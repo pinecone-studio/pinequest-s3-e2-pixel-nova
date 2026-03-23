@@ -3,6 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true,
     "lib": [
@@ -12,7 +13,8 @@
     "jsxImportSource": "hono/jsx",
     "types": [
         "./worker-configuration.d.ts",
-        "node"
+        "node",
+        "jest"
     ]
   },
 }
