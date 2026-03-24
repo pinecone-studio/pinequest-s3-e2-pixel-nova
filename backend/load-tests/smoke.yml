@@ -1,0 +1,30 @@
+config:
+  environments:
+    local:
+      target: "http://127.0.0.1:8787"
+      phases:
+        - duration: 15
+          arrivalRate: 5
+    ci:
+      target: "http://127.0.0.1:8787"
+      phases:
+        - duration: 10
+          arrivalRate: 3
+    staging:
+      target: "{{ $processEnvironment.STAGING_API_BASE_URL }}"
+      phases:
+        - duration: 15
+          arrivalRate: 5
+  defaults:
+    headers:
+      content-type: "application/json"
+  ensure:
+    thresholds:
+      - http.response_time.p95: 750
+      - http.codes.200: 1
+
+scenarios:
+  - name: "health check smoke"
+    flow:
+      - get:
+          url: "/"
