@@ -1,4 +1,4 @@
 declare module "mammoth" {
-  const mammoth: any;
+  const mammoth: unknown;
   export = mammoth;
 }

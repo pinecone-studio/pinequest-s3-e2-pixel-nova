@@ -91,7 +91,7 @@ const formatDateTime = (value?: string | null) => {
   });
 };
 
-export default function БагшPage() {
+export default function TeacherPage() {
   const router = useRouter();
   const cardClass =
     "rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
@@ -459,7 +459,12 @@ export default function БагшPage() {
   const handleDocxUpload = async (file: File) => {
     setImportError(null);
     try {
-      const mammoth = await import("mammoth");
+      type Mammoth = {
+        extractRawText: (args: { arrayBuffer: ArrayBuffer }) => Promise<{
+          value: string;
+        }>;
+      };
+      const mammoth = (await import("mammoth")) as Mammoth;
       const arrayBuffer = await file.arrayBuffer();
       const result = await mammoth.extractRawText({ arrayBuffer });
       const rawText = result.value || "";
@@ -481,7 +486,24 @@ export default function БагшPage() {
     setPdfLoading(true);
     setPdfError(null);
     try {
-      const pdfjsLib = (await import("pdfjs-dist/legacy/build/pdf")) as any;
+      type PdfPage = {
+        getTextContent: () => Promise<{ items: { str?: string }[] }>;
+        render: (args: {
+          canvasContext: CanvasRenderingContext2D;
+          viewport: { width: number; height: number };
+        }) => { promise: Promise<void> };
+        getViewport: (args: { scale: number }) => { width: number; height: number };
+      };
+      type PdfDoc = {
+        numPages: number;
+        getPage: (pageNum: number) => Promise<PdfPage>;
+      };
+      type PdfJs = {
+        version: string;
+        GlobalWorkerOptions: { workerSrc: string };
+        getDocument: (args: { data: ArrayBuffer }) => { promise: Promise<PdfDoc> };
+      };
+      const pdfjsLib = (await import("pdfjs-dist/legacy/build/pdf")) as PdfJs;
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -490,14 +512,20 @@ export default function БагшPage() {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
-          .map((item: any) => ("str" in item ? item.str : ""))
+          .map((item) => (typeof item.str === "string" ? item.str : ""))
           .join(" ");
         combinedText += `${pageText}\n`;
       }
 
       let answerKey = new Map<number, string>();
       if (pdfUseOcr) {
-        const tesseract = await import("tesseract.js");
+        type Tesseract = {
+          recognize: (
+            image: HTMLCanvasElement,
+            lang: string
+          ) => Promise<{ data: { text: string } }>;
+        };
+        const tesseract = (await import("tesseract.js")) as Tesseract;
         const pageToRead =
           answerKeyPage === "last"
             ? pdf.numPages
@@ -525,7 +553,7 @@ export default function БагшPage() {
         }
         showToast(`${parsedQuestions.length} асуулт автоматаар бөглөгдлөө.`);
       }
-    } catch (error) {
+      } catch {
       setPdfError("PDF боловсруулах үед алдаа гарлаа.");
     } finally {
       setPdfLoading(false);

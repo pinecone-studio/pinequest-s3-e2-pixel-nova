@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   User,
@@ -195,13 +195,13 @@ export default function StudentPage() {
     if (!currentUser) return [] as StudentProgress[string]["history"];
     const progress = getJSON<StudentProgress>("studentProgress", {});
     return progress[currentUser.id]?.history ?? [];
-  }, [currentUser, lastSubmission]);
+  }, [currentUser]);
 
   const studentProgress = useMemo(() => {
     if (!currentUser) return { xp: 0, level: 1, history: [] };
     const progress = getJSON<StudentProgress>("studentProgress", {});
     return progress[currentUser.id] ?? { xp: 0, level: 1, history: [] };
-  }, [currentUser, lastSubmission]);
+  }, [currentUser]);
 
   const levelInfo = useMemo(
     () => getLevel(studentProgress.xp),
@@ -263,11 +263,6 @@ export default function StudentPage() {
     }));
   };
 
-  const terminateExam = (reason: string) => {
-    showWarning("Шалгалт зогсоолоо.");
-    submitExam(true, true, reason);
-  };
-
   const startExam = () => {
     if (!activeExam || !currentUser) return;
     const totalSeconds = (activeExam.duration ?? 45) * 60;
@@ -299,6 +294,108 @@ export default function StudentPage() {
     }
     setView("exam");
   };
+
+  const submitExam = useCallback(
+    (auto = false, terminated = false, reason?: string) => {
+      if (!activeExam || !currentUser) return;
+      if (!auto) {
+        const ok = window.confirm("Та шалгалтаа илгээхдээ итгэлтэй байна уу?");
+        if (!ok) return;
+      }
+      const report = activeExam.questions.map((question) => {
+        const studentAnswer = (answers[question.id] || "").trim();
+        const correctAnswer = question.correctAnswer.trim();
+        const correct =
+          studentAnswer.toLowerCase() === correctAnswer.toLowerCase() ||
+          (question.type === "mcq" &&
+            !!question.options?.some(
+              (opt) =>
+                opt.toLowerCase() === correctAnswer.toLowerCase() &&
+                studentAnswer.toLowerCase() === opt.toLowerCase(),
+            ));
+        return { question, answer: studentAnswer, correct: !!correct };
+      });
+      const score = terminated ? 0 : report.filter((item) => item.correct).length;
+      const totalPoints = activeExam.questions.length || 1;
+      const percentage = terminated
+        ? 0
+        : Math.round((score / totalPoints) * 100);
+      const submission: Submission = {
+        id: generateId(),
+        examId: activeExam.id,
+        studentId: currentUser.id,
+        studentНэр: currentUser.username,
+        answers: report.map((item) => ({
+          questionId: item.question.id,
+          selectedAnswer: item.answer,
+          correct: item.correct,
+        })),
+        score,
+        totalPoints,
+        percentage,
+        terminated,
+        terminationReason: reason,
+        violations,
+        submittedAt: new Date().toISOString(),
+      };
+      const stored = getJSON<Submission[]>("submissions", []);
+      setJSON("submissions", [submission, ...stored]);
+
+      const progress = getJSON<StudentProgress>("studentProgress", {});
+      const existing = progress[currentUser.id] ?? {
+        xp: 0,
+        level: 1,
+        history: [],
+      };
+      const xpEarned = terminated ? 0 : calculateXP(percentage);
+      const nextXp = existing.xp + xpEarned;
+      const level = getLevel(nextXp);
+      progress[currentUser.id] = {
+        xp: nextXp,
+        level: level.level,
+        history: [
+          {
+            examId: activeExam.id,
+            percentage,
+            xp: xpEarned,
+            date: new Date().toISOString(),
+          },
+          ...existing.history,
+        ],
+      };
+      setJSON("studentProgress", progress);
+
+      const notification: NotificationItem = {
+        examId: activeExam.id,
+        message: `📥 ${currentUser.username} ${activeExam.title} шалгалтыг өглөө (${percentage}%).`,
+        read: false,
+        createdAt: new Date().toISOString(),
+      };
+      const notifStore = getJSON<NotificationItem[]>("notifications", []);
+      setJSON("notifications", [notification, ...notifStore]);
+      setNotifications([notification, ...notifStore]);
+
+      if (sessionKey) localStorage.removeItem(sessionKey);
+      setLastSubmission(submission);
+      setAnswerReport(report);
+      setView("result");
+    },
+    [
+      activeExam,
+      answers,
+      currentUser,
+      sessionKey,
+      violations,
+    ],
+  );
+
+  const terminateExam = useCallback(
+    (reason: string) => {
+      showWarning("Шалгалт зогсоолоо.");
+      submitExam(true, true, reason);
+    },
+    [submitExam],
+  );
 
   useEffect(() => {
     if (view !== "exam" || !sessionKey) return;
@@ -399,6 +496,7 @@ export default function StudentPage() {
     };
   }, [
     view,
+    terminateExam,
     violations.tabSwitch,
     violations.windowBlur,
     violations.fullscreenExit,
@@ -418,7 +516,7 @@ export default function StudentPage() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [view, sessionKey, currentUser, activeExam]);
+  }, [view, sessionKey, currentUser, activeExam, submitExam]);
 
   useEffect(() => {
     if (view !== "exam" || !sessionKey || !currentUser || !activeExam) return;
@@ -481,89 +579,6 @@ export default function StudentPage() {
     const prev = Math.max(currentQuestionIndex - 1, 0);
     setCurrentQuestionIndex(prev);
     persistSessionNow();
-  };
-
-  const submitExam = (auto = false, terminated = false, reason?: string) => {
-    if (!activeExam || !currentUser) return;
-    if (!auto) {
-      const ok = window.confirm("Та шалгалтаа илгээхдээ итгэлтэй байна уу?");
-      if (!ok) return;
-    }
-    const report = activeExam.questions.map((question) => {
-      const studentAnswer = (answers[question.id] || "").trim();
-      const correctAnswer = question.correctAnswer.trim();
-      const correct =
-        studentAnswer.toLowerCase() === correctAnswer.toLowerCase() ||
-        (question.type === "mcq" &&
-          !!question.options?.some(
-            (opt) =>
-              opt.toLowerCase() === correctAnswer.toLowerCase() &&
-              studentAnswer.toLowerCase() === opt.toLowerCase(),
-          ));
-      return { question, answer: studentAnswer, correct: !!correct };
-    });
-    const score = terminated ? 0 : report.filter((item) => item.correct).length;
-    const totalPoints = activeExam.questions.length || 1;
-    const percentage = terminated ? 0 : Math.round((score / totalPoints) * 100);
-    const submission: Submission = {
-      id: generateId(),
-      examId: activeExam.id,
-      studentId: currentUser.id,
-      studentНэр: currentUser.username,
-      answers: report.map((item) => ({
-        questionId: item.question.id,
-        selectedAnswer: item.answer,
-        correct: item.correct,
-      })),
-      score,
-      totalPoints,
-      percentage,
-      terminated,
-      terminationReason: reason,
-      violations,
-      submittedAt: new Date().toISOString(),
-    };
-    const stored = getJSON<Submission[]>("submissions", []);
-    setJSON("submissions", [submission, ...stored]);
-
-    const progress = getJSON<StudentProgress>("studentProgress", {});
-    const existing = progress[currentUser.id] ?? {
-      xp: 0,
-      level: 1,
-      history: [],
-    };
-    const xpEarned = terminated ? 0 : calculateXP(percentage);
-    const nextXp = existing.xp + xpEarned;
-    const level = getLevel(nextXp);
-    progress[currentUser.id] = {
-      xp: nextXp,
-      level: level.level,
-      history: [
-        {
-          examId: activeExam.id,
-          percentage,
-          xp: xpEarned,
-          date: new Date().toISOString(),
-        },
-        ...existing.history,
-      ],
-    };
-    setJSON("studentProgress", progress);
-
-    const notification: NotificationItem = {
-      examId: activeExam.id,
-      message: `📥 ${currentUser.username} ${activeExam.title} шалгалтыг өглөө (${percentage}%).`,
-      read: false,
-      createdAt: new Date().toISOString(),
-    };
-    const notifStore = getJSON<NotificationItem[]>("notifications", []);
-    setJSON("notifications", [notification, ...notifStore]);
-    setNotifications([notification, ...notifStore]);
-
-    if (sessionKey) localStorage.removeItem(sessionKey);
-    setLastSubmission(submission);
-    setAnswerReport(report);
-    setView("result");
   };
 
   const formatTimer = (seconds: number) => {
