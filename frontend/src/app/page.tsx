@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+
 import {
   Role,
   STORAGE_KEYS,
@@ -10,6 +10,7 @@ import {
   getJSON,
   setSessionUser,
 } from "@/lib/examGuard";
+import { useRouter } from "next/navigation";
 
 const mockHighlights = [
   "Fullscreen Exam Room",
@@ -56,7 +57,7 @@ export default function Home() {
       (u) =>
         u.username === loginUsername &&
         u.password === loginPassword &&
-        u.role === loginMode
+        u.role === loginMode,
     );
     if (!user) {
       showToast("Нэвтрэх нэр эсвэл нууц үг буруу байна.");
@@ -74,10 +75,12 @@ export default function Home() {
             AI-Powered LMS
           </div>
           <div className="space-y-3">
-            <h1 className="text-4xl font-semibold tracking-tight">ExamGuard LMS</h1>
+            <h1 className="text-4xl font-semibold tracking-tight">
+              ExamGuard LMS
+            </h1>
             <p className="text-base text-muted-foreground">
-              Modern, premium online exam platform with real-time monitoring,
-              AI grading, and analytics.
+              Modern, premium online exam platform with real-time monitoring, AI
+              grading, and analytics.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
