@@ -7,16 +7,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a full-stack exam platform (PineQuest) deployed entirely on Cloudflare, split into two independent apps:
 
 - **`backend/`** — Cloudflare Worker API using [Hono](https://hono.dev/) with [Drizzle ORM](https://orm.drizzle.team/) against a D1 (SQLite) database. Entry point: `src/index.ts`. DB schema: `src/db/schema.ts`. DB access helper: `src/db/index.ts` exports `getDb(d1)`.
-- **`frontend/`** — Next.js 16 app deployed via [OpenNext for Cloudflare](https://opennext.js.org/cloudflare). Uses Clerk for auth, shadcn/ui components (`src/components/ui/`), and Tailwind CSS v4.
+- **`frontend/`** — Next.js 16 app deployed via [OpenNext for Cloudflare](https://opennext.js.org/cloudflare). Code-based auth (no external provider), shadcn/ui components (`src/components/ui/`), and Tailwind CSS v4.
 
 ### Database Schema Overview
 
-13 tables in the D1 SQLite database, organized by domain:
+14 tables in the D1 SQLite database, organized by domain:
 
 | Domain | Tables |
 |---|---|
-| Auth | `teachers`, `students` |
+| Auth | `teachers`, `students` (code-based, no passwords) |
 | Exams | `subjects`, `exams`, `questions`, `options`, `materials` |
+| Question Bank | `question_bank`, `question_bank_options` |
 | Sessions | `exam_sessions`, `student_answers`, `cheat_events` |
 | Gamification | `xp_transactions`, `saved_exams` |
 
@@ -62,6 +63,13 @@ npm run cf-typegen
 - Backend route handlers go in `src/index.ts` (or new route files imported there); DB changes go alongside `schema.ts`.
 - Frontend path alias `@/` maps to `src/`.
 - Tests live in `backend/tests/` and `frontend/tests/` — file pattern `*.test.ts` / `*.test.tsx`.
-- Conventional commit subjects: `feat:`, `fix:`, etc.
 - Keep lockfile updates scoped to the package being changed.
 - PRs touching DB schema or Cloudflare config must note the migration/config change.
+
+## Git Naming Conventions
+
+- **Issue titles**: Short and descriptive (e.g., "Add unit tests and load tests for API")
+- **Branch names**: `feat/short-description`, `fix/short-description`, `test/short-description`
+- **Commit messages**: Conventional commits with concise description — `feat:`, `fix:`, `test:`, `chore:`, `refactor:`, `docs:`
+- **PR titles**: Conventional commit style, under 70 characters
+- **PR labels**: Use specific labels — `testing`, `backend`, `frontend`, `performance`, `database`, `cheat-detection`, `gamification`, `analytics`
