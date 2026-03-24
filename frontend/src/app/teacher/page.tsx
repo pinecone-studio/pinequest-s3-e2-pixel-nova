@@ -138,6 +138,8 @@ export default function TeacherPage() {
     "Exam",
   );
   const [durationMinutes, setDurationMinutes] = useState(45);
+  const [previewQuestionIndex, setPreviewQuestionIndex] = useState(0);
+  const [isPreviewEditing, setIsPreviewEditing] = useState(false);
 
   useEffect(() => {
     const user = getSessionUser();
@@ -264,6 +266,33 @@ export default function TeacherPage() {
     setQuestions((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const updateQuestionField = (
+    index: number,
+    field: "text" | "correctAnswer",
+    value: string,
+  ) => {
+    setQuestions((prev) =>
+      prev.map((question, questionIndex) =>
+        questionIndex === index ? { ...question, [field]: value } : question,
+      ),
+    );
+  };
+
+  const updateQuestionOption = (
+    questionIndex: number,
+    optionIndex: number,
+    value: string,
+  ) => {
+    setQuestions((prev) =>
+      prev.map((question, currentIndex) => {
+        if (currentIndex !== questionIndex) return question;
+        const nextOptions = [...(question.options ?? [])];
+        nextOptions[optionIndex] = value;
+        return { ...question, options: nextOptions };
+      }),
+    );
+  };
+
   const saveExam = () => {
     if (!examTitle || questions.length === 0) {
       showToast("Шалгалтын нэр болон асуултууд оруулна уу.");
@@ -302,7 +331,7 @@ export default function TeacherPage() {
       .map((line) => line.trim())
       .filter(Boolean);
     lines.forEach((line) => {
-      const match = line.match(/(\d+)\s*[:.)-]?\s*([ABCD])/i);
+      const match = line.match(/(\d+)\s*[:.)-]?\s*([A-E])/i);
       if (match) {
         map.set(Number(match[1]), match[2].toUpperCase());
       }
@@ -312,7 +341,7 @@ export default function TeacherPage() {
 
   const parseOptionsInline = (block: string) => {
     const normalized = block.replace(/\s+/g, " ").trim();
-    const regex = /([A-D])[.)]\s*([^A-D]+?)(?=\s+[A-D][.)]\s*|$)/gi;
+    const regex = /([A-E])[.)]\s*([^A-E]+?)(?=\s+[A-E][.)]\s*|$)/gi;
     const options: string[] = [];
     let match: RegExpExecArray | null;
     while ((match = regex.exec(normalized)) !== null) {
@@ -321,37 +350,58 @@ export default function TeacherPage() {
     return options;
   };
 
+  const normalizeImportedText = (text: string) =>
+    text
+      .replace(/\u0000/g, "")
+      .replace(/\r\n/g, "\n")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+  const normalizeMathText = (text: string) =>
+    text
+      .replace(/(\d)\s*\.\s*(\d)/g, "$1.$2")
+      .replace(/([A-Za-z0-9)])\s+2\b/g, "$1²")
+      .replace(/([A-Za-z0-9)])\s+3\b/g, "$1³")
+      .replace(/√\s+([A-Za-z0-9]+)/g, "√$1")
+      .replace(/([+\-=;:(]\s*)(\d{1,2})\s+(\d{1,2})(?=\s|$)/g, "$1$2/$3")
+      .replace(/^(\d{1,2})\s+(\d{1,2})(?=\s|$)/g, "$1/$2")
+      .replace(/\s+([,.;:)])/g, "$1")
+      .replace(/([(])\s+/g, "$1")
+      .replace(/\{\s+/g, "{ ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
   const parseQuestionsFromText = (
     rawText: string,
     answerKey: Map<number, string>,
   ) => {
-    const cleaned = rawText.replace(/\u0000/g, "");
-    const questionBlocks = cleaned
-      .split(/\n?\s*(\d+)\s*[.)]\s+/)
-      .filter(Boolean);
+    const cleaned = normalizeImportedText(rawText);
     const parsed: Question[] = [];
-    for (let i = 0; i < questionBlocks.length; i += 2) {
-      const number = Number(questionBlocks[i]);
-      const block = questionBlocks[i + 1] ?? "";
-      const lines = block
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean);
-      if (lines.length === 0) continue;
-      const textLine = lines[0];
-      const options: string[] = [];
-      lines.slice(1).forEach((line) => {
-        const optMatch = line.match(/^[A-D][.)]\s*(.+)$/i);
-        if (optMatch) options.push(optMatch[1].trim());
-      });
-      const inlineOptions =
-        options.length === 0 ? parseOptionsInline(block) : [];
-      const finalOptions = options.length > 0 ? options : inlineOptions;
-      if (finalOptions.length === 0) continue;
+    const questionRegex = /(\d+)\.\s*(.*?)(?=\s+\d+\.\s+|$)/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = questionRegex.exec(cleaned)) !== null) {
+      const number = Number(match[1]);
+      const block = match[2]?.trim() ?? "";
+      if (!block) continue;
+
+      const firstOptionIndex = block.search(/\bA[.)]\s*/i);
+      if (firstOptionIndex <= 0) continue;
+
+      const textLine = normalizeMathText(
+        block.slice(0, firstOptionIndex).trim(),
+      );
+      const finalOptions = parseOptionsInline(block)
+        .map((option) => normalizeMathText(option))
+        .slice(0, 5);
+      if (!textLine || finalOptions.length < 4) continue;
+
       const correctLetter = answerKey.get(number) ?? "A";
-      const correctIndex = ["A", "B", "C", "D"].indexOf(correctLetter);
-      const correctAnswer =
-        finalOptions[correctIndex] ?? finalOptions[0] ?? correctLetter;
+      const correctIndex = ["A", "B", "C", "D", "E"].indexOf(correctLetter);
+      const correctAnswer = normalizeMathText(
+        finalOptions[correctIndex] ?? finalOptions[0] ?? correctLetter,
+      );
       parsed.push({
         id: generateId(),
         text: textLine,
@@ -360,7 +410,25 @@ export default function TeacherPage() {
         correctAnswer,
       });
     }
+
     return parsed;
+  };
+
+  const finalizeImportedQuestions = (
+    parsedQuestions: Question[],
+    fileName: string,
+    extensionPattern: RegExp,
+    sourceLabel: string,
+    setError: (message: string | null) => void,
+  ) => {
+    if (parsedQuestions.length === 0) {
+      setError(`${sourceLabel}-ээс асуулт олдсонгүй. Форматаа шалгана уу.`);
+      return;
+    }
+    setError(null);
+    setQuestions(parsedQuestions);
+    if (!examTitle) setExamTitle(fileName.replace(extensionPattern, ""));
+    showToast(`${parsedQuestions.length} асуулт ${sourceLabel}-ээс бөглөгдлөө.`);
   };
 
   const parseCsv = (text: string) => {
@@ -419,6 +487,7 @@ export default function TeacherPage() {
       const bIndex = header.findIndex((h) => h === "b");
       const cIndex = header.findIndex((h) => h === "c");
       const dIndex = header.findIndex((h) => h === "d");
+      const eIndex = header.findIndex((h) => h === "e");
       const answerIndex = header.findIndex((h) => h.includes("answer"));
       const dataRows = rows.slice(1);
       const parsed = dataRows
@@ -429,18 +498,21 @@ export default function TeacherPage() {
             cols[bIndex] ?? "",
             cols[cIndex] ?? "",
             cols[dIndex] ?? "",
+            cols[eIndex] ?? "",
           ].map((item) => item.trim());
           const correct = cols[answerIndex] ?? "A";
-          if (!qText || options.some((opt) => !opt)) return null;
-          const correctIndex = ["A", "B", "C", "D"].indexOf(
+          const filteredOptions = options.filter(Boolean);
+          if (!qText || filteredOptions.length < 4) return null;
+          const correctIndex = ["A", "B", "C", "D", "E"].indexOf(
             correct.trim().toUpperCase(),
           );
           return {
             id: generateId(),
             text: qText,
             type: "mcq" as const,
-            options,
-            correctAnswer: options[correctIndex] ?? options[0],
+            options: filteredOptions,
+            correctAnswer:
+              filteredOptions[correctIndex] ?? filteredOptions[0],
           };
         })
         .filter(Boolean) as Question[];
@@ -470,20 +542,38 @@ export default function TeacherPage() {
       const rawText = result.value || "";
       const answerKey = parseAnswerKey(rawText);
       const parsedQuestions = parseQuestionsFromText(rawText, answerKey);
-      if (parsedQuestions.length === 0) {
-        setImportError("DOCX‑ээс асуулт олдсонгүй.");
-        return;
-      }
-      setQuestions(parsedQuestions);
-      if (!examTitle) setExamTitle(file.name.replace(/\.docx$/i, ""));
-      showToast(`${parsedQuestions.length} асуулт DOCX‑ээс бөглөгдлөө.`);
+      finalizeImportedQuestions(
+        parsedQuestions,
+        file.name,
+        /\.docx$/i,
+        "DOCX",
+        setImportError,
+      );
     } catch {
-      setImportError("DOCX боловсруулах үед алдаа гарлаа.");
+      setImportError("DOCX import failed.");
     }
   };
-
+  const handleTxtUpload = async (file: File) => {
+    setImportError(null);
+    setPdfError(null);
+    try {
+      const text = await file.text();
+      const answerKey = parseAnswerKey(text);
+      const parsedQuestions = parseQuestionsFromText(text, answerKey);
+      finalizeImportedQuestions(
+        parsedQuestions,
+        file.name,
+        /\.(txt|text)$/i,
+        "TXT",
+        setImportError,
+      );
+    } catch {
+      setImportError("TXT import failed.");
+    }
+  };
   const handlePdfUpload = async (file: File) => {
     setPdfLoading(true);
+    setImportError(null);
     setPdfError(null);
     try {
       type PdfPage = {
@@ -499,12 +589,16 @@ export default function TeacherPage() {
         getPage: (pageNum: number) => Promise<PdfPage>;
       };
       type PdfJs = {
-        version: string;
         GlobalWorkerOptions: { workerSrc: string };
         getDocument: (args: { data: ArrayBuffer }) => { promise: Promise<PdfDoc> };
       };
-      const pdfjsLib = (await import("pdfjs-dist/legacy/build/pdf")).default as PdfJs;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+      const pdfjsModule = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const pdfjsLib =
+        ("default" in pdfjsModule ? pdfjsModule.default : pdfjsModule) as PdfJs;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        "pdfjs-dist/build/pdf.worker.min.mjs",
+        import.meta.url,
+      ).toString();
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       let combinedText = "";
@@ -516,7 +610,6 @@ export default function TeacherPage() {
           .join(" ");
         combinedText += `${pageText}\n`;
       }
-
       let answerKey = new Map<number, string>();
       if (pdfUseOcr) {
         type Tesseract = {
@@ -542,24 +635,20 @@ export default function TeacherPage() {
           answerKey = parseAnswerKey(result.data.text);
         }
       }
-
       const parsedQuestions = parseQuestionsFromText(combinedText, answerKey);
-      if (parsedQuestions.length === 0) {
-        setPdfError("PDF‑ээс асуулт олдсонгүй. Форматыг шалгана уу.");
-      } else {
-        setQuestions(parsedQuestions);
-        if (!examTitle) {
-          setExamTitle(file.name.replace(/\.pdf$/i, ""));
-        }
-        showToast(`${parsedQuestions.length} асуулт автоматаар бөглөгдлөө.`);
-      }
-      } catch {
-      setPdfError("PDF боловсруулах үед алдаа гарлаа.");
+      finalizeImportedQuestions(
+        parsedQuestions,
+        file.name,
+        /\.pdf$/i,
+        "PDF",
+        setPdfError,
+      );
+    } catch {
+      setPdfError("PDF import failed.");
     } finally {
       setPdfLoading(false);
     }
   };
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     const root = document.documentElement;
@@ -1066,6 +1155,33 @@ export default function TeacherPage() {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                               >
+                                <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" />
+                                <path d="M14 2v6h6" />
+                                <path d="M8 13h8" />
+                                <path d="M8 17h6" />
+                              </svg>
+                              TXT
+                              <input
+                                type="file"
+                                accept=".txt,text/plain"
+                                className="hidden"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
+                                  if (file) handleTxtUpload(file);
+                                  event.currentTarget.value = "";
+                                }}
+                              />
+                            </label>
+                            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-1 text-xs text-foreground transition hover:bg-muted">
+                              <svg
+                                className="h-4 w-4 text-muted-foreground"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
                                 <path d="M4 4h16v16H4z" />
                                 <path d="M8 8h8" />
                                 <path d="M8 12h8" />
@@ -1233,27 +1349,209 @@ export default function TeacherPage() {
                         </button>
                       </div>
                       {questions.length > 0 && (
-                        <div className="rounded-xl border border-border bg-muted px-3 py-2 text-sm">
-                          <div className="text-xs text-muted-foreground">
-                            Нэмсэн асуултууд
-                          </div>
-                          <div className="mt-2 space-y-2">
-                            {questions.map((question, index) => (
-                              <div
-                                key={question.id}
-                                className="flex items-center justify-between rounded-lg border border-border bg-card px-2 py-1"
-                              >
-                                <div className="text-xs">
-                                  {index + 1}. {question.text} ({question.type})
+                        <div className="space-y-3">
+                          <div
+                            className={`grid gap-4 ${
+                              isPreviewEditing
+                                ? "lg:grid-cols-[1.1fr_0.9fr]"
+                                : "lg:grid-cols-1"
+                            }`}
+                          >
+                            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                  <div className="text-sm font-semibold">
+                                    Student Preview
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Preview the parsed exam as a student sees it.
+                                  </div>
                                 </div>
-                                <button
-                                  className="text-xs text-red-500 transition hover:opacity-80"
-                                  onClick={() => removeQuestion(question.id)}
-                                >
-                                  Устгах
-                                </button>
+                                <div className="flex items-center gap-2">
+                                  <div className="rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground">
+                                    {previewQuestionIndex + 1}/{questions.length}
+                                  </div>
+                                  <button
+                                    className={buttonGhost}
+                                    onClick={() =>
+                                      setIsPreviewEditing((prev) => !prev)
+                                    }
+                                  >
+                                    {isPreviewEditing ? "Close Edit" : "Edit"}
+                                  </button>
+                                </div>
                               </div>
-                            ))}
+                              <div className="mt-4 rounded-2xl border border-border bg-muted/60 p-5">
+                                <div className="text-xs text-muted-foreground">
+                                  Question {previewQuestionIndex + 1}
+                                </div>
+                                <div className="mt-2 text-base font-medium leading-7 text-foreground">
+                                  {questions[previewQuestionIndex]?.text}
+                                </div>
+                                {questions[previewQuestionIndex]?.type === "mcq" &&
+                                  questions[previewQuestionIndex]?.options && (
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                      {questions[previewQuestionIndex].options.map(
+                                        (option, index) => {
+                                          const label = String.fromCharCode(
+                                            65 + index,
+                                          );
+                                          return (
+                                            <div
+                                              key={`${label}-${option}`}
+                                              className="rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-sm"
+                                            >
+                                              <span className="font-semibold">
+                                                {label}.
+                                              </span>{" "}
+                                              {option}
+                                            </div>
+                                          );
+                                        },
+                                      )}
+                                    </div>
+                                  )}
+                                {questions[previewQuestionIndex]?.type !== "mcq" && (
+                                  <div className="mt-4 rounded-xl border border-dashed border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+                                    {questions[previewQuestionIndex]?.type === "open"
+                                      ? "Students will type a long answer here."
+                                      : "Students will enter a short answer here."}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                                <div className="flex flex-wrap gap-2">
+                                  {questions.map((question, index) => (
+                                    <button
+                                      key={question.id}
+                                      className={`grid h-9 w-9 place-items-center rounded-lg border text-xs transition ${
+                                        index === previewQuestionIndex
+                                          ? "border-primary bg-primary/10 text-foreground"
+                                          : "border-border bg-muted hover:bg-muted/70"
+                                      }`}
+                                      onClick={() => setPreviewQuestionIndex(index)}
+                                    >
+                                      {index + 1}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    className={buttonGhost}
+                                    onClick={() =>
+                                      setPreviewQuestionIndex((prev) =>
+                                        Math.max(prev - 1, 0),
+                                      )
+                                    }
+                                    disabled={previewQuestionIndex === 0}
+                                  >
+                                    Prev
+                                  </button>
+                                  <button
+                                    className={buttonGhost}
+                                    onClick={() =>
+                                      setPreviewQuestionIndex((prev) =>
+                                        Math.min(prev + 1, questions.length - 1),
+                                      )
+                                    }
+                                    disabled={
+                                      previewQuestionIndex === questions.length - 1
+                                    }
+                                  >
+                                    Next
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                            {isPreviewEditing && (
+                              <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                              <div className="text-sm font-semibold">Edit Panel</div>
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                Fix broken math/text here and check the preview beside it.
+                              </div>
+                              <div className="mt-4 space-y-3">
+                                <textarea
+                                  className="min-h-32 w-full rounded-xl border border-border bg-muted px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                  value={questions[previewQuestionIndex]?.text ?? ""}
+                                  onChange={(event) =>
+                                    updateQuestionField(
+                                      previewQuestionIndex,
+                                      "text",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                                {questions[previewQuestionIndex]?.type === "mcq" &&
+                                  questions[previewQuestionIndex]?.options && (
+                                    <div className="grid gap-2">
+                                      {questions[
+                                        previewQuestionIndex
+                                      ].options.map((option, index) => {
+                                        const label = String.fromCharCode(
+                                          65 + index,
+                                        );
+                                        return (
+                                          <input
+                                            key={`${label}-edit-${index}`}
+                                            className={inputClass}
+                                            value={option}
+                                            placeholder={`${label} option`}
+                                            onChange={(event) =>
+                                              updateQuestionOption(
+                                                previewQuestionIndex,
+                                                index,
+                                                event.target.value,
+                                              )
+                                            }
+                                          />
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                <input
+                                  className={inputClass}
+                                  value={
+                                    questions[previewQuestionIndex]
+                                      ?.correctAnswer ?? ""
+                                  }
+                                  placeholder="Correct answer"
+                                  onChange={(event) =>
+                                    updateQuestionField(
+                                      previewQuestionIndex,
+                                      "correctAnswer",
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-sm">
+                            <div className="text-xs text-muted-foreground">
+                              Parsed Questions
+                            </div>
+                            <div className="mt-2 space-y-2">
+                              {questions.map((question, index) => (
+                                <div
+                                  key={question.id}
+                                  className="flex items-center justify-between rounded-lg border border-border bg-card px-2 py-1"
+                                >
+                                  <button
+                                    className="text-left text-xs transition hover:opacity-80"
+                                    onClick={() => setPreviewQuestionIndex(index)}
+                                  >
+                                    {index + 1}. {question.text} ({question.type})
+                                  </button>
+                                  <button
+                                    className="text-xs text-red-500 transition hover:opacity-80"
+                                    onClick={() => removeQuestion(question.id)}
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1646,3 +1944,4 @@ export default function TeacherPage() {
     </div>
   );
 }
+
