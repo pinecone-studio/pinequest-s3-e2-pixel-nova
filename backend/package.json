@@ -5,10 +5,18 @@
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy --minify",
 		"test": "jest --runInBand",
-		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
+		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "wrangler d1 migrations apply pinequest-db --local",
+		"db:migrate:prod": "wrangler d1 migrations apply pinequest-db --remote",
+		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {
-		"hono": "^4.12.8"
+		"@hono/zod-validator": "^0.7.6",
+		"drizzle-kit": "^0.31.10",
+		"drizzle-orm": "^0.45.1",
+		"hono": "^4.12.8",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@types/jest": "^30.0.0",
