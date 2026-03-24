@@ -464,7 +464,7 @@ export default function TeacherPage() {
           value: string;
         }>;
       };
-      const mammoth = (await import("mammoth")) as Mammoth;
+      const mammoth = (await import("mammoth")).default as Mammoth;
       const arrayBuffer = await file.arrayBuffer();
       const result = await mammoth.extractRawText({ arrayBuffer });
       const rawText = result.value || "";
@@ -503,7 +503,7 @@ export default function TeacherPage() {
         GlobalWorkerOptions: { workerSrc: string };
         getDocument: (args: { data: ArrayBuffer }) => { promise: Promise<PdfDoc> };
       };
-      const pdfjsLib = (await import("pdfjs-dist/legacy/build/pdf")) as PdfJs;
+      const pdfjsLib = (await import("pdfjs-dist/legacy/build/pdf")).default as PdfJs;
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
