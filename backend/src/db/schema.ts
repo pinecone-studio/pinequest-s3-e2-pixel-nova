@@ -66,16 +66,58 @@ export const exams = sqliteTable("exams", {
   updatedAt: text("updated_at").notNull().default(sql`(current_timestamp)`),
 });
 
-// Question
+// ============================================
+// QUESTION BANK — Reusable questions across exams
+// ============================================
+
+// Question Bank (багш асуултуудыг хадгалж, олон шалгалтад дахин ашиглах)
+export const questionBank = sqliteTable("question_bank", {
+  id: text("id").primaryKey(),
+  teacherId: text("teacher_id")
+    .notNull()
+    .references(() => teachers.id, { onDelete: "cascade" }),
+  subjectId: text("subject_id")
+    .references(() => subjects.id, { onDelete: "set null" }),
+  type: text("type").notNull(),                        // multiple_choice | true_false | short_answer
+  difficulty: text("difficulty").notNull().default("medium"), // easy | medium | hard
+  questionText: text("question_text").notNull(),
+  imageUrl: text("image_url"),                         // зураг (R2 URL)
+  audioUrl: text("audio_url"),                         // аудио (R2 URL)
+  explanation: text("explanation"),
+  correctAnswerText: text("correct_answer_text"),      // for short_answer
+  tags: text("tags"),                                  // JSON array: ["algebra", "grade10"]
+  usageCount: integer("usage_count").notNull().default(0), // хэдэн шалгалтад ашигласан
+  createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+  updatedAt: text("updated_at").notNull().default(sql`(current_timestamp)`),
+});
+
+// Question Bank Options (банк дахь асуултын хариултууд)
+export const questionBankOptions = sqliteTable("question_bank_options", {
+  id: text("id").primaryKey(),
+  bankQuestionId: text("bank_question_id")
+    .notNull()
+    .references(() => questionBank.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),                      // A, B, C, D
+  text: text("text").notNull(),
+  imageUrl: text("image_url"),
+  isCorrect: integer("is_correct", { mode: "boolean" }).notNull().default(false),
+  orderIndex: integer("order_index").notNull().default(0),
+});
+
+// Question (exam дотор — банкнаас хуулсан эсвэл шинээр үүсгэсэн)
 export const questions = sqliteTable("questions", {
   id: text("id").primaryKey(),
   examId: text("exam_id")
     .notNull()
     .references(() => exams.id, { onDelete: "cascade" }),
+  bankQuestionId: text("bank_question_id")
+    .references(() => questionBank.id),                // null = original, set = copied from bank
   topic: text("topic"),
   difficulty: text("difficulty").notNull().default("medium"), // easy | medium | hard
   type: text("type").notNull(), // multiple_choice | true_false | short_answer
   questionText: text("question_text").notNull(),
+  imageUrl: text("image_url"),                         // зураг (R2 URL)
+  audioUrl: text("audio_url"),                         // аудио (R2 URL)
   explanation: text("explanation"),
   correctAnswerText: text("correct_answer_text"), // for short_answer grading
   points: real("points").notNull().default(1),
@@ -92,6 +134,7 @@ export const options = sqliteTable("options", {
     .references(() => questions.id, { onDelete: "cascade" }),
   label: text("label").notNull(), // A, B, C, D
   text: text("text").notNull(),
+  imageUrl: text("image_url"),                         // хариулт дотор зураг (R2 URL)
   isCorrect: integer("is_correct", { mode: "boolean" }).notNull().default(false),
   orderIndex: integer("order_index").notNull().default(0),
 });

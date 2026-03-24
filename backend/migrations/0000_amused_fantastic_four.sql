@@ -68,25 +68,60 @@ CREATE TABLE `options` (
 	`question_id` text NOT NULL,
 	`label` text NOT NULL,
 	`text` text NOT NULL,
+	`image_url` text,
 	`is_correct` integer DEFAULT false NOT NULL,
 	`order_index` integer DEFAULT 0 NOT NULL,
 	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE TABLE `question_bank` (
+	`id` text PRIMARY KEY NOT NULL,
+	`teacher_id` text NOT NULL,
+	`subject_id` text,
+	`type` text NOT NULL,
+	`difficulty` text DEFAULT 'medium' NOT NULL,
+	`question_text` text NOT NULL,
+	`image_url` text,
+	`audio_url` text,
+	`explanation` text,
+	`correct_answer_text` text,
+	`tags` text,
+	`usage_count` integer DEFAULT 0 NOT NULL,
+	`created_at` text DEFAULT (current_timestamp) NOT NULL,
+	`updated_at` text DEFAULT (current_timestamp) NOT NULL,
+	FOREIGN KEY (`teacher_id`) REFERENCES `teachers`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE set null
+);
+--> statement-breakpoint
+CREATE TABLE `question_bank_options` (
+	`id` text PRIMARY KEY NOT NULL,
+	`bank_question_id` text NOT NULL,
+	`label` text NOT NULL,
+	`text` text NOT NULL,
+	`image_url` text,
+	`is_correct` integer DEFAULT false NOT NULL,
+	`order_index` integer DEFAULT 0 NOT NULL,
+	FOREIGN KEY (`bank_question_id`) REFERENCES `question_bank`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
 CREATE TABLE `questions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`exam_id` text NOT NULL,
+	`bank_question_id` text,
 	`topic` text,
 	`difficulty` text DEFAULT 'medium' NOT NULL,
 	`type` text NOT NULL,
 	`question_text` text NOT NULL,
+	`image_url` text,
+	`audio_url` text,
 	`explanation` text,
 	`correct_answer_text` text,
 	`points` real DEFAULT 1 NOT NULL,
 	`order_index` integer DEFAULT 0 NOT NULL,
 	`created_at` text DEFAULT (current_timestamp) NOT NULL,
 	`updated_at` text DEFAULT (current_timestamp) NOT NULL,
-	FOREIGN KEY (`exam_id`) REFERENCES `exams`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`exam_id`) REFERENCES `exams`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`bank_question_id`) REFERENCES `question_bank`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE TABLE `saved_exams` (
