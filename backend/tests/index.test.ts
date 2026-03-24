@@ -1,5 +1,7 @@
 jest.mock("nanoid", () => ({
+  __esModule: true,
   nanoid: () => "test-id",
+  customAlphabet: () => () => "ROOM01",
 }));
 
 import app from "../src/index";
