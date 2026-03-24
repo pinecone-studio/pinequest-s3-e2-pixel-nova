@@ -88,7 +88,7 @@ export default function Home() {
           {/* Product Screenshot */}
           <div className="relative animate-float w-full h-full max-w-2xl flex items-center">
             <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-accent/20 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
-            <Image
+            <img
               src="https://play-lh.googleusercontent.com/vR9XKzwSTlnJ37TCOCUgAYK0W920yw2u4n3xk86j5gFQwfBzSyM6bMVQyWkz0eB-9cI5=w3840-h2160-rw"
               alt="EduCore LMS Хяналт"
               width={800}
@@ -178,7 +178,7 @@ export default function Home() {
           >
             <div className="relative">
               <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-accent/20 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
-              <Image
+              <img
                 src="https://play-lh.googleusercontent.com/vR9XKzwSTlnJ37TCOCUgAYK0W920yw2u4n3xk86j5gFQwfBzSyM6bMVQyWkz0eB-9cI5=w3840-h2160-rw"
                 alt="EduCore LMS Хяналт"
                 width={640}
