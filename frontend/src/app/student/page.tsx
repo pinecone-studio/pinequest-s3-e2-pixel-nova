@@ -478,12 +478,12 @@ export default function StudentPage() {
       const correct =
         studentAnswer.toLowerCase() === correctAnswer.toLowerCase() ||
         (question.type === "mcq" &&
-          question.options?.some(
-            (opt, idx) =>
+          !!question.options?.some(
+            (opt) =>
               opt.toLowerCase() === correctAnswer.toLowerCase() &&
               studentAnswer.toLowerCase() === opt.toLowerCase()
           ));
-      return { question, answer: studentAnswer, correct };
+      return { question, answer: studentAnswer, correct: !!correct };
     });
     const score = terminated ? 0 : report.filter((item) => item.correct).length;
     const totalPoints = activeExam.questions.length || 1;
