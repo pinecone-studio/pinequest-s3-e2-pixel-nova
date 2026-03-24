@@ -1,14 +1,13 @@
-jest.mock("nanoid", () => ({
-  __esModule: true,
-  nanoid: () => "test-id",
-  customAlphabet: () => () => "ROOM01",
-}));
-
+import { resetDbMock, workerEnv } from "./helpers/mock-db";
 import app from "../src/index";
 
 describe("backend worker", () => {
+  beforeEach(() => {
+    resetDbMock();
+  });
+
   it("returns the health check response", async () => {
-    const response = await app.request("http://localhost/");
+    const response = await app.request("http://localhost/", undefined, workerEnv);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
@@ -18,7 +17,7 @@ describe("backend worker", () => {
   });
 
   it("rejects protected routes without auth headers", async () => {
-    const response = await app.request("http://localhost/api/exams");
+    const response = await app.request("http://localhost/api/exams", undefined, workerEnv);
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({

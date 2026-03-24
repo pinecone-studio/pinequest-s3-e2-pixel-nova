@@ -1,0 +1,31 @@
+config:
+  environments:
+    local:
+      target: "http://127.0.0.1:8787"
+      phases:
+        - duration: 45
+          arrivalRate: 2
+    staging:
+      target: "{{ $processEnvironment.STAGING_API_BASE_URL }}"
+      phases:
+        - duration: 45
+          arrivalRate: 2
+  defaults:
+    headers:
+      content-type: "application/json"
+      x-user-id: "{{ $processEnvironment.LOAD_TEACHER_ID }}"
+      x-user-role: "teacher"
+  ensure:
+    thresholds:
+      - http.response_time.p95: 1200
+      - http.request_rate: 1
+
+scenarios:
+  - name: "teacher dashboard and analytics"
+    flow:
+      - get:
+          url: "/api/analytics/dashboard"
+      - get:
+          url: "/api/exams"
+      - get:
+          url: "/api/analytics/exam/{{ $processEnvironment.LOAD_EXAM_ID }}/summary"

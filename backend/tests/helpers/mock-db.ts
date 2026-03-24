@@ -1,0 +1,171 @@
+type MockResult = unknown;
+
+const resultQueue: MockResult[] = [];
+
+const createTable = <T extends string>(columns: T[]) =>
+  columns.reduce(
+    (table, column) => ({
+      ...table,
+      [column]: column,
+    }),
+    {} as Record<T, string>,
+  );
+
+const dequeue = (fallback: unknown) =>
+  Promise.resolve(resultQueue.length > 0 ? resultQueue.shift() : fallback);
+
+const createChain = (fallback: unknown) => {
+  const chain: Record<string, unknown> = {};
+
+  for (const method of [
+    "from",
+    "where",
+    "limit",
+    "innerJoin",
+    "leftJoin",
+    "groupBy",
+    "orderBy",
+    "set",
+    "values",
+    "returning",
+  ]) {
+    chain[method] = () => chain;
+  }
+
+  chain.then = (onFulfilled?: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) =>
+    dequeue(fallback).then(onFulfilled, onRejected);
+
+  return chain;
+};
+
+export const mockDb = {
+  select: jest.fn(() => createChain([])),
+  insert: jest.fn(() => createChain(undefined)),
+  update: jest.fn(() => createChain(undefined)),
+  delete: jest.fn(() => createChain(undefined)),
+};
+
+export const mockGetDb = jest.fn(() => mockDb);
+
+const tableExports = {
+  teachers: createTable(["id", "code", "fullName", "email", "avatarUrl"]),
+  students: createTable(["id", "code", "fullName", "email", "avatarUrl", "xp", "level", "createdAt"]),
+  subjects: createTable(["id", "name", "code"]),
+  exams: createTable([
+    "id",
+    "teacherId",
+    "subjectId",
+    "title",
+    "description",
+    "status",
+    "scheduledAt",
+    "startedAt",
+    "finishedAt",
+    "durationMin",
+    "roomCode",
+    "passScore",
+    "shuffleQuestions",
+    "createdAt",
+    "updatedAt",
+  ]),
+  questions: createTable([
+    "id",
+    "examId",
+    "type",
+    "questionText",
+    "topic",
+    "difficulty",
+    "imageUrl",
+    "audioUrl",
+    "explanation",
+    "correctAnswerText",
+    "points",
+    "orderIndex",
+  ]),
+  options: createTable(["id", "questionId", "label", "text", "imageUrl", "isCorrect", "orderIndex"]),
+  examSessions: createTable([
+    "id",
+    "examId",
+    "studentId",
+    "status",
+    "startedAt",
+    "submittedAt",
+    "score",
+    "earnedPoints",
+    "totalPoints",
+    "isFlagged",
+    "flagCount",
+  ]),
+  studentAnswers: createTable([
+    "id",
+    "sessionId",
+    "questionId",
+    "selectedOptionId",
+    "textAnswer",
+    "isCorrect",
+    "pointsEarned",
+    "answeredAt",
+  ]),
+  cheatEvents: createTable(["id", "sessionId", "examId", "studentId", "eventType", "isNotified", "createdAt"]),
+  xpTransactions: createTable(["id", "studentId", "amount", "reason", "createdAt"]),
+  savedExams: createTable(["id", "studentId", "examId", "createdAt"]),
+  materials: createTable(["id"]),
+  questionBank: createTable(["id"]),
+  questionBankOptions: createTable(["id"]),
+};
+
+jest.mock("nanoid", () => ({
+  __esModule: true,
+  nanoid: () => "test-id",
+  customAlphabet: () => () => "ROOM01",
+}));
+
+jest.mock("../../src/db", () => ({
+  __esModule: true,
+  getDb: mockGetDb,
+  ...tableExports,
+}));
+
+export function queueDbResults(...results: MockResult[]) {
+  resultQueue.push(...results);
+}
+
+export function resetDbMock() {
+  resultQueue.length = 0;
+  mockGetDb.mockClear();
+  mockDb.select.mockClear();
+  mockDb.insert.mockClear();
+  mockDb.update.mockClear();
+  mockDb.delete.mockClear();
+}
+
+export function teacherHeaders(overrides: Record<string, string> = {}) {
+  return {
+    "x-user-id": "teacher-1",
+    "x-user-role": "teacher",
+    ...overrides,
+  };
+}
+
+export function studentHeaders(overrides: Record<string, string> = {}) {
+  return {
+    "x-user-id": "student-1",
+    "x-user-role": "student",
+    ...overrides,
+  };
+}
+
+export function jsonRequest(body: unknown, headers: Record<string, string> = {}) {
+  return {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...headers,
+    },
+    body: JSON.stringify(body),
+  };
+}
+
+export const workerEnv = {
+  educore: {},
+} as any;
