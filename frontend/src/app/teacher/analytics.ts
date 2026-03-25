@@ -182,8 +182,8 @@ export const buildCheatStudents = (params: {
   const { submissions, exams } = params;
   const examTitleMap = new Map(exams.map((exam) => [exam.id, exam.title]));
 
-  return submissions
-    .map((submission) => {
+  const flaggedStudents = submissions
+    .map<CheatStudent | null>((submission) => {
       const events = violationKeys.reduce(
         (sum, key) => sum + Number(submission.violations?.[key] ?? 0),
         0,
@@ -205,11 +205,15 @@ export const buildCheatStudents = (params: {
         events,
         reason: violationLabels[dominantKey],
       };
-    })
-    .filter((student): student is CheatStudent => Boolean(student))
+    });
+
+  return flaggedStudents
+    .filter((student) => student !== null)
     .sort((left, right) => {
-      if (right.events !== left.events) return right.events - left.events;
-      return left.score - right.score;
+      const rightEvents = right?.events ?? 0;
+      const leftEvents = left?.events ?? 0;
+      if (rightEvents !== leftEvents) return rightEvents - leftEvents;
+      return (left?.score ?? 0) - (right?.score ?? 0);
     })
     .slice(0, 5);
 };
