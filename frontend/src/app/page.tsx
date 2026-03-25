@@ -1,17 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-
-import {
-  Role,
-  STORAGE_KEYS,
-  User,
-  ensureDemoAccounts,
-  getJSON,
-  setSessionUser,
-} from "@/lib/examGuard";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const mockHighlights = [
   "Дэлгэцийн шалгалт",
@@ -20,15 +10,9 @@ const mockHighlights = [
 ];
 
 export default function Home() {
-  const router = useRouter();
-  const [loginMode, setLoginMode] = useState<Role>("teacher");
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [toast, setToast] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    ensureDemoAccounts();
     const storedTheme =
       typeof window !== "undefined"
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
@@ -43,29 +27,14 @@ export default function Home() {
     else root.classList.remove("dark");
   }, [theme]);
 
-  const showToast = (message: string) => {
-    setToast(message);
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const handleLogin = () => {
-    if (!loginUsername || !loginPassword) {
-      showToast("Бүх талбарыг бөглөнө үү.");
-      return;
-    }
-    const stored = getJSON<User[]>(STORAGE_KEYS.users, []);
-    const user = stored.find(
-      (u) =>
-        u.username === loginUsername &&
-        u.password === loginPassword &&
-        u.role === loginMode,
-    );
-    if (!user) {
-      showToast("Нэвтрэх нэр эсвэл нууц үг буруу байна.");
-      return;
-    }
-    setSessionUser(user);
-    router.push(loginMode === "teacher" ? "/teacher" : "/student");
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      if (typeof window !== "undefined") {
+        localStorage.setItem("theme", next);
+      }
+      return next;
+    });
   };
 
   return (
@@ -188,189 +157,79 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Login Tabs */}
+          {/* Access Cards */}
           <div
             className="w-full max-w-sm space-y-4 animate-slide-in-up"
             style={{ animationDelay: "0.6s" }}
           >
-            {/* Tab Buttons */}
-            <div className="flex gap-2 bg-muted rounded-2xl p-1">
-              <button
-                className={`flex-1 rounded-xl py-2.5 px-4 text-sm font-semibold transition duration-300 ${
-                  loginMode === "teacher"
-                    ? "border-transparent bg-linear-to-r from-primary to-primary/80 text-primary-foreground shadow-lg"
-                    : "text-foreground hover:bg-card/50"
-                }`}
-                onClick={() => setLoginMode("teacher")}
-              >
-                👨‍🏫 Багш
-              </button>
-              <button
-                className={`flex-1 rounded-xl py-2.5 px-4 text-sm font-semibold transition duration-300 ${
-                  loginMode === "student"
-                    ? "border-transparent bg-linear-to-r from-primary to-primary/80 text-primary-foreground shadow-lg"
-                    : "text-foreground hover:bg-card/50"
-                }`}
-                onClick={() => setLoginMode("student")}
-              >
-                👨‍🎓 Оюутан
-              </button>
+            <div className="space-y-5 rounded-3xl border border-border bg-card/80 backdrop-blur-sm p-6 lg:p-7 shadow-[0_20px_50px_rgba(15,23,42,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(15,23,42,0.15)] dark:hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] transition-all duration-300 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                  <span className="grid h-8 w-8 place-items-center rounded-xl border border-border bg-card text-primary">
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 7l9-4 9 4-9 4-9-4Z" />
+                      <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
+                      <path d="M4 12v4" />
+                    </svg>
+                  </span>
+                  EduCore нэвтрэх
+                </h2>
+                <button
+                  className="rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:text-foreground hover:bg-muted"
+                  onClick={toggleTheme}
+                >
+                  {theme === "dark" ? "☀️ Цагаан" : "🌙 Харанхуй"}
+                </button>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Google-ээр нэвтэрч өөрийн портал руу орно. Багш болон сурагчийн
+                орчин тусдаа хамгаалалттай.
+              </p>
+
+              <div className="grid gap-3">
+                <Link
+                  href="/teacher"
+                  className="group w-full rounded-2xl border border-border bg-linear-to-r from-primary/90 to-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span className="flex items-center justify-between">
+                    Багшийн самбар
+                    <span className="text-xs opacity-80">→</span>
+                  </span>
+                </Link>
+                <Link
+                  href="/student"
+                  className="group w-full rounded-2xl border border-border bg-linear-to-r from-accent/80 to-primary/60 px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span className="flex items-center justify-between">
+                    Сурагчийн самбар
+                    <span className="text-xs opacity-80">→</span>
+                  </span>
+                </Link>
+              </div>
+
+              <div className="rounded-2xl border border-border/60 bg-muted/40 p-4 text-xs text-muted-foreground">
+                <div className="font-semibold text-foreground mb-1">
+                  Бодит цагийн хамгаалалт
+                </div>
+                <ul className="space-y-1">
+                  <li>• Tab switch, copy/paste, screenshot илрүүлэлт</li>
+                  <li>• AI дүн шинжилгээ + автомат тайлан</li>
+                  <li>• Гүйцэтгэлийн live analytics</li>
+                </ul>
+              </div>
             </div>
-
-            {/* Login Form - Teacher */}
-            {loginMode === "teacher" && (
-              <div className="space-y-4 rounded-3xl border border-border bg-card/80 backdrop-blur-sm p-6 lg:p-7 shadow-[0_20px_50px_rgba(15,23,42,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(15,23,42,0.15)] dark:hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] transition-all duration-300 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-                    <span className="grid h-8 w-8 place-items-center rounded-xl border border-border bg-card text-primary">
-                      <svg
-                        className="h-4 w-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M3 7l9-4 9 4-9 4-9-4Z" />
-                        <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
-                        <path d="M4 12v4" />
-                      </svg>
-                    </span>
-                    EduCore нэвтрэх
-                  </h2>
-                  <button
-                    className="rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:text-foreground hover:bg-muted"
-                    onClick={() => {
-                      const next = theme === "dark" ? "light" : "dark";
-                      setTheme(next);
-                      localStorage.setItem("theme", next);
-                    }}
-                  >
-                    {theme === "dark" ? "☀️ Цагаан" : "🌙 Харанхуй"}
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-foreground/80">
-                      Нэвтрэх нэр
-                    </label>
-                    <input
-                      className="w-full mt-1 rounded-xl border border-border bg-muted/50 px-4 py-2.5 text-sm outline-none transition duration-300 focus:ring-2 focus:ring-primary focus:bg-muted placeholder:text-muted-foreground"
-                      placeholder="Нэвтрэх нэр оруулна уу"
-                      value={loginUsername}
-                      onChange={(e) => setLoginUsername(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && handleLogin()}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-foreground/80">
-                      Нууц үг
-                    </label>
-                    <input
-                      className="w-full mt-1 rounded-xl border border-border bg-muted/50 px-4 py-2.5 text-sm outline-none transition duration-300 focus:ring-2 focus:ring-primary focus:bg-muted placeholder:text-muted-foreground"
-                      placeholder="Нууц үг оруулна уу"
-                      type="password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && handleLogin()}
-                    />
-                  </div>
-                </div>
-
-                <button
-                  className="w-full rounded-xl bg-linear-to-r from-primary to-primary/80 px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-105 active:scale-95"
-                  onClick={handleLogin}
-                >
-                  Нэвтрэх →
-                </button>
-
-                <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border">
-                  <p className="font-semibold mb-1">Туршилтын дансууд:</p>
-                  <p>
-                    <span className="font-semibold">Нэвтрэх нэр:</span> teacher
-                  </p>
-                  <p>
-                    <span className="font-semibold">Нууц үг:</span> teacher123
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Login Form - Student */}
-            {loginMode === "student" && (
-              <div className="space-y-4 rounded-3xl border border-border bg-card/80 backdrop-blur-sm p-6 lg:p-7 shadow-[0_20px_50px_rgba(15,23,42,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(15,23,42,0.15)] dark:hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] transition-all duration-300 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-foreground">Нэвтрэх</h2>
-                  <button
-                    className="rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:text-foreground hover:bg-muted"
-                    onClick={() => {
-                      const next = theme === "dark" ? "light" : "dark";
-                      setTheme(next);
-                      localStorage.setItem("theme", next);
-                    }}
-                  >
-                    {theme === "dark" ? "☀️ Цагаан" : "🌙 Харанхуй"}
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-foreground/80">
-                      Нэвтрэх нэр
-                    </label>
-                    <input
-                      className="w-full mt-1 rounded-xl border border-border bg-muted/50 px-4 py-2.5 text-sm outline-none transition duration-300 focus:ring-2 focus:ring-primary focus:bg-muted placeholder:text-muted-foreground"
-                      placeholder="Нэвтрэх нэр оруулна уу"
-                      value={loginUsername}
-                      onChange={(e) => setLoginUsername(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && handleLogin()}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-foreground/80">
-                      Нууц үг
-                    </label>
-                    <input
-                      className="w-full mt-1 rounded-xl border border-border bg-muted/50 px-4 py-2.5 text-sm outline-none transition duration-300 focus:ring-2 focus:ring-primary focus:bg-muted placeholder:text-muted-foreground"
-                      placeholder="Нууц үг оруулна уу"
-                      type="password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && handleLogin()}
-                    />
-                  </div>
-                </div>
-
-                <button
-                  className="w-full rounded-xl bg-linear-to-r from-primary to-primary/80 px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-105 active:scale-95"
-                  onClick={handleLogin}
-                >
-                  Нэвтрэх →
-                </button>
-
-                <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border">
-                  <p className="font-semibold mb-1">Туршилтын дансууд:</p>
-                  <p>
-                    <span className="font-semibold">Нэвтрэх нэр:</span> student
-                  </p>
-                  <p>
-                    <span className="font-semibold">Нууц үг:</span> student123
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
-
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed right-6 top-6 rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-lg animate-slide-in-down">
-          {toast}
-        </div>
-      )}
 
       {/* Animation Styles */}
       <style jsx>{`
