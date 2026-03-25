@@ -15,6 +15,17 @@ export default function ResultsDetailPanel({
   studentProfile,
   profileLoading,
 }: ResultsDetailPanelProps) {
+  const violationEntries = selectedSubmission?.violations
+    ? [
+        { label: "Tab", value: selectedSubmission.violations.tabSwitch },
+        { label: "Blur", value: selectedSubmission.violations.windowBlur },
+        { label: "Copy", value: selectedSubmission.violations.copyAttempt },
+        { label: "Paste", value: selectedSubmission.violations.pasteAttempt },
+        { label: "Fullscreen", value: selectedSubmission.violations.fullscreenExit },
+        { label: "Shortcut", value: selectedSubmission.violations.keyboardShortcut },
+      ]
+    : [];
+
   return (
     <div className={cardClass}>
       <h2 className="flex items-center gap-2 text-sm font-semibold">Дэлгэрэнгүй</h2>
