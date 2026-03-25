@@ -48,6 +48,7 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [role, setRole] = useState<RoleKey>(forcedRole ?? "teacher-1");
   const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалт үүсгэх");
+  const tabSet = useMemo(() => new Set(teacherTabs), []);
 
   const roleUser = useMemo(() => buildRoleUser(role), [role]);
   const data = useTeacherData(roleUser);
@@ -87,6 +88,12 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
       router.replace(`/${nextRole}`);
     }
   }, [router, forcedRole, pathname]);
+
+  useEffect(() => {
+    if (!tabSet.has(activeTab)) {
+      setActiveTab("Шалгалт үүсгэх");
+    }
+  }, [activeTab, tabSet]);
 
   const handleRoleChange = (next: RoleKey) => {
     setRole(next);
