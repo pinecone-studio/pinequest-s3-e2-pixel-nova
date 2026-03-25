@@ -3,9 +3,12 @@ import {
   calculateXP,
   generateId,
   getJSON,
+  getJSONForRole,
   getLevel,
   setJSON,
+  setJSONForRole,
 } from "@/lib/examGuard";
+import { getLinkedTeacherRole, getStoredRole } from "@/lib/role-session";
 import type {
   Exam,
   ExamSession,
@@ -171,6 +174,17 @@ export const useStudentExamState = (params: {
       };
       const stored = getJSON<Submission[]>("submissions", []);
       setJSON("submissions", [submission, ...stored]);
+      const linkedTeacherRole = getLinkedTeacherRole(getStoredRole());
+      const teacherSubs = getJSONForRole<Submission[]>(
+        "submissions",
+        [],
+        linkedTeacherRole,
+      );
+      setJSONForRole(
+        "submissions",
+        [submission, ...teacherSubs],
+        linkedTeacherRole,
+      );
 
       const progress = getJSON<StudentProgress>("studentProgress", {});
       const existing = progress[currentUser.id] ?? {
@@ -195,6 +209,32 @@ export const useStudentExamState = (params: {
         ],
       };
       setJSON("studentProgress", progress);
+      const teacherProgress = getJSONForRole<StudentProgress>(
+        "studentProgress",
+        {},
+        linkedTeacherRole,
+      );
+      const teacherExisting = teacherProgress[currentUser.id] ?? {
+        xp: 0,
+        level: 1,
+        history: [],
+      };
+      const teacherNextXp = teacherExisting.xp + xpEarned;
+      const teacherLevel = getLevel(teacherNextXp);
+      teacherProgress[currentUser.id] = {
+        xp: teacherNextXp,
+        level: teacherLevel.level,
+        history: [
+          {
+            examId: activeExam.id,
+            percentage,
+            xp: xpEarned,
+            date: new Date().toISOString(),
+          },
+          ...teacherExisting.history,
+        ],
+      };
+      setJSONForRole("studentProgress", teacherProgress, linkedTeacherRole);
 
       const notification: NotificationItem = {
         examId: activeExam.id,
@@ -205,8 +245,22 @@ export const useStudentExamState = (params: {
       const notifStore = getJSON<NotificationItem[]>("notifications", []);
       setJSON("notifications", [notification, ...notifStore]);
       setNotifications([notification, ...notifStore]);
+      const teacherNotifications = getJSONForRole<NotificationItem[]>(
+        "notifications",
+        [],
+        linkedTeacherRole,
+      );
+      setJSONForRole(
+        "notifications",
+        [notification, ...teacherNotifications],
+        linkedTeacherRole,
+      );
 
       if (sessionKey) localStorage.removeItem(sessionKey);
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => null);
+      }
+      document.body.style.filter = "none";
       setLastSubmission(submission);
       setAnswerReport(report);
       setView("result");

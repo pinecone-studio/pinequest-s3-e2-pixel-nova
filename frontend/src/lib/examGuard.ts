@@ -125,10 +125,18 @@ export const generateRoomCode = () =>
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 6);
 
+const ROLE_KEY = "educoreRole";
+
+const withRolePrefix = (key: string, roleOverride?: string) => {
+  if (typeof window === "undefined") return key;
+  const role = roleOverride ?? localStorage.getItem(ROLE_KEY);
+  return role ? `${role}:${key}` : key;
+};
+
 export const getJSON = <T,>(key: string, fallback: T): T => {
   if (typeof window === "undefined") return fallback;
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(withRolePrefix(key));
     if (!raw) return fallback;
     return JSON.parse(raw) as T;
   } catch {
@@ -138,7 +146,27 @@ export const getJSON = <T,>(key: string, fallback: T): T => {
 
 export const setJSON = (key: string, value: unknown) => {
   if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify(value));
+  localStorage.setItem(withRolePrefix(key), JSON.stringify(value));
+};
+
+export const getJSONForRole = <T,>(
+  key: string,
+  fallback: T,
+  role: string,
+): T => {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(withRolePrefix(key, role));
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+export const setJSONForRole = (key: string, value: unknown, role: string) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(withRolePrefix(key, role), JSON.stringify(value));
 };
 
 export const calculateXP = (percentage: number) => {
