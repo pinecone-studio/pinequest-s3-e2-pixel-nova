@@ -10,7 +10,6 @@ declare namespace Cloudflare {
 		educore: D1Database;
 		AI: Ai;
 		ASSETS: Fetcher;
-		CLERK_SECRET_KEY: "";
 	}
 }
 interface CloudflareBindings extends Cloudflare.Env {}
@@ -18,7 +17,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "CLERK_SECRET_KEY">> {}
+	interface ProcessEnv {}
 }
 
 // Begin runtime types

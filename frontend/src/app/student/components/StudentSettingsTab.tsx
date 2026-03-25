@@ -31,17 +31,15 @@ export default function StudentSettingsTab({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clerkDefaults = useMemo(() => ({}) satisfies Partial<StudentProfile>, []);
-
   useEffect(() => {
     const stored = getJSON<StudentProfile | null>(storageKey, null);
     if (stored) {
-      setProfile({ ...defaultProfile(username), ...clerkDefaults, ...stored });
+      setProfile({ ...defaultProfile(username), ...stored });
     } else {
-      setProfile({ ...defaultProfile(username), ...clerkDefaults });
+      setProfile(defaultProfile(username));
     }
     setSaved(false);
-  }, [storageKey, username, clerkDefaults]);
+  }, [storageKey, username]);
 
   useEffect(() => {
     setLoading(true);
