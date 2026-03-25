@@ -521,6 +521,20 @@ examRoutes.post(
         );
       }
 
+      const examQuestions = await db
+        .select()
+        .from(questions)
+        .where(eq(questions.examId, examId));
+
+      if (examQuestions.length === 0) {
+        return error(
+          c,
+          "BAD_REQUEST",
+          "Cannot schedule an exam with no questions",
+          400,
+        );
+      }
+
       const roomCode = generateRoomCode();
 
       await db
@@ -640,6 +654,56 @@ examRoutes.post("/:examId/finish", async (c) => {
     return success(c, updated);
   } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to finish exam", 500);
+  }
+});
+
+// ──────────────────────────────────────────────
+// POST /:examId/archive — Archive a finished exam
+// ──────────────────────────────────────────────
+examRoutes.post("/:examId/archive", async (c) => {
+  try {
+    const examId = c.req.param("examId");
+    const teacherId = c.get("user").id;
+    const db = getDb(c.env.educore);
+
+    const [exam] = await db
+      .select()
+      .from(exams)
+      .where(and(eq(exams.id, examId), eq(exams.teacherId, teacherId)))
+      .limit(1);
+
+    if (!exam) {
+      return notFound(c, "Exam");
+    }
+
+    if (exam.status !== "finished") {
+      return error(
+        c,
+        "BAD_REQUEST",
+        "Only finished exams can be archived",
+        400,
+      );
+    }
+
+    const now = new Date().toISOString();
+
+    await db
+      .update(exams)
+      .set({
+        status: "archived",
+        updatedAt: now,
+      })
+      .where(eq(exams.id, examId));
+
+    const [updated] = await db
+      .select()
+      .from(exams)
+      .where(eq(exams.id, examId))
+      .limit(1);
+
+    return success(c, updated);
+  } catch (err) {
+    return error(c, "INTERNAL_ERROR", "Failed to archive exam", 500);
   }
 });
 

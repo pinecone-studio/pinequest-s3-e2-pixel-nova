@@ -11,6 +11,9 @@ import studentRoutes from "./routes/student.routes";
 import analyticsRoutes from "./routes/analytics.routes";
 import xpRoutes from "./routes/xp.routes";
 import savedRoutes from "./routes/saved.routes";
+import subjectRoutes from "./routes/subjects.routes";
+import materialRoutes from "./routes/materials.routes";
+import questionBankRoutes from "./routes/question-bank.routes";
 
 const app = new Hono<AppEnv>();
 
@@ -35,5 +38,8 @@ app.route("/api/student", studentRoutes);
 app.route("/api/analytics", analyticsRoutes);
 app.route("/api/xp", xpRoutes);
 app.route("/api/saved", savedRoutes);
+app.route("/api/subjects", subjectRoutes);
+app.route("/api/materials", materialRoutes);
+app.route("/api/question-bank", questionBankRoutes);
 
 export default app;
