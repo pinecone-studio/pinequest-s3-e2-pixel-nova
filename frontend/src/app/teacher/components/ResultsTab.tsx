@@ -2,7 +2,8 @@ import ResultsSummaryCard from "./ResultsSummaryCard";
 import ResultsCharts from "./ResultsCharts";
 import ResultsSubmissionsList from "./ResultsSubmissionsList";
 import ResultsDetailPanel from "./ResultsDetailPanel";
-import type { Exam, Submission } from "../types";
+import TeacherCardSkeleton from "./TeacherCardSkeleton";
+import type { Exam, ExamStatsSummary, Submission } from "../types";
 import type { StudentProfile } from "@/lib/backend-auth";
 
 type ResultsTabProps = {

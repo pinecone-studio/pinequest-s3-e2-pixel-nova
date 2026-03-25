@@ -35,14 +35,14 @@ export type Submission = {
   percentage: number;
   terminated?: boolean;
   terminationReason?: string;
-  violations?: {
+  violations?: Partial<{
     tabSwitch: number;
     windowBlur: number;
     copyAttempt: number;
     pasteAttempt: number;
     fullscreenExit: number;
     keyboardShortcut: number;
-  };
+  }>;
   submittedAt: string;
 };
 
@@ -82,10 +82,26 @@ export type NotificationItem = {
 };
 
 export type CheatStudent = {
+  studentId?: string;
   id?: string;
   name: string;
   score: number;
   cheat: "Бага" | "Дунд" | "Өндөр";
+  examTitle?: string;
+  reason?: string;
   events?: number;
   flagCount?: number;
+};
+
+export type XpLeaderboardEntry = {
+  studentId: string;
+  name: string;
+  xp: number;
+  level: number;
+  levelName: string;
+  icon: string;
+  examsTaken: number;
+  progressPercent: number;
+  nextLevelXp: number;
+  lastActivity: string | null;
 };

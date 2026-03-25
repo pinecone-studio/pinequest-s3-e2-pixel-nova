@@ -91,12 +91,12 @@ export const useTeacherData = (
   const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
     if (!useRemote) setJSON("exams", next);
-  };
+  }, [useRemote]);
 
   const persistNotifications = useCallback((next: NotificationItem[]) => {
     setNotifications(next);
     if (!useRemote) setJSON("notifications", next);
-  };
+  }, [useRemote]);
 
   const markNotificationRead = useCallback((index: number) => {
     const next = notifications.map((item, idx) =>
