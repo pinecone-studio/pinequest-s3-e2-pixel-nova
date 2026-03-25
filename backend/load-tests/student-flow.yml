@@ -1,0 +1,48 @@
+config:
+  environments:
+    local:
+      target: "http://127.0.0.1:8787"
+      phases:
+        - duration: 60
+          arrivalRate: 2
+    staging:
+      target: "{{ $processEnvironment.STAGING_API_BASE_URL }}"
+      phases:
+        - duration: 60
+          arrivalRate: 2
+  defaults:
+    headers:
+      content-type: "application/json"
+      x-user-id: "{{ $processEnvironment.LOAD_STUDENT_ID }}"
+      x-user-role: "student"
+  ensure:
+    thresholds:
+      - http.response_time.p95: 1500
+      - http.request_rate: 1
+
+scenarios:
+  - name: "student exam flow"
+    flow:
+      - post:
+          url: "/api/sessions/join"
+          json:
+            roomCode: "{{ $processEnvironment.LOAD_ROOM_CODE }}"
+          capture:
+            - json: "$.data.sessionId"
+              as: "sessionId"
+      - get:
+          url: "/api/sessions/{{ sessionId }}"
+          capture:
+            - json: "$.data.questions[0].id"
+              as: "questionId"
+            - json: "$.data.questions[0].options[0].id"
+              as: "selectedOptionId"
+      - post:
+          url: "/api/sessions/{{ sessionId }}/start"
+      - post:
+          url: "/api/sessions/{{ sessionId }}/answer"
+          json:
+            questionId: "{{ questionId }}"
+            selectedOptionId: "{{ selectedOptionId }}"
+      - post:
+          url: "/api/sessions/{{ sessionId }}/submit"

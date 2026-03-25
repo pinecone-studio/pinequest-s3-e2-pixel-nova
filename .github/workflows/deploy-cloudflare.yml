@@ -78,6 +78,21 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Start backend worker for load smoke
+        run: |
+          nohup npx wrangler dev --port 8787 --ip 127.0.0.1 > /tmp/pinequest-backend-smoke.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8787/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/pinequest-backend-smoke.log
+          exit 1
+
+      - name: Load smoke
+        run: npm run test:load:smoke:ci
+
   deploy-frontend:
     name: Deploy frontend
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
