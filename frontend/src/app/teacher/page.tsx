@@ -375,6 +375,10 @@ export default function TeacherPage() {
                 questions={management.questions}
                 addQuestion={management.addQuestion}
                 removeQuestion={management.removeQuestion}
+                updateQuestion={management.updateQuestion}
+                updateQuestionOption={management.updateQuestionOption}
+                addQuestionOption={management.addQuestionOption}
+                removeQuestionOption={management.removeQuestionOption}
                 saveExam={management.saveExam}
                 pdfUseOcr={imports.pdfUseOcr}
                 setPdfUseOcr={imports.setPdfUseOcr}
