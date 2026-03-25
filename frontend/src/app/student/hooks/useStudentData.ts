@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { User, getSessionUser, getJSON } from "@/lib/examGuard";
+import { User, getSessionUser, getJSON, getJSONForRole } from "@/lib/examGuard";
+import { getLinkedTeacherRole, getStoredRole } from "@/lib/role-session";
 import type { Exam, NotificationItem } from "../types";
 
 export const useStudentData = (overrideUser?: User | null) => {
@@ -11,6 +12,8 @@ export const useStudentData = (overrideUser?: User | null) => {
 
   useEffect(() => {
     const user = overrideUser ?? getSessionUser();
+    const currentRole = getStoredRole();
+    const teacherRole = getLinkedTeacherRole(currentRole);
     setCurrentUser(
       user ?? {
         id: "demo",
@@ -25,9 +28,39 @@ export const useStudentData = (overrideUser?: User | null) => {
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    setExams(getJSON<Exam[]>("exams", []));
-    setNotifications(getJSON<NotificationItem[]>("notifications", []));
-  }, [overrideUser?.id]);
+    setExams(getJSONForRole<Exam[]>("exams", [], teacherRole));
+    const ownNotifications = getJSON<NotificationItem[]>("notifications", []);
+    const teacherNotifications = getJSONForRole<NotificationItem[]>(
+      "notifications",
+      [],
+      teacherRole,
+    );
+    const merged = [...ownNotifications, ...teacherNotifications].sort(
+      (left, right) => right.createdAt.localeCompare(left.createdAt),
+    );
+    setNotifications(merged);
+  }, [overrideUser]);
+
+  useEffect(() => {
+    const sync = () => {
+      const currentRole = getStoredRole();
+      const teacherRole = getLinkedTeacherRole(currentRole);
+      setExams(getJSONForRole<Exam[]>("exams", [], teacherRole));
+      const ownNotifications = getJSON<NotificationItem[]>("notifications", []);
+      const teacherNotifications = getJSONForRole<NotificationItem[]>(
+        "notifications",
+        [],
+        teacherRole,
+      );
+      const merged = [...ownNotifications, ...teacherNotifications].sort(
+        (left, right) => right.createdAt.localeCompare(left.createdAt),
+      );
+      setNotifications(merged);
+    };
+    sync();
+    const interval = setInterval(sync, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

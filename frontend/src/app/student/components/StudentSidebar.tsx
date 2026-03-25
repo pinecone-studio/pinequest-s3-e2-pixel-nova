@@ -3,12 +3,10 @@ import {
   GraduationCap,
   HelpCircle,
   List,
-  LucideNotebook,
-  Notebook,
   Settings,
   User,
 } from "lucide-react";
-import { Profiler, type MutableRefObject } from "react";
+import type { MutableRefObject } from "react";
 
 const tabs = [
   { key: "Шалгалт", icon: "exam" },

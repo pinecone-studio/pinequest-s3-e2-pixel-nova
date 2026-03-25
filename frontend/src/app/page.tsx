@@ -191,26 +191,26 @@ export default function Home() {
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Google-ээр нэвтэрч өөрийн портал руу орно. Багш болон сурагчийн
-                орчин тусдаа хамгаалалттай.
+                Ролио сонгоод тухайн самбар руу шууд орно. Өгөгдөл бүр тухайн
+                role-ын орчинд тусад нь хадгалагдана.
               </p>
 
               <div className="grid gap-3">
                 <Link
-                  href="/teacher"
+                  href="/teacher-1"
                   className="group w-full rounded-2xl border border-border bg-linear-to-r from-primary/90 to-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span className="flex items-center justify-between">
-                    Багшийн самбар
+                    Багшийн самбар (Teacher-1)
                     <span className="text-xs opacity-80">→</span>
                   </span>
                 </Link>
                 <Link
-                  href="/student"
+                  href="/student-1"
                   className="group w-full rounded-2xl border border-border bg-linear-to-r from-accent/80 to-primary/60 px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span className="flex items-center justify-between">
-                    Сурагчийн самбар
+                    Сурагчийн самбар (Student-1)
                     <span className="text-xs opacity-80">→</span>
                   </span>
                 </Link>

@@ -10,10 +10,10 @@ type ResultsTabProps = {
   loading: boolean;
   examOptions: Exam[];
   activeExamId: string | null;
-  onSelectExam: (value: string) => void;
+  onSelectExam: (value: string | null) => void;
   examStats: ExamStatsSummary | null;
   submissions: Submission[];
-  onSelectSubmission: (id: string) => void;
+  onSelectSubmission: (id: string | null) => void;
   selectedSubmissionId: string | null;
   selectedSubmission: Submission | null;
   selectedExam: Exam | null;

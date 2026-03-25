@@ -114,13 +114,13 @@ export const buildTeacherOverviewStats = (params: {
 };
 
 export const buildXpLeaderboard = (params: {
-  progress: StudentProgress;
+  progress?: StudentProgress;
   submissions: Submission[];
-  users: User[];
+  users?: User[];
 }): XpLeaderboardEntry[] => {
-  const { progress, submissions, users } = params;
+  const { progress = {}, submissions, users } = params;
   const userNameMap = new Map(
-    users
+    (users ?? [])
       .filter((user) => user.role === "student")
       .map((user) => [user.id, user.username]),
   );

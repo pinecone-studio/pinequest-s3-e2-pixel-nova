@@ -1,18 +1,18 @@
-import { LogOut, MoonIcon } from "lucide-react";
+import { MoonIcon } from "lucide-react";
 import { useState } from "react";
 
 type StudentHeaderProps = {
   theme: "light" | "dark";
   onToggleTheme: () => void;
-  onLogout: () => void;
   notifications: { message: string; createdAt: string }[];
+  roleControl?: React.ReactNode;
 };
 
 export default function StudentHeader({
   theme,
   onToggleTheme,
-  onLogout,
   notifications,
+  roleControl,
 }: StudentHeaderProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -75,13 +75,7 @@ export default function StudentHeader({
             ))}
           </div>
         </div>
-        <button
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:brightness-110"
-          onClick={onLogout}
-        >
-          <LogOut className="w-5 h-5" />
-          Гарах
-        </button>
+        {roleControl}
       </div>
     </header>
   );

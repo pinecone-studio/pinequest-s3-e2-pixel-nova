@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { clearSession } from "@/lib/examGuard";
-import { useAuth, useClerk, useUser } from "@clerk/nextjs";
-import { getStudentResults, syncClerkUser } from "@/lib/backend-auth";
+import { usePathname, useRouter } from "next/navigation";
+import RoleNavbar from "@/components/RoleNavbar";
+import {
+  buildRoleUser,
+  getStoredRole,
+  isTeacherRole,
+  setStoredRole,
+  type RoleKey,
+} from "@/lib/role-session";
 import StudentSidebar from "./components/StudentSidebar";
 import StudentHeader from "./components/StudentHeader";
 import StudentDashboardTab from "./components/StudentDashboardTab";
@@ -22,32 +27,19 @@ import { useExamCheatDetection } from "./hooks/useExamCheatDetection";
 import { useExamTimer } from "./hooks/useExamTimer";
 import { useExamAutosave } from "./hooks/useExamAutosave";
 
-export default function StudentPage() {
+type StudentPageProps = {
+  forcedRole?: RoleKey;
+};
+
+export default function StudentPage({ forcedRole }: StudentPageProps) {
   const router = useRouter();
-  const { user } = useUser();
-  const { isSignedIn, isLoaded, getToken } = useAuth();
-  const { signOut } = useClerk();
+  const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [remoteHistory, setRemoteHistory] = useState<
-    { examId: string; title: string; percentage: number; date: string }[]
-  >([]);
+  const [role, setRole] = useState<RoleKey>(forcedRole ?? "student-1");
 
-  const clerkUser = useMemo(() => {
-    if (!user) return null;
-    return {
-      id: user.id,
-      username:
-        user.fullName ||
-        user.username ||
-        user.primaryEmailAddress?.emailAddress ||
-        "Сурагч",
-      password: "",
-      role: "student" as const,
-      createdAt: "",
-    };
-  }, [user]);
+  const roleUser = useMemo(() => buildRoleUser(role), [role]);
 
-  const data = useStudentData(clerkUser);
+  const data = useStudentData(roleUser);
   const exam = useStudentExamState({
     currentUser: data.currentUser,
     exams: data.exams,
@@ -89,56 +81,26 @@ export default function StudentPage() {
     currentQuestionIndex: exam.currentQuestionIndex,
     timeLeft: exam.timeLeft,
   });
-  const showWarning = exam.showWarning;
 
   useEffect(() => {
-    if (!isLoaded) return;
-    if (!isSignedIn) {
-      router.push("/sign-in");
+    if (pathname === "/student") {
+      router.replace("/student-1");
+      return;
     }
-  }, [isLoaded, isSignedIn, router]);
+    const nextRole = forcedRole ?? getStoredRole();
+    setRole(nextRole);
+    setStoredRole(nextRole);
+    if (isTeacherRole(nextRole)) {
+      router.replace(`/${nextRole}`);
+    }
+  }, [router, forcedRole, pathname]);
 
-  useEffect(() => {
-    if (!isSignedIn) return;
-    const sync = async () => {
-      const token = await getToken();
-      if (!token) return;
-      try {
-        await syncClerkUser("student", token);
-      } catch {
-        showWarning("Нэвтрэх мэдээлэл хадгалах үед алдаа гарлаа.");
-      }
-    };
-    sync();
-  }, [getToken, isSignedIn, showWarning]);
+  const handleRoleChange = (next: RoleKey) => {
+    setRole(next);
+    setStoredRole(next);
+    router.push(`/${next}`);
+  };
 
-  useEffect(() => {
-    if (!isSignedIn) return;
-    const loadHistory = async () => {
-      const token = await getToken();
-      if (!token) return;
-      try {
-        const results = await getStudentResults(token);
-        const mapped = results.map((item) => {
-          const total = item.totalPoints ?? 0;
-          const score = item.score ?? 0;
-          const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-          return {
-            examId: item.examId,
-            title: item.title ?? "Шалгалт",
-            percentage,
-            date: item.submittedAt ?? new Date().toISOString(),
-          };
-        });
-        setRemoteHistory(mapped);
-      } catch {
-        setRemoteHistory([]);
-      }
-    };
-    loadHistory();
-  }, [getToken, isSignedIn]);
-
-  if (!isLoaded || !isSignedIn) return null;
   if (!data.currentUser) return null;
 
   return (
@@ -165,12 +127,10 @@ export default function StudentPage() {
                 onToggleTheme={() =>
                   data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
                 }
-                onLogout={() => {
-                  clearSession();
-                  signOut();
-                  router.push("/");
-                }}
                 notifications={data.notifications}
+                roleControl={
+                  <RoleNavbar activeRole={role} onChange={handleRoleChange} />
+                }
               />
 
               {exam.activeTab === "Шалгалт" && (
@@ -187,12 +147,28 @@ export default function StudentPage() {
                   progressSegments={progress.progressSegments}
                   nextLevel={progress.nextLevel}
                   notifications={data.notifications}
-                  studentHistory={remoteHistory}
+                  studentHistory={progress.studentHistory.map((item) => ({
+                    examId: item.examId,
+                    title:
+                      data.exams.find((examItem) => examItem.id === item.examId)
+                        ?.title ?? `Шалгалт #${item.examId.slice(-4)}`,
+                    percentage: item.percentage,
+                    date: item.date,
+                  }))}
                 />
               )}
 
               {exam.activeTab === "Дүн" && (
-                <StudentResultsTab studentHistory={remoteHistory} />
+                <StudentResultsTab
+                  studentHistory={progress.studentHistory.map((item) => ({
+                    examId: item.examId,
+                    title:
+                      data.exams.find((examItem) => examItem.id === item.examId)
+                        ?.title ?? `Шалгалт #${item.examId.slice(-4)}`,
+                    percentage: item.percentage,
+                    date: item.date,
+                  }))}
+                />
               )}
 
               {exam.activeTab === "Профайл" && (

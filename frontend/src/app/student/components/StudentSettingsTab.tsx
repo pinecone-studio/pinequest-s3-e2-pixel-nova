@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getJSON, setJSON } from "@/lib/examGuard";
-import { useAuth, useUser } from "@clerk/nextjs";
-import {
-  StudentProfile,
-  getStudentProfile,
-  updateStudentProfile,
-} from "@/lib/backend-auth";
+import { getJSON, getJSONForRole, setJSON, setJSONForRole } from "@/lib/examGuard";
+import type { StudentProfile } from "@/lib/backend-auth";
 import { cardClass } from "../styles";
 import { Settings, User } from "lucide-react";
+import { getLinkedTeacherRole, getStoredRole } from "@/lib/role-session";
 
 type StudentSettingsTabProps = {
   userId: string;
@@ -27,8 +23,6 @@ export default function StudentSettingsTab({
   userId,
   username,
 }: StudentSettingsTabProps) {
-  const { user } = useUser();
-  const { getToken, isSignedIn } = useAuth();
   const storageKey = `studentProfile:${userId}`;
   const [profile, setProfile] = useState<StudentProfile>(
     defaultProfile(username),
@@ -37,18 +31,7 @@ export default function StudentSettingsTab({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clerkDefaults = useMemo(() => {
-    if (!user) return {};
-    return {
-      fullName: user.fullName || username,
-      email: user.primaryEmailAddress?.emailAddress || "",
-      avatarUrl: user.imageUrl || "",
-      phone: (user.publicMetadata?.phone as string) || "",
-      school: (user.publicMetadata?.school as string) || "",
-      grade: (user.publicMetadata?.grade as string) || "",
-      bio: (user.publicMetadata?.bio as string) || "",
-    } satisfies Partial<StudentProfile>;
-  }, [user, username]);
+  const clerkDefaults = useMemo(() => ({}) satisfies Partial<StudentProfile>, []);
 
   useEffect(() => {
     const stored = getJSON<StudentProfile | null>(storageKey, null);
@@ -61,24 +44,19 @@ export default function StudentSettingsTab({
   }, [storageKey, username, clerkDefaults]);
 
   useEffect(() => {
-    if (!isSignedIn) return;
-    const loadProfile = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = await getToken();
-        if (!token) return;
-        const remote = await getStudentProfile(token);
-        setProfile((prev) => ({ ...prev, ...remote }));
-        setJSON(storageKey, { ...defaultProfile(username), ...remote });
-      } catch {
-        setError("Профайл ачаалах үед алдаа гарлаа.");
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const stored = getJSON<StudentProfile | null>(storageKey, null);
+      if (stored) {
+        setProfile({ ...defaultProfile(username), ...stored });
       }
-    };
-    loadProfile();
-  }, [getToken, isSignedIn, storageKey, username]);
+    } catch {
+      setError("Профайл ачаалах үед алдаа гарлаа.");
+    } finally {
+      setLoading(false);
+    }
+  }, [storageKey, username]);
 
   const handleChange = (field: keyof StudentProfile, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -88,41 +66,33 @@ export default function StudentSettingsTab({
   const handleSave = useCallback(async () => {
     setSaved(false);
     setError(null);
-    setJSON(storageKey, profile);
-    if (!isSignedIn) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-      return;
-    }
+    const nextProfile: StudentProfile = {
+      ...profile,
+      fullName: profile.fullName || username,
+      id: userId,
+    };
+    setJSON(storageKey, nextProfile);
+    const profiles = getJSON<Record<string, StudentProfile>>(
+      "studentProfiles",
+      {},
+    );
+    profiles[userId] = nextProfile;
+    setJSON("studentProfiles", profiles);
+    const linkedTeacherRole = getLinkedTeacherRole(getStoredRole());
+    const teacherProfiles = getJSONForRole<Record<string, StudentProfile>>(
+      "studentProfiles",
+      {},
+      linkedTeacherRole,
+    );
+    teacherProfiles[userId] = nextProfile;
+    setJSONForRole("studentProfiles", teacherProfiles, linkedTeacherRole);
     try {
-      const token = await getToken();
-      if (!token) throw new Error("Нэвтрэх токен олдсонгүй");
-      const payload: StudentProfile = {
-        fullName: profile.fullName,
-        email: profile.email ?? "",
-        avatarUrl: profile.avatarUrl ?? "",
-        phone: profile.phone ?? "",
-        school: profile.school ?? "",
-        grade: profile.grade ?? "",
-        bio: profile.bio ?? "",
-      };
-      await updateStudentProfile(token, payload);
-      if (user) {
-        const nameParts = profile.fullName.trim().split(" ");
-        const firstName = nameParts[0] || "";
-        const lastName =
-          nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
-        await user.update({
-          firstName,
-          lastName,
-        });
-      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
       setError("Профайл хадгалах үед алдаа гарлаа.");
     }
-  }, [getToken, isSignedIn, profile, storageKey, user]);
+  }, [profile, storageKey, userId, username]);
 
   return (
     <section className="grid gap-4 lg:grid-cols-2">
