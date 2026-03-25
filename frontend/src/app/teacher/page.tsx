@@ -8,7 +8,6 @@ import TeacherHeader from "./components/TeacherHeader";
 import ExamTab from "./components/ExamTab";
 import ResultsTab from "./components/ResultsTab";
 import SettingsTab from "./components/SettingsTab";
-import { mockStudents } from "./types";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamImport } from "./hooks/useExamImport";
@@ -36,6 +35,8 @@ export default function TeacherPage() {
   const examStatsState = useExamStats({
     exams: data.exams,
     submissions: data.submissions,
+    studentProgress: data.studentProgress,
+    users: data.users,
   });
 
   if (!data.currentUser) return null;
@@ -115,18 +116,21 @@ export default function TeacherPage() {
                 exams={data.exams}
                 notifications={data.notifications}
                 onMarkNotificationRead={data.markNotificationRead}
-                cheatStudents={mockStudents}
+                cheatStudents={examStatsState.cheatStudents}
+                xpLeaderboard={examStatsState.xpLeaderboard}
               />
             )}
 
             {activeTab === "Дүн" && (
               <ResultsTab
+                loading={data.loading}
                 examOptions={examStatsState.examOptions}
                 activeExamId={examStatsState.activeExamId}
                 onSelectExam={examStatsState.setSelectedExamId}
                 examStats={examStatsState.examStats}
-                submissions={data.submissions}
+                submissions={examStatsState.activeSubmissions}
                 onSelectSubmission={examStatsState.setSelectedSubmissionId}
+                selectedSubmissionId={examStatsState.selectedSubmissionId}
                 selectedSubmission={examStatsState.selectedSubmission}
                 selectedExam={examStatsState.selectedExam}
               />

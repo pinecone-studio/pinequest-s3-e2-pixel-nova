@@ -1,20 +1,37 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  STORAGE_KEYS,
   User,
   getSessionUser,
   getJSON,
   setJSON,
 } from "@/lib/examGuard";
+import type { StudentProgress } from "@/lib/examGuard";
+import { normalizeSubmission } from "../analytics";
 import type { Exam, NotificationItem, Submission } from "../types";
 
 export const useTeacherData = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [exams, setExams] = useState<Exam[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [studentProgress, setStudentProgress] = useState<StudentProgress>({});
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  const syncFromStorage = useCallback(() => {
+    setUsers(getJSON<User[]>(STORAGE_KEYS.users, []));
+    setExams(getJSON<Exam[]>("exams", []));
+    setSubmissions(
+      getJSON<unknown[]>("submissions", [])
+        .map((item) => normalizeSubmission(item as Submission))
+        .filter((item): item is Submission => Boolean(item)),
+    );
+    setStudentProgress(getJSON<StudentProgress>("studentProgress", {}));
+    setNotifications(getJSON<NotificationItem[]>("notifications", []));
+  }, []);
 
   useEffect(() => {
     const user = getSessionUser();
@@ -27,24 +44,23 @@ export const useTeacherData = () => {
         createdAt: "",
       },
     );
+    syncFromStorage();
     const storedTheme =
       typeof window !== "undefined"
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    setExams(getJSON<Exam[]>("exams", []));
-    setSubmissions(getJSON<Submission[]>("submissions", []));
-    setNotifications(getJSON<NotificationItem[]>("notifications", []));
-  }, []);
+  }, [syncFromStorage]);
 
   useEffect(() => {
-    const sync = () => {
-      setSubmissions(getJSON<Submission[]>("submissions", []));
-      setNotifications(getJSON<NotificationItem[]>("notifications", []));
+    const interval = setInterval(syncFromStorage, 15000);
+    const onStorage = () => syncFromStorage();
+    window.addEventListener("storage", onStorage);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", onStorage);
     };
-    const interval = setInterval(sync, 15000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [syncFromStorage]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 700);
@@ -59,30 +75,31 @@ export const useTeacherData = () => {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const showToast = (message: string) => {
+  const showToast = useCallback((message: string) => {
     setToast(message);
     setTimeout(() => setToast(null), 3000);
-  };
+  }, []);
 
-  const persistExams = (next: Exam[]) => {
+  const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
     setJSON("exams", next);
-  };
+  }, []);
 
-  const persistNotifications = (next: NotificationItem[]) => {
+  const persistNotifications = useCallback((next: NotificationItem[]) => {
     setNotifications(next);
     setJSON("notifications", next);
-  };
+  }, []);
 
-  const markNotificationRead = (index: number) => {
+  const markNotificationRead = useCallback((index: number) => {
     const next = notifications.map((item, idx) =>
       idx === index ? { ...item, read: true } : item,
     );
     persistNotifications(next);
-  };
+  }, [notifications, persistNotifications]);
 
   return {
     currentUser,
+    users,
     theme,
     setTheme,
     loading,
@@ -93,6 +110,7 @@ export const useTeacherData = () => {
     persistExams,
     submissions,
     setSubmissions,
+    studentProgress,
     notifications,
     setNotifications,
     persistNotifications,
