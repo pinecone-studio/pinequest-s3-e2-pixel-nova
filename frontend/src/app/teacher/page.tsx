@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
 import {
-  buildRoleUser,
-  getStoredRole,
-  isTeacherRole,
+  STORAGE_KEYS,
+  getJSON,
+  setJSON,
+  setSessionUser,
+} from "@/lib/examGuard";
+import type { AuthUser, StudentProfile } from "@/lib/backend-auth";
+import { getAuthUsers } from "@/lib/backend-auth";
+import {
+  buildSessionUser,
+  getStoredSelectedUserId,
   setStoredRole,
+  setStoredSelectedUserId,
   type RoleKey,
 } from "@/lib/role-session";
-import { getJSON } from "@/lib/examGuard";
-import type { StudentProfile } from "@/lib/backend-auth";
 import TeacherSidebar from "./components/TeacherSidebar";
 import TeacherHeader from "./components/TeacherHeader";
 import ExamScheduleCard from "./components/ExamScheduleCard";
@@ -44,14 +50,16 @@ type TeacherPageProps = {
 
 export default function TeacherPage({ forcedRole }: TeacherPageProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [role, setRole] = useState<RoleKey>(forcedRole ?? "teacher-1");
-  const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалт үүсгэх");
-  const tabSet = useMemo(() => new Set(teacherTabs), []);
+  const role: RoleKey = forcedRole ?? "teacher";
+  const [users, setUsers] = useState<AuthUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
+  const [activeTab, setActiveTab] = useState<TeacherTab>(teacherTabs[0]);
 
-  const roleUser = useMemo(() => buildRoleUser(role), [role]);
-  const data = useTeacherData(roleUser);
+  const data = useTeacherData(
+    selectedUser ? buildSessionUser(selectedUser) : null,
+  );
 
   const management = useExamManagement({
     exams: data.exams,
@@ -78,28 +86,60 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
   const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
-    if (pathname === "/teacher") {
-      router.replace("/teacher-1");
-      return;
-    }
-    const nextRole = forcedRole ?? getStoredRole();
-    setRole(nextRole);
-    setStoredRole(nextRole);
-    if (!isTeacherRole(nextRole)) {
-      router.replace(`/${nextRole}`);
-    }
-  }, [router, forcedRole, pathname]);
+    setStoredRole(role);
+  }, [role]);
 
   useEffect(() => {
-    if (!tabSet.has(activeTab)) {
-      setActiveTab("Шалгалт үүсгэх");
-    }
-  }, [activeTab, tabSet]);
+    let cancelled = false;
 
-  const handleRoleChange = (next: RoleKey) => {
-    setRole(next);
-    setStoredRole(next);
-    router.push(`/${next}`);
+    const loadUsers = async () => {
+      setUsersLoading(true);
+      try {
+        const authUsers = await getAuthUsers();
+        if (cancelled) return;
+
+        const nextUsers = authUsers.filter((user) => user.role === role);
+        const storedUserId = getStoredSelectedUserId(role);
+        const nextUser =
+          nextUsers.find((user) => user.id === storedUserId) ??
+          nextUsers[0] ??
+          null;
+
+        setUsers(nextUsers);
+        setSelectedUser(nextUser);
+        setJSON(
+          STORAGE_KEYS.users,
+          nextUsers.map((user) => buildSessionUser(user)),
+        );
+
+        if (nextUser) {
+          setStoredSelectedUserId(role, nextUser.id);
+          setSessionUser(buildSessionUser(nextUser));
+        }
+      } finally {
+        if (!cancelled) setUsersLoading(false);
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
+
+  const handleRoleChange = (nextRole: RoleKey) => {
+    setStoredRole(nextRole);
+    router.push(`/${nextRole}`);
+  };
+
+  const handleUserChange = (userId: string) => {
+    const nextUser = users.find((user) => user.id === userId) ?? null;
+    if (!nextUser) return;
+
+    setSelectedUser(nextUser);
+    setStoredSelectedUserId(role, nextUser.id);
+    setSessionUser(buildSessionUser(nextUser));
   };
 
   useEffect(() => {
@@ -131,8 +171,7 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
           sidebarCollapsed
             ? "lg:grid-cols-[72px_1fr]"
             : "lg:grid-cols-[260px_1fr]"
-        }`}
-      >
+        }`}>
         <TeacherSidebar
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed}
@@ -151,13 +190,23 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
               notifications={data.notifications}
               onMarkRead={data.markNotificationRead}
               roleControl={
-                <RoleNavbar activeRole={role} onChange={handleRoleChange} />
+                <RoleNavbar
+                  activeRole={role}
+                  activeUserId={selectedUser?.id ?? null}
+                  users={users}
+                  loading={usersLoading}
+                  onChangeRole={handleRoleChange}
+                  onChangeUser={handleUserChange}
+                />
               }
             />
 
             {activeTab === "Шалгалт үүсгэх" && (
               <>
-                <ExamStatsCards loading={data.loading} stats={examStatsState.stats} />
+                <ExamStatsCards
+                  loading={data.loading}
+                  stats={examStatsState.stats}
+                />
                 <section className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
                   <ExamScheduleCard
                     scheduleTitle={management.scheduleTitle}
@@ -214,13 +263,18 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
 
             {activeTab === "Хадгалсан шалгалт" && (
               <section className="grid gap-4">
-                <ExamListCard exams={data.exams} onCopyCode={management.copyCode} />
+                <ExamListCard
+                  exams={data.exams}
+                  onCopyCode={management.copyCode}
+                />
               </section>
             )}
 
             {activeTab === "XP харах" && (
               <section className="grid gap-4">
-                <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
+                <TeacherXpOverviewCard
+                  students={examStatsState.xpLeaderboard}
+                />
               </section>
             )}
 

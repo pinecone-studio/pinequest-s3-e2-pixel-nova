@@ -60,6 +60,62 @@ describe("auth routes", () => {
     });
   });
 
+  it("returns all teachers and students for /users", async () => {
+    queueDbResults(
+      [
+        {
+          id: "teacher-1",
+          code: "T-1001",
+          fullName: "Ada Teacher",
+          email: "ada@example.com",
+          avatarUrl: "https://cdn.example.com/ada.png",
+        },
+      ],
+      [
+        {
+          id: "student-1",
+          code: "S-2001",
+          fullName: "Nora Student",
+          email: "nora@example.com",
+          avatarUrl: null,
+          xp: 250,
+          level: 2,
+        },
+      ],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/auth/users",
+      undefined,
+      workerEnv,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: [
+        {
+          id: "teacher-1",
+          code: "T-1001",
+          fullName: "Ada Teacher",
+          email: "ada@example.com",
+          avatarUrl: "https://cdn.example.com/ada.png",
+          role: "teacher",
+        },
+        {
+          id: "student-1",
+          code: "S-2001",
+          fullName: "Nora Student",
+          email: "nora@example.com",
+          avatarUrl: null,
+          xp: 250,
+          level: 2,
+          role: "student",
+        },
+      ],
+    });
+  });
+
   it("returns the current student profile for /me", async () => {
     queueDbResults(
       [{ id: "student-1", fullName: "Nora Student" }],
