@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 
 const mockHighlights = [
@@ -58,12 +57,12 @@ export default function Home() {
           {/* Product Screenshot */}
           <div className="relative animate-float w-full h-full max-w-2xl flex items-center">
             <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-accent/20 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="https://play-lh.googleusercontent.com/vR9XKzwSTlnJ37TCOCUgAYK0W920yw2u4n3xk86j5gFQwfBzSyM6bMVQyWkz0eB-9cI5=w3840-h2160-rw"
               alt="EduCore LMS Хяналт"
               width={800}
               height={700}
-              unoptimized
               className="rounded-3xl shadow-2xl border border-border/50 object-cover hover:shadow-3xl transition-shadow duration-500 h-[700px] w-[800px]"
             />
           </div>
@@ -149,12 +148,12 @@ export default function Home() {
           >
             <div className="relative">
               <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-accent/20 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="https://play-lh.googleusercontent.com/vR9XKzwSTlnJ37TCOCUgAYK0W920yw2u4n3xk86j5gFQwfBzSyM6bMVQyWkz0eB-9cI5=w3840-h2160-rw"
                 alt="EduCore LMS Хяналт"
                 width={640}
                 height={256}
-                unoptimized
                 className="w-full rounded-3xl shadow-2xl border border-border/50 object-cover h-64 hover:shadow-3xl transition-shadow duration-500"
               />
             </div>
