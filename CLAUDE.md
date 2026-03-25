@@ -66,6 +66,16 @@ npm run cf-typegen
 - Keep lockfile updates scoped to the package being changed.
 - PRs touching DB schema or Cloudflare config must note the migration/config change.
 
+## Memory
+
+At the **start of every session**, read all files in `C:/Users/user/.claude/projects/D--zozo-pinequest-s3-e2-pixel-nova/memory/`:
+- `user.md` — who the user is
+- `people.md` — team members and stakeholders
+- `decisions.md` — key architectural and product decisions
+- `preferences.md` — working style and feedback
+
+At the **end of every session** (or when you learn something new), update the relevant memory files to reflect new information about the user, team, decisions made, or preferences expressed during the session.
+
 ## Git Naming Conventions
 
 - **Issue titles**: Short and descriptive (e.g., "Add unit tests and load tests for API")
