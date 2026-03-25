@@ -6,14 +6,51 @@ import {
   getJSON,
   setJSON,
 } from "@/lib/examGuard";
+import {
+  getAuthUsers,
+  getTeacherExams,
+  getTeacherExamSubmissions,
+  getXpLeaderboard,
+  type TeacherExamSummary,
+  type TeacherSubmissionSummary,
+} from "@/api";
 import type { StudentProgress } from "@/lib/examGuard";
 import { normalizeSubmission } from "../analytics";
 import type { Exam, NotificationItem, Submission } from "../types";
 
-export const useTeacherData = (
-  overrideUser?: User | null,
-  useRemote: boolean = false,
-) => {
+const mapExam = (exam: TeacherExamSummary): Exam => ({
+  id: exam.id,
+  title: exam.title,
+  scheduledAt: exam.scheduledAt,
+  examStartedAt: exam.startedAt ?? null,
+  roomCode: exam.roomCode ?? "",
+  questions: [],
+  duration: exam.durationMin,
+  createdAt: exam.createdAt,
+});
+
+const mapSubmission = (submission: TeacherSubmissionSummary): Submission => ({
+  id: submission.id,
+  examId: submission.examId,
+  studentId: submission.studentId,
+  studentName: submission.studentName,
+  score: submission.score ?? 0,
+  totalPoints: submission.totalPoints ?? 0,
+  percentage: submission.percentage ?? submission.score ?? 0,
+  submittedAt: submission.submittedAt ?? new Date(0).toISOString(),
+  violations: submission.flagCount
+    ? {
+        tabSwitch: 0,
+        windowBlur: 0,
+        copyAttempt: 0,
+        pasteAttempt: 0,
+        fullscreenExit: 0,
+        keyboardShortcut: 0,
+      }
+    : undefined,
+});
+
+export const useTeacherData = (overrideUser?: User | null) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -41,39 +78,96 @@ export const useTeacherData = (
     setCurrentUser(
       user ?? {
         id: "demo",
-        username: "DemoБагш",
+        username: "DemoTeacher",
         password: "",
         role: "teacher",
         createdAt: "",
       },
     );
-    syncFromStorage();
+
     const storedTheme =
       typeof window !== "undefined"
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    if (!useRemote) {
-      setExams(getJSON<Exam[]>("exams", []));
-      setSubmissions(getJSON<Submission[]>("submissions", []));
-      setNotifications(getJSON<NotificationItem[]>("notifications", []));
+
+    if (!user) {
+      syncFromStorage();
+      setLoading(false);
+      return;
     }
-  }, [overrideUser, syncFromStorage, useRemote]);
 
-  useEffect(() => {
-    if (useRemote) return;
-    const sync = () => {
-      setSubmissions(getJSON<Submission[]>("submissions", []));
-      setNotifications(getJSON<NotificationItem[]>("notifications", []));
+    let cancelled = false;
+
+    const loadRemote = async () => {
+      setLoading(true);
+      try {
+        const [authUsers, teacherExams, leaderboard] = await Promise.all([
+          getAuthUsers(),
+          getTeacherExams(user),
+          getXpLeaderboard(user),
+        ]);
+
+        if (cancelled) return;
+
+        const mappedUsers = authUsers.map((item) => ({
+          id: item.id,
+          username: item.fullName,
+          password: "",
+          role: item.role,
+          createdAt: "",
+        }));
+        const mappedExams = teacherExams.map(mapExam);
+
+        setUsers(mappedUsers);
+        setExams(mappedExams);
+        setJSON(STORAGE_KEYS.users, mappedUsers);
+        setJSON("exams", mappedExams);
+
+        const submissionsByExam = await Promise.all(
+          teacherExams.map((exam) => getTeacherExamSubmissions(exam.id, user)),
+        );
+
+        if (cancelled) return;
+
+        const mappedSubmissions = submissionsByExam
+          .flat()
+          .map(mapSubmission)
+          .map((item) => normalizeSubmission(item as Submission))
+          .filter((item): item is Submission => Boolean(item));
+
+        const nextProgress = leaderboard.reduce<StudentProgress>(
+          (acc, entry) => {
+            acc[entry.id] = {
+              xp: entry.xp,
+              level: entry.level,
+              history: [],
+            };
+            return acc;
+          },
+          {},
+        );
+
+        setSubmissions(mappedSubmissions);
+        setStudentProgress(nextProgress);
+        setNotifications(getJSON<NotificationItem[]>("notifications", []));
+        setJSON("submissions", mappedSubmissions);
+        setJSON("studentProgress", nextProgress);
+      } catch {
+        if (cancelled) return;
+        syncFromStorage();
+        setToast("Failed to load teacher data from backend.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
-    const interval = setInterval(sync, 15000);
-    return () => clearInterval(interval);
-  }, [useRemote]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 700);
-    return () => clearTimeout(timer);
-  }, []);
+    loadRemote();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [overrideUser, overrideUser?.id, syncFromStorage]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -90,20 +184,23 @@ export const useTeacherData = (
 
   const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
-    if (!useRemote) setJSON("exams", next);
-  }, [useRemote]);
+    setJSON("exams", next);
+  }, []);
 
   const persistNotifications = useCallback((next: NotificationItem[]) => {
     setNotifications(next);
-    if (!useRemote) setJSON("notifications", next);
-  }, [useRemote]);
+    setJSON("notifications", next);
+  }, []);
 
-  const markNotificationRead = useCallback((index: number) => {
-    const next = notifications.map((item, idx) =>
-      idx === index ? { ...item, read: true } : item,
-    );
-    persistNotifications(next);
-  }, [notifications, persistNotifications]);
+  const markNotificationRead = useCallback(
+    (index: number) => {
+      const next = notifications.map((item, idx) =>
+        idx === index ? { ...item, read: true } : item,
+      );
+      persistNotifications(next);
+    },
+    [notifications, persistNotifications],
+  );
 
   return {
     currentUser,
