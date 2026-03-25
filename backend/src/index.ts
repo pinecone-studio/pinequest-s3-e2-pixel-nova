@@ -8,6 +8,7 @@ import examRoutes from "./routes/exam.routes";
 import sessionRoutes from "./routes/session.routes";
 import cheatRoutes from "./routes/cheat.routes";
 import studentRoutes from "./routes/student.routes";
+import teacherRoutes from "./routes/teacher.routes";
 import analyticsRoutes from "./routes/analytics.routes";
 import xpRoutes from "./routes/xp.routes";
 import savedRoutes from "./routes/saved.routes";
@@ -17,8 +18,8 @@ const app = new Hono<AppEnv>();
 // Global middleware
 app.use("*", logger());
 app.use("*", cors({
-  origin: ["http://localhost:3000", "http://localhost:5173"],
-  allowHeaders: ["Content-Type", "x-user-id", "x-user-role"],
+  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"],
+  allowHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
 app.onError(errorHandler);
@@ -32,6 +33,7 @@ app.route("/api/exams", examRoutes);
 app.route("/api/sessions", sessionRoutes);
 app.route("/api/cheat", cheatRoutes);
 app.route("/api/student", studentRoutes);
+app.route("/api/teacher", teacherRoutes);
 app.route("/api/analytics", analyticsRoutes);
 app.route("/api/xp", xpRoutes);
 app.route("/api/saved", savedRoutes);

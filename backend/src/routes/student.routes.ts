@@ -1,10 +1,13 @@
 import { Hono } from "hono";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
+import { zValidator } from "@hono/zod-validator";
 import { getDb, examSessions, exams, studentAnswers, questions, options } from "../db";
 import type { AppEnv } from "../types";
 import { success, notFound } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
+import { students } from "../db";
 
 const studentRoutes = new Hono<AppEnv>();
 
@@ -161,6 +164,80 @@ studentRoutes.get("/results/:sessionId", async (c) => {
     startedAt: session.startedAt,
     submittedAt: session.submittedAt,
     answers: breakdown,
+  });
+});
+
+const profileSchema = z.object({
+  fullName: z.string().min(1),
+  email: z.string().email().optional().or(z.literal("")),
+  avatarUrl: z.string().url().optional().or(z.literal("")),
+  phone: z.string().optional().or(z.literal("")),
+  school: z.string().optional().or(z.literal("")),
+  grade: z.string().optional().or(z.literal("")),
+  bio: z.string().optional().or(z.literal("")),
+});
+
+// GET /profile — current student's profile
+studentRoutes.get("/profile", async (c) => {
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  const [student] = await db
+    .select()
+    .from(students)
+    .where(eq(students.id, user.id))
+    .limit(1);
+
+  if (!student) {
+    return notFound(c, "Student");
+  }
+
+  return success(c, {
+    id: student.id,
+    code: student.code,
+    fullName: student.fullName,
+    email: student.email,
+    avatarUrl: student.avatarUrl,
+    phone: student.phone,
+    school: student.school,
+    grade: student.grade,
+    bio: student.bio,
+    xp: student.xp,
+    level: student.level,
+  });
+});
+
+// PUT /profile — update current student's profile
+studentRoutes.put("/profile", zValidator("json", profileSchema), async (c) => {
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+  const payload = c.req.valid("json");
+
+  const [student] = await db
+    .select()
+    .from(students)
+    .where(eq(students.id, user.id))
+    .limit(1);
+
+  if (!student) {
+    return notFound(c, "Student");
+  }
+
+  await db
+    .update(students)
+    .set({
+      fullName: payload.fullName,
+      email: payload.email || null,
+      avatarUrl: payload.avatarUrl || null,
+      phone: payload.phone || null,
+      school: payload.school || null,
+      grade: payload.grade || null,
+      bio: payload.bio || null,
+    })
+    .where(eq(students.id, user.id));
+
+  return success(c, {
+    ...payload,
   });
 });
 

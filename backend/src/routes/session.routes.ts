@@ -2,12 +2,13 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
-import { getDb, exams, examSessions, studentAnswers, questions, options, students } from "../db";
+import { getDb, exams, examSessions, studentAnswers, questions, options, students, xpTransactions } from "../db";
 import type { AppEnv } from "../types";
 import { success, error, notFound, forbidden } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
+import { getLevel } from "../utils/level-calc";
 
 const sessionRoutes = new Hono<AppEnv>();
 
@@ -308,13 +309,140 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
     return error(c, "INVALID_STATUS", "Session must be in 'in_progress' status to submit", 400);
   }
 
+  // Fetch exam and questions for grading
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(eq(exams.id, session.examId))
+    .limit(1);
+
+  if (!exam) {
+    return notFound(c, "Exam");
+  }
+
+  const examQuestions = await db
+    .select()
+    .from(questions)
+    .where(eq(questions.examId, exam.id));
+
+  const questionIds = examQuestions.map((q) => q.id);
+  const questionOptions = questionIds.length > 0
+    ? await db
+        .select()
+        .from(options)
+        .where(
+          sql`${options.questionId} IN (${sql.join(questionIds.map((id) => sql`${id}`), sql`, `)})`
+        )
+    : [];
+
+  const optionsByQuestion = new Map<string, typeof questionOptions>();
+  for (const opt of questionOptions) {
+    const list = optionsByQuestion.get(opt.questionId) ?? [];
+    list.push(opt);
+    optionsByQuestion.set(opt.questionId, list);
+  }
+
+  const answers = await db
+    .select()
+    .from(studentAnswers)
+    .where(eq(studentAnswers.sessionId, sessionId));
+
+  const answerByQuestion = new Map(
+    answers.map((answer) => [answer.questionId, answer]),
+  );
+
+  let totalPoints = 0;
+  let earnedPoints = 0;
+
+  for (const question of examQuestions) {
+    totalPoints += Number(question.points ?? 1);
+    const answer = answerByQuestion.get(question.id);
+    if (!answer) {
+      continue;
+    }
+
+    const possibleOptions = optionsByQuestion.get(question.id) ?? [];
+    const correctOption = possibleOptions.find((opt) => opt.isCorrect);
+    const selectedOption = possibleOptions.find(
+      (opt) => opt.id === answer.selectedOptionId,
+    );
+    const correctAnswerText =
+      correctOption?.text ?? question.correctAnswerText ?? "";
+
+    const normalizedCorrect = correctAnswerText.trim().toLowerCase();
+    const normalizedSelected = (selectedOption?.text ?? answer.textAnswer ?? "")
+      .trim()
+      .toLowerCase();
+
+    const isCorrect = normalizedCorrect.length > 0
+      ? normalizedCorrect === normalizedSelected
+      : false;
+    const pointsEarned = isCorrect ? Number(question.points ?? 1) : 0;
+    earnedPoints += pointsEarned;
+
+    await db
+      .update(studentAnswers)
+      .set({
+        isCorrect,
+        pointsEarned,
+      })
+      .where(eq(studentAnswers.id, answer.id));
+  }
+
+  const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+
   const now = new Date().toISOString();
   await db
     .update(examSessions)
-    .set({ status: "submitted", submittedAt: now })
+    .set({
+      status: "graded",
+      submittedAt: now,
+      score: percentage,
+      totalPoints,
+      earnedPoints,
+    })
     .where(eq(examSessions.id, sessionId));
 
-  return success(c, { sessionId, status: "submitted", submittedAt: now });
+  // XP calculation (simple tiered)
+  const xpEarned =
+    percentage >= 90 ? 100 :
+    percentage >= 80 ? 80 :
+    percentage >= 70 ? 60 :
+    percentage >= 60 ? 40 :
+    percentage >= 50 ? 20 : 10;
+
+  const [student] = await db
+    .select()
+    .from(students)
+    .where(eq(students.id, user.id))
+    .limit(1);
+
+  if (student) {
+    const nextXp = student.xp + xpEarned;
+    const nextLevel = getLevel(nextXp);
+    await db
+      .update(students)
+      .set({ xp: nextXp, level: nextLevel })
+      .where(eq(students.id, user.id));
+
+    await db.insert(xpTransactions).values({
+      id: newId(),
+      studentId: student.id,
+      amount: xpEarned,
+      reason: "exam_completed",
+      referenceId: sessionId,
+    });
+  }
+
+  return success(c, {
+    sessionId,
+    status: "graded",
+    submittedAt: now,
+    score: percentage,
+    totalPoints,
+    earnedPoints,
+    xpEarned,
+  });
 });
 
 // ---------------------------------------------------------------------------
