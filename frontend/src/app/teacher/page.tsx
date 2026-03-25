@@ -30,10 +30,9 @@ type TeacherPageProps = {
 export default function TeacherPage({ forcedRole }: TeacherPageProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [role, setRole] = useState<RoleKey>(forcedRole ?? "teacher-1");
   const [activeTab, setActiveTab] = useState<
-    "Шалгалт" | "Дүн" | "Сурагч" | "Тохиргоо"
+    "Шалгалт" | "Дүн" | "Хуваарь" | "Шалгалтын гүйцэтгэл"
   >("Шалгалт");
 
   const roleUser = useMemo(() => buildRoleUser(role), [role]);
@@ -137,23 +136,14 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
           {data.toast}
         </div>
       )}
-      <div
-        className={`grid min-h-screen transition-[grid-template-columns] duration-300 ease-out ${
-          sidebarCollapsed
-            ? "lg:grid-cols-[72px_1fr]"
-            : "lg:grid-cols-[260px_1fr]"
-        }`}
-      >
-        <TeacherSidebar
-          collapsed={sidebarCollapsed}
-          setCollapsed={setSidebarCollapsed}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          sidebarTimerRef={management.sidebarTimerRef}
-          currentUserName={data.currentUser.username}
-        />
-        <main className="px-6 py-8">
-          <div className="mx-auto w-full max-w-7xl space-y-6">
+      <TeacherSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        currentUserName={data.currentUser.username}
+      />
+      <main className="px-6 py-8">
+        <div className="mx-auto w-full max-w-7xl space-y-6">
+          {activeTab !== "Шалгалтын гүйцэтгэл" && activeTab !== "Хуваарь" && (
             <TeacherHeader
               theme={data.theme}
               onToggleTheme={() =>
@@ -165,79 +155,90 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
                 <RoleNavbar activeRole={role} onChange={handleRoleChange} />
               }
             />
+          )}
 
-            {activeTab === "Шалгалт" && (
-              <ExamTab
-                loading={data.loading}
-                stats={examStatsState.stats}
-                scheduleTitle={management.scheduleTitle}
-                setScheduleTitle={management.setScheduleTitle}
-                scheduleDate={management.scheduleDate}
-                setScheduleDate={management.setScheduleDate}
-                durationMinutes={management.durationMinutes}
-                setDurationMinutes={management.setDurationMinutes}
-                roomCode={management.roomCode}
-                onSchedule={management.handleSchedule}
-                onCopyCode={management.copyCode}
-                examTitle={management.examTitle}
-                setExamTitle={management.setExamTitle}
-                questionText={management.questionText}
-                setQuestionText={management.setQuestionText}
-                questionType={management.questionType}
-                setQuestionType={management.setQuestionType}
-                mcqOptions={management.mcqOptions}
-                setMcqOptions={management.setMcqOptions}
-                questionAnswer={management.questionAnswer}
-                setQuestionAnswer={management.setQuestionAnswer}
-                questions={management.questions}
-                addQuestion={management.addQuestion}
-                removeQuestion={management.removeQuestion}
-                updateQuestion={management.updateQuestion}
-                updateQuestionOption={management.updateQuestionOption}
-                addQuestionOption={management.addQuestionOption}
-                removeQuestionOption={management.removeQuestionOption}
-                saveExam={management.saveExam}
-                pdfUseOcr={imports.pdfUseOcr}
-                setPdfUseOcr={imports.setPdfUseOcr}
-                answerKeyPage={imports.answerKeyPage}
-                setAnswerKeyPage={imports.setAnswerKeyPage}
-                pdfLoading={imports.pdfLoading}
-                pdfError={imports.pdfError}
-                importError={imports.importError}
-                onPdfUpload={imports.handlePdfUpload}
-                onCsvUpload={imports.handleCsvUpload}
-                onDocxUpload={imports.handleDocxUpload}
-                exams={data.exams}
-                notifications={data.notifications}
-                onMarkNotificationRead={data.markNotificationRead}
-                cheatStudents={cheatStudents}
-                xpLeaderboard={[]}
-              />
-            )}
+          {activeTab === "Шалгалт" && (
+            <ExamTab
+              loading={data.loading}
+              stats={examStatsState.stats}
+              scheduleTitle={management.scheduleTitle}
+              setScheduleTitle={management.setScheduleTitle}
+              scheduleDate={management.scheduleDate}
+              setScheduleDate={management.setScheduleDate}
+              durationMinutes={management.durationMinutes}
+              setDurationMinutes={management.setDurationMinutes}
+              roomCode={management.roomCode}
+              onSchedule={management.handleSchedule}
+              onCopyCode={management.copyCode}
+              examTitle={management.examTitle}
+              setExamTitle={management.setExamTitle}
+              questionText={management.questionText}
+              setQuestionText={management.setQuestionText}
+              questionType={management.questionType}
+              setQuestionType={management.setQuestionType}
+              mcqOptions={management.mcqOptions}
+              setMcqOptions={management.setMcqOptions}
+              questionAnswer={management.questionAnswer}
+              setQuestionAnswer={management.setQuestionAnswer}
+              questions={management.questions}
+              addQuestion={management.addQuestion}
+              removeQuestion={management.removeQuestion}
+              updateQuestion={management.updateQuestion}
+              updateQuestionOption={management.updateQuestionOption}
+              addQuestionOption={management.addQuestionOption}
+              removeQuestionOption={management.removeQuestionOption}
+              saveExam={management.saveExam}
+              pdfUseOcr={imports.pdfUseOcr}
+              setPdfUseOcr={imports.setPdfUseOcr}
+              answerKeyPage={imports.answerKeyPage}
+              setAnswerKeyPage={imports.setAnswerKeyPage}
+              pdfLoading={imports.pdfLoading}
+              pdfError={imports.pdfError}
+              importError={imports.importError}
+              onPdfUpload={imports.handlePdfUpload}
+              onCsvUpload={imports.handleCsvUpload}
+              onDocxUpload={imports.handleDocxUpload}
+              exams={data.exams}
+              notifications={data.notifications}
+              onMarkNotificationRead={data.markNotificationRead}
+              cheatStudents={cheatStudents}
+              xpLeaderboard={[]}
+            />
+          )}
 
-            {activeTab === "Дүн" && (
-              <ResultsTab
-                loading={data.loading}
-                examOptions={examStatsState.examOptions}
-                activeExamId={examStatsState.activeExamId}
-                onSelectExam={examStatsState.setSelectedExamId}
-                examStats={examStatsState.examStats}
-                submissions={examStatsState.activeSubmissions}
-                onSelectSubmission={examStatsState.setSelectedSubmissionId}
-                selectedSubmissionId={examStatsState.selectedSubmissionId}
-                selectedSubmission={examStatsState.selectedSubmission}
-                selectedExam={examStatsState.selectedExam}
-                studentProfile={studentProfile}
-                profileLoading={profileLoading}
-              />
-            )}
+          {activeTab === "Дүн" && (
+            <ResultsTab
+              loading={data.loading}
+              examOptions={examStatsState.examOptions}
+              activeExamId={examStatsState.activeExamId}
+              onSelectExam={examStatsState.setSelectedExamId}
+              examStats={examStatsState.examStats}
+              submissions={examStatsState.activeSubmissions}
+              onSelectSubmission={examStatsState.setSelectedSubmissionId}
+              selectedSubmissionId={examStatsState.selectedSubmissionId}
+              selectedSubmission={examStatsState.selectedSubmission}
+              selectedExam={examStatsState.selectedExam}
+              studentProfile={studentProfile}
+              profileLoading={profileLoading}
+            />
+          )}
 
-            {activeTab === "Сурагч" && <TeacherStudentsTab />}
+          {activeTab === "Хуваарь" && (
+            <TeacherStudentsTab
+              exams={data.exams}
+              onAddSchedule={() => setActiveTab("Шалгалт")}
+            />
+          )}
 
-            {activeTab === "Тохиргоо" && <SettingsTab />}
-          </div>
-        </main>
-      </div>
+          {activeTab === "Шалгалтын гүйцэтгэл" && (
+            <SettingsTab
+              activeExam={examStatsState.activeExam}
+              submissions={examStatsState.activeSubmissions}
+              currentUserName={data.currentUser.username}
+            />
+          )}
+        </div>
+      </main>
     </div>
   );
 }
