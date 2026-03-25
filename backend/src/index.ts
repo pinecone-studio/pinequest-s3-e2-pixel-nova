@@ -15,6 +15,7 @@ import savedRoutes from "./routes/saved.routes";
 import subjectRoutes from "./routes/subjects.routes";
 import materialRoutes from "./routes/materials.routes";
 import questionBankRoutes from "./routes/question-bank.routes";
+import pdfRoutes from "./routes/pdf.routes";
 
 const app = new Hono<AppEnv>();
 
@@ -43,5 +44,6 @@ app.route("/api/saved", savedRoutes);
 app.route("/api/subjects", subjectRoutes);
 app.route("/api/materials", materialRoutes);
 app.route("/api/question-bank", questionBankRoutes);
+app.route("/api/pdf", pdfRoutes);
 
 export default app;

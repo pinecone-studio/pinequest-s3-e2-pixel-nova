@@ -1,5 +1,13 @@
 import { Hono } from "hono";
-import { getDb, students, exams, examSessions, questions, studentAnswers, options } from "../db";
+import {
+  getDb,
+  students,
+  exams,
+  examSessions,
+  questions,
+  studentAnswers,
+  options,
+} from "../db";
 import { and, eq, sql } from "drizzle-orm";
 import type { AppEnv } from "../types";
 import { success, notFound } from "../utils/response";
@@ -72,7 +80,9 @@ teacherRoutes.get("/exams/:examId/submissions", async (c) => {
     })
     .from(examSessions)
     .innerJoin(students, eq(examSessions.studentId, students.id))
-    .where(and(eq(examSessions.examId, examId), eq(examSessions.status, "graded")))
+    .where(
+      and(eq(examSessions.examId, examId), eq(examSessions.status, "graded")),
+    )
     .orderBy(examSessions.submittedAt);
 
   return success(c, submissions);
@@ -128,15 +138,19 @@ teacherRoutes.get("/sessions/:sessionId/result", async (c) => {
     .orderBy(questions.orderIndex);
 
   const questionIds = answers.map((a) => a.questionId);
-  const allOptions = questionIds.length > 0
-    ? await db
-        .select()
-        .from(options)
-        .where(
-          sql`${options.questionId} IN (${sql.join(questionIds.map((id) => sql`${id}`), sql`, `)})`
-        )
-        .orderBy(options.orderIndex)
-    : [];
+  const allOptions =
+    questionIds.length > 0
+      ? await db
+          .select()
+          .from(options)
+          .where(
+            sql`${options.questionId} IN (${sql.join(
+              questionIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})`,
+          )
+          .orderBy(options.orderIndex)
+      : [];
 
   const optionsByQuestion = new Map<string, typeof allOptions>();
   for (const opt of allOptions) {

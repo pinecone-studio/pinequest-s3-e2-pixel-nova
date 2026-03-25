@@ -115,6 +115,23 @@ const tableExports = {
   questionBankOptions: createTable(["id", "bankQuestionId", "label", "text", "imageUrl", "isCorrect", "orderIndex"]),
 };
 
+// Mock auth middleware — bypass Clerk and DB, use x-user-id/x-user-role headers directly
+// Consumes one queued result for backward compatibility (tests queue an "auth" result first)
+jest.mock("../../src/middleware/auth", () => ({
+  __esModule: true,
+  authMiddleware: jest.fn(async (c: any, next: any) => {
+    const userId = c.req.header("x-user-id");
+    const role = c.req.header("x-user-role");
+    if (!userId || !role) {
+      return c.json({ success: false, error: { code: "UNAUTHORIZED", message: "Missing x-user-id or x-user-role header" } }, 401);
+    }
+    // Consume the "auth" result that tests queue as first item
+    if (resultQueue.length > 0) resultQueue.shift();
+    c.set("user", { id: userId, role, fullName: role === "teacher" ? "Test Teacher" : "Test Student" });
+    await next();
+  }),
+}));
+
 jest.mock("nanoid", () => ({
   __esModule: true,
   nanoid: () => "test-id",
