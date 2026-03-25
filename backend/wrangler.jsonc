@@ -18,4 +18,16 @@
       "database_id": "6617005b-b2ef-4dda-8581-ad6abf9245fe",
     },
   ],
+  "r2_buckets": [
+    {
+      "bucket_name": "educore-exam-files",
+      "binding": "EXAM_FILES",
+    },
+  ],
+  "ai": {
+    "binding": "AI",
+  },
+  "vars": {
+    "CLERK_SECRET_KEY": "",
+  },
 }
