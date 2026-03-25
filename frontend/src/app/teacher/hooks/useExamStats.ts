@@ -1,11 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { StudentProgress, User } from "@/lib/examGuard";
+import {
+  buildCheatStudents,
+  buildExamStats,
+  buildTeacherOverviewStats,
+  buildXpLeaderboard,
+} from "../analytics";
 import type { Exam, Submission } from "../types";
 
 export const useExamStats = (params: {
   exams: Exam[];
   submissions: Submission[];
+  studentProgress: StudentProgress;
+  users: User[];
 }) => {
-  const { exams, submissions } = params;
+  const { exams, submissions, studentProgress, users } = params;
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
 
@@ -45,8 +54,10 @@ export const useExamStats = (params: {
   }, [selectedSubmission, exams]);
 
   const examOptions = useMemo(() => {
-    const finishedIds = new Set(submissions.map((s) => s.examId));
-    return exams.filter((exam) => finishedIds.has(exam.id));
+    const finishedIds = new Set(submissions.map((submission) => submission.examId));
+    return exams
+      .filter((exam) => finishedIds.has(exam.id))
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }, [exams, submissions]);
 
   const activeExamId = selectedExamId ?? examOptions[0]?.id ?? null;
@@ -54,8 +65,12 @@ export const useExamStats = (params: {
     () => exams.find((exam) => exam.id === activeExamId) ?? null,
     [exams, activeExamId],
   );
+
   const activeSubmissions = useMemo(
-    () => submissions.filter((s) => s.examId === activeExamId),
+    () =>
+      submissions
+        .filter((submission) => submission.examId === activeExamId)
+        .sort((left, right) => right.submittedAt.localeCompare(left.submittedAt)),
     [submissions, activeExamId],
   );
 
@@ -112,6 +127,8 @@ export const useExamStats = (params: {
 
   return {
     stats,
+    cheatStudents,
+    xpLeaderboard,
     selectedSubmissionId,
     setSelectedSubmissionId,
     selectedSubmission,

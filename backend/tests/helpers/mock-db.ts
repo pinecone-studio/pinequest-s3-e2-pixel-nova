@@ -21,6 +21,7 @@ const createChain = (fallback: unknown) => {
     "from",
     "where",
     "limit",
+    "offset",
     "innerJoin",
     "leftJoin",
     "groupBy",
@@ -49,8 +50,8 @@ export const mockGetDb = jest.fn(() => mockDb);
 
 const tableExports = {
   teachers: createTable(["id", "code", "fullName", "email", "avatarUrl"]),
-  students: createTable(["id", "code", "fullName", "email", "avatarUrl", "xp", "level", "createdAt"]),
-  subjects: createTable(["id", "name", "code"]),
+  students: createTable(["id", "code", "fullName", "email", "avatarUrl", "xp", "level", "createdAt", "updatedAt"]),
+  subjects: createTable(["id", "name", "code", "description", "createdAt", "updatedAt"]),
   exams: createTable([
     "id",
     "teacherId",
@@ -107,11 +108,11 @@ const tableExports = {
     "answeredAt",
   ]),
   cheatEvents: createTable(["id", "sessionId", "examId", "studentId", "eventType", "isNotified", "createdAt"]),
-  xpTransactions: createTable(["id", "studentId", "amount", "reason", "createdAt"]),
+  xpTransactions: createTable(["id", "studentId", "amount", "reason", "referenceId", "createdAt"]),
   savedExams: createTable(["id", "studentId", "examId", "createdAt"]),
-  materials: createTable(["id"]),
-  questionBank: createTable(["id"]),
-  questionBankOptions: createTable(["id"]),
+  materials: createTable(["id", "examId", "fileName", "fileType", "materialType", "fileUrl", "createdAt"]),
+  questionBank: createTable(["id", "teacherId", "subjectId", "type", "difficulty", "questionText", "imageUrl", "audioUrl", "explanation", "correctAnswerText", "tags", "usageCount", "createdAt", "updatedAt"]),
+  questionBankOptions: createTable(["id", "bankQuestionId", "label", "text", "imageUrl", "isCorrect", "orderIndex"]),
 };
 
 jest.mock("nanoid", () => ({

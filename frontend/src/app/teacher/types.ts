@@ -17,6 +17,13 @@ export type Exam = {
   notified?: boolean;
 };
 
+export type TeacherStat = {
+  label: string;
+  value: string;
+  trend: string;
+  tone: "primary" | "success" | "warning" | "neutral";
+};
+
 export type Submission = {
   id: string;
   examId: string;
@@ -37,6 +44,34 @@ export type Submission = {
     keyboardShortcut: number;
   };
   submittedAt: string;
+};
+
+export type QuestionInsight = {
+  id: string;
+  text: string;
+  correctCount: number;
+  total: number;
+  correctRate: number;
+  missCount: number;
+};
+
+export type ScoreBand = {
+  label: string;
+  count: number;
+  color: string;
+};
+
+export type ExamStatsSummary = {
+  average: number;
+  passRate: number;
+  submissionCount: number;
+  totalPoints: number;
+  mostMissed: QuestionInsight[];
+  mostCorrect: QuestionInsight[];
+  scoreDistribution: { name: string; score: number }[];
+  correctTotal: number;
+  incorrectTotal: number;
+  performanceBands: ScoreBand[];
 };
 
 export type NotificationItem = {
