@@ -22,6 +22,7 @@ describe("teacher analytics", () => {
         type: "mcq",
         options: ["3", "4", "5", "6"],
         correctAnswer: "4",
+        points: 1,
       },
       {
         id: "q2",
@@ -29,6 +30,7 @@ describe("teacher analytics", () => {
         type: "mcq",
         options: ["5", "6", "7", "8"],
         correctAnswer: "6",
+        points: 1,
       },
     ],
   };

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { buttonGhost, inputClass, selectClass } from "../../styles";
 import type { Question } from "../../types";
 
@@ -253,12 +254,16 @@ export default function QuestionPreviewPanel({
         ) : (
           <div className="mt-2 grid gap-2">
             {activeQuestion.imageUrl && (
-              <img
-                src={activeQuestion.imageUrl}
-                alt="Асуултын зураг"
-                className="w-full rounded-xl border border-border object-contain"
-                style={{ maxHeight: 280 }}
-              />
+              <div className="relative w-full overflow-hidden rounded-xl border border-border">
+                <Image
+                  src={activeQuestion.imageUrl}
+                  alt="Асуултын зураг"
+                  width={960}
+                  height={280}
+                  className="h-auto w-full object-contain"
+                  unoptimized
+                />
+              </div>
             )}
             <div className="text-lg font-semibold leading-7">
               {activeQuestion.text}

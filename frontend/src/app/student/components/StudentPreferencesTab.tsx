@@ -1,4 +1,4 @@
-import { Settings, Tv, Watch } from "lucide-react";
+import { Settings, Tv } from "lucide-react";
 import { cardClass } from "../styles";
 
 export default function StudentPreferencesTab() {

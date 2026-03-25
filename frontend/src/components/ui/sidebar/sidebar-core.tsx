@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/sheet"
 import {
   SIDEBAR_WIDTH_MOBILE,
-  SIDEBAR_WIDTH_ICON,
   useSidebar,
 } from "./sidebar-context"
 

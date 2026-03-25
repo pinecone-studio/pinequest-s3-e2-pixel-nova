@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { User, getSessionUser, getJSON, getJSONForRole } from "@/lib/examGuard";
-import { getTeacherRoles, getStoredRole } from "@/lib/role-session";
+import { User, getSessionUser } from "@/lib/examGuard";
 import type { Exam, NotificationItem } from "../types";
+import { getStudentResults } from "@/lib/backend-auth";
 
 export const useStudentData = (overrideUser?: User | null) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -12,7 +12,6 @@ export const useStudentData = (overrideUser?: User | null) => {
 
   useEffect(() => {
     const user = overrideUser ?? getSessionUser();
-    const teacherRoles = getTeacherRoles();
     setCurrentUser(
       user ?? {
         id: "demo",
@@ -27,46 +26,50 @@ export const useStudentData = (overrideUser?: User | null) => {
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    const mergedExams = teacherRoles.flatMap((role) =>
-      getJSONForRole<Exam[]>("exams", [], role),
-    );
-    const deduped = new Map<string, Exam>();
-    mergedExams.forEach((exam) => {
-      deduped.set(exam.id, exam);
-    });
-    setExams(Array.from(deduped.values()));
-    const ownNotifications = getJSON<NotificationItem[]>("notifications", []);
-    const teacherNotifications = teacherRoles.flatMap((role) =>
-      getJSONForRole<NotificationItem[]>("notifications", [], role),
-    );
-    const merged = [...ownNotifications, ...teacherNotifications].sort(
-      (left, right) => right.createdAt.localeCompare(left.createdAt),
-    );
-    setNotifications(merged);
+    const load = async () => {
+      try {
+        const results = await getStudentResults();
+        const mappedExams: Exam[] = results.map((item) => ({
+          id: item.examId,
+          title: item.title,
+          scheduledAt: null,
+          roomCode: "",
+          questions: [],
+          duration: undefined,
+          createdAt: item.submittedAt ?? new Date().toISOString(),
+        }));
+        setExams(mappedExams);
+        setNotifications([]);
+      } catch {
+        setExams([]);
+        setNotifications([]);
+      }
+    };
+    void load();
   }, [overrideUser]);
 
   useEffect(() => {
-    const sync = () => {
-      const teacherRoles = getTeacherRoles();
-      const mergedExams = teacherRoles.flatMap((role) =>
-        getJSONForRole<Exam[]>("exams", [], role),
-      );
-      const deduped = new Map<string, Exam>();
-      mergedExams.forEach((exam) => {
-        deduped.set(exam.id, exam);
-      });
-      setExams(Array.from(deduped.values()));
-      const ownNotifications = getJSON<NotificationItem[]>("notifications", []);
-      const teacherNotifications = teacherRoles.flatMap((role) =>
-        getJSONForRole<NotificationItem[]>("notifications", [], role),
-      );
-      const merged = [...ownNotifications, ...teacherNotifications].sort(
-        (left, right) => right.createdAt.localeCompare(left.createdAt),
-      );
-      setNotifications(merged);
+    const sync = async () => {
+      try {
+        const results = await getStudentResults();
+        const mappedExams: Exam[] = results.map((item) => ({
+          id: item.examId,
+          title: item.title,
+          scheduledAt: null,
+          roomCode: "",
+          questions: [],
+          duration: undefined,
+          createdAt: item.submittedAt ?? new Date().toISOString(),
+        }));
+        setExams(mappedExams);
+        setNotifications([]);
+      } catch {
+        setExams([]);
+        setNotifications([]);
+      }
     };
-    sync();
-    const interval = setInterval(sync, 10000);
+    void sync();
+    const interval = setInterval(sync, 15000);
     return () => clearInterval(interval);
   }, []);
 

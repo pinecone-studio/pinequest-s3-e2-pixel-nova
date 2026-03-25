@@ -5,12 +5,11 @@ import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
 import {
   STORAGE_KEYS,
-  getJSON,
   setJSON,
   setSessionUser,
 } from "@/lib/examGuard";
 import type { AuthUser, StudentProfile } from "@/lib/backend-auth";
-import { getAuthUsers } from "@/lib/backend-auth";
+import { getAuthUsers, getStudentProfileForTeacher } from "@/lib/backend-auth";
 import {
   buildSessionUser,
   getStoredSelectedUserId,
@@ -148,13 +147,24 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
       return;
     }
     setProfileLoading(true);
-    const profiles = getJSON<Record<string, StudentProfile>>(
-      "studentProfiles",
-      {},
-    );
-    setStudentProfile((profiles[studentId] as StudentProfile) ?? null);
-    setProfileLoading(false);
-  }, [examStatsState.selectedSubmission?.studentId, role]);
+    let active = true;
+    const loadProfile = async () => {
+      try {
+        const profile = await getStudentProfileForTeacher(studentId);
+        if (!active) return;
+        setStudentProfile(profile);
+      } catch {
+        if (!active) return;
+        setStudentProfile(null);
+      } finally {
+        if (active) setProfileLoading(false);
+      }
+    };
+    void loadProfile();
+    return () => {
+      active = false;
+    };
+  }, [examStatsState.selectedSubmission?.studentId]);
 
   if (!data.currentUser) return null;
 

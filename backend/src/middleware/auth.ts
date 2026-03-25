@@ -14,6 +14,7 @@ const unauthorized = (message: string) => ({
 export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const userId = c.req.header("x-user-id");
   const userRole = c.req.header("x-user-role") as "teacher" | "student" | undefined;
+  const userName = c.req.header("x-user-name") ?? undefined;
 
   if (!userId || !userRole) {
     return c.json(unauthorized("Missing x-user-id or x-user-role header"), 401);
@@ -29,13 +30,20 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       .limit(1);
 
     if (!teacher) {
-      return c.json(unauthorized("Teacher not found"), 401);
+      const now = new Date().toISOString();
+      await db.insert(teachers).values({
+        id: userId,
+        code: userId,
+        fullName: userName ?? userId,
+        createdAt: now,
+        updatedAt: now,
+      });
     }
 
     c.set("user", {
-      id: teacher.id,
+      id: teacher?.id ?? userId,
       role: "teacher",
-      fullName: teacher.fullName,
+      fullName: teacher?.fullName ?? userName ?? userId,
     });
     await next();
     return;
@@ -49,13 +57,22 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
       .limit(1);
 
     if (!student) {
-      return c.json(unauthorized("Student not found"), 401);
+      const now = new Date().toISOString();
+      await db.insert(students).values({
+        id: userId,
+        code: userId,
+        fullName: userName ?? userId,
+        xp: 0,
+        level: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
     }
 
     c.set("user", {
-      id: student.id,
+      id: student?.id ?? userId,
       role: "student",
-      fullName: student.fullName,
+      fullName: student?.fullName ?? userName ?? userId,
     });
     await next();
     return;

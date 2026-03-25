@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  STORAGE_KEYS,
-  User,
-  getSessionUser,
-  getJSON,
-  setJSON,
-} from "@/lib/examGuard";
+import { User, getSessionUser } from "@/lib/examGuard";
 import type { StudentProgress } from "@/lib/examGuard";
 import { normalizeSubmission } from "../analytics";
 import type { Exam, NotificationItem, Submission } from "../types";
+import {
+  fetchTeacherExams,
+  fetchTeacherSubmissions,
+  fetchXpLeaderboard,
+} from "./teacher-api";
 
 export const useTeacherData = (
   overrideUser?: User | null,
@@ -25,15 +24,11 @@ export const useTeacherData = (
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const syncFromStorage = useCallback(() => {
-    setUsers(getJSON<User[]>(STORAGE_KEYS.users, []));
-    setExams(getJSON<Exam[]>("exams", []));
-    setSubmissions(
-      getJSON<unknown[]>("submissions", [])
-        .map((item) => normalizeSubmission(item as Submission))
-        .filter((item): item is Submission => Boolean(item)),
-    );
-    setStudentProgress(getJSON<StudentProgress>("studentProgress", {}));
-    setNotifications(getJSON<NotificationItem[]>("notifications", []));
+    setUsers([]);
+    setExams([]);
+    setSubmissions([]);
+    setStudentProgress({});
+    setNotifications([]);
   }, []);
 
   useEffect(() => {
@@ -53,20 +48,56 @@ export const useTeacherData = (
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    if (!useRemote) {
-      setExams(getJSON<Exam[]>("exams", []));
-      setSubmissions(getJSON<Submission[]>("submissions", []));
-      setNotifications(getJSON<NotificationItem[]>("notifications", []));
-    }
-  }, [overrideUser?.id, useRemote]);
+    if (!useRemote) return;
+    const loadRemote = async () => {
+      try {
+        setLoading(true);
+        const remoteExams = await fetchTeacherExams();
+        setExams(remoteExams);
+        const submissionsByExam = await Promise.all(
+          remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
+        );
+        const allSubmissions = submissionsByExam
+          .flat()
+          .map((item) => normalizeSubmission(item as Submission))
+          .filter((item): item is Submission => Boolean(item));
+        setSubmissions(allSubmissions);
+        const leaderboard = await fetchXpLeaderboard();
+        const progress: StudentProgress = {};
+        const mappedUsers: User[] = leaderboard.map((student) => {
+          progress[student.studentId] = {
+            xp: student.xp,
+            level: student.level,
+            history: [],
+          };
+          return {
+            id: student.studentId,
+            username: student.name,
+            password: "",
+            role: "student",
+            createdAt: new Date().toISOString(),
+          };
+        });
+        setUsers(mappedUsers);
+        setStudentProgress(progress);
+        setNotifications([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void loadRemote();
+  }, [overrideUser, syncFromStorage, useRemote]);
 
   useEffect(() => {
-    if (useRemote) return;
-    const sync = () => {
-      setSubmissions(getJSON<Submission[]>("submissions", []));
-      setNotifications(getJSON<NotificationItem[]>("notifications", []));
-    };
-    const interval = setInterval(sync, 15000);
+    if (!useRemote) return;
+    const interval = setInterval(async () => {
+      const remoteExams = await fetchTeacherExams();
+      setExams(remoteExams);
+      const submissionsByExam = await Promise.all(
+        remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
+      );
+      setSubmissions(submissionsByExam.flat());
+    }, 30000);
     return () => clearInterval(interval);
   }, [useRemote]);
 
@@ -90,13 +121,11 @@ export const useTeacherData = (
 
   const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
-    if (!useRemote) setJSON("exams", next);
-  }, [useRemote]);
+  }, []);
 
   const persistNotifications = useCallback((next: NotificationItem[]) => {
     setNotifications(next);
-    if (!useRemote) setJSON("notifications", next);
-  }, [useRemote]);
+  }, []);
 
   const markNotificationRead = useCallback((index: number) => {
     const next = notifications.map((item, idx) =>
