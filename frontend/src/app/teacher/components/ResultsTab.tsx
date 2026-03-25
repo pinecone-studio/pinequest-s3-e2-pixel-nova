@@ -2,6 +2,7 @@ import ResultsSummaryCard from "./ResultsSummaryCard";
 import ResultsCharts from "./ResultsCharts";
 import ResultsSubmissionsList from "./ResultsSubmissionsList";
 import ResultsDetailPanel from "./ResultsDetailPanel";
+import TeacherCardSkeleton from "./TeacherCardSkeleton";
 import type { Exam, Submission } from "../types";
 import type { StudentProfile } from "@/lib/backend-auth";
 

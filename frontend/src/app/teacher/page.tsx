@@ -390,6 +390,7 @@ export default function TeacherPage() {
                 notifications={data.notifications}
                 onMarkNotificationRead={data.markNotificationRead}
                 cheatStudents={cheatStudents}
+                xpLeaderboard={examStatsState.xpLeaderboard}
               />
             )}
 
