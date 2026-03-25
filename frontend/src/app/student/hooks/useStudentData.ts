@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { User, getSessionUser, getJSON } from "@/lib/examGuard";
 import type { Exam, NotificationItem } from "../types";
 
-export const useStudentData = () => {
+export const useStudentData = (overrideUser?: User | null) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(true);
@@ -10,7 +10,7 @@ export const useStudentData = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
-    const user = getSessionUser();
+    const user = overrideUser ?? getSessionUser();
     setCurrentUser(
       user ?? {
         id: "demo",
@@ -27,7 +27,7 @@ export const useStudentData = () => {
     if (storedTheme) setTheme(storedTheme);
     setExams(getJSON<Exam[]>("exams", []));
     setNotifications(getJSON<NotificationItem[]>("notifications", []));
-  }, []);
+  }, [overrideUser?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

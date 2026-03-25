@@ -1,14 +1,19 @@
 import { cardClass } from "../styles";
 import type { Exam, Submission } from "../types";
+import type { StudentProfile } from "@/lib/backend-auth";
 
 type ResultsDetailPanelProps = {
   selectedSubmission: Submission | null;
   selectedExam: Exam | null;
+  studentProfile: StudentProfile | null;
+  profileLoading: boolean;
 };
 
 export default function ResultsDetailPanel({
   selectedSubmission,
   selectedExam,
+  studentProfile,
+  profileLoading,
 }: ResultsDetailPanelProps) {
   const violationEntries = selectedSubmission?.violations
     ? [
@@ -43,17 +48,51 @@ export default function ResultsDetailPanel({
               {selectedSubmission.totalPoints} оноо
             </div>
           </div>
-          {violationEntries.length > 0 && (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {violationEntries.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-xl border border-border bg-muted px-3 py-2 text-xs"
-                >
-                  <div className="text-muted-foreground">{item.label}</div>
-                  <div className="mt-1 text-base font-semibold">{item.value}</div>
-                </div>
-              ))}
+          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs">
+            <div className="font-semibold text-foreground">Сурагчийн профайл</div>
+            {profileLoading && (
+              <div className="mt-2 text-muted-foreground">Ачаалж байна...</div>
+            )}
+            {!profileLoading && !studentProfile && (
+              <div className="mt-2 text-muted-foreground">
+                Профайл мэдээлэл алга.
+              </div>
+            )}
+            {!profileLoading && studentProfile && (
+              <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
+                <div>Нэр: {studentProfile.fullName}</div>
+                {studentProfile.email && (
+                  <div>Имэйл: {studentProfile.email}</div>
+                )}
+                {studentProfile.phone && (
+                  <div>Утас: {studentProfile.phone}</div>
+                )}
+                {studentProfile.school && (
+                  <div>Сургууль: {studentProfile.school}</div>
+                )}
+                {studentProfile.grade && (
+                  <div>Анги: {studentProfile.grade}</div>
+                )}
+                {studentProfile.bio && (
+                  <div>Танилцуулга: {studentProfile.bio}</div>
+                )}
+                {typeof studentProfile.level === "number" && (
+                  <div>Түвшин: Lv.{studentProfile.level}</div>
+                )}
+                {typeof studentProfile.xp === "number" && (
+                  <div>XP: {studentProfile.xp}</div>
+                )}
+              </div>
+            )}
+          </div>
+          {selectedSubmission.violations && (
+            <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs">
+              Зөрчил: Таб {selectedSubmission.violations.tabSwitch} · Цонх алдалт{" "}
+              {selectedSubmission.violations.windowBlur} · Хуулах{" "}
+              {selectedSubmission.violations.copyAttempt} · Буулгах{" "}
+              {selectedSubmission.violations.pasteAttempt} · Бүтэн дэлгэц{" "}
+              {selectedSubmission.violations.fullscreenExit} · Товч{" "}
+              {selectedSubmission.violations.keyboardShortcut}
             </div>
           )}
           {selectedExam && selectedSubmission.answers && (

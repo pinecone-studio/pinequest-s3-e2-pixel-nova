@@ -1,9 +1,12 @@
 import { cardClass } from "../styles";
 import { formatDate } from "../utils";
-import { mockHistory } from "../constants";
-
 type StudentResultsTabProps = {
-  studentHistory: { examId: string; percentage: number; date: string }[];
+  studentHistory: {
+    examId: string;
+    title: string;
+    percentage: number;
+    date: string;
+  }[];
 };
 
 export default function StudentResultsTab({
@@ -31,31 +34,27 @@ export default function StudentResultsTab({
           Сүүлийн дүн
         </h2>
         <div className="mt-4 space-y-3 text-sm">
-          {studentHistory.length === 0
-            ? mockHistory.map((exam) => (
-                <div
-                  key={exam.title}
-                  className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2"
-                >
-                  <div>
-                    <div className="font-medium">{exam.title}</div>
-                    <div className="text-xs text-muted-foreground">{exam.date}</div>
-                  </div>
-                  <div className="text-xs font-semibold text-foreground">{exam.score}</div>
+          {studentHistory.length === 0 && (
+            <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+              Одоогоор дүнгийн түүх алга.
+            </div>
+          )}
+          {studentHistory.map((exam) => (
+            <div
+              key={`${exam.examId}-${exam.date}`}
+              className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2"
+            >
+              <div>
+                <div className="font-medium">{exam.title}</div>
+                <div className="text-xs text-muted-foreground">
+                  {formatDate(exam.date)}
                 </div>
-              ))
-            : studentHistory.map((exam) => (
-                <div
-                  key={`${exam.examId}-${exam.date}`}
-                  className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2"
-                >
-                  <div>
-                    <div className="font-medium">Шалгалт #{exam.examId.slice(-4)}</div>
-                    <div className="text-xs text-muted-foreground">{formatDate(exam.date)}</div>
-                  </div>
-                  <div className="text-xs font-semibold text-foreground">{exam.percentage}%</div>
-                </div>
-              ))}
+              </div>
+              <div className="text-xs font-semibold text-foreground">
+                {exam.percentage}%
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       <div className={cardClass}>

@@ -35,9 +35,9 @@ export const useStudentExamState = (params: {
   const [view, setView] = useState<"dashboard" | "exam" | "result">(
     "dashboard",
   );
-  const [activeTab, setActiveTab] = useState<"Шалгалт" | "Дүн" | "Тохиргоо">(
-    "Шалгалт",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "Шалгалт" | "Дүн" | "Профайл" | "Тохиргоо" | "Тусламж"
+  >("Шалгалт");
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);

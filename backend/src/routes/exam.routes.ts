@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
-import { getDb, exams, questions, options } from "../db";
+import { getDb, exams, questions, options, subjects } from "../db";
 import type { AppEnv } from "../types";
 import { success, error, notFound } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
@@ -23,7 +23,7 @@ examRoutes.post(
   zValidator(
     "json",
     z.object({
-      subjectId: z.string(),
+      subjectId: z.string().optional(),
       title: z.string(),
       description: z.string().optional(),
       durationMin: z.number().int().positive().optional(),
@@ -37,13 +37,34 @@ examRoutes.post(
       const teacherId = c.get("user").id;
       const db = getDb(c.env.educore);
 
+      const ensureDefaultSubject = async () => {
+        const [existing] = await db
+          .select()
+          .from(subjects)
+          .where(eq(subjects.code, "GENERAL"))
+          .limit(1);
+        if (existing) return existing.id;
+        const id = newId();
+        await db.insert(subjects).values({
+          id,
+          name: "Ерөнхий",
+          code: "GENERAL",
+          description: "Анхдагч ерөнхий хичээл",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        return id;
+      };
+
+      const subjectId = body.subjectId ?? (await ensureDefaultSubject());
+
       const id = newId();
       const now = new Date().toISOString();
 
       await db.insert(exams).values({
         id,
         teacherId,
-        subjectId: body.subjectId,
+        subjectId,
         title: body.title,
         description: body.description,
         durationMin: body.durationMin ?? 60,

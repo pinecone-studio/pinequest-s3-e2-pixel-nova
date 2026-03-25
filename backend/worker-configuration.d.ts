@@ -8,6 +8,7 @@ declare namespace Cloudflare {
 	interface Env {
 		educore: D1Database;
 		ASSETS: Fetcher;
+		CLERK_SECRET_KEY: string;
 	}
 }
 interface CloudflareBindings extends Cloudflare.Env {}

@@ -82,24 +82,10 @@ export type NotificationItem = {
 };
 
 export type CheatStudent = {
-  studentId: string;
+  id?: string;
   name: string;
   score: number;
   cheat: "Бага" | "Дунд" | "Өндөр";
-  examTitle: string;
-  events: number;
-  reason: string;
-};
-
-export type XpLeaderboardEntry = {
-  studentId: string;
-  name: string;
-  xp: number;
-  level: number;
-  levelName: string;
-  icon: string;
-  examsTaken: number;
-  progressPercent: number;
-  nextLevelXp: number;
-  lastActivity: string | null;
+  events?: number;
+  flagCount?: number;
 };

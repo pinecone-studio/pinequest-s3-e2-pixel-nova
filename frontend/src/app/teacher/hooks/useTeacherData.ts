@@ -10,7 +10,10 @@ import type { StudentProgress } from "@/lib/examGuard";
 import { normalizeSubmission } from "../analytics";
 import type { Exam, NotificationItem, Submission } from "../types";
 
-export const useTeacherData = () => {
+export const useTeacherData = (
+  overrideUser?: User | null,
+  useRemote: boolean = false,
+) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -34,7 +37,7 @@ export const useTeacherData = () => {
   }, []);
 
   useEffect(() => {
-    const user = getSessionUser();
+    const user = overrideUser ?? getSessionUser();
     setCurrentUser(
       user ?? {
         id: "demo",
@@ -50,17 +53,22 @@ export const useTeacherData = () => {
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-  }, [syncFromStorage]);
+    if (!useRemote) {
+      setExams(getJSON<Exam[]>("exams", []));
+      setSubmissions(getJSON<Submission[]>("submissions", []));
+      setNotifications(getJSON<NotificationItem[]>("notifications", []));
+    }
+  }, [overrideUser?.id, useRemote]);
 
   useEffect(() => {
-    const interval = setInterval(syncFromStorage, 15000);
-    const onStorage = () => syncFromStorage();
-    window.addEventListener("storage", onStorage);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("storage", onStorage);
+    if (useRemote) return;
+    const sync = () => {
+      setSubmissions(getJSON<Submission[]>("submissions", []));
+      setNotifications(getJSON<NotificationItem[]>("notifications", []));
     };
-  }, [syncFromStorage]);
+    const interval = setInterval(sync, 15000);
+    return () => clearInterval(interval);
+  }, [useRemote]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 700);
@@ -82,13 +90,13 @@ export const useTeacherData = () => {
 
   const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
-    setJSON("exams", next);
-  }, []);
+    if (!useRemote) setJSON("exams", next);
+  };
 
   const persistNotifications = useCallback((next: NotificationItem[]) => {
     setNotifications(next);
-    setJSON("notifications", next);
-  }, []);
+    if (!useRemote) setJSON("notifications", next);
+  };
 
   const markNotificationRead = useCallback((index: number) => {
     const next = notifications.map((item, idx) =>

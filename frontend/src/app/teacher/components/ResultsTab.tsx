@@ -2,8 +2,8 @@ import ResultsSummaryCard from "./ResultsSummaryCard";
 import ResultsCharts from "./ResultsCharts";
 import ResultsSubmissionsList from "./ResultsSubmissionsList";
 import ResultsDetailPanel from "./ResultsDetailPanel";
-import TeacherCardSkeleton from "./TeacherCardSkeleton";
-import type { Exam, ExamStatsSummary, Submission } from "../types";
+import type { Exam, Submission } from "../types";
+import type { StudentProfile } from "@/lib/backend-auth";
 
 type ResultsTabProps = {
   loading: boolean;
@@ -16,6 +16,8 @@ type ResultsTabProps = {
   selectedSubmissionId: string | null;
   selectedSubmission: Submission | null;
   selectedExam: Exam | null;
+  studentProfile: StudentProfile | null;
+  profileLoading: boolean;
 };
 
 export default function ResultsTab({
@@ -29,6 +31,8 @@ export default function ResultsTab({
   selectedSubmissionId,
   selectedSubmission,
   selectedExam,
+  studentProfile,
+  profileLoading,
 }: ResultsTabProps) {
   if (loading) {
     return (
@@ -64,6 +68,8 @@ export default function ResultsTab({
         <ResultsDetailPanel
           selectedSubmission={selectedSubmission}
           selectedExam={selectedExam}
+          studentProfile={studentProfile}
+          profileLoading={profileLoading}
         />
       </section>
     </section>

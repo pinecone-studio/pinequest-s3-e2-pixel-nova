@@ -27,7 +27,7 @@ export const useExamCheatDetection = ({
       if (!document.hidden) return;
       const nextCount = violations.tabSwitch + 1;
       logViolation("TAB_SWITCH");
-      showWarning(`⚠️ Tab солисон илэрлээ! ${3 - nextCount} оролдлого үлдлээ`);
+      showWarning(`⚠️ Таб солисон илэрлээ! ${3 - nextCount} оролдлого үлдлээ`);
       if (nextCount >= 3) terminateExam("TAB_SWITCH_LIMIT");
     };
 
@@ -35,7 +35,7 @@ export const useExamCheatDetection = ({
       const nextCount = violations.windowBlur + 1;
       logViolation("WINDOW_BLUR");
       showWarning(
-        `⚠️ Window focus алдагдлаа! ${3 - nextCount} оролдлого үлдлээ`,
+        `⚠️ Цонхны фокус алдагдлаа! ${3 - nextCount} оролдлого үлдлээ`,
       );
       if (nextCount >= 3) terminateExam("WINDOW_BLUR_LIMIT");
     };
@@ -84,7 +84,9 @@ export const useExamCheatDetection = ({
       if (document.fullscreenElement) return;
       const nextCount = violations.fullscreenExit + 1;
       logViolation("FULLSCREEN_EXIT");
-      showWarning(`⚠️ Fullscreen‑с гарлаа! ${3 - nextCount} оролдлого үлдлээ`);
+      showWarning(
+        `⚠️ Бүтэн дэлгэцээс гарлаа! ${3 - nextCount} оролдлого үлдлээ`,
+      );
       if (nextCount >= 3) terminateExam("FULLSCREEN_EXIT_LIMIT");
     };
 

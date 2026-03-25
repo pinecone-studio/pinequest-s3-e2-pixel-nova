@@ -33,6 +33,12 @@ export default function StudentExamView({
   onExit,
 }: StudentExamViewProps) {
   const currentQuestion = activeExam?.questions[currentQuestionIndex];
+  const totalQuestions = activeExam?.questions.length || 0;
+  const answeredCount = Object.values(answers).filter((value) =>
+    value && value.trim().length > 0,
+  ).length;
+  const progressPercent =
+    totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   return (
     <div className="min-h-screen bg-background px-6 py-8 text-foreground">
       {warning && (
@@ -59,6 +65,20 @@ export default function StudentExamView({
           </span>
         </div>
       </header>
+      <div className="mx-auto mt-3 w-full max-w-5xl rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Явц</span>
+          <span>
+            {answeredCount}/{totalQuestions} · {progressPercent}%
+          </span>
+        </div>
+        <div className="mt-2 h-2 w-full rounded-full bg-muted">
+          <div
+            className="h-2 rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
 
       <div className="mx-auto mt-6 grid w-full max-w-5xl gap-4 lg:grid-cols-[1fr_140px]">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
