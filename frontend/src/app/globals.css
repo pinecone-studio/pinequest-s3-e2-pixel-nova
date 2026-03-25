@@ -81,6 +81,7 @@
   --sidebar-border: #e6e9f2;
   --sidebar-ring: #cfd7ff;
   --font-sans: "Inter", "SF Pro Display", system-ui, sans-serif;
+  --font-geist-mono: "SFMono-Regular", "JetBrains Mono", "Menlo", monospace;
 }
 
 .dark {
