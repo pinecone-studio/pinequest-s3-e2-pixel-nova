@@ -4,6 +4,7 @@ export type Question = {
   type: "text" | "open" | "mcq";
   options?: string[];
   correctAnswer: string;
+  points: number;
   imageUrl?: string;
 };
 
@@ -11,6 +12,7 @@ export type Exam = {
   id: string;
   title: string;
   scheduledAt: string | null;
+  examStartedAt?: string | null;
   roomCode: string;
   questions: Question[];
   duration?: number;

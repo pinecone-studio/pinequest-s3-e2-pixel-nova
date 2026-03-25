@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import {
   cardClass,
   mutedCardClass,
@@ -5,7 +6,7 @@ import {
   buttonPrimary,
   buttonGhost,
 } from "../styles";
-import { formatDate } from "../utils";
+import { formatDate, gradeFromPercentage } from "../utils";
 import type { Exam, NotificationItem } from "../types";
 import { HistoryIcon, LockIcon, Star } from "lucide-react";
 
@@ -26,6 +27,9 @@ type StudentDashboardTabProps = {
     examId: string;
     title: string;
     percentage: number;
+    score?: number;
+    totalPoints?: number;
+    grade?: "A" | "B" | "C" | "D" | "F";
     date: string;
   }[];
 };
@@ -45,6 +49,36 @@ export default function StudentDashboardTab({
   notifications,
   studentHistory,
 }: StudentDashboardTabProps) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const examStatus = useMemo(() => {
+    if (!selectedExam) return { canStart: false, message: "" };
+    const scheduledAt = selectedExam.scheduledAt
+      ? new Date(selectedExam.scheduledAt).getTime()
+      : null;
+    if (selectedExam.examStartedAt) {
+      return { canStart: false, message: "Шалгалт аль хэдийн эхэлсэн байна." };
+    }
+    if (scheduledAt && now < scheduledAt) {
+      const diff = scheduledAt - now;
+      const mins = Math.floor(diff / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      return {
+        canStart: false,
+        message: `Шалгалт эхлэх хүртэл: ${mins}:${secs
+          .toString()
+          .padStart(2, "0")}`,
+      };
+    }
+    if (joinError) return { canStart: false, message: joinError };
+    return { canStart: true, message: "" };
+  }, [selectedExam, joinError, now]);
+
   return (
     <>
       <section className="grid gap-4 md:grid-cols-3">
@@ -85,9 +119,15 @@ export default function StudentDashboardTab({
                     {selectedExam.questions.length} асуулт ·{" "}
                     {selectedExam.duration ?? 45} мин
                   </div>
+                  {examStatus.message && (
+                    <div className="mt-2 rounded-lg border border-amber-300/50 bg-amber-200/20 px-2 py-1 text-[11px] text-amber-700">
+                      {examStatus.message}
+                    </div>
+                  )}
                   <button
                     className={`mt-3 w-full ${buttonGhost}`}
                     onClick={onStartExam}
+                    disabled={!examStatus.canStart}
                   >
                     Шалгалт эхлэх
                   </button>
@@ -103,6 +143,9 @@ export default function StudentDashboardTab({
               </div>
               <div className="mt-2 text-xl font-semibold">
                 Түвшин {levelInfo.level} · {studentProgress.xp} XP
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Одоогийн XP: {studentProgress.xp} · Дараагийн түвшин: {nextLevel.minXP}
               </div>
               <div className="mt-3 grid grid-cols-10 gap-1">
                 {Array.from({ length: 10 }).map((_, idx) => (
@@ -143,9 +186,9 @@ export default function StudentDashboardTab({
                     Одоогоор мэдэгдэл алга.
                   </div>
                 )}
-                {notifications.slice(0, 3).map((item) => (
+                {notifications.slice(0, 3).map((item, idx) => (
                   <div
-                    key={`${item.examId}-${item.createdAt}`}
+                    key={`${item.examId ?? "msg"}-${item.createdAt}-${idx}`}
                     className="rounded-lg border border-border bg-muted px-2 py-1"
                   >
                     {item.message}
@@ -168,7 +211,9 @@ export default function StudentDashboardTab({
               Одоогоор шалгалтын түүх алга.
             </div>
           )}
-          {studentHistory.map((exam) => (
+          {studentHistory.map((exam) => {
+            const grade = exam.grade ?? gradeFromPercentage(exam.percentage);
+            return (
             <div
               key={`${exam.examId}-${exam.date}`}
               className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2"
@@ -178,12 +223,17 @@ export default function StudentDashboardTab({
                 <div className="text-xs text-muted-foreground">
                   {formatDate(exam.date)}
                 </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Оноо: {exam.score ?? "—"}/{exam.totalPoints ?? "—"} · {exam.percentage}%
+                </div>
               </div>
               <div className="text-xs font-semibold text-foreground">
-                {exam.percentage}%
+                <span className="rounded-full border border-border bg-card px-2 py-1">
+                  {grade}
+                </span>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </section>
     </>

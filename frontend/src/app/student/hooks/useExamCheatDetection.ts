@@ -21,7 +21,13 @@ export const useExamCheatDetection = ({
   terminateExam,
 }: Params) => {
   useEffect(() => {
-    if (view !== "exam") return;
+    if (view !== "exam") {
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => null);
+      }
+      document.body.style.filter = "none";
+      return;
+    }
 
     const handleVisibility = () => {
       if (!document.hidden) return;

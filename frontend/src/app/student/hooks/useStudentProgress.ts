@@ -1,13 +1,38 @@
 import { useMemo } from "react";
-import { getJSON, getLevel, LEVELS } from "@/lib/examGuard";
-import type { StudentProgress } from "../types";
+import { calculateXP, getJSON, getLevel, LEVELS } from "@/lib/examGuard";
+import type { StudentProgress, Submission } from "../types";
 import type { User } from "@/lib/examGuard";
+import { gradeFromPercentage } from "../utils";
 
 export const useStudentProgress = (currentUser: User | null) => {
   const studentHistory = useMemo(() => {
     if (!currentUser) return [] as StudentProgress[string]["history"];
     const progress = getJSON<StudentProgress>("studentProgress", {});
-    return progress[currentUser.id]?.history ?? [];
+    const storedHistory = progress[currentUser.id]?.history ?? [];
+    const submissions = getJSON<Submission[]>("submissions", []).filter(
+      (item) => item.studentId === currentUser.id,
+    );
+    const submissionHistory = submissions.map((item) => {
+      const percentage = item.percentage ?? 0;
+      return {
+        examId: item.examId,
+        percentage,
+        xp: calculateXP(percentage),
+        date: item.submittedAt,
+        score: item.score,
+        totalPoints: item.totalPoints,
+        grade: gradeFromPercentage(percentage),
+      };
+    });
+    const merged = [...submissionHistory, ...storedHistory];
+    const unique = new Map<string, StudentProgress[string]["history"][number]>();
+    merged.forEach((entry) => {
+      const key = `${entry.examId}-${entry.date}`;
+      if (!unique.has(key)) unique.set(key, entry);
+    });
+    return Array.from(unique.values()).sort((a, b) =>
+      b.date.localeCompare(a.date),
+    );
   }, [currentUser]);
 
   const studentProgress = useMemo(() => {

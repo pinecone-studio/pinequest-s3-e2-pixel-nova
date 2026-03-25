@@ -4,12 +4,16 @@ export type Question = {
   type: "text" | "open" | "mcq";
   options?: string[];
   correctAnswer: string;
+  points: number;
 };
+
+export type Grade = "A" | "B" | "C" | "D" | "F";
 
 export type Exam = {
   id: string;
   title: string;
   scheduledAt: string | null;
+  examStartedAt?: string | null;
   roomCode: string;
   questions: Question[];
   duration?: number;
@@ -51,7 +55,15 @@ export type StudentProgress = {
   [studentId: string]: {
     xp: number;
     level: number;
-    history: { examId: string; percentage: number; xp: number; date: string }[];
+    history: {
+      examId: string;
+      percentage: number;
+      xp: number;
+      date: string;
+      score?: number;
+      totalPoints?: number;
+      grade?: Grade;
+    }[];
   };
 };
 

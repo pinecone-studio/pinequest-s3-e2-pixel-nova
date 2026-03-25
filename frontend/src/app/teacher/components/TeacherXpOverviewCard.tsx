@@ -1,3 +1,12 @@
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { cardClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { XpLeaderboardEntry } from "../types";
@@ -15,6 +24,11 @@ export default function TeacherXpOverviewCard({
     students.length > 0
       ? (students.reduce((sum, student) => sum + student.level, 0) / students.length).toFixed(1)
       : "0.0";
+  const chartData = students.slice(0, 8).map((student) => ({
+    name: student.name.length > 8 ? `${student.name.slice(0, 8)}…` : student.name,
+    xp: student.xp,
+    level: student.level,
+  }));
 
   return (
     <div className={`${cardClass} overflow-hidden`}>
@@ -108,6 +122,65 @@ export default function TeacherXpOverviewCard({
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-border bg-muted/50 px-4 py-3">
+        <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          XP график (Top 5)
+        </div>
+        <div className="mt-3 space-y-2">
+          {topStudents.map((student) => (
+            <div key={`xp-${student.studentId}`} className="grid gap-1">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>{student.name}</span>
+                <span>{student.xp} XP</span>
+              </div>
+              <div className="h-2 rounded-full bg-background">
+                <div
+                  className="h-2 rounded-full bg-linear-to-r from-primary via-sky-500 to-emerald-400"
+                  style={{
+                    width: `${Math.max(
+                      6,
+                      Math.round(
+                        (student.xp /
+                          Math.max(topStudents[0]?.xp ?? 1, 1)) *
+                          100,
+                      ),
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+          {topStudents.length === 0 && (
+            <div className="text-xs text-muted-foreground">
+              XP мэдээлэл хараахан алга.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-border bg-card px-4 py-3">
+        <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          XP Distribution (Top 8)
+        </div>
+        <div className="mt-3 h-48">
+          {chartData.length === 0 ? (
+            <div className="grid h-full place-items-center text-xs text-muted-foreground">
+              XP дата алга.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={10} />
+                <YAxis tickLine={false} axisLine={false} fontSize={10} />
+                <Tooltip />
+                <Bar dataKey="xp" radius={[10, 10, 0, 0]} fill="hsl(var(--primary))" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
       </div>
     </div>
   );

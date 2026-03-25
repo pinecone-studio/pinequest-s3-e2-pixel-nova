@@ -4,7 +4,7 @@ import { useState } from "react";
 type StudentHeaderProps = {
   theme: "light" | "dark";
   onToggleTheme: () => void;
-  notifications: { message: string; createdAt: string }[];
+  notifications: { message: string; createdAt: string; examId?: string }[];
   roleControl?: React.ReactNode;
 };
 
@@ -65,9 +65,9 @@ export default function StudentHeader({
                 Одоогоор мэдэгдэл алга.
               </div>
             )}
-            {notifications.slice(0, 6).map((item) => (
+            {notifications.slice(0, 6).map((item, idx) => (
               <div
-                key={item.createdAt}
+                key={`${item.createdAt}-${item.examId ?? "msg"}-${idx}`}
                 className="mt-2 rounded-xl border border-border bg-muted px-3 py-2 text-xs text-foreground"
               >
                 {item.message}

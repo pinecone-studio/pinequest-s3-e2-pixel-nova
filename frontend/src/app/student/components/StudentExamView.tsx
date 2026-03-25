@@ -42,9 +42,18 @@ export default function StudentExamView({
   return (
     <div className="min-h-screen bg-background px-6 py-8 text-foreground">
       {warning && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-red-900/40 backdrop-blur-sm">
-          <div className="rounded-2xl border border-red-400/40 bg-red-500/20 px-6 py-4 text-center text-sm font-semibold">
-            {warning}
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm">
+          <div className="relative w-[min(92vw,460px)] overflow-hidden rounded-3xl border border-red-400/40 bg-card/90 px-6 py-5 text-center shadow-[0_20px_60px_rgba(239,68,68,0.25)]">
+            <div className="absolute inset-0 bg-linear-to-br from-red-500/15 via-transparent to-transparent" />
+            <div className="relative flex items-center justify-center gap-2 text-sm font-semibold text-foreground">
+              <span className="grid h-8 w-8 place-items-center rounded-2xl bg-red-500/15 text-red-500">
+                ⚠️
+              </span>
+              <span>{warning}</span>
+            </div>
+            <div className="relative mt-2 text-xs text-muted-foreground">
+              Энэ үйлдэл дахин давтагдвал шалгалт автоматаар дуусна.
+            </div>
           </div>
         </div>
       )}

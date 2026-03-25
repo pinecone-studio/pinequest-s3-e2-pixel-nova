@@ -95,6 +95,24 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
     }
   }, [router, forcedRole, pathname]);
 
+  useEffect(() => {
+    if (exam.view === "exam") return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => null);
+    }
+    document.body.style.filter = "none";
+    document.body.style.background = "";
+  }, [exam.view]);
+
+  useEffect(() => {
+    if (exam.view !== "result") return;
+    const timer = setTimeout(() => {
+      exam.setView("dashboard");
+      router.push(`/${role}`);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [exam.view, exam, router, role]);
+
   const handleRoleChange = (next: RoleKey) => {
     setRole(next);
     setStoredRole(next);
@@ -153,6 +171,9 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
                       data.exams.find((examItem) => examItem.id === item.examId)
                         ?.title ?? `Шалгалт #${item.examId.slice(-4)}`,
                     percentage: item.percentage,
+                    score: item.score,
+                    totalPoints: item.totalPoints,
+                    grade: item.grade,
                     date: item.date,
                   }))}
                 />
@@ -166,6 +187,9 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
                       data.exams.find((examItem) => examItem.id === item.examId)
                         ?.title ?? `Шалгалт #${item.examId.slice(-4)}`,
                     percentage: item.percentage,
+                    score: item.score,
+                    totalPoints: item.totalPoints,
+                    grade: item.grade,
                     date: item.date,
                   }))}
                 />
@@ -208,7 +232,10 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
         <StudentResultView
           lastSubmission={exam.lastSubmission}
           answerReport={exam.answerReport}
-          onBack={() => exam.setView("dashboard")}
+          onBack={() => {
+            exam.setView("dashboard");
+            router.push(`/${role}`);
+          }}
         />
       )}
     </div>

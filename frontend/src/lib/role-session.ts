@@ -32,6 +32,8 @@ export const getRoleLabel = (role: RoleKey) => {
   }
 };
 
+export const getTeacherRoles = (): RoleKey[] => ["teacher-1", "teacher-2"];
+
 export const getLinkedTeacherRole = (role: RoleKey): RoleKey => {
   if (role === "student-1") return "teacher-1";
   if (role === "student-2") return "teacher-2";

@@ -1,24 +1,19 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  calculateXP,
-  generateId,
-  getJSON,
-  getJSONForRole,
-  getLevel,
-  setJSON,
-  setJSONForRole,
-} from "@/lib/examGuard";
-import { getLinkedTeacherRole, getStoredRole } from "@/lib/role-session";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getJSON, setJSON } from "@/lib/examGuard";
 import type {
   Exam,
   ExamSession,
   NotificationItem,
   Question,
-  StudentProgress,
   Submission,
   Violations,
 } from "../types";
 import type { User } from "@/lib/examGuard";
+import {
+  buildAnswerReport,
+  markExamStartedForRoles,
+  persistSubmissionData,
+} from "./student-exam-helpers";
 
 const emptyViolations: Violations = {
   tabSwitch: 0,
@@ -54,6 +49,14 @@ export const useStudentExamState = (params: {
   const [violations, setViolations] = useState<Violations>({ ...emptyViolations });
   const [warning, setWarning] = useState<string | null>(null);
   const sidebarTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (view === "exam") return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => null);
+    }
+    document.body.style.filter = "none";
+  }, [view]);
   const activeExam = useMemo(() => {
     return selectedExam ?? exams[0] ?? null;
   }, [selectedExam, exams]);
@@ -70,6 +73,29 @@ export const useStudentExamState = (params: {
     const found = exams.find((exam) => exam.roomCode === code) || null;
     if (!found) {
       setJoinError("Өрөөний код олдсонгүй.");
+      setSelectedExam(null);
+      return;
+    }
+    if (found.scheduledAt) {
+      const now = Date.now();
+      const scheduledAt = new Date(found.scheduledAt).getTime();
+      if (Number.isFinite(scheduledAt) && now < scheduledAt) {
+        setJoinError("Шалгалт хараахан эхлээгүй байна. Товлосон үед хүлээнэ үү.");
+        setSelectedExam(found);
+        return;
+      }
+      if (
+        Number.isFinite(scheduledAt) &&
+        now > scheduledAt + 5 * 60 * 1000 &&
+        !found.examStartedAt
+      ) {
+        setJoinError("Шалгалтын эхлэлээс 5 минут өнгөрсөн тул орох боломжгүй.");
+        setSelectedExam(null);
+        return;
+      }
+    }
+    if (found.examStartedAt) {
+      setJoinError("Шалгалт аль хэдийн эхэлсэн байна.");
       setSelectedExam(null);
       return;
     }
@@ -106,6 +132,25 @@ export const useStudentExamState = (params: {
   };
   const startExam = () => {
     if (!activeExam || !currentUser) return;
+    if (activeExam.scheduledAt) {
+      const scheduledAt = new Date(activeExam.scheduledAt).getTime();
+      if (Number.isFinite(scheduledAt) && Date.now() < scheduledAt) {
+        setJoinError("Шалгалт хараахан эхлээгүй байна. Түр хүлээнэ үү.");
+        return;
+      }
+      if (
+        Number.isFinite(scheduledAt) &&
+        Date.now() > scheduledAt + 5 * 60 * 1000 &&
+        !activeExam.examStartedAt
+      ) {
+        setJoinError("Шалгалтын эхлэлээс 5 минут өнгөрсөн тул орох боломжгүй.");
+        return;
+      }
+    }
+    const startedAt = new Date().toISOString();
+    if (!activeExam.examStartedAt) {
+      markExamStartedForRoles(activeExam, startedAt);
+    }
     const totalSeconds = (activeExam.duration ?? 45) * 60;
     setTimeLeft(totalSeconds);
     setCurrentQuestionIndex(0);
@@ -134,127 +179,16 @@ export const useStudentExamState = (params: {
         const ok = window.confirm("Та шалгалтаа илгээхдээ итгэлтэй байна уу?");
         if (!ok) return;
       }
-      const report = activeExam.questions.map((question) => {
-        const studentAnswer = (answers[question.id] || "").trim();
-        const correctAnswer = question.correctAnswer.trim();
-        const correct =
-          studentAnswer.toLowerCase() === correctAnswer.toLowerCase() ||
-          (question.type === "mcq" &&
-            !!question.options?.some(
-              (opt) =>
-                opt.toLowerCase() === correctAnswer.toLowerCase() &&
-                studentAnswer.toLowerCase() === opt.toLowerCase(),
-            ));
-        return { question, answer: studentAnswer, correct: !!correct };
-      });
-      const score = terminated
-        ? 0
-        : report.filter((item) => item.correct).length;
-      const totalPoints = activeExam.questions.length || 1;
-      const percentage = terminated
-        ? 0
-        : Math.round((score / totalPoints) * 100);
-      const submission: Submission = {
-        id: generateId(),
-        examId: activeExam.id,
-        studentId: currentUser.id,
-        studentНэр: currentUser.username,
-        answers: report.map((item) => ({
-          questionId: item.question.id,
-          selectedAnswer: item.answer,
-          correct: item.correct,
-        })),
-        score,
-        totalPoints,
-        percentage,
-        terminated,
-        terminationReason: reason,
+      const report = buildAnswerReport(activeExam, answers);
+      const { submission } = persistSubmissionData({
+        exam: activeExam,
+        currentUser,
+        report,
         violations,
-        submittedAt: new Date().toISOString(),
-      };
-      const stored = getJSON<Submission[]>("submissions", []);
-      setJSON("submissions", [submission, ...stored]);
-      const linkedTeacherRole = getLinkedTeacherRole(getStoredRole());
-      const teacherSubs = getJSONForRole<Submission[]>(
-        "submissions",
-        [],
-        linkedTeacherRole,
-      );
-      setJSONForRole(
-        "submissions",
-        [submission, ...teacherSubs],
-        linkedTeacherRole,
-      );
-
-      const progress = getJSON<StudentProgress>("studentProgress", {});
-      const existing = progress[currentUser.id] ?? {
-        xp: 0,
-        level: 1,
-        history: [],
-      };
-      const xpEarned = terminated ? 0 : calculateXP(percentage);
-      const nextXp = existing.xp + xpEarned;
-      const level = getLevel(nextXp);
-      progress[currentUser.id] = {
-        xp: nextXp,
-        level: level.level,
-        history: [
-          {
-            examId: activeExam.id,
-            percentage,
-            xp: xpEarned,
-            date: new Date().toISOString(),
-          },
-          ...existing.history,
-        ],
-      };
-      setJSON("studentProgress", progress);
-      const teacherProgress = getJSONForRole<StudentProgress>(
-        "studentProgress",
-        {},
-        linkedTeacherRole,
-      );
-      const teacherExisting = teacherProgress[currentUser.id] ?? {
-        xp: 0,
-        level: 1,
-        history: [],
-      };
-      const teacherNextXp = teacherExisting.xp + xpEarned;
-      const teacherLevel = getLevel(teacherNextXp);
-      teacherProgress[currentUser.id] = {
-        xp: teacherNextXp,
-        level: teacherLevel.level,
-        history: [
-          {
-            examId: activeExam.id,
-            percentage,
-            xp: xpEarned,
-            date: new Date().toISOString(),
-          },
-          ...teacherExisting.history,
-        ],
-      };
-      setJSONForRole("studentProgress", teacherProgress, linkedTeacherRole);
-
-      const notification: NotificationItem = {
-        examId: activeExam.id,
-        message: `📥 ${currentUser.username} ${activeExam.title} шалгалтыг өглөө (${percentage}%).`,
-        read: false,
-        createdAt: new Date().toISOString(),
-      };
-      const notifStore = getJSON<NotificationItem[]>("notifications", []);
-      setJSON("notifications", [notification, ...notifStore]);
-      setNotifications([notification, ...notifStore]);
-      const teacherNotifications = getJSONForRole<NotificationItem[]>(
-        "notifications",
-        [],
-        linkedTeacherRole,
-      );
-      setJSONForRole(
-        "notifications",
-        [notification, ...teacherNotifications],
-        linkedTeacherRole,
-      );
+        terminated,
+        reason,
+        setNotifications,
+      });
 
       if (sessionKey) localStorage.removeItem(sessionKey);
       if (document.fullscreenElement) {
@@ -263,6 +197,7 @@ export const useStudentExamState = (params: {
       document.body.style.filter = "none";
       setLastSubmission(submission);
       setAnswerReport(report);
+      setActiveTab("Дүн");
       setView("result");
     },
     [activeExam, answers, currentUser, sessionKey, violations, setNotifications],

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { User, getSessionUser, getJSON, getJSONForRole } from "@/lib/examGuard";
-import { getLinkedTeacherRole, getStoredRole } from "@/lib/role-session";
+import { getTeacherRoles, getStoredRole } from "@/lib/role-session";
 import type { Exam, NotificationItem } from "../types";
 
 export const useStudentData = (overrideUser?: User | null) => {
@@ -12,8 +12,7 @@ export const useStudentData = (overrideUser?: User | null) => {
 
   useEffect(() => {
     const user = overrideUser ?? getSessionUser();
-    const currentRole = getStoredRole();
-    const teacherRole = getLinkedTeacherRole(currentRole);
+    const teacherRoles = getTeacherRoles();
     setCurrentUser(
       user ?? {
         id: "demo",
@@ -28,12 +27,17 @@ export const useStudentData = (overrideUser?: User | null) => {
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    setExams(getJSONForRole<Exam[]>("exams", [], teacherRole));
+    const mergedExams = teacherRoles.flatMap((role) =>
+      getJSONForRole<Exam[]>("exams", [], role),
+    );
+    const deduped = new Map<string, Exam>();
+    mergedExams.forEach((exam) => {
+      deduped.set(exam.id, exam);
+    });
+    setExams(Array.from(deduped.values()));
     const ownNotifications = getJSON<NotificationItem[]>("notifications", []);
-    const teacherNotifications = getJSONForRole<NotificationItem[]>(
-      "notifications",
-      [],
-      teacherRole,
+    const teacherNotifications = teacherRoles.flatMap((role) =>
+      getJSONForRole<NotificationItem[]>("notifications", [], role),
     );
     const merged = [...ownNotifications, ...teacherNotifications].sort(
       (left, right) => right.createdAt.localeCompare(left.createdAt),
@@ -43,14 +47,18 @@ export const useStudentData = (overrideUser?: User | null) => {
 
   useEffect(() => {
     const sync = () => {
-      const currentRole = getStoredRole();
-      const teacherRole = getLinkedTeacherRole(currentRole);
-      setExams(getJSONForRole<Exam[]>("exams", [], teacherRole));
+      const teacherRoles = getTeacherRoles();
+      const mergedExams = teacherRoles.flatMap((role) =>
+        getJSONForRole<Exam[]>("exams", [], role),
+      );
+      const deduped = new Map<string, Exam>();
+      mergedExams.forEach((exam) => {
+        deduped.set(exam.id, exam);
+      });
+      setExams(Array.from(deduped.values()));
       const ownNotifications = getJSON<NotificationItem[]>("notifications", []);
-      const teacherNotifications = getJSONForRole<NotificationItem[]>(
-        "notifications",
-        [],
-        teacherRole,
+      const teacherNotifications = teacherRoles.flatMap((role) =>
+        getJSONForRole<NotificationItem[]>("notifications", [], role),
       );
       const merged = [...ownNotifications, ...teacherNotifications].sort(
         (left, right) => right.createdAt.localeCompare(left.createdAt),
