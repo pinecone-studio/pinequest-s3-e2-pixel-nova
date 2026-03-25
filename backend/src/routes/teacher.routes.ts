@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
 import { getDb, students, exams, examSessions, questions, studentAnswers, options } from "../db";
 import { and, eq, sql } from "drizzle-orm";
 import type { AppEnv } from "../types";
