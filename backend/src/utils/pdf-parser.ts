@@ -1,5 +1,3 @@
-import { PDFParse } from "pdf-parse";
-
 export interface ParsedPdf {
   text: string;
   pageCount: number;
@@ -7,6 +5,12 @@ export interface ParsedPdf {
 }
 
 const MAX_PAGES = 20;
+let pdfParseModulePromise: Promise<typeof import("pdf-parse")> | null = null;
+
+async function loadPdfParse() {
+  pdfParseModulePromise ??= import("pdf-parse");
+  return pdfParseModulePromise;
+}
 
 /**
  * Extract text from a typed PDF buffer.
@@ -14,6 +18,7 @@ const MAX_PAGES = 20;
  */
 export async function parsePdf(data: Uint8Array | ArrayBuffer): Promise<ParsedPdf> {
   const input = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
+  const { PDFParse } = await loadPdfParse();
   const parser = new PDFParse({ data: input });
 
   try {
