@@ -1,7 +1,19 @@
 import { getSessionUser, type User } from "@/lib/examGuard";
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8787";
+const getApiBaseUrl = () => {
+  // Build-time env var takes priority
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  // Runtime: if running in browser on a deployed domain, use the backend URL
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+    return "https://backend.zbymba4.workers.dev";
+  }
+  // Local dev fallback
+  return "http://localhost:8787";
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 type ApiEnvelope<T> = {
   data?: T;

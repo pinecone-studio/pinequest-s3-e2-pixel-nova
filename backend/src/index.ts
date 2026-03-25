@@ -22,7 +22,13 @@ const app = new Hono<AppEnv>();
 // Global middleware
 app.use("*", logger());
 app.use("*", cors({
-  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"],
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:5173",
+    "https://educore.pages.dev",
+    "https://frontend.zbymba4.workers.dev",
+  ],
   allowHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
