@@ -107,6 +107,60 @@ export const useExamManagement = (params: {
     setQuestions((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const updateQuestion = (id: string, patch: Partial<Question>) => {
+    setQuestions((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        return { ...item, ...patch };
+      }),
+    );
+  };
+
+  const updateQuestionOption = (
+    id: string,
+    optionIndex: number,
+    value: string,
+  ) => {
+    setQuestions((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const nextOptions = [...(item.options ?? [])];
+        nextOptions[optionIndex] = value;
+        return { ...item, options: nextOptions };
+      }),
+    );
+  };
+
+  const addQuestionOption = (id: string) => {
+    setQuestions((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const nextOptions = [...(item.options ?? []), ""];
+        return { ...item, type: "mcq", options: nextOptions };
+      }),
+    );
+  };
+
+  const removeQuestionOption = (id: string, optionIndex: number) => {
+    setQuestions((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const nextOptions = (item.options ?? []).filter((_, idx) => idx !== optionIndex);
+        const nextCorrect =
+          item.correctAnswer &&
+          (item.options ?? [])[optionIndex] === item.correctAnswer
+            ? nextOptions[0] ?? ""
+            : item.correctAnswer;
+        return {
+          ...item,
+          options: nextOptions,
+          correctAnswer: nextCorrect,
+          type: nextOptions.length > 1 ? "mcq" : "open",
+        };
+      }),
+    );
+  };
+
   const saveExam = () => {
     if (!examTitle || questions.length === 0) {
       showToast("Шалгалтын нэр болон асуултууд оруулна уу.");
@@ -163,6 +217,10 @@ export const useExamManagement = (params: {
     handleSchedule,
     addQuestion,
     removeQuestion,
+    updateQuestion,
+    updateQuestionOption,
+    addQuestionOption,
+    removeQuestionOption,
     saveExam,
     copyCode,
   };

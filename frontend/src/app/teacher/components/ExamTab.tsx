@@ -40,6 +40,10 @@ type ExamTabProps = {
   questions: Question[];
   addQuestion: () => void;
   removeQuestion: (id: string) => void;
+  updateQuestion: (id: string, patch: Partial<Question>) => void;
+  updateQuestionOption: (id: string, optionIndex: number, value: string) => void;
+  addQuestionOption: (id: string) => void;
+  removeQuestionOption: (id: string, optionIndex: number) => void;
   saveExam: () => void;
   pdfUseOcr: boolean;
   setPdfUseOcr: (value: boolean) => void;
@@ -109,6 +113,10 @@ export default function ExamTab(props: ExamTabProps) {
           questions={props.questions}
           addQuestion={props.addQuestion}
           removeQuestion={props.removeQuestion}
+          updateQuestion={props.updateQuestion}
+          updateQuestionOption={props.updateQuestionOption}
+          addQuestionOption={props.addQuestionOption}
+          removeQuestionOption={props.removeQuestionOption}
           saveExam={props.saveExam}
           pdfUseOcr={props.pdfUseOcr}
           setPdfUseOcr={props.setPdfUseOcr}

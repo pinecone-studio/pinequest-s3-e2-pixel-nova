@@ -4,6 +4,7 @@ export type Question = {
   type: "text" | "open" | "mcq";
   options?: string[];
   correctAnswer: string;
+  imageUrl?: string;
 };
 
 export type Exam = {
