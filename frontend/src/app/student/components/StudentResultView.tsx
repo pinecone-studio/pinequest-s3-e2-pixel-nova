@@ -17,9 +17,29 @@ export default function StudentResultView({
   answerReport,
   onBack,
 }: StudentResultViewProps) {
+  if (!lastSubmission) {
+    return (
+      <div className="min-h-screen bg-background text-foreground px-6 py-10">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold">Дүн боловсруулж байна...</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Хэсэг хүлээнэ үү. Хэрэв энэ дэлгэц удаан үргэлжилбэл самбар руу
+            буцаад дахин орж үзнэ үү.
+          </p>
+          <button
+            className="mt-6 w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            onClick={onBack}
+          >
+            Самбар руу буцах
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-4xl px-6 py-10">
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <div className="min-h-screen bg-background text-foreground px-6 py-10">
+      <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Дүнгийн хураангуй</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="rounded-xl border border-border bg-muted p-4">
