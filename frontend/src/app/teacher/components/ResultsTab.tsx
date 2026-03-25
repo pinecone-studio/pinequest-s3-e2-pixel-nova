@@ -3,6 +3,7 @@ import ResultsCharts from "./ResultsCharts";
 import ResultsSubmissionsList from "./ResultsSubmissionsList";
 import ResultsDetailPanel from "./ResultsDetailPanel";
 import type { Exam, Submission } from "../types";
+import type { StudentProfile } from "@/lib/backend-auth";
 
 type ResultsTabProps = {
   examOptions: Exam[];
@@ -20,6 +21,8 @@ type ResultsTabProps = {
   onSelectSubmission: (id: string) => void;
   selectedSubmission: Submission | null;
   selectedExam: Exam | null;
+  studentProfile: StudentProfile | null;
+  profileLoading: boolean;
 };
 
 export default function ResultsTab({
@@ -31,6 +34,8 @@ export default function ResultsTab({
   onSelectSubmission,
   selectedSubmission,
   selectedExam,
+  studentProfile,
+  profileLoading,
 }: ResultsTabProps) {
   return (
     <section className="grid gap-4">
@@ -49,6 +54,8 @@ export default function ResultsTab({
         <ResultsDetailPanel
           selectedSubmission={selectedSubmission}
           selectedExam={selectedExam}
+          studentProfile={studentProfile}
+          profileLoading={profileLoading}
         />
       </section>
     </section>

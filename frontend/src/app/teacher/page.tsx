@@ -1,14 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearSession } from "@/lib/examGuard";
+import { useAuth, useClerk, useUser } from "@clerk/nextjs";
+import {
+  StudentProfile,
+  CheatFlaggedStudent,
+  TeacherExamDetail,
+  TeacherExamSummary,
+  TeacherSubmissionSummary,
+  getTeacherExamDetail,
+  getTeacherExamSubmissions,
+  getTeacherExams,
+  getTeacherSessionResult,
+  getCheatFlaggedStudents,
+  getStudentProfileForTeacher,
+  syncClerkUser,
+} from "@/lib/backend-auth";
 import TeacherSidebar from "./components/TeacherSidebar";
 import TeacherHeader from "./components/TeacherHeader";
 import ExamTab from "./components/ExamTab";
 import ResultsTab from "./components/ResultsTab";
 import SettingsTab from "./components/SettingsTab";
-import { mockStudents } from "./types";
+import TeacherStudentsTab from "./components/TeacherStudentsTab";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamImport } from "./hooks/useExamImport";
@@ -16,12 +31,30 @@ import { useExamStats } from "./hooks/useExamStats";
 
 export default function TeacherPage() {
   const router = useRouter();
+  const { user } = useUser();
+  const { isSignedIn, isLoaded, getToken } = useAuth();
+  const { signOut } = useClerk();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [activeTab, setActiveTab] = useState<"Шалгалт" | "Дүн" | "Тохиргоо">(
-    "Шалгалт",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "Шалгалт" | "Дүн" | "Сурагч" | "Тохиргоо"
+  >("Шалгалт");
 
-  const data = useTeacherData();
+  const clerkUser = useMemo(() => {
+    if (!user) return null;
+    return {
+      id: user.id,
+      username:
+        user.fullName ||
+        user.username ||
+        user.primaryEmailAddress?.emailAddress ||
+        "Багш",
+      password: "",
+      role: "teacher" as const,
+      createdAt: "",
+    };
+  }, [user]);
+
+  const data = useTeacherData(clerkUser, true);
   const management = useExamManagement({
     exams: data.exams,
     setExams: data.setExams,
@@ -37,7 +70,243 @@ export default function TeacherPage() {
     exams: data.exams,
     submissions: data.submissions,
   });
+  const showToast = data.showToast;
+  const setExams = data.setExams;
+  const setSubmissions = data.setSubmissions;
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
+    null,
+  );
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [cheatStudents, setCheatStudents] = useState<
+    { id: string; name: string; score: number; cheat: "Бага" | "Дунд" | "Өндөр"; events: number }[]
+  >([]);
 
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      router.push("/sign-in");
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const sync = async () => {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        await syncClerkUser("teacher", token);
+      } catch {
+        showToast("Нэвтрэх мэдээлэл хадгалах үед алдаа гарлаа.");
+      }
+    };
+    sync();
+  }, [getToken, isSignedIn, showToast]);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const loadExams = async () => {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const items: TeacherExamSummary[] = await getTeacherExams(token);
+        const mapped = items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          scheduledAt: item.scheduledAt ?? null,
+          roomCode: item.roomCode ?? "",
+          questions: [],
+          duration: item.durationMin ?? 45,
+          createdAt: item.createdAt ?? new Date().toISOString(),
+          notified: false,
+        }));
+        setExams(mapped);
+      } catch {
+        setExams([]);
+      }
+    };
+    loadExams();
+  }, [getToken, isSignedIn, setExams]);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const examId = examStatsState.activeExamId;
+    if (!examId) {
+      setSubmissions([]);
+      return;
+    }
+    const loadSubmissions = async () => {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const list: TeacherSubmissionSummary[] =
+          await getTeacherExamSubmissions(token, examId);
+        const mapped = list.map((item) => {
+          const total = item.totalPoints ?? 0;
+          const score = item.score ?? 0;
+          const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+          return {
+            id: item.id,
+            examId: item.examId,
+            studentId: item.studentId,
+            studentName: item.studentName,
+            answers: [],
+            score,
+            totalPoints: total,
+            percentage,
+            submittedAt: item.submittedAt ?? new Date().toISOString(),
+            terminated: false,
+          };
+        });
+        setSubmissions(mapped);
+      } catch {
+        setSubmissions([]);
+      }
+    };
+    const loadExamDetail = async () => {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const detail: TeacherExamDetail = await getTeacherExamDetail(
+          token,
+          examId,
+        );
+        setExams((prev) =>
+          prev.map((examItem) => {
+            if (examItem.id !== examId) return examItem;
+            const questions = (detail.questions ?? []).map((q) => {
+              const type: "text" | "open" | "mcq" =
+                q.type === "multiple_choice"
+                  ? "mcq"
+                  : q.type === "short_answer"
+                    ? "open"
+                    : "text";
+              const correctOption =
+                q.options?.find((opt) => opt.isCorrect) ?? null;
+              return {
+                id: q.id,
+                text: q.questionText,
+                type,
+                options: q.options?.map((opt) => opt.text) ?? [],
+                correctAnswer:
+                  correctOption?.text ?? q.correctAnswerText ?? "",
+              };
+            });
+            return {
+              ...examItem,
+              title: detail.title ?? examItem.title,
+              scheduledAt: detail.scheduledAt ?? examItem.scheduledAt,
+              roomCode: detail.roomCode ?? examItem.roomCode,
+              duration: detail.durationMin ?? examItem.duration,
+              questions,
+            };
+          }),
+        );
+      } catch {
+        // ignore detail fetch errors for now
+      }
+    };
+    loadSubmissions();
+    loadExamDetail();
+  }, [examStatsState.activeExamId, getToken, isSignedIn, setExams, setSubmissions]);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const examId = examStatsState.activeExamId;
+    if (!examId) {
+      setCheatStudents([]);
+      return;
+    }
+    const loadCheat = async () => {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const flagged: CheatFlaggedStudent[] = await getCheatFlaggedStudents(
+          token,
+          examId,
+        );
+        const mapped = flagged.map((item) => {
+          const submission = data.submissions.find(
+            (s) => s.examId === examId && s.studentId === item.studentId,
+          );
+          const score = submission?.percentage ?? 0;
+          const events = item.eventCount ?? item.flagCount ?? 0;
+          const cheat: "Бага" | "Дунд" | "Өндөр" =
+            events >= 8 ? "Өндөр" : events >= 4 ? "Дунд" : "Бага";
+          return {
+            id: item.studentId,
+            name: item.fullName,
+            score,
+            cheat,
+            events,
+          };
+        });
+        setCheatStudents(mapped);
+      } catch {
+        setCheatStudents([]);
+      }
+    };
+    loadCheat();
+  }, [data.submissions, examStatsState.activeExamId, getToken, isSignedIn]);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!isSignedIn) return;
+      const studentId = examStatsState.selectedSubmission?.studentId;
+      if (!studentId) {
+        setStudentProfile(null);
+        return;
+      }
+      setProfileLoading(true);
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const profile = await getStudentProfileForTeacher(token, studentId);
+        setStudentProfile(profile);
+      } catch {
+        setStudentProfile(null);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    loadProfile();
+  }, [examStatsState.selectedSubmission?.studentId, getToken, isSignedIn]);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const sessionId = examStatsState.selectedSubmission?.id;
+    if (!sessionId) return;
+    const loadResultDetail = async () => {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const result = await getTeacherSessionResult(token, sessionId);
+        const mappedAnswers =
+          result.answers?.map((answer) => {
+            const selectedOption = answer.options?.find(
+              (opt) => opt.id === answer.selectedOptionId,
+            );
+            return {
+              questionId: answer.questionId,
+              selectedAnswer:
+                selectedOption?.text ?? answer.textAnswer ?? "",
+              correct: Boolean(answer.isCorrect),
+            };
+          }) ?? [];
+        setSubmissions((prev) =>
+          prev.map((item) =>
+            item.id === sessionId
+              ? { ...item, answers: mappedAnswers }
+              : item,
+          ),
+        );
+      } catch {
+        // ignore detail fetch errors
+      }
+    };
+    loadResultDetail();
+  }, [examStatsState.selectedSubmission?.id, getToken, isSignedIn, setSubmissions]);
+
+  if (!isLoaded || !isSignedIn) return null;
   if (!data.currentUser) return null;
 
   return (
@@ -71,8 +340,11 @@ export default function TeacherPage() {
               }
               onLogout={() => {
                 clearSession();
+                signOut();
                 router.push("/");
               }}
+              notifications={data.notifications}
+              onMarkRead={data.markNotificationRead}
             />
 
             {activeTab === "Шалгалт" && (
@@ -115,7 +387,7 @@ export default function TeacherPage() {
                 exams={data.exams}
                 notifications={data.notifications}
                 onMarkNotificationRead={data.markNotificationRead}
-                cheatStudents={mockStudents}
+                cheatStudents={cheatStudents}
               />
             )}
 
@@ -129,8 +401,12 @@ export default function TeacherPage() {
                 onSelectSubmission={examStatsState.setSelectedSubmissionId}
                 selectedSubmission={examStatsState.selectedSubmission}
                 selectedExam={examStatsState.selectedExam}
+                studentProfile={studentProfile}
+                profileLoading={profileLoading}
               />
             )}
+
+            {activeTab === "Сурагч" && <TeacherStudentsTab />}
 
             {activeTab === "Тохиргоо" && <SettingsTab />}
           </div>

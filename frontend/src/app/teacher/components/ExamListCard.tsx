@@ -43,7 +43,7 @@ export default function ExamListCard({ exams, onCopyCode }: ExamListCardProps) {
             <div>
               <div className="font-medium">{exam.title}</div>
               <div className="text-xs text-muted-foreground">
-                Код: {exam.roomCode} · {exam.questions.length} асуулт
+                Код: {exam.roomCode || "—"} · {(exam.questions?.length ?? 0)} асуулт
               </div>
               <div className="text-xs text-muted-foreground">
                 Хугацаа: {exam.duration ?? 45} мин · Товлосон:{" "}

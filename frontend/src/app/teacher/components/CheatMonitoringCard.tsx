@@ -24,15 +24,20 @@ export default function CheatMonitoringCard({ students }: CheatMonitoringCardPro
         Хууран мэхлэлт хяналт
       </h2>
       <div className="mt-4 space-y-3 text-sm">
+        {students.length === 0 && (
+          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+            Одоогоор сэжигтэй үйлдэл илрээгүй.
+          </div>
+        )}
         {students.map((student) => (
           <div
-            key={student.name}
+            key={student.id ?? student.name}
             className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2"
           >
             <div>
               <div className="font-medium">{student.name}</div>
               <div className="text-xs text-muted-foreground">
-                Оноо: {student.score}%
+                Оноо: {student.score}% · Зөрчил: {student.events ?? 0}
               </div>
             </div>
             <span

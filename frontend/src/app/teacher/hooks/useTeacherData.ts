@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   User,
   getSessionUser,
@@ -7,7 +7,10 @@ import {
 } from "@/lib/examGuard";
 import type { Exam, NotificationItem, Submission } from "../types";
 
-export const useTeacherData = () => {
+export const useTeacherData = (
+  overrideUser?: User | null,
+  useRemote: boolean = false,
+) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(true);
@@ -17,7 +20,7 @@ export const useTeacherData = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
-    const user = getSessionUser();
+    const user = overrideUser ?? getSessionUser();
     setCurrentUser(
       user ?? {
         id: "demo",
@@ -32,19 +35,22 @@ export const useTeacherData = () => {
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    setExams(getJSON<Exam[]>("exams", []));
-    setSubmissions(getJSON<Submission[]>("submissions", []));
-    setNotifications(getJSON<NotificationItem[]>("notifications", []));
-  }, []);
+    if (!useRemote) {
+      setExams(getJSON<Exam[]>("exams", []));
+      setSubmissions(getJSON<Submission[]>("submissions", []));
+      setNotifications(getJSON<NotificationItem[]>("notifications", []));
+    }
+  }, [overrideUser?.id, useRemote]);
 
   useEffect(() => {
+    if (useRemote) return;
     const sync = () => {
       setSubmissions(getJSON<Submission[]>("submissions", []));
       setNotifications(getJSON<NotificationItem[]>("notifications", []));
     };
     const interval = setInterval(sync, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [useRemote]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 700);
@@ -59,19 +65,19 @@ export const useTeacherData = () => {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const showToast = (message: string) => {
+  const showToast = useCallback((message: string) => {
     setToast(message);
     setTimeout(() => setToast(null), 3000);
-  };
+  }, []);
 
   const persistExams = (next: Exam[]) => {
     setExams(next);
-    setJSON("exams", next);
+    if (!useRemote) setJSON("exams", next);
   };
 
   const persistNotifications = (next: NotificationItem[]) => {
     setNotifications(next);
-    setJSON("notifications", next);
+    if (!useRemote) setJSON("notifications", next);
   };
 
   const markNotificationRead = (index: number) => {

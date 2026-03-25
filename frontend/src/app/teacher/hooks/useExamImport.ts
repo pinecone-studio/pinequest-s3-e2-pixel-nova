@@ -97,6 +97,24 @@ export const useExamImport = (params: {
     setPdfLoading(true);
     setPdfError(null);
     try {
+      const limitInput = window.prompt(
+        "PDF-ээс хэдэн асуулт үүсгэх вэ? (жишээ: 20)",
+        "20",
+      );
+      if (limitInput === null) {
+        setPdfLoading(false);
+        return;
+      }
+      const parsedLimit = Number(limitInput);
+      const questionLimit = Number.isFinite(parsedLimit)
+        ? Math.max(1, Math.floor(parsedLimit))
+        : 0;
+      if (!questionLimit) {
+        setPdfError("Асуултын тоо буруу байна.");
+        setPdfLoading(false);
+        return;
+      }
+
       type PdfPage = {
         getTextContent: () => Promise<{ items: { str?: string }[] }>;
         render: (args: {
@@ -114,7 +132,10 @@ export const useExamImport = (params: {
         GlobalWorkerOptions: { workerSrc: string };
         getDocument: (args: { data: ArrayBuffer }) => { promise: Promise<PdfDoc> };
       };
-      const pdfjsLib = (await import("pdfjs-dist/legacy/build/pdf")).default as PdfJs;
+      const pdfModule = (await import("pdfjs-dist/legacy/build/pdf")) as {
+        default?: PdfJs;
+      } & PdfJs;
+      const pdfjsLib = pdfModule.default ?? pdfModule;
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -158,14 +179,19 @@ export const useExamImport = (params: {
       if (parsedQuestions.length === 0) {
         setPdfError("PDF‑ээс асуулт олдсонгүй. Форматыг шалгана уу.");
       } else {
-        setQuestions(parsedQuestions);
+        const limited = parsedQuestions.slice(0, questionLimit);
+        setQuestions(limited);
         if (!examTitle) {
           setExamTitle(file.name.replace(/\.pdf$/i, ""));
         }
-        showToast(`${parsedQuestions.length} асуулт автоматаар бөглөгдлөө.`);
+        showToast(`${limited.length} асуулт автоматаар бөглөгдлөө.`);
       }
-    } catch {
-      setPdfError("PDF боловсруулах үед алдаа гарлаа.");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Тодорхойгүй алдаа";
+      // Surface the actual error for debugging
+      console.error("PDF parse error:", err);
+      setPdfError(`PDF боловсруулах үед алдаа гарлаа. (${message})`);
     } finally {
       setPdfLoading(false);
     }

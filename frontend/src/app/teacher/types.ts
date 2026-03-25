@@ -47,14 +47,10 @@ export type NotificationItem = {
 };
 
 export type CheatStudent = {
+  id?: string;
   name: string;
   score: number;
   cheat: "Бага" | "Дунд" | "Өндөр";
+  events?: number;
+  flagCount?: number;
 };
-
-export const mockStudents: CheatStudent[] = [
-  { name: "Anu", score: 92, cheat: "Бага" },
-  { name: "Baatar", score: 76, cheat: "Дунд" },
-  { name: "Saraa", score: 63, cheat: "Өндөр" },
-  { name: "Temuulen", score: 88, cheat: "Бага" },
-];

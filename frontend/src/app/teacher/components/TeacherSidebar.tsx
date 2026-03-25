@@ -3,6 +3,7 @@ import type { MutableRefObject } from "react";
 const tabs = [
   { key: "Шалгалт", icon: "exam" },
   { key: "Дүн", icon: "results" },
+  { key: "Сурагч", icon: "students" },
   { key: "Тохиргоо", icon: "settings" },
 ] as const;
 
@@ -27,7 +28,9 @@ export default function TeacherSidebar({
 }: TeacherSidebarProps) {
   return (
     <aside
-      className="border-r border-border bg-card/70 p-4 backdrop-blur transition-[width,transform,opacity] duration-300 ease-out overflow-hidden"
+      className={`border-r border-border bg-card/70 backdrop-blur transition-all duration-500 ease-in-out overflow-hidden flex flex-col group ${
+        collapsed ? "w-20" : "w-64"
+      }`}
       onMouseEnter={() => {
         if (sidebarTimerRef.current) {
           window.clearTimeout(sidebarTimerRef.current);
@@ -41,130 +44,233 @@ export default function TeacherSidebar({
         }
         sidebarTimerRef.current = window.setTimeout(() => {
           setCollapsed(true);
-        }, 300);
+        }, 800);
       }}
     >
-      <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
-        <span className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-muted text-primary">
+      <div className="p-4 pb-3 transition-all duration-500">
+        <div className="flex items-center gap-3 transition-all duration-500">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-500 flex-shrink-0 group-hover:scale-110">
+            <svg
+              className="h-5 w-5 transition-transform duration-500"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              stroke="none"
+            >
+              <path
+                d="M3 7l9-4 9 4-9 4-9-4Z"
+                fill="currentColor"
+                opacity="0.8"
+              />
+              <path
+                d="M12 11l-9-4v4c0 2.5 4 4 9 4s9-1.5 9-4v-4l-9 4Z"
+                fill="currentColor"
+                opacity="0.6"
+              />
+              <path
+                d="M21 15.5v4c0 2.5-4 4-9 4s-9-1.5-9-4v-4l9 4 9-4Z"
+                fill="currentColor"
+                opacity="0.4"
+              />
+            </svg>
+          </div>
+          <div
+            className={`transition-all duration-500 ${
+              collapsed ? "hidden opacity-0" : "block opacity-100"
+            }`}
+          >
+            <h1 className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              EduCore
+            </h1>
+            <p className="text-[10px] text-muted-foreground font-medium">
+              Багшийн төв
+            </p>
+          </div>
+        </div>
+
+        <button
+          className={`mt-4 w-full group/btn relative rounded-2xl border border-border/50 bg-muted/60 hover:bg-muted hover:border-border px-3 py-3 text-[11px] uppercase tracking-widest font-semibold text-muted-foreground hover:text-foreground transition-all duration-500 overflow-hidden flex items-center gap-2 justify-center group-hover:gap-3 ${
+            collapsed ? "justify-center" : "justify-between"
+          }`}
+          onClick={() => setCollapsed((prev) => !prev)}
+        >
+          <span
+            className={`transition-all duration-500 ${
+              collapsed ? "hidden opacity-0 w-0" : "inline opacity-100 w-auto"
+            }`}
+          >
+            {collapsed ? "Өргөх" : "Хураах"}
+          </span>
           <svg
-            className="h-4 w-4"
+            className={`h-4 w-4 transition-transform duration-500 flex-shrink-0 ${
+              collapsed ? "rotate-0" : "rotate-180"
+            }`}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeWidth="2"
           >
-            <path d="M3 7l9-4 9 4-9 4-9-4Z" />
-            <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
-            <path d="M4 12v4" />
+            <path d="M15 19l-7-7 7-7" />
           </svg>
-        </span>
-        {!collapsed && <span>EduCore</span>}
+        </button>
       </div>
-      <button
-        className="mt-4 w-full rounded-xl border border-border bg-muted px-3 py-2 text-[11px] uppercase tracking-wide"
-        onClick={() => setCollapsed((prev) => !prev)}
-      >
-        {collapsed ? "Өргөх" : "Хураах"}
-      </button>
-      <nav className="mt-6 space-y-2 text-sm">
+
+      <nav className="flex-1 space-y-3 px-3 py-4 overflow-y-auto scrollbar-hide">
         {tabs.map((item) => (
           <button
             key={item.key}
-            className={`group flex w-full items-center ${
-              collapsed ? "justify-center gap-0 px-2" : "gap-3 px-3"
-            } rounded-full border py-2 text-left text-[13px] transition duration-200 ease-out hover:scale-[1.01] hover:ring-1 hover:ring-primary/30 ${
+            className={`group/nav relative w-full flex items-center transition-all duration-500 ease-in-out ${
+              collapsed ? "justify-center px-2" : "gap-3 px-4"
+            } py-3 rounded-2xl overflow-hidden ${
               activeTab === item.key
-                ? "border-primary/30 bg-primary/10 text-foreground shadow-sm"
-                : "border-transparent hover:border-border hover:bg-muted"
+                ? "bg-gradient-to-r from-primary/25 to-primary/5 border border-primary/40 shadow-lg"
+                : "border border-transparent hover:border-border/50 hover:bg-muted/40"
             }`}
             onClick={() => setActiveTab(item.key)}
           >
-            <span
-              className={`relative grid h-9 w-9 place-items-center rounded-full border text-xs font-semibold transition ${
+            <div
+              className={`absolute inset-0 bg-gradient-to-r from-primary/15 via-transparent to-transparent opacity-0 transition-opacity duration-500 ${
                 activeTab === item.key
-                  ? "border-primary/30 bg-linear-to-br from-primary/20 to-transparent text-primary"
-                  : "border-border bg-card text-muted-foreground group-hover:text-foreground"
+                  ? "opacity-100"
+                  : "group-hover/nav:opacity-50"
+              }`}
+            />
+            <span
+              className={`relative grid h-11 w-11 place-items-center rounded-2xl border flex-shrink-0 transition-all duration-500 ${
+                activeTab === item.key
+                  ? "border-primary/50 bg-gradient-to-br from-primary/30 to-primary/10 text-primary shadow-md scale-100"
+                  : "border-border/40 bg-card text-muted-foreground group-hover/nav:text-foreground group-hover/nav:border-border/60 group-hover/nav:bg-muted/60 group-hover/nav:scale-105"
               }`}
             >
               {item.key === "Шалгалт" && (
                 <svg
-                  className={`h-4 w-4 transition group-hover:scale-110 ${
+                  className={`h-5 w-5 transition-all duration-500 ${
                     activeTab === item.key
                       ? "text-primary"
-                      : "text-muted-foreground group-hover:text-foreground"
+                      : "text-muted-foreground group-hover/nav:text-foreground"
                   }`}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
                   <path d="M4 5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2Z" />
                   <path d="M6 3v15" />
+                  <path d="M10 7h4" />
+                  <path d="M10 11h4" />
                 </svg>
               )}
               {item.key === "Дүн" && (
                 <svg
-                  className={`h-4 w-4 transition group-hover:scale-110 ${
+                  className={`h-5 w-5 transition-all duration-500 ${
                     activeTab === item.key
                       ? "text-primary"
-                      : "text-muted-foreground group-hover:text-foreground"
+                      : "text-muted-foreground group-hover/nav:text-foreground"
                   }`}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M4 19V5" />
-                  <path d="M4 19h16" />
-                  <path d="M8 15v-4" />
-                  <path d="M12 15V9" />
-                  <path d="M16 15v-6" />
+                  <path d="M3 3v18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z" />
+                  <path d="M3 7h18" />
+                  <path d="M7 11v6" />
+                  <path d="M12 11v6" />
+                  <path d="M17 11v6" />
+                </svg>
+              )}
+              {item.key === "Сурагч" && (
+                <svg
+                  className={`h-5 w-5 transition-all duration-500 ${
+                    activeTab === item.key
+                      ? "text-primary"
+                      : "text-muted-foreground group-hover/nav:text-foreground"
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="9" cy="8" r="3" />
+                  <path d="M2 21c0-3.5 3-6 7-6" />
+                  <path d="M17 11a3 3 0 1 0-2.8-4" />
+                  <path d="M16 21c0-2.1-1.4-3.9-3.4-4.6" />
                 </svg>
               )}
               {item.key === "Тохиргоо" && (
                 <svg
-                  className={`h-4 w-4 transition group-hover:scale-110 ${
+                  className={`h-5 w-5 transition-all duration-500 ${
                     activeTab === item.key
                       ? "text-primary"
-                      : "text-muted-foreground group-hover:text-foreground"
+                      : "text-muted-foreground group-hover/nav:text-foreground"
                   }`}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.8"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
                   <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+                  <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m6.08 0l4.24-4.24M1 12h6m6 0h6m-1.78 7.78l-4.24-4.24m-6.08 0l-4.24 4.24" />
                 </svg>
               )}
+
               {collapsed && (
-                <span className="pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md border border-border bg-card px-2 py-1 text-[11px] text-muted-foreground opacity-0 shadow-sm transition duration-200 ease-out group-hover:translate-x-0 group-hover:scale-100 group-hover:opacity-100 group-hover:shadow-md translate-x-1 scale-95">
+                <span className="pointer-events-none absolute left-full top-1/2 ml-2 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-lg opacity-0 transition-all duration-500 ease-out group-hover/nav:ml-4 group-hover/nav:opacity-100 group-hover/nav:shadow-xl translate-x-4 scale-90 group-hover/nav:translate-x-0 group-hover/nav:scale-100 z-50">
                   {item.key}
+                  <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-card" />
                 </span>
               )}
             </span>
+
             <span
-              className={`transition-all duration-200 ${
+              className={`relative font-medium text-sm transition-all duration-500 overflow-hidden ${
                 collapsed
-                  ? "pointer-events-none -translate-x-2 opacity-0"
-                  : "translate-x-0 opacity-100"
+                  ? "w-0 -translate-x-4 opacity-0"
+                  : "w-auto translate-x-0 opacity-100"
               }`}
             >
               {item.key}
             </span>
+
+            {activeTab === item.key && !collapsed && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-gradient-to-b from-primary via-primary to-primary/50 rounded-l-full transition-all duration-500 shadow-lg" />
+            )}
           </button>
         ))}
       </nav>
-      <div className="mt-8 border-t border-border pt-4 text-xs text-muted-foreground">
-        {!collapsed && currentUserName}
+
+      <div
+        className={`border-t border-border/30 p-3 transition-all duration-500 ${
+          collapsed ? "text-center" : ""
+        }`}
+      >
+        <div
+          className={`w-full flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-500 justify-center ${
+            collapsed ? "" : "justify-start"
+          }`}
+        >
+          <svg
+            className="h-4 w-4 flex-shrink-0 transition-transform duration-500 group-hover:rotate-180"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M9 9h6M9 15h6" />
+          </svg>
+          {!collapsed && (
+            <span className="transition-opacity duration-500">
+              {currentUserName ?? "Багш"}
+            </span>
+          )}
+        </div>
       </div>
     </aside>
   );
