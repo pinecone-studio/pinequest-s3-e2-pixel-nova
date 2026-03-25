@@ -3,17 +3,17 @@ import { useState } from "react";
 type TeacherHeaderProps = {
   theme: "light" | "dark";
   onToggleTheme: () => void;
-  onLogout: () => void;
   notifications: { message: string; createdAt: string; read: boolean }[];
   onMarkRead?: (index: number) => void;
+  roleControl?: React.ReactNode;
 };
 
 export default function TeacherHeader({
   theme,
   onToggleTheme,
-  onLogout,
   notifications,
   onMarkRead,
+  roleControl,
 }: TeacherHeaderProps) {
   const [open, setOpen] = useState(false);
   const unreadCount = notifications.filter((item) => !item.read).length;
@@ -109,25 +109,7 @@ export default function TeacherHeader({
             ))}
           </div>
         </div>
-        <button
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:brightness-110"
-          onClick={onLogout}
-        >
-          <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <path d="M16 17l5-5-5-5" />
-            <path d="M21 12H9" />
-          </svg>
-          Гарах
-        </button>
+        {roleControl}
       </div>
     </header>
   );
