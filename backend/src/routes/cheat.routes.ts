@@ -28,6 +28,7 @@ const EVENT_TYPES = [
   "suspicious_resize",
   "rapid_answers",
   "idle_too_long",
+  "disqualification",
 ] as const;
 
 type EventType = (typeof EVENT_TYPES)[number];
@@ -44,6 +45,7 @@ const SEVERITY_MAP: Record<EventType, { severity: string; weight: number }> = {
   rapid_answers:      { severity: "high",     weight: 4 },
   screen_capture:     { severity: "critical", weight: 8 },
   multiple_monitors:  { severity: "critical", weight: 8 },
+  disqualification:   { severity: "critical", weight: 8 },
 };
 
 const FLAG_THRESHOLD = 6;
@@ -121,11 +123,11 @@ cheatRoutes.get("/events/:examId", requireRole("teacher"), async (c) => {
   const examId = c.req.param("examId");
   const db = getDb(c.env.educore);
 
-  // Verify exam exists
+  // Verify exam exists and teacher owns it
   const [exam] = await db
     .select()
     .from(exams)
-    .where(eq(exams.id, examId))
+    .where(and(eq(exams.id, examId), eq(exams.teacherId, c.get("user").id)))
     .limit(1);
 
   if (!exam) {
@@ -149,11 +151,11 @@ cheatRoutes.get("/events/:examId/:studentId", requireRole("teacher"), async (c) 
   const studentId = c.req.param("studentId");
   const db = getDb(c.env.educore);
 
-  // Verify exam exists
+  // Verify exam exists and teacher owns it
   const [exam] = await db
     .select()
     .from(exams)
-    .where(eq(exams.id, examId))
+    .where(and(eq(exams.id, examId), eq(exams.teacherId, c.get("user").id)))
     .limit(1);
 
   if (!exam) {
@@ -176,11 +178,11 @@ cheatRoutes.get("/flagged/:examId", requireRole("teacher"), async (c) => {
   const examId = c.req.param("examId");
   const db = getDb(c.env.educore);
 
-  // Verify exam exists
+  // Verify exam exists and teacher owns it
   const [exam] = await db
     .select()
     .from(exams)
-    .where(eq(exams.id, examId))
+    .where(and(eq(exams.id, examId), eq(exams.teacherId, c.get("user").id)))
     .limit(1);
 
   if (!exam) {
@@ -225,11 +227,11 @@ cheatRoutes.get("/notifications/:examId", requireRole("teacher"), async (c) => {
   const examId = c.req.param("examId");
   const db = getDb(c.env.educore);
 
-  // Verify exam exists
+  // Verify exam exists and teacher owns it
   const [exam] = await db
     .select()
     .from(exams)
-    .where(eq(exams.id, examId))
+    .where(and(eq(exams.id, examId), eq(exams.teacherId, c.get("user").id)))
     .limit(1);
 
   if (!exam) {
@@ -261,11 +263,11 @@ cheatRoutes.post("/notifications/:examId/ack", requireRole("teacher"), async (c)
   const examId = c.req.param("examId");
   const db = getDb(c.env.educore);
 
-  // Verify exam exists
+  // Verify exam exists and teacher owns it
   const [exam] = await db
     .select()
     .from(exams)
-    .where(eq(exams.id, examId))
+    .where(and(eq(exams.id, examId), eq(exams.teacherId, c.get("user").id)))
     .limit(1);
 
   if (!exam) {
@@ -278,6 +280,75 @@ cheatRoutes.post("/notifications/:examId/ack", requireRole("teacher"), async (c)
     .where(eq(cheatEvents.examId, examId));
 
   return success(c, { acknowledged: true });
+});
+
+// ---------------------------------------------------------------------------
+// POST /disqualify/:sessionId — Teacher disqualifies a student session
+// ---------------------------------------------------------------------------
+const disqualifySchema = z.object({
+  reason: z.string().min(1),
+});
+
+cheatRoutes.post("/disqualify/:sessionId", requireRole("teacher"), zValidator("json", disqualifySchema), async (c) => {
+  const sessionId = c.req.param("sessionId");
+  const { reason } = c.req.valid("json");
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  // Fetch the session
+  const [session] = await db
+    .select()
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .limit(1);
+
+  if (!session) {
+    return notFound(c, "Session");
+  }
+
+  // Verify teacher owns the exam
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(and(eq(exams.id, session.examId), eq(exams.teacherId, user.id)))
+    .limit(1);
+
+  if (!exam) {
+    return forbidden(c, "You do not own this exam");
+  }
+
+  // Only allow disqualification of active sessions
+  if (session.status !== "in_progress" && session.status !== "submitted") {
+    return error(c, "INVALID_STATUS", "Can only disqualify sessions that are in progress or submitted", 400);
+  }
+
+  // Update session status to disqualified
+  await db
+    .update(examSessions)
+    .set({ status: "disqualified" })
+    .where(eq(examSessions.id, sessionId));
+
+  // Insert a cheat event for the disqualification
+  const eventId = newId();
+  await db.insert(cheatEvents).values({
+    id: eventId,
+    sessionId,
+    examId: session.examId,
+    studentId: session.studentId,
+    eventType: "disqualification",
+    severity: "critical",
+    metadata: JSON.stringify({ reason }),
+    isNotified: false,
+  });
+
+  // Fetch the updated session
+  const [updatedSession] = await db
+    .select()
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .limit(1);
+
+  return success(c, updatedSession);
 });
 
 export default cheatRoutes;

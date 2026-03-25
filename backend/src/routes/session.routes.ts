@@ -8,6 +8,7 @@ import { success, error, notFound, forbidden } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
+import { awardXpForGrading } from "../utils/xp-award";
 
 const sessionRoutes = new Hono<AppEnv>();
 
@@ -406,6 +407,229 @@ sessionRoutes.get("/:sessionId/result", requireRole("student"), async (c) => {
     submittedAt: session.submittedAt,
     answers: detailedAnswers,
   });
+});
+
+// ---------------------------------------------------------------------------
+// POST /:sessionId/grade — Auto-grade a submitted session (teacher only)
+// ---------------------------------------------------------------------------
+sessionRoutes.post("/:sessionId/grade", requireRole("teacher"), async (c) => {
+  const sessionId = c.req.param("sessionId");
+  const teacherId = c.get("user").id;
+  const db = getDb(c.env.educore);
+
+  // Fetch session
+  const [session] = await db
+    .select()
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .limit(1);
+
+  if (!session) return notFound(c, "Session");
+
+  // Verify teacher owns the exam
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(and(eq(exams.id, session.examId), eq(exams.teacherId, teacherId)))
+    .limit(1);
+
+  if (!exam) return notFound(c, "Exam");
+
+  if (session.status !== "submitted") {
+    return error(c, "INVALID_STATUS", "Session must be in 'submitted' status to grade", 400);
+  }
+
+  // Fetch all questions for the exam
+  const examQuestions = await db
+    .select()
+    .from(questions)
+    .where(eq(questions.examId, session.examId));
+
+  // Build a map of correct option IDs for MC/TF questions
+  const mcQuestionIds = examQuestions
+    .filter((q) => q.type === "multiple_choice" || q.type === "true_false")
+    .map((q) => q.id);
+
+  const correctOptions = mcQuestionIds.length > 0
+    ? await db
+        .select()
+        .from(options)
+        .where(
+          and(
+            sql`${options.questionId} IN (${sql.join(mcQuestionIds.map((id) => sql`${id}`), sql`, `)})`,
+            eq(options.isCorrect, true),
+          ),
+        )
+    : [];
+
+  const correctOptionByQuestion = new Map<string, string>();
+  for (const opt of correctOptions) {
+    correctOptionByQuestion.set(opt.questionId, opt.id);
+  }
+
+  // Build question map for points and type lookup
+  const questionMap = new Map(examQuestions.map((q) => [q.id, q]));
+
+  // Fetch student answers
+  const answers = await db
+    .select()
+    .from(studentAnswers)
+    .where(eq(studentAnswers.sessionId, sessionId));
+
+  let earnedPoints = 0;
+  let totalPoints = 0;
+
+  for (const q of examQuestions) {
+    totalPoints += q.points;
+  }
+
+  // Grade each answer
+  for (const answer of answers) {
+    const question = questionMap.get(answer.questionId);
+    if (!question) continue;
+
+    let isCorrect = false;
+    let pointsEarned = 0;
+
+    if (question.type === "multiple_choice" || question.type === "true_false") {
+      const correctOptId = correctOptionByQuestion.get(question.id);
+      isCorrect = answer.selectedOptionId === correctOptId;
+    } else if (question.type === "short_answer") {
+      isCorrect =
+        !!question.correctAnswerText &&
+        !!answer.textAnswer &&
+        answer.textAnswer.trim().toLowerCase() === question.correctAnswerText.trim().toLowerCase();
+    }
+
+    if (isCorrect) {
+      pointsEarned = question.points;
+      earnedPoints += pointsEarned;
+    }
+
+    await db
+      .update(studentAnswers)
+      .set({ isCorrect, pointsEarned })
+      .where(eq(studentAnswers.id, answer.id));
+  }
+
+  // Calculate score as percentage
+  const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+
+  // Update session
+  await db
+    .update(examSessions)
+    .set({ status: "graded", score, earnedPoints, totalPoints })
+    .where(eq(examSessions.id, sessionId));
+
+  // Award XP
+  await awardXpForGrading({
+    db,
+    studentId: session.studentId,
+    sessionId,
+    score,
+    passScore: exam.passScore ?? 50,
+    totalPoints,
+    earnedPoints,
+  });
+
+  const [graded] = await db
+    .select()
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .limit(1);
+
+  return success(c, graded);
+});
+
+// ---------------------------------------------------------------------------
+// POST /:sessionId/grade-manual — Teacher manually grades individual answers
+// ---------------------------------------------------------------------------
+const manualGradeSchema = z.object({
+  grades: z.array(
+    z.object({
+      answerId: z.string().min(1),
+      pointsEarned: z.number().min(0),
+      isCorrect: z.boolean(),
+    })
+  ).min(1),
+});
+
+sessionRoutes.post("/:sessionId/grade-manual", requireRole("teacher"), zValidator("json", manualGradeSchema), async (c) => {
+  const sessionId = c.req.param("sessionId");
+  const teacherId = c.get("user").id;
+  const db = getDb(c.env.educore);
+
+  // Fetch session
+  const [session] = await db
+    .select()
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .limit(1);
+
+  if (!session) return notFound(c, "Session");
+
+  // Verify teacher owns the exam
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(and(eq(exams.id, session.examId), eq(exams.teacherId, teacherId)))
+    .limit(1);
+
+  if (!exam) return notFound(c, "Exam");
+
+  if (session.status !== "submitted" && session.status !== "graded") {
+    return error(c, "INVALID_STATUS", "Session must be in 'submitted' or 'graded' status to grade", 400);
+  }
+
+  const { grades } = c.req.valid("json");
+
+  // Update each answer with the manual grade
+  for (const grade of grades) {
+    await db
+      .update(studentAnswers)
+      .set({ isCorrect: grade.isCorrect, pointsEarned: grade.pointsEarned })
+      .where(and(eq(studentAnswers.id, grade.answerId), eq(studentAnswers.sessionId, sessionId)));
+  }
+
+  // Recalculate total earnedPoints from all answers in this session
+  const allAnswers = await db
+    .select({ pointsEarned: studentAnswers.pointsEarned })
+    .from(studentAnswers)
+    .where(eq(studentAnswers.sessionId, sessionId));
+
+  let earnedPoints = 0;
+  for (const a of allAnswers) {
+    earnedPoints += a.pointsEarned ?? 0;
+  }
+
+  // Calculate totalPoints from exam questions
+  const examQuestions = await db
+    .select({ points: questions.points })
+    .from(questions)
+    .where(eq(questions.examId, session.examId));
+
+  let totalPoints = 0;
+  for (const q of examQuestions) {
+    totalPoints += q.points;
+  }
+
+  // Recalculate score percentage
+  const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+
+  // Update session
+  await db
+    .update(examSessions)
+    .set({ status: "graded", score, earnedPoints, totalPoints })
+    .where(eq(examSessions.id, sessionId));
+
+  // Return updated session
+  const [updated] = await db
+    .select()
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .limit(1);
+
+  return success(c, updated);
 });
 
 export default sessionRoutes;
