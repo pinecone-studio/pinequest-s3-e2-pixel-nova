@@ -14,70 +14,143 @@ export const formatDateTime = (value?: string | null) => {
   });
 };
 
+const OPTION_LABELS = ["A", "B", "C", "D", "E"] as const;
+const CYRILLIC_OPTION_MAP: Record<string, string> = {
+  А: "A",
+  Б: "B",
+  В: "C",
+  Г: "D",
+  Д: "E",
+};
+
+const normalizeOptionLabel = (value: string) => {
+  const upper = value.trim().toUpperCase();
+  return CYRILLIC_OPTION_MAP[upper] ?? upper;
+};
+
+const sanitizePdfText = (rawText: string) =>
+  rawText
+    .replace(/\u0000/g, "")
+    .replace(/\r/g, "\n")
+    .replace(/(\d)\s+(\d)\s*([.)])/g, "$1$2$3")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/5-\s*р ангиийн [^.]*?хугацаа \d+ минут/gi, " ")
+    .replace(/\b[AА]\s+хувилбар\b/gi, " ");
+
+const isNoiseLine = (line: string) => {
+  const normalized = line.trim();
+  if (!normalized) return true;
+  if (/^(хугацаа|хууд(?:ас|\.?)|answer\s*sheet)/i.test(normalized)) return true;
+  if (/^[ABCDEАБВГД](\s+[ABCDEАБВГД]){3,}$/i.test(normalized)) return true;
+  if (/^\d+(?:\s+\d+){5,}$/.test(normalized)) return true;
+  return false;
+};
+
 export const parseAnswerKey = (text: string) => {
   const map = new Map<number, string>();
-  const lines = text
-    .split(/\r?\n/)
+  const lines = sanitizePdfText(text)
+    .split(/\n/)
     .map((line) => line.trim())
     .filter(Boolean);
-  lines.forEach((line) => {
-    const match = line.match(/(\d+)\s*[:.)-]?\s*([ABCD])/i);
-    if (match) {
-      map.set(Number(match[1]), match[2].toUpperCase());
+
+  for (const line of lines) {
+    const matches = [...line.matchAll(/(\d+)\s*[:.)-]?\s*([A-EАБВГД])/gi)];
+    for (const match of matches) {
+      const questionNumber = Number(match[1]);
+      const label = normalizeOptionLabel(match[2]);
+      if (questionNumber > 0 && OPTION_LABELS.includes(label as (typeof OPTION_LABELS)[number])) {
+        map.set(questionNumber, label);
+      }
     }
-  });
+  }
+
   return map;
 };
 
-export const parseOptionsInline = (block: string) => {
-  const normalized = block.replace(/\s+/g, " ").trim();
-  const regex = /([A-D])[.)]\s*([^A-D]+?)(?=\s+[A-D][.)]\s*|$)/gi;
+const extractOptions = (block: string) => {
+  const regex = /(?:^|\n|\s)([A-EАБВГД])[.)]\s*(.+?)(?=(?:\s+[A-EАБВГД][.)]\s)|(?:\n+[A-EАБВГД][.)]\s)|$)/gis;
   const options: string[] = [];
   let match: RegExpExecArray | null;
-  while ((match = regex.exec(normalized)) !== null) {
-    options.push(match[2].trim());
+
+  while ((match = regex.exec(block)) !== null) {
+    const optionText = match[2]
+      .replace(/\s+/g, " ")
+      .replace(/\s*$/, "")
+      .trim();
+    if (optionText) options.push(optionText);
   }
+
   return options;
+};
+
+const extractStem = (block: string) => {
+  const optionStart = block.search(/(?:^|\n|\s)[A-EАБВГД][.)]\s*/i);
+  const stem = (optionStart >= 0 ? block.slice(0, optionStart) : block)
+    .replace(/\s+/g, " ")
+    .trim();
+  return stem;
+};
+
+const splitQuestionBlocks = (rawText: string) => {
+  const text = sanitizePdfText(rawText)
+    .split(/\n/)
+    .map((line) => line.trim())
+    .filter((line) => !isNoiseLine(line))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const blocks: Array<{ number: number; content: string }> = [];
+  const regex = /(?:^|\s)(\d{1,3})\s*[.)]\s*/g;
+  const matches = [...text.matchAll(regex)];
+
+  for (let index = 0; index < matches.length; index += 1) {
+    const match = matches[index];
+    const number = Number(match[1]);
+    const start = (match.index ?? 0) + match[0].length;
+    const end = index + 1 < matches.length ? matches[index + 1].index ?? text.length : text.length;
+    const content = text.slice(start, end).trim();
+    if (!number || !content) continue;
+    blocks.push({ number, content });
+  }
+
+  return blocks;
 };
 
 export const parseQuestionsFromText = (
   rawText: string,
   answerKey: Map<number, string>,
 ) => {
-  const cleaned = rawText.replace(/\u0000/g, "");
-  const questionBlocks = cleaned
-    .split(/\n?\s*(\d+)\s*[.)]\s+/)
-    .filter(Boolean);
+  const blocks = splitQuestionBlocks(rawText);
   const parsed: Question[] = [];
-  for (let i = 0; i < questionBlocks.length; i += 2) {
-    const number = Number(questionBlocks[i]);
-    const block = questionBlocks[i + 1] ?? "";
-    const lines = block
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-    if (lines.length === 0) continue;
-    const textLine = lines[0];
-    const options: string[] = [];
-    lines.slice(1).forEach((line) => {
-      const optMatch = line.match(/^[A-D][.)]\s*(.+)$/i);
-      if (optMatch) options.push(optMatch[1].trim());
-    });
-    const inlineOptions = options.length === 0 ? parseOptionsInline(block) : [];
-    const finalOptions = options.length > 0 ? options : inlineOptions;
-    if (finalOptions.length === 0) continue;
-    const correctLetter = answerKey.get(number) ?? "A";
-    const correctIndex = ["A", "B", "C", "D"].indexOf(correctLetter);
-    const correctAnswer =
-      finalOptions[correctIndex] ?? finalOptions[0] ?? correctLetter;
+
+  for (const { number, content } of blocks) {
+    const stem = extractStem(content);
+    if (!stem) continue;
+
+    const options = extractOptions(content);
+    if (options.length >= 2) {
+      const correctLetter = answerKey.get(number) ?? "A";
+      const correctIndex = OPTION_LABELS.indexOf(correctLetter as (typeof OPTION_LABELS)[number]);
+      parsed.push({
+        id: generateId(),
+        text: stem,
+        type: "mcq",
+        options,
+        correctAnswer: options[Math.max(correctIndex, 0)] ?? options[0] ?? "",
+      });
+      continue;
+    }
+
     parsed.push({
       id: generateId(),
-      text: textLine,
-      type: "mcq",
-      options: finalOptions,
-      correctAnswer,
+      text: stem,
+      type: "open",
+      correctAnswer: "",
     });
   }
+
   return parsed;
 };
 
