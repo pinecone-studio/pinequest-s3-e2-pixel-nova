@@ -4,11 +4,20 @@ import ExamScheduleCard from "./ExamScheduleCard";
 import ExamStatsCards from "./ExamStatsCards";
 import NotificationsCard from "./NotificationsCard";
 import CheatMonitoringCard from "./CheatMonitoringCard";
-import type { CheatStudent, Question, Exam, NotificationItem } from "../types";
+import TeacherXpOverviewCard from "./TeacherXpOverviewCard";
+import TeacherCardSkeleton from "./TeacherCardSkeleton";
+import type {
+  CheatStudent,
+  Question,
+  Exam,
+  NotificationItem,
+  TeacherStat,
+  XpLeaderboardEntry,
+} from "../types";
 
 type ExamTabProps = {
   loading: boolean;
-  stats: { label: string; value: string; trend: string }[];
+  stats: TeacherStat[];
   scheduleTitle: string;
   setScheduleTitle: (value: string) => void;
   scheduleDate: string;
@@ -46,9 +55,29 @@ type ExamTabProps = {
   notifications: NotificationItem[];
   onMarkNotificationRead: (index: number) => void;
   cheatStudents: CheatStudent[];
+  xpLeaderboard: XpLeaderboardEntry[];
 };
 
 export default function ExamTab(props: ExamTabProps) {
+  if (props.loading) {
+    return (
+      <>
+        <ExamStatsCards loading={props.loading} stats={props.stats} />
+        <section className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+          <TeacherCardSkeleton className="min-h-[320px]" rows={5} />
+          <TeacherCardSkeleton className="min-h-[620px]" rows={8} />
+        </section>
+        <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+          <TeacherCardSkeleton className="min-h-[360px]" rows={5} />
+          <div className="space-y-4">
+            <TeacherCardSkeleton className="min-h-[280px]" rows={4} />
+            <TeacherCardSkeleton className="min-h-[320px]" rows={5} />
+          </div>
+        </section>
+      </>
+    );
+  }
+
   return (
     <>
       <ExamStatsCards loading={props.loading} stats={props.stats} />
@@ -96,6 +125,7 @@ export default function ExamTab(props: ExamTabProps) {
       <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
         <ExamListCard exams={props.exams} onCopyCode={props.onCopyCode} />
         <div className="space-y-4">
+          <TeacherXpOverviewCard students={props.xpLeaderboard} />
           <NotificationsCard
             notifications={props.notifications}
             onMarkRead={props.onMarkNotificationRead}
