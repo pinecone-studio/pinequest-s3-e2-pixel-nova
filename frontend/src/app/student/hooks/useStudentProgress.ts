@@ -1,44 +1,67 @@
-import { useMemo } from "react";
-import { calculateXP, getJSON, getLevel, LEVELS } from "@/lib/examGuard";
-import type { StudentProgress, Submission } from "../types";
+import { useEffect, useMemo, useState } from "react";
+import { getLevel, LEVELS } from "@/lib/examGuard";
+import type { StudentProgress } from "../types";
 import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
+import { apiFetch, unwrapApi } from "@/lib/api-client";
+import { getStudentResults } from "@/lib/backend-auth";
 
 export const useStudentProgress = (currentUser: User | null) => {
-  const studentHistory = useMemo(() => {
-    if (!currentUser) return [] as StudentProgress[string]["history"];
-    const progress = getJSON<StudentProgress>("studentProgress", {});
-    const storedHistory = progress[currentUser.id]?.history ?? [];
-    const submissions = getJSON<Submission[]>("submissions", []).filter(
-      (item) => item.studentId === currentUser.id,
-    );
-    const submissionHistory = submissions.map((item) => {
-      const percentage = item.percentage ?? 0;
-      return {
-        examId: item.examId,
-        percentage,
-        xp: calculateXP(percentage),
-        date: item.submittedAt,
-        score: item.score,
-        totalPoints: item.totalPoints,
-        grade: gradeFromPercentage(percentage),
-      };
-    });
-    const merged = [...submissionHistory, ...storedHistory];
-    const unique = new Map<string, StudentProgress[string]["history"][number]>();
-    merged.forEach((entry) => {
-      const key = `${entry.examId}-${entry.date}`;
-      if (!unique.has(key)) unique.set(key, entry);
-    });
-    return Array.from(unique.values()).sort((a, b) =>
-      b.date.localeCompare(a.date),
-    );
-  }, [currentUser]);
+  const [studentHistory, setStudentHistory] = useState<
+    StudentProgress[string]["history"]
+  >([]);
+  const [studentProgress, setStudentProgress] = useState({
+    xp: 0,
+    level: 1,
+    history: [],
+  });
 
-  const studentProgress = useMemo(() => {
-    if (!currentUser) return { xp: 0, level: 1, history: [] };
-    const progress = getJSON<StudentProgress>("studentProgress", {});
-    return progress[currentUser.id] ?? { xp: 0, level: 1, history: [] };
+  useEffect(() => {
+    if (!currentUser) return;
+    const load = async () => {
+      try {
+        const xpPayload = await apiFetch<
+          { data?: { xp: number; level: number | { level: number } } } | {
+            xp: number;
+            level: number | { level: number };
+          }
+        >("/api/xp/profile");
+        const xpData = unwrapApi(xpPayload);
+        const levelValue =
+          typeof xpData.level === "object"
+            ? xpData.level.level
+            : xpData.level;
+        setStudentProgress({
+          xp: xpData.xp,
+          level: levelValue ?? 1,
+          history: [],
+        });
+      } catch {
+        setStudentProgress({ xp: 0, level: 1, history: [] });
+      }
+
+      try {
+        const results = await getStudentResults();
+        const history = results.map((item) => {
+          const percentage = item.score ?? 0;
+          return {
+            examId: item.examId,
+            percentage,
+            xp: 0,
+            date: item.submittedAt ?? new Date().toISOString(),
+            score: item.score ?? 0,
+            totalPoints: item.totalPoints ?? 0,
+            grade: gradeFromPercentage(percentage),
+          };
+        });
+        setStudentHistory(
+          history.sort((a, b) => b.date.localeCompare(a.date)),
+        );
+      } catch {
+        setStudentHistory([]);
+      }
+    };
+    void load();
   }, [currentUser]);
 
   const levelInfo = useMemo(

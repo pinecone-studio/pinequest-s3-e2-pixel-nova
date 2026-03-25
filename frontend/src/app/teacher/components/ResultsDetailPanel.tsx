@@ -15,6 +15,17 @@ export default function ResultsDetailPanel({
   studentProfile,
   profileLoading,
 }: ResultsDetailPanelProps) {
+  const violationEntries = selectedSubmission?.violations
+    ? [
+        { label: "Tab", value: selectedSubmission.violations.tabSwitch },
+        { label: "Blur", value: selectedSubmission.violations.windowBlur },
+        { label: "Copy", value: selectedSubmission.violations.copyAttempt },
+        { label: "Paste", value: selectedSubmission.violations.pasteAttempt },
+        { label: "Fullscreen", value: selectedSubmission.violations.fullscreenExit },
+        { label: "Shortcut", value: selectedSubmission.violations.keyboardShortcut },
+      ]
+    : [];
+
   return (
     <div className={cardClass}>
       <h2 className="flex items-center gap-2 text-sm font-semibold">Дэлгэрэнгүй</h2>
@@ -74,14 +85,22 @@ export default function ResultsDetailPanel({
               </div>
             )}
           </div>
-          {selectedSubmission.violations && (
+          {violationEntries.length > 0 && (
             <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs">
-              Зөрчил: Таб {selectedSubmission.violations.tabSwitch} · Цонх алдалт{" "}
-              {selectedSubmission.violations.windowBlur} · Хуулах{" "}
-              {selectedSubmission.violations.copyAttempt} · Буулгах{" "}
-              {selectedSubmission.violations.pasteAttempt} · Бүтэн дэлгэц{" "}
-              {selectedSubmission.violations.fullscreenExit} · Товч{" "}
-              {selectedSubmission.violations.keyboardShortcut}
+              <div className="font-semibold text-foreground">Хяналтын тэмдэглэл</div>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {violationEntries.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between rounded-lg border border-border bg-card px-2 py-1"
+                  >
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <span className="font-semibold text-foreground">
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {selectedExam && selectedSubmission.answers && (

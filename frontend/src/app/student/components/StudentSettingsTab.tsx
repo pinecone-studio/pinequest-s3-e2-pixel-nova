@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { getJSON, getJSONForRole, setJSON, setJSONForRole } from "@/lib/examGuard";
-import { getStudentProfile, updateStudentProfile, type StudentProfile } from "@/api";
+import {
+  getStudentProfile,
+  updateStudentProfile,
+  type StudentProfile,
+} from "@/lib/backend-auth";
 import { cardClass } from "../styles";
 import { Settings, User } from "lucide-react";
-import { getLinkedTeacherRole, getStoredRole } from "@/lib/role-session";
 
 type StudentSettingsTabProps = {
   userId: string;
@@ -23,7 +25,6 @@ export default function StudentSettingsTab({
   userId,
   username,
 }: StudentSettingsTabProps) {
-  const storageKey = `studentProfile:${userId}`;
   const [profile, setProfile] = useState<StudentProfile>(
     defaultProfile(username),
   );
@@ -32,50 +33,32 @@ export default function StudentSettingsTab({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = getJSON<StudentProfile | null>(storageKey, null);
-    if (stored) {
-      setProfile({ ...defaultProfile(username), ...stored });
-    } else {
-      setProfile(defaultProfile(username));
-    }
-    setSaved(false);
-  }, [storageKey, username]);
-
-  useEffect(() => {
-    let cancelled = false;
-
+    let active = true;
     const loadProfile = async () => {
       setLoading(true);
       setError(null);
       try {
-        const remoteProfile = await getStudentProfile();
-        if (cancelled) return;
-
-        const nextProfile = {
+        const remote = await getStudentProfile();
+        if (!active) return;
+        setProfile({
           ...defaultProfile(username),
-          ...remoteProfile,
-        };
-        setProfile(nextProfile);
-        setJSON(storageKey, nextProfile);
+          ...remote,
+          fullName: remote.fullName || username,
+        });
       } catch {
-        if (cancelled) return;
-        const stored = getJSON<StudentProfile | null>(storageKey, null);
-        if (stored) {
-          setProfile({ ...defaultProfile(username), ...stored });
-        } else {
-          setError("Failed to load profile.");
-        }
+        if (!active) return;
+        setProfile(defaultProfile(username));
+        setError("Профайл ачаалах үед алдаа гарлаа.");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (active) setLoading(false);
       }
     };
-
-    loadProfile();
-
+    void loadProfile();
+    setSaved(false);
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [storageKey, username]);
+  }, [userId, username]);
 
   const handleChange = (field: keyof StudentProfile, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -90,51 +73,30 @@ export default function StudentSettingsTab({
       fullName: profile.fullName || username,
       id: userId,
     };
-
     try {
+      setLoading(true);
       const savedProfile = await updateStudentProfile(nextProfile);
-      const normalizedProfile = {
-        ...nextProfile,
-        ...savedProfile,
-      };
-
-      setProfile(normalizedProfile);
-      setJSON(storageKey, normalizedProfile);
-
-      const profiles = getJSON<Record<string, StudentProfile>>(
-        "studentProfiles",
-        {},
-      );
-      profiles[userId] = normalizedProfile;
-      setJSON("studentProfiles", profiles);
-
-      const linkedTeacherRole = getLinkedTeacherRole(getStoredRole());
-      const teacherProfiles = getJSONForRole<Record<string, StudentProfile>>(
-        "studentProfiles",
-        {},
-        linkedTeacherRole,
-      );
-      teacherProfiles[userId] = normalizedProfile;
-      setJSONForRole("studentProfiles", teacherProfiles, linkedTeacherRole);
-
+      setProfile({ ...defaultProfile(username), ...savedProfile });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      setError("Failed to save profile.");
+      setError("Профайл хадгалах үед алдаа гарлаа.");
+    } finally {
+      setLoading(false);
     }
-  }, [profile, storageKey, userId, username]);
+  }, [profile, userId, username]);
 
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <div className={cardClass}>
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <User className="w-4 h-4" />
-          Profile
+          Профайл
         </h2>
         <div className="mt-4 grid gap-3 text-sm">
           {loading && (
             <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-              Loading profile...
+              Профайл ачаалж байна...
             </div>
           )}
           {error && (
@@ -144,18 +106,18 @@ export default function StudentSettingsTab({
           )}
           <div>
             <label className="text-xs font-semibold text-muted-foreground">
-              Full name
+              Бүтэн нэр
             </label>
             <input
               className="mt-1 w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm outline-none transition focus:border-primary"
               value={profile.fullName ?? ""}
               onChange={(e) => handleChange("fullName", e.target.value)}
-              placeholder="Enter full name"
+              placeholder="Нэрээ оруулна уу"
             />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">
-              Email
+              Имэйл
             </label>
             <input
               className="mt-1 w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm outline-none transition focus:border-primary"
@@ -167,7 +129,7 @@ export default function StudentSettingsTab({
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">
-              Phone
+              Утас
             </label>
             <input
               className="mt-1 w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm outline-none transition focus:border-primary"
@@ -179,18 +141,18 @@ export default function StudentSettingsTab({
           <div className="grid gap-3 md:grid-cols-2">
             <div>
               <label className="text-xs font-semibold text-muted-foreground">
-                School
+                Сургууль
               </label>
               <input
                 className="mt-1 w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm outline-none transition focus:border-primary"
                 value={profile.school ?? ""}
                 onChange={(e) => handleChange("school", e.target.value)}
-                placeholder="School name"
+                placeholder="Сургуулийн нэр"
               />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">
-                Grade
+                Анги
               </label>
               <input
                 className="mt-1 w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm outline-none transition focus:border-primary"
@@ -202,29 +164,29 @@ export default function StudentSettingsTab({
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground">
-              Bio
+              Танилцуулга
             </label>
             <textarea
               className="mt-1 min-h-[90px] w-full resize-none rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm outline-none transition focus:border-primary"
               value={profile.bio ?? ""}
               onChange={(e) => handleChange("bio", e.target.value)}
-              placeholder="Short introduction..."
+              placeholder="Өөрийн товч танилцуулга..."
             />
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              Review your information before saving.
+              Мэдээлэл зөв эсэхийг шалгаад хадгална уу.
             </span>
             <button
               className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:brightness-110"
               onClick={handleSave}
             >
-              Save
+              Хадгалах
             </button>
           </div>
           {saved && (
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-600">
-              Profile saved successfully.
+              Профайл амжилттай хадгалагдлаа.
             </div>
           )}
         </div>
@@ -232,12 +194,12 @@ export default function StudentSettingsTab({
       <div className={cardClass}>
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Settings className="w-4 h-4" />
-          Settings
+          Тохиргоо
         </h2>
         <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-          <div>Autosave: Enabled</div>
-          <div>Exam reminders: Enabled</div>
-          <div>Focus mode: Active</div>
+          <div>Авто хадгалалт: Асаалттай</div>
+          <div>Шалгалтын сануулга: Асаалттай</div>
+          <div>Төвлөрөх горим: Идэвхтэй</div>
         </div>
       </div>
     </section>

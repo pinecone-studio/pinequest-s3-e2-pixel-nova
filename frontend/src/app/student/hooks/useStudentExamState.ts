@@ -1,19 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setJSON } from "@/lib/examGuard";
-import type {
-  Exam,
-  ExamSession,
-  NotificationItem,
-  Question,
-  Submission,
-  Violations,
-} from "../types";
+import { apiFetch, unwrapApi } from "@/lib/api-client";
+import type { Exam, ExamSession, Question, Submission, Violations } from "../types";
 import type { User } from "@/lib/examGuard";
-import {
-  buildAnswerReport,
-  markExamStartedForRoles,
-  persistSubmissionData,
-} from "./student-exam-helpers";
+import { buildAnswerReport } from "./student-exam-helpers";
 
 const emptyViolations: Violations = {
   tabSwitch: 0,
@@ -26,10 +16,8 @@ const emptyViolations: Violations = {
 };
 export const useStudentExamState = (params: {
   currentUser: User | null;
-  exams: Exam[];
-  setNotifications: (items: NotificationItem[]) => void;
 }) => {
-  const { currentUser, exams, setNotifications } = params;
+  const { currentUser } = params;
   const [view, setView] = useState<"dashboard" | "exam" | "result">(
     "dashboard",
   );
@@ -39,6 +27,8 @@ export const useStudentExamState = (params: {
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const [activeExam, setActiveExam] = useState<Exam | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -57,50 +47,42 @@ export const useStudentExamState = (params: {
     }
     document.body.style.filter = "none";
   }, [view]);
-  const activeExam = useMemo(() => {
-    return selectedExam ?? exams[0] ?? null;
-  }, [selectedExam, exams]);
   const sessionKey = useMemo(() => {
-    if (!currentUser || !activeExam) return null;
-    return `examSession_${activeExam.id}_${currentUser.id}`;
-  }, [activeExam, currentUser]);
-  const handleLookup = () => {
+    if (!currentUser || !sessionId) return null;
+    return `examSession_${sessionId}_${currentUser.id}`;
+  }, [sessionId, currentUser]);
+  const handleLookup = async () => {
     const code = roomCodeInput.trim().toUpperCase();
     if (!code) {
       setJoinError("Өрөөний код оруулна уу.");
       return;
     }
-    const found = exams.find((exam) => exam.roomCode === code) || null;
-    if (!found) {
-      setJoinError("Өрөөний код олдсонгүй.");
+    try {
+      const payload = await apiFetch<
+        { data?: { sessionId: string; exam: { id: string; title: string; durationMin: number; questionCount: number } } } | {
+          sessionId: string;
+          exam: { id: string; title: string; durationMin: number; questionCount: number };
+        }
+      >("/api/sessions/join", {
+        method: "POST",
+        body: JSON.stringify({ roomCode: code }),
+      });
+      const data = unwrapApi(payload);
+      setSessionId(data.sessionId);
+      setSelectedExam({
+        id: data.exam.id,
+        title: data.exam.title,
+        scheduledAt: null,
+        roomCode: code,
+        questions: [],
+        duration: data.exam.durationMin,
+        createdAt: new Date().toISOString(),
+      });
+      setJoinError(null);
+    } catch {
+      setJoinError("Өрөөний код олдсонгүй эсвэл шалгалт идэвхгүй байна.");
       setSelectedExam(null);
-      return;
     }
-    if (found.scheduledAt) {
-      const now = Date.now();
-      const scheduledAt = new Date(found.scheduledAt).getTime();
-      if (Number.isFinite(scheduledAt) && now < scheduledAt) {
-        setJoinError("Шалгалт хараахан эхлээгүй байна. Товлосон үед хүлээнэ үү.");
-        setSelectedExam(found);
-        return;
-      }
-      if (
-        Number.isFinite(scheduledAt) &&
-        now > scheduledAt + 5 * 60 * 1000 &&
-        !found.examStartedAt
-      ) {
-        setJoinError("Шалгалтын эхлэлээс 5 минут өнгөрсөн тул орох боломжгүй.");
-        setSelectedExam(null);
-        return;
-      }
-    }
-    if (found.examStartedAt) {
-      setJoinError("Шалгалт аль хэдийн эхэлсэн байна.");
-      setSelectedExam(null);
-      return;
-    }
-    setJoinError(null);
-    setSelectedExam(found);
   };
   const showWarning = (message: string) => {
     setWarning(message);
@@ -129,78 +111,165 @@ export const useStudentExamState = (params: {
           ? prev.keyboardShortcut + 1
           : prev.keyboardShortcut,
     }));
+    if (!sessionId) return;
+    const eventTypeMap: Record<string, string> = {
+      TAB_SWITCH: "tab_switch",
+      WINDOW_BLUR: "window_blur",
+      COPY_ATTEMPT: "copy_paste",
+      PASTE_ATTEMPT: "copy_paste",
+      FULLSCREEN_EXIT: "tab_hidden",
+      KEYBOARD_SHORTCUT: "devtools_open",
+      SUSPICIOUS_SPEED: "rapid_answers",
+      NO_MOUSE_MOVEMENT: "idle_too_long",
+      EXTENDED_DISPLAY: "multiple_monitors",
+    };
+    const eventType = eventTypeMap[type] ?? "suspicious_resize";
+    void apiFetch("/api/cheat/event", {
+      method: "POST",
+      body: JSON.stringify({
+        sessionId,
+        eventType,
+        metadata: type,
+      }),
+    });
   };
   const startExam = () => {
-    if (!activeExam || !currentUser) return;
-    if (activeExam.scheduledAt) {
-      const scheduledAt = new Date(activeExam.scheduledAt).getTime();
-      if (Number.isFinite(scheduledAt) && Date.now() < scheduledAt) {
-        setJoinError("Шалгалт хараахан эхлээгүй байна. Түр хүлээнэ үү.");
-        return;
+    if (!sessionId || !currentUser) return;
+    const run = async () => {
+      try {
+        const sessionPayload = await apiFetch<
+          { data?: { exam: { id: string; title: string; durationMin: number; questions: { id: string; type: string; questionText: string; imageUrl?: string | null; points: number; options?: { id: string; label: string; text: string }[] }[] } } } | {
+            exam: { id: string; title: string; durationMin: number; questions: { id: string; type: string; questionText: string; imageUrl?: string | null; points: number; options?: { id: string; label: string; text: string }[] }[] };
+          }
+        >(`/api/sessions/${sessionId}`);
+        const sessionData = unwrapApi(sessionPayload);
+        const examData = sessionData.exam;
+        const mappedExam: Exam = {
+          id: examData.id,
+          title: examData.title,
+          scheduledAt: null,
+          roomCode: roomCodeInput.trim().toUpperCase(),
+          questions: examData.questions.map((question) => ({
+            id: question.id,
+            text: question.questionText,
+            type: question.type as Question["type"],
+            options: question.options?.map((opt) => opt.text) ?? undefined,
+            correctAnswer: "",
+            points: Number(question.points ?? 1),
+            imageUrl: question.imageUrl ?? undefined,
+          })),
+          duration: examData.durationMin,
+          createdAt: new Date().toISOString(),
+        };
+        setActiveExam(mappedExam);
+        await apiFetch(`/api/sessions/${sessionId}/start`, { method: "POST" });
+        const totalSeconds = (mappedExam.duration ?? 45) * 60;
+        setTimeLeft(totalSeconds);
+        setCurrentQuestionIndex(0);
+        setAnswers({});
+        setViolations({ ...emptyViolations });
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => null);
+        }
+        if (sessionKey) {
+          const session: ExamSession = {
+            examId: mappedExam.id,
+            studentId: currentUser.id,
+            answers: {},
+            currentQuestionIndex: 0,
+            timeLeft: totalSeconds,
+            startedAt: new Date().toISOString(),
+          };
+          setJSON(sessionKey, session);
+        }
+        setView("exam");
+      } catch {
+        setJoinError("Шалгалт эхлүүлэхэд алдаа гарлаа.");
       }
-      if (
-        Number.isFinite(scheduledAt) &&
-        Date.now() > scheduledAt + 5 * 60 * 1000 &&
-        !activeExam.examStartedAt
-      ) {
-        setJoinError("Шалгалтын эхлэлээс 5 минут өнгөрсөн тул орох боломжгүй.");
-        return;
-      }
-    }
-    const startedAt = new Date().toISOString();
-    if (!activeExam.examStartedAt) {
-      markExamStartedForRoles(activeExam, startedAt);
-    }
-    const totalSeconds = (activeExam.duration ?? 45) * 60;
-    setTimeLeft(totalSeconds);
-    setCurrentQuestionIndex(0);
-    setAnswers({});
-    setViolations({ ...emptyViolations });
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(() => null);
-    }
-    if (sessionKey) {
-      const session: ExamSession = {
-        examId: activeExam.id,
-        studentId: currentUser.id,
-        answers: {},
-        currentQuestionIndex: 0,
-        timeLeft: totalSeconds,
-        startedAt: new Date().toISOString(),
-      };
-      setJSON(sessionKey, session);
-    }
-    setView("exam");
+    };
+    void run();
   };
   const submitExam = useCallback(
-    (auto = false, terminated = false, reason?: string) => {
+    async (auto = false, terminated = false, reason?: string) => {
       if (!activeExam || !currentUser) return;
       if (!auto) {
         const ok = window.confirm("Та шалгалтаа илгээхдээ итгэлтэй байна уу?");
         if (!ok) return;
       }
+      if (!sessionId) return;
       const report = buildAnswerReport(activeExam, answers);
-      const { submission } = persistSubmissionData({
-        exam: activeExam,
-        currentUser,
-        report,
-        violations,
-        terminated,
-        reason,
-        setNotifications,
-      });
+      await apiFetch(`/api/sessions/${sessionId}/submit`, { method: "POST" });
+      const resultPayload = await apiFetch<
+        | {
+            data?: {
+              answers: {
+                questionText: string;
+                selectedAnswer: string | null;
+                correctAnswer: string | null;
+                isCorrect: boolean;
+                points: number;
+                pointsEarned: number;
+              }[];
+              score: number;
+              totalPoints: number;
+            };
+          }
+        | {
+            answers: {
+              questionText: string;
+              selectedAnswer: string | null;
+              correctAnswer: string | null;
+              isCorrect: boolean;
+              points: number;
+              pointsEarned: number;
+            }[];
+            score: number;
+            totalPoints: number;
+          }
+      >(`/api/sessions/${sessionId}/result`);
+      const result = unwrapApi(resultPayload);
+      const backendReport = result.answers.map((item) => ({
+        question: {
+          id: `${item.questionText}-${item.points}`,
+          text: item.questionText,
+          type: "text" as const,
+          options: undefined,
+          correctAnswer: item.correctAnswer ?? "",
+          points: item.points ?? 1,
+        },
+        answer: item.selectedAnswer ?? "",
+        correct: Boolean(item.isCorrect),
+      }));
 
       if (sessionKey) localStorage.removeItem(sessionKey);
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => null);
       }
       document.body.style.filter = "none";
+      const submission: Submission = {
+        id: sessionId,
+        examId: activeExam.id,
+        studentId: currentUser.id,
+        studentНэр: currentUser.username,
+        answers: report.map((item) => ({
+          questionId: item.question.id,
+          selectedAnswer: item.answer,
+          correct: item.correct,
+        })),
+        score: result.score ?? 0,
+        totalPoints: result.totalPoints ?? 0,
+        percentage: result.score ?? 0,
+        terminated,
+        terminationReason: reason,
+        violations,
+        submittedAt: new Date().toISOString(),
+      };
       setLastSubmission(submission);
-      setAnswerReport(report);
+      setAnswerReport(backendReport);
       setActiveTab("Дүн");
       setView("result");
     },
-    [activeExam, answers, currentUser, sessionKey, violations, setNotifications],
+    [activeExam, answers, currentUser, sessionKey, violations, sessionId],
   );
 
   const terminateExam = useCallback(
@@ -215,6 +284,14 @@ export const useStudentExamState = (params: {
     if (!activeExam) return;
     const currentQuestion = activeExam.questions[currentQuestionIndex];
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
+    if (!sessionId) return;
+    void apiFetch(`/api/sessions/${sessionId}/answer`, {
+      method: "POST",
+      body: JSON.stringify({
+        questionId: currentQuestion.id,
+        textAnswer: value,
+      }),
+    });
   };
   const selectMcqAnswer = (value: string) => {
     updateAnswer(value);

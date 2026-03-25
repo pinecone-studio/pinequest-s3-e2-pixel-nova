@@ -62,6 +62,7 @@ export default function Home() {
               width={800}
               height={700}
               className="rounded-3xl shadow-2xl border border-border/50 object-cover hover:shadow-3xl transition-shadow duration-500 h-[700px] w-[800px]"
+              unoptimized
             />
           </div>
         </div>
@@ -144,6 +145,7 @@ export default function Home() {
                 width={640}
                 height={256}
                 className="w-full rounded-3xl shadow-2xl border border-border/50 object-cover h-64 hover:shadow-3xl transition-shadow duration-500"
+                unoptimized
               />
             </div>
           </div>

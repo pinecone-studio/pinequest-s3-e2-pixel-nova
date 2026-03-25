@@ -47,8 +47,6 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
   );
   const exam = useStudentExamState({
     currentUser: data.currentUser,
-    exams: data.exams,
-    setNotifications: data.setNotifications,
   });
   const progress = useStudentProgress(data.currentUser);
 
