@@ -29,6 +29,8 @@ type ExamTabProps = {
   onCopyCode: (code: string) => void;
   examTitle: string;
   setExamTitle: (value: string) => void;
+  createDate: string;
+  setCreateDate: (value: string) => void;
   questionText: string;
   setQuestionText: (value: string) => void;
   questionType: "text" | "open" | "mcq";
@@ -37,6 +39,10 @@ type ExamTabProps = {
   setMcqOptions: (value: string[]) => void;
   questionAnswer: string;
   setQuestionAnswer: (value: string) => void;
+  questionPoints: number;
+  setQuestionPoints: (value: number) => void;
+  questionCorrectIndex: number;
+  setQuestionCorrectIndex: (value: number) => void;
   questions: Question[];
   addQuestion: () => void;
   removeQuestion: (id: string) => void;
@@ -53,7 +59,7 @@ type ExamTabProps = {
   pdfError: string | null;
   importError: string | null;
   onPdfUpload: (file: File) => void;
-  onCsvUpload: (file: File) => void;
+  onImageUpload: (file: File) => void;
   onDocxUpload: (file: File) => void;
   exams: Exam[];
   notifications: NotificationItem[];
@@ -100,6 +106,8 @@ export default function ExamTab(props: ExamTabProps) {
         <ExamCreateCard
           examTitle={props.examTitle}
           setExamTitle={props.setExamTitle}
+          createDate={props.createDate}
+          setCreateDate={props.setCreateDate}
           durationMinutes={props.durationMinutes}
           setDurationMinutes={props.setDurationMinutes}
           questionText={props.questionText}
@@ -110,6 +118,10 @@ export default function ExamTab(props: ExamTabProps) {
           setMcqOptions={props.setMcqOptions}
           questionAnswer={props.questionAnswer}
           setQuestionAnswer={props.setQuestionAnswer}
+          questionPoints={props.questionPoints}
+          setQuestionPoints={props.setQuestionPoints}
+          questionCorrectIndex={props.questionCorrectIndex}
+          setQuestionCorrectIndex={props.setQuestionCorrectIndex}
           questions={props.questions}
           addQuestion={props.addQuestion}
           removeQuestion={props.removeQuestion}
@@ -126,7 +138,7 @@ export default function ExamTab(props: ExamTabProps) {
           pdfError={props.pdfError}
           importError={props.importError}
           onPdfUpload={props.onPdfUpload}
-          onCsvUpload={props.onCsvUpload}
+          onImageUpload={props.onImageUpload}
           onDocxUpload={props.onDocxUpload}
         />
       </section>

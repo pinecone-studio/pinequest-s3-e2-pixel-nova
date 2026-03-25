@@ -29,9 +29,9 @@ export default function CheatMonitoringCard({ students }: CheatMonitoringCardPro
             Одоогоор сэжигтэй үйлдэл илрээгүй.
           </div>
         )}
-        {students.map((student) => (
+        {students.map((student, idx) => (
           <div
-            key={student.id ?? student.name}
+            key={`${student.studentId ?? student.id ?? student.name}-${student.examTitle ?? "exam"}-${idx}`}
             className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2"
           >
             <div className="flex items-start justify-between gap-3">

@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { cardClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { Exam } from "../types";
@@ -8,9 +9,37 @@ type ExamListCardProps = {
 };
 
 export default function ExamListCard({ exams, onCopyCode }: ExamListCardProps) {
-  const sortedExams = [...exams].sort((left, right) =>
-    right.createdAt.localeCompare(left.createdAt),
-  );
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "scheduled" | "saved" | "draft">("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "scheduled">("newest");
+
+  const sortedExams = useMemo(() => {
+    const filtered = exams.filter((exam) => {
+      const matchesText = search
+        ? exam.title.toLowerCase().includes(search.toLowerCase()) ||
+          exam.roomCode.toLowerCase().includes(search.toLowerCase())
+        : true;
+      const isSaved = exam.questions.length > 0;
+      const isScheduled = Boolean(exam.scheduledAt);
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "scheduled" && isScheduled) ||
+        (statusFilter === "saved" && isSaved) ||
+        (statusFilter === "draft" && !isSaved && !isScheduled);
+      return matchesText && matchesStatus;
+    });
+
+    const sorted = [...filtered].sort((left, right) => {
+      if (sortBy === "oldest") return left.createdAt.localeCompare(right.createdAt);
+      if (sortBy === "scheduled") {
+        const leftTime = left.scheduledAt ? new Date(left.scheduledAt).getTime() : 0;
+        const rightTime = right.scheduledAt ? new Date(right.scheduledAt).getTime() : 0;
+        return rightTime - leftTime;
+      }
+      return right.createdAt.localeCompare(left.createdAt);
+    });
+    return sorted;
+  }, [exams, search, statusFilter, sortBy]);
   const savedExams = exams.filter((exam) => exam.questions.length > 0).length;
   const scheduledExams = exams.filter((exam) => Boolean(exam.scheduledAt)).length;
 
@@ -50,6 +79,38 @@ export default function ExamListCard({ exams, onCopyCode }: ExamListCardProps) {
           </span>
         </div>
       </div>
+      <div className="mt-4 grid gap-2 text-sm">
+        <div className="grid gap-2 md:grid-cols-[1.4fr_160px_160px]">
+          <input
+            className="w-full rounded-xl border border-border bg-muted/60 px-3 py-2 text-sm outline-none transition focus:border-primary"
+            placeholder="Шалгах: нэр эсвэл room код"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <select
+            className="w-full rounded-xl border border-border bg-muted/60 px-3 py-2 text-sm outline-none transition focus:border-primary"
+            value={statusFilter}
+            onChange={(event) =>
+              setStatusFilter(event.target.value as typeof statusFilter)
+            }
+          >
+            <option value="all">Бүгд</option>
+            <option value="scheduled">Товлосон</option>
+            <option value="saved">Санд хадгалсан</option>
+            <option value="draft">Ноорог</option>
+          </select>
+          <select
+            className="w-full rounded-xl border border-border bg-muted/60 px-3 py-2 text-sm outline-none transition focus:border-primary"
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
+          >
+            <option value="newest">Сүүлд үүссэн</option>
+            <option value="oldest">Эртний</option>
+            <option value="scheduled">Товлосон огноо</option>
+          </select>
+        </div>
+      </div>
+
       <div className="mt-4 space-y-3 text-sm">
         {sortedExams.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border bg-muted/60 px-4 py-8 text-center text-sm text-muted-foreground">

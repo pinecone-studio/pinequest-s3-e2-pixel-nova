@@ -1,10 +1,13 @@
 import { cardClass } from "../styles";
-import { formatDate } from "../utils";
+import { formatDate, gradeFromPercentage } from "../utils";
 type StudentResultsTabProps = {
   studentHistory: {
     examId: string;
     title: string;
     percentage: number;
+    score?: number;
+    totalPoints?: number;
+    grade?: "A" | "B" | "C" | "D" | "F";
     date: string;
   }[];
 };
@@ -39,7 +42,9 @@ export default function StudentResultsTab({
               Одоогоор дүнгийн түүх алга.
             </div>
           )}
-          {studentHistory.map((exam) => (
+          {studentHistory.map((exam) => {
+            const grade = exam.grade ?? gradeFromPercentage(exam.percentage);
+            return (
             <div
               key={`${exam.examId}-${exam.date}`}
               className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2"
@@ -49,12 +54,17 @@ export default function StudentResultsTab({
                 <div className="text-xs text-muted-foreground">
                   {formatDate(exam.date)}
                 </div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Оноо: {exam.score ?? "—"}/{exam.totalPoints ?? "—"} · {exam.percentage}%
+                </div>
               </div>
               <div className="text-xs font-semibold text-foreground">
-                {exam.percentage}%
+                <span className="rounded-full border border-border bg-card px-2 py-1">
+                  {grade}
+                </span>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
       <div className={cardClass}>
@@ -79,7 +89,13 @@ export default function StudentResultsTab({
           олон алхамтай бодлогод тооцоогоо дахин нягтлаарай.
         </p>
         <div className="mt-4 rounded-xl border border-border bg-muted px-3 py-2 text-xs">
-          Дундаж дүн: 85%
+          Дундаж дүн: {studentHistory.length
+            ? Math.round(
+                studentHistory.reduce((sum, item) => sum + item.percentage, 0) /
+                  studentHistory.length,
+              )
+            : 0}
+          %
         </div>
       </div>
     </section>

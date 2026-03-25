@@ -49,21 +49,21 @@ export default function ExamScheduleCard({
         <input
           className={inputClass}
           placeholder="Шалгалтын нэр"
-          value={scheduleTitle}
+          value={scheduleTitle ?? ""}
           onChange={(event) => setScheduleTitle(event.target.value)}
         />
         <input
           type="number"
           min={10}
           className={inputClass}
-          value={durationMinutes}
+          value={Number.isFinite(durationMinutes) ? durationMinutes : 0}
           onChange={(event) => setDurationMinutes(Number(event.target.value))}
           placeholder="Хугацаа (минут)"
         />
         <input
           type="datetime-local"
           className={inputClass}
-          value={scheduleDate}
+          value={scheduleDate ?? ""}
           onChange={(event) => setScheduleDate(event.target.value)}
         />
         <button className={`w-full ${buttonPrimary}`} onClick={onSchedule}>

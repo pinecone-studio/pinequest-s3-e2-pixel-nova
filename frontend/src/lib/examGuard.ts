@@ -144,9 +144,15 @@ export const getJSON = <T,>(key: string, fallback: T): T => {
   }
 };
 
-export const setJSON = (key: string, value: unknown) => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(withRolePrefix(key), JSON.stringify(value));
+export const setJSON = (key: string, value: unknown): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    localStorage.setItem(withRolePrefix(key), JSON.stringify(value));
+    return true;
+  } catch (err) {
+    console.error("localStorage quota error:", err);
+    return false;
+  }
 };
 
 export const getJSONForRole = <T,>(
@@ -164,9 +170,19 @@ export const getJSONForRole = <T,>(
   }
 };
 
-export const setJSONForRole = (key: string, value: unknown, role: string) => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(withRolePrefix(key, role), JSON.stringify(value));
+export const setJSONForRole = (
+  key: string,
+  value: unknown,
+  role: string,
+): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    localStorage.setItem(withRolePrefix(key, role), JSON.stringify(value));
+    return true;
+  } catch (err) {
+    console.error("localStorage quota error:", err);
+    return false;
+  }
 };
 
 export const calculateXP = (percentage: number) => {

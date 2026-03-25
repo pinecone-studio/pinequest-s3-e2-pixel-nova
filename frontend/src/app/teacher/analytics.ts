@@ -226,7 +226,9 @@ export const buildExamStats = (params: {
   if (!activeExam) return null;
 
   const submissionCount = activeSubmissions.length;
-  const totalPoints = activeExam.questions.length || 1;
+  const totalPoints =
+    activeExam.questions.reduce((sum, question) => sum + (question.points ?? 1), 0) ||
+    1;
   const average =
     activeSubmissions.reduce((sum, submission) => sum + submission.percentage, 0) /
     Math.max(submissionCount, 1);
@@ -254,10 +256,13 @@ export const buildExamStats = (params: {
     })
     .filter((question) => question.total > 0);
 
-  const scoreDistribution = activeSubmissions.map((submission) => ({
-    name: submission.studentName,
-    score: Math.round((submission.score / totalPoints) * 100),
-  }));
+  const scoreDistribution = activeSubmissions.map((submission) => {
+    const basePoints = submission.totalPoints || totalPoints;
+    return {
+      name: submission.studentName,
+      score: Math.round((submission.score / basePoints) * 100),
+    };
+  });
 
   return {
     average: Math.round(average),
@@ -277,11 +282,14 @@ export const buildExamStats = (params: {
       })
       .slice(0, 5),
     scoreDistribution,
-    correctTotal: activeSubmissions.reduce((sum, submission) => sum + submission.score, 0),
-    incorrectTotal: activeSubmissions.reduce(
-      (sum, submission) => sum + Math.max(totalPoints - submission.score, 0),
+    correctTotal: activeSubmissions.reduce(
+      (sum, submission) => sum + submission.score,
       0,
     ),
+    incorrectTotal: activeSubmissions.reduce((sum, submission) => {
+      const basePoints = submission.totalPoints || totalPoints;
+      return sum + Math.max(basePoints - submission.score, 0);
+    }, 0),
     performanceBands: [
       {
         label: "90-100%",

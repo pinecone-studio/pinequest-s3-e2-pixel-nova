@@ -139,6 +139,7 @@ export const parseQuestionsFromText = (
         type: "mcq",
         options,
         correctAnswer: options[Math.max(correctIndex, 0)] ?? options[0] ?? "",
+        points: 1,
       });
       continue;
     }
@@ -148,6 +149,7 @@ export const parseQuestionsFromText = (
       text: stem,
       type: "open",
       correctAnswer: "",
+      points: 1,
     });
   }
 

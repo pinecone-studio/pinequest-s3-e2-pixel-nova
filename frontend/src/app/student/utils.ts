@@ -13,3 +13,13 @@ export const formatTimer = (seconds: number) => {
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
+
+import type { Grade } from "./types";
+
+export const gradeFromPercentage = (percentage: number): Grade => {
+  if (percentage >= 90) return "A";
+  if (percentage >= 80) return "B";
+  if (percentage >= 70) return "C";
+  if (percentage >= 60) return "D";
+  return "F";
+};

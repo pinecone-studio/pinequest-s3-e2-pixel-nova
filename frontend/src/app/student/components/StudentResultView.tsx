@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { Submission } from "../types";
 
 type AnswerReportItem = {
@@ -17,6 +18,13 @@ export default function StudentResultView({
   answerReport,
   onBack,
 }: StudentResultViewProps) {
+  useEffect(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => null);
+    }
+    document.body.style.filter = "none";
+  }, []);
+
   if (!lastSubmission) {
     return (
       <div className="min-h-screen bg-background text-foreground px-6 py-10">

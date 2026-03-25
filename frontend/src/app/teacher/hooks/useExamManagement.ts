@@ -11,11 +11,14 @@ export const useExamManagement = (params: {
   const [scheduleTitle, setScheduleTitle] = useState("");
   const [scheduleDate, setScheduleDate] = useState("");
   const [examTitle, setExamTitle] = useState("");
+  const [createDate, setCreateDate] = useState("");
   const [questionText, setQuestionText] = useState("");
   const [questionType, setQuestionType] = useState<"text" | "open" | "mcq">(
     "text",
   );
   const [questionAnswer, setQuestionAnswer] = useState("");
+  const [questionPoints, setQuestionPoints] = useState(1);
+  const [questionCorrectIndex, setQuestionCorrectIndex] = useState(0);
   const [mcqOptions, setMcqOptions] = useState<string[]>(["", "", "", ""]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [roomCode, setRoomCode] = useState<string | null>(null);
@@ -24,7 +27,22 @@ export const useExamManagement = (params: {
 
   const persistExams = (next: Exam[]) => {
     setExams(next);
-    setJSON("exams", next);
+    const ok = setJSON("exams", next);
+    if (!ok) {
+      const stripped = next.map((exam) => ({
+        ...exam,
+        questions: exam.questions.map((question) => ({
+          ...question,
+          imageUrl: undefined,
+        })),
+      }));
+      const fallbackOk = setJSON("exams", stripped);
+      showToast(
+        fallbackOk
+          ? "Орон зай дүүрсэн тул зураг хадгалагдсангүй. Асуултууд хадгалагдлаа."
+          : "Хадгалах орон зай дүүрсэн байна. Зургийн хэмжээ/тоо их байж магадгүй.",
+      );
+    }
   };
 
   useEffect(() => {
@@ -63,6 +81,7 @@ export const useExamManagement = (params: {
       id: generateId(),
       title: scheduleTitle,
       scheduledAt: scheduleDate,
+      examStartedAt: null,
       roomCode: generateRoomCode(),
       questions: [],
       duration: durationMinutes,
@@ -76,8 +95,16 @@ export const useExamManagement = (params: {
   };
 
   const addQuestion = () => {
-    if (!questionText || !questionAnswer) {
-      showToast("Асуулт болон зөв хариулт оруулна уу.");
+    if (!questionText) {
+      showToast("Асуултын текст оруулна уу.");
+      return;
+    }
+    if (questionType !== "mcq" && !questionAnswer) {
+      showToast("Зөв хариулт оруулна уу.");
+      return;
+    }
+    if (!Number.isFinite(questionPoints) || questionPoints <= 0) {
+      showToast("Оноо 1-с их байх ёстой.");
       return;
     }
     const options =
@@ -88,6 +115,10 @@ export const useExamManagement = (params: {
       showToast("A, B, C, D сонголтыг бүрэн бөглөнө үү.");
       return;
     }
+    const correctAnswer =
+      questionType === "mcq"
+        ? options?.[questionCorrectIndex] ?? options?.[0] ?? ""
+        : questionAnswer;
     setQuestions((prev) => [
       ...prev,
       {
@@ -95,11 +126,14 @@ export const useExamManagement = (params: {
         text: questionText,
         type: questionType,
         options,
-        correctAnswer: questionAnswer,
+        correctAnswer,
+        points: Math.max(1, Math.floor(questionPoints)),
       },
     ]);
     setQuestionText("");
     setQuestionAnswer("");
+    setQuestionPoints(1);
+    setQuestionCorrectIndex(0);
     if (questionType === "mcq") setMcqOptions(["", "", "", ""]);
   };
 
@@ -166,10 +200,19 @@ export const useExamManagement = (params: {
       showToast("Шалгалтын нэр болон асуултууд оруулна уу.");
       return;
     }
+    const missingCorrect = questions.filter(
+      (question) =>
+        question.type === "mcq" && (!question.correctAnswer || !question.correctAnswer.trim()),
+    ).length;
+    if (missingCorrect > 0) {
+      showToast("Зөв хариулт сонгоогүй асуулт байна.");
+      return;
+    }
     const newExam: Exam = {
       id: generateId(),
       title: examTitle,
-      scheduledAt: null,
+      scheduledAt: createDate || null,
+      examStartedAt: null,
       roomCode: generateRoomCode(),
       questions,
       duration: durationMinutes,
@@ -177,8 +220,10 @@ export const useExamManagement = (params: {
     };
     persistExams([...exams, newExam]);
     setExamTitle("");
+    setCreateDate("");
     setQuestions([]);
     setDurationMinutes(45);
+    setQuestionPoints(1);
     setRoomCode(newExam.roomCode);
     showToast("Шалгалт амжилттай хадгалагдлаа.");
   };
@@ -199,12 +244,18 @@ export const useExamManagement = (params: {
     setScheduleDate,
     examTitle,
     setExamTitle,
+    createDate,
+    setCreateDate,
     questionText,
     setQuestionText,
     questionType,
     setQuestionType,
     questionAnswer,
     setQuestionAnswer,
+    questionPoints,
+    setQuestionPoints,
+    questionCorrectIndex,
+    setQuestionCorrectIndex,
     mcqOptions,
     setMcqOptions,
     questions,
