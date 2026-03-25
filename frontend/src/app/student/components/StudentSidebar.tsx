@@ -52,8 +52,7 @@ export default function StudentSidebar({
         sidebarTimerRef.current = window.setTimeout(() => {
           setCollapsed(true);
         }, 800);
-      }}
-    >
+      }}>
       <div className="p-4 pb-3 transition-all duration-500">
         <div className="flex items-center gap-3 transition-all duration-500">
           <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-500 flex-shrink-0 group-hover:scale-110">
@@ -62,8 +61,7 @@ export default function StudentSidebar({
           <div
             className={`transition-all duration-500 ${
               collapsed ? "hidden opacity-0" : "block opacity-100"
-            }`}
-          >
+            }`}>
             <h1 className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               EduCore
             </h1>
@@ -85,10 +83,9 @@ export default function StudentSidebar({
                 ? "bg-gradient-to-r from-primary/25 to-primary/5 border border-primary/40 shadow-lg"
                 : "border border-transparent hover:border-border/50 hover:bg-muted/40"
             }`}
-            onClick={() => setActiveTab(item.key)}
-          >
+            onClick={() => setActiveTab(item.key)}>
             <div
-              className={`absolute inset-0 bg-gradient-to-r from-primary/15 via-transparent to-transparent opacity-0 transition-opacity duration-500 ${
+              className={`absolute inset-0 bg-linear-to-r from-primary/15 via-transparent to-transparent opacity-0 transition-opacity duration-500 ${
                 activeTab === item.key
                   ? "opacity-100"
                   : "group-hover/nav:opacity-50"
@@ -97,10 +94,9 @@ export default function StudentSidebar({
             <span
               className={`relative grid h-11 w-11 place-items-center rounded-2xl border flex-shrink-0 transition-all duration-500 ${
                 activeTab === item.key
-                  ? "border-primary/50 bg-gradient-to-br from-primary/30 to-primary/10 text-primary shadow-md scale-100"
+                  ? "border-primary/50 bg-linear-to-br from-primary/30 to-primary/10 text-primary shadow-md scale-100"
                   : "border-border/40 bg-card text-muted-foreground group-hover/nav:text-foreground group-hover/nav:border-border/60 group-hover/nav:bg-muted/60 group-hover/nav:scale-105"
-              }`}
-            >
+              }`}>
               {item.key === "Шалгалт" && <ComputerIcon className="w-5 h-5" />}
               {item.key === "Дүн" && <List className="w-5 h-5" />}
               {item.key === "Тохиргоо" && <Settings className="w-5 h-5" />}
@@ -120,13 +116,12 @@ export default function StudentSidebar({
                 collapsed
                   ? "w-0 -translate-x-4 opacity-0"
                   : "w-auto translate-x-0 opacity-100"
-              }`}
-            >
+              }`}>
               {item.key}
             </span>
 
             {activeTab === item.key && !collapsed && (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-gradient-to-b from-primary via-primary to-primary/50 rounded-l-full transition-all duration-500 shadow-lg" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-linear-to-b from-primary via-primary to-primary/50 rounded-l-full transition-all duration-500 shadow-lg" />
             )}
           </button>
         ))}
@@ -135,20 +130,17 @@ export default function StudentSidebar({
       <div
         className={`border-t border-border/30 p-3 transition-all duration-500 ${
           collapsed ? "text-center" : ""
-        }`}
-      >
+        }`}>
         <button
           className={`w-full flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-500 justify-center ${
             collapsed ? "" : "justify-start"
-          }`}
-        >
+          }`}>
           <svg
             className="h-4 w-4 flex-shrink-0 transition-transform duration-500 group-hover:rotate-180"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
-          >
+            strokeWidth="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M9 9h6M9 15h6" />
           </svg>
           {!collapsed && (
