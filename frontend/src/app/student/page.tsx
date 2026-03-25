@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
+import { STORAGE_KEYS, setJSON, setSessionUser } from "@/lib/examGuard";
+import type { AuthUser } from "@/lib/backend-auth";
+import { getAuthUsers } from "@/lib/backend-auth";
 import {
-  buildRoleUser,
-  getStoredRole,
-  isTeacherRole,
+  buildSessionUser,
+  getStoredSelectedUserId,
   setStoredRole,
+  setStoredSelectedUserId,
   type RoleKey,
 } from "@/lib/role-session";
 import StudentSidebar from "./components/StudentSidebar";
@@ -33,13 +36,15 @@ type StudentPageProps = {
 
 export default function StudentPage({ forcedRole }: StudentPageProps) {
   const router = useRouter();
-  const pathname = usePathname();
+  const role: RoleKey = forcedRole ?? "student";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [role, setRole] = useState<RoleKey>(forcedRole ?? "student-1");
+  const [users, setUsers] = useState<AuthUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
 
-  const roleUser = useMemo(() => buildRoleUser(role), [role]);
-
-  const data = useStudentData(roleUser);
+  const data = useStudentData(
+    selectedUser ? buildSessionUser(selectedUser) : null,
+  );
   const exam = useStudentExamState({
     currentUser: data.currentUser,
     exams: data.exams,
@@ -83,17 +88,8 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
   });
 
   useEffect(() => {
-    if (pathname === "/student") {
-      router.replace("/student-1");
-      return;
-    }
-    const nextRole = forcedRole ?? getStoredRole();
-    setRole(nextRole);
-    setStoredRole(nextRole);
-    if (isTeacherRole(nextRole)) {
-      router.replace(`/${nextRole}`);
-    }
-  }, [router, forcedRole, pathname]);
+    setStoredRole(role);
+  }, [role]);
 
   useEffect(() => {
     if (exam.view === "exam") return;
@@ -113,10 +109,55 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
     return () => clearTimeout(timer);
   }, [exam.view, exam, router, role]);
 
-  const handleRoleChange = (next: RoleKey) => {
-    setRole(next);
-    setStoredRole(next);
-    router.push(`/${next}`);
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadUsers = async () => {
+      setUsersLoading(true);
+      try {
+        const authUsers = await getAuthUsers();
+        if (cancelled) return;
+
+        const nextUsers = authUsers.filter((user) => user.role === role);
+        const storedUserId = getStoredSelectedUserId(role);
+        const nextUser =
+          nextUsers.find((user) => user.id === storedUserId) ?? nextUsers[0] ?? null;
+
+        setUsers(nextUsers);
+        setSelectedUser(nextUser);
+        setJSON(
+          STORAGE_KEYS.users,
+          nextUsers.map((user) => buildSessionUser(user)),
+        );
+
+        if (nextUser) {
+          setStoredSelectedUserId(role, nextUser.id);
+          setSessionUser(buildSessionUser(nextUser));
+        }
+      } finally {
+        if (!cancelled) setUsersLoading(false);
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
+
+  const handleRoleChange = (nextRole: RoleKey) => {
+    setStoredRole(nextRole);
+    router.push(`/${nextRole}`);
+  };
+
+  const handleUserChange = (userId: string) => {
+    const nextUser = users.find((user) => user.id === userId) ?? null;
+    if (!nextUser) return;
+
+    setSelectedUser(nextUser);
+    setStoredSelectedUserId(role, nextUser.id);
+    setSessionUser(buildSessionUser(nextUser));
   };
 
   if (!data.currentUser) return null;
@@ -147,7 +188,14 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
                 }
                 notifications={data.notifications}
                 roleControl={
-                  <RoleNavbar activeRole={role} onChange={handleRoleChange} />
+                  <RoleNavbar
+                    activeRole={role}
+                    activeUserId={selectedUser?.id ?? null}
+                    users={users}
+                    loading={usersLoading}
+                    onChangeRole={handleRoleChange}
+                    onChangeUser={handleUserChange}
+                  />
                 }
               />
 

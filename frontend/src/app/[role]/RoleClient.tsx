@@ -12,10 +12,8 @@ import {
 } from "@/lib/role-session";
 
 const validRoles: RoleKey[] = [
-	"teacher-1",
-	"teacher-2",
-	"student-1",
-	"student-2",
+	"teacher",
+	"student",
 ];
 
 const isValidRole = (value: string): value is RoleKey =>

@@ -24,6 +24,19 @@ export type StudentProfile = {
   level?: number;
 };
 
+export type AuthRole = "teacher" | "student";
+
+export type AuthUser = {
+  id: string;
+  code?: string;
+  fullName: string;
+  email?: string | null;
+  avatarUrl?: string | null;
+  role: AuthRole;
+  xp?: number;
+  level?: number;
+};
+
 export type StudentResultSummary = {
   sessionId: string;
   examId: string;
@@ -107,6 +120,18 @@ export const getStudentProfile = async (token: string): Promise<StudentProfile> 
 
   const data = (await res.json()) as ApiResponse<StudentProfile> | StudentProfile;
   return unwrapData<StudentProfile>(data);
+};
+
+export const getAuthUsers = async (): Promise<AuthUser[]> => {
+  const res = await fetch(`${API_BASE_URL}/api/auth/users`);
+
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(message || "Failed to load users");
+  }
+
+  const data = (await res.json()) as ApiResponse<AuthUser[]> | AuthUser[];
+  return unwrapData<AuthUser[]>(data);
 };
 
 export const updateStudentProfile = async (

@@ -58,6 +58,36 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
 });
 
 // GET /me — Get current user profile
+auth.get("/users", async (c) => {
+  const db = getDb(c.env.educore);
+
+  const teacherRows = await db.select().from(teachers);
+  const studentRows = await db.select().from(students);
+
+  const users = [
+    ...teacherRows.map((teacher) => ({
+      id: teacher.id,
+      code: teacher.code,
+      fullName: teacher.fullName,
+      email: teacher.email,
+      avatarUrl: teacher.avatarUrl,
+      role: "teacher" as const,
+    })),
+    ...studentRows.map((student) => ({
+      id: student.id,
+      code: student.code,
+      fullName: student.fullName,
+      email: student.email,
+      avatarUrl: student.avatarUrl,
+      xp: student.xp,
+      level: student.level,
+      role: "student" as const,
+    })),
+  ].sort((left, right) => left.fullName.localeCompare(right.fullName));
+
+  return success(c, users);
+});
+
 auth.get("/me", authMiddleware, async (c) => {
   const user = c.get("user");
   const db = getDb(c.env.educore);
