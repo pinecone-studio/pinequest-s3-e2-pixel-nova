@@ -94,6 +94,15 @@ export default function StudentExamView({
           <div className="text-lg font-semibold">
             {currentQuestion ? currentQuestion.text : "Асуулт хараахан алга"}
           </div>
+          {currentQuestion?.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={currentQuestion.imageUrl}
+              alt="Асуултын зураг"
+              className="mt-4 w-full rounded-2xl border border-border bg-muted/30 object-contain"
+              style={{ maxHeight: 320 }}
+            />
+          )}
           {currentQuestion?.type === "open" ? (
             <textarea
               className="mt-4 h-32 w-full rounded-xl border border-border bg-muted px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"

@@ -64,6 +64,7 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
     exams: data.exams,
     setExams: data.setExams,
     showToast: data.showToast,
+    currentUser: data.currentUser,
   });
   const imports = useExamImport({
     setQuestions: management.setQuestions,
