@@ -1,57 +1,128 @@
-import type { MutableRefObject } from "react";
-
 const tabs = [
   { key: "Шалгалт", icon: "exam" },
   { key: "Дүн", icon: "results" },
-  { key: "Сурагч", icon: "students" },
-  { key: "Тохиргоо", icon: "settings" },
+  { key: "Хуваарь", icon: "schedule" },
+  { key: "Шалгалтын гүйцэтгэл", icon: "performance" },
 ] as const;
 
 type TabKey = (typeof tabs)[number]["key"];
+type TabIconKey = (typeof tabs)[number]["icon"];
 
 type TeacherSidebarProps = {
-  collapsed: boolean;
-  setCollapsed: (value: boolean | ((value: boolean) => boolean)) => void;
   activeTab: TabKey;
   setActiveTab: (value: TabKey) => void;
-  sidebarTimerRef: MutableRefObject<number | null>;
   currentUserName?: string | null;
 };
 
+function TabIcon({ icon, active }: { icon: TabIconKey; active: boolean }) {
+  const iconClassName = `h-4 w-4 transition-colors ${
+    active ? "text-primary" : "text-muted-foreground"
+  }`;
+
+  if (icon === "exam") {
+    return (
+      <svg
+        className={iconClassName}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M4 5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2Z" />
+        <path d="M6 3v15" />
+        <path d="M10 7h4" />
+        <path d="M10 11h4" />
+      </svg>
+    );
+  }
+
+  if (icon === "results") {
+    return (
+      <svg
+        className={iconClassName}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M3 3v18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z" />
+        <path d="M3 7h18" />
+        <path d="M7 11v6" />
+        <path d="M12 11v6" />
+        <path d="M17 11v6" />
+      </svg>
+    );
+  }
+
+  if (icon === "schedule") {
+    return (
+      <svg
+        className={iconClassName}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4" />
+        <path d="M8 2v4" />
+        <path d="M3 10h18" />
+      </svg>
+    );
+  }
+
+  if (icon === "performance") {
+    return (
+      <svg
+        className={iconClassName}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M3 3v18h18" />
+        <path d="M7 14l3-3 3 2 4-5" />
+        <path d="M17 8h2v2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      className={iconClassName}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m6.08 0l4.24-4.24M1 12h6m6 0h6m-1.78 7.78l-4.24-4.24m-6.08 0l-4.24 4.24" />
+    </svg>
+  );
+}
+
 export default function TeacherSidebar({
-  collapsed,
-  setCollapsed,
   activeTab,
   setActiveTab,
-  sidebarTimerRef,
   currentUserName,
 }: TeacherSidebarProps) {
   return (
-    <aside
-      className={`border-r border-border bg-card/70 backdrop-blur transition-all duration-500 ease-in-out overflow-hidden flex flex-col group ${
-        collapsed ? "w-20" : "w-64"
-      }`}
-      onMouseEnter={() => {
-        if (sidebarTimerRef.current) {
-          window.clearTimeout(sidebarTimerRef.current);
-          sidebarTimerRef.current = null;
-        }
-        setCollapsed(false);
-      }}
-      onMouseLeave={() => {
-        if (sidebarTimerRef.current) {
-          window.clearTimeout(sidebarTimerRef.current);
-        }
-        sidebarTimerRef.current = window.setTimeout(() => {
-          setCollapsed(true);
-        }, 800);
-      }}
-    >
-      <div className="p-4 pb-3 transition-all duration-500">
-        <div className="flex items-center gap-3 transition-all duration-500">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-500 flex-shrink-0 group-hover:scale-110">
+    <header className="border-b border-border bg-card/70 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg">
             <svg
-              className="h-5 w-5 transition-transform duration-500"
+              className="h-5 w-5"
               viewBox="0 0 24 24"
               fill="currentColor"
               stroke="none"
@@ -73,11 +144,7 @@ export default function TeacherSidebar({
               />
             </svg>
           </div>
-          <div
-            className={`transition-all duration-500 ${
-              collapsed ? "hidden opacity-0" : "block opacity-100"
-            }`}
-          >
+          <div>
             <h1 className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               EduCore
             </h1>
@@ -87,177 +154,26 @@ export default function TeacherSidebar({
           </div>
         </div>
 
-        <button
-          className={`mt-4 w-full group/btn relative rounded-2xl border border-border/50 bg-muted/60 hover:bg-muted hover:border-border px-3 py-3 text-[11px] uppercase tracking-widest font-semibold text-muted-foreground hover:text-foreground transition-all duration-500 overflow-hidden flex items-center gap-2 justify-center group-hover:gap-3 ${
-            collapsed ? "justify-center" : "justify-between"
-          }`}
-          onClick={() => setCollapsed((prev) => !prev)}
-        >
-          <span
-            className={`transition-all duration-500 ${
-              collapsed ? "hidden opacity-0 w-0" : "inline opacity-100 w-auto"
-            }`}
-          >
-            {collapsed ? "Өргөх" : "Хураах"}
-          </span>
-          <svg
-            className={`h-4 w-4 transition-transform duration-500 flex-shrink-0 ${
-              collapsed ? "rotate-0" : "rotate-180"
-            }`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-      </div>
-
-      <nav className="flex-1 space-y-3 px-3 py-4 overflow-y-auto scrollbar-hide">
-        {tabs.map((item) => (
-          <button
-            key={item.key}
-            className={`group/nav relative w-full flex items-center transition-all duration-500 ease-in-out ${
-              collapsed ? "justify-center px-2" : "gap-3 px-4"
-            } py-3 rounded-2xl overflow-hidden ${
-              activeTab === item.key
-                ? "bg-gradient-to-r from-primary/25 to-primary/5 border border-primary/40 shadow-lg"
-                : "border border-transparent hover:border-border/50 hover:bg-muted/40"
-            }`}
-            onClick={() => setActiveTab(item.key)}
-          >
-            <div
-              className={`absolute inset-0 bg-gradient-to-r from-primary/15 via-transparent to-transparent opacity-0 transition-opacity duration-500 ${
+        <nav className="flex flex-1 flex-wrap items-center justify-center gap-2">
+          {tabs.map((item) => (
+            <button
+              key={item.key}
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition ${
                 activeTab === item.key
-                  ? "opacity-100"
-                  : "group-hover/nav:opacity-50"
+                  ? "border-primary/40 bg-primary/10 text-foreground"
+                  : "border-border bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
-            />
-            <span
-              className={`relative grid h-11 w-11 place-items-center rounded-2xl border flex-shrink-0 transition-all duration-500 ${
-                activeTab === item.key
-                  ? "border-primary/50 bg-gradient-to-br from-primary/30 to-primary/10 text-primary shadow-md scale-100"
-                  : "border-border/40 bg-card text-muted-foreground group-hover/nav:text-foreground group-hover/nav:border-border/60 group-hover/nav:bg-muted/60 group-hover/nav:scale-105"
-              }`}
+              onClick={() => setActiveTab(item.key)}
             >
-              {item.key === "Шалгалт" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M4 5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2Z" />
-                  <path d="M6 3v15" />
-                  <path d="M10 7h4" />
-                  <path d="M10 11h4" />
-                </svg>
-              )}
-              {item.key === "Дүн" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 3v18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z" />
-                  <path d="M3 7h18" />
-                  <path d="M7 11v6" />
-                  <path d="M12 11v6" />
-                  <path d="M17 11v6" />
-                </svg>
-              )}
-              {item.key === "Сурагч" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="9" cy="8" r="3" />
-                  <path d="M2 21c0-3.5 3-6 7-6" />
-                  <path d="M17 11a3 3 0 1 0-2.8-4" />
-                  <path d="M16 21c0-2.1-1.4-3.9-3.4-4.6" />
-                </svg>
-              )}
-              {item.key === "Тохиргоо" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m6.08 0l4.24-4.24M1 12h6m6 0h6m-1.78 7.78l-4.24-4.24m-6.08 0l-4.24 4.24" />
-                </svg>
-              )}
+              <TabIcon icon={item.icon} active={activeTab === item.key} />
+              <span>{item.key}</span>
+            </button>
+          ))}
+        </nav>
 
-              {collapsed && (
-                <span className="pointer-events-none absolute left-full top-1/2 ml-2 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-lg opacity-0 transition-all duration-500 ease-out group-hover/nav:ml-4 group-hover/nav:opacity-100 group-hover/nav:shadow-xl translate-x-4 scale-90 group-hover/nav:translate-x-0 group-hover/nav:scale-100 z-50">
-                  {item.key}
-                  <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-card" />
-                </span>
-              )}
-            </span>
-
-            <span
-              className={`relative font-medium text-sm transition-all duration-500 overflow-hidden ${
-                collapsed
-                  ? "w-0 -translate-x-4 opacity-0"
-                  : "w-auto translate-x-0 opacity-100"
-              }`}
-            >
-              {item.key}
-            </span>
-
-            {activeTab === item.key && !collapsed && (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-gradient-to-b from-primary via-primary to-primary/50 rounded-l-full transition-all duration-500 shadow-lg" />
-            )}
-          </button>
-        ))}
-      </nav>
-
-      <div
-        className={`border-t border-border/30 p-3 transition-all duration-500 ${
-          collapsed ? "text-center" : ""
-        }`}
-      >
-        <div
-          className={`w-full flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-500 justify-center ${
-            collapsed ? "" : "justify-start"
-          }`}
-        >
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground">
           <svg
-            className="h-4 w-4 flex-shrink-0 transition-transform duration-500 group-hover:rotate-180"
+            className="h-4 w-4 flex-shrink-0"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -265,13 +181,9 @@ export default function TeacherSidebar({
           >
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M9 9h6M9 15h6" />
           </svg>
-          {!collapsed && (
-            <span className="transition-opacity duration-500">
-              {currentUserName ?? "Багш"}
-            </span>
-          )}
+          <span>{currentUserName ?? "Багш"}</span>
         </div>
       </div>
-    </aside>
+    </header>
   );
 }
