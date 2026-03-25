@@ -58,7 +58,7 @@ export const useTeacherData = (
       setSubmissions(getJSON<Submission[]>("submissions", []));
       setNotifications(getJSON<NotificationItem[]>("notifications", []));
     }
-  }, [overrideUser?.id, useRemote]);
+  }, [overrideUser, syncFromStorage, useRemote]);
 
   useEffect(() => {
     if (useRemote) return;

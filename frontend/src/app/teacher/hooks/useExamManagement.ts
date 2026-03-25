@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { generateId, generateRoomCode, setJSON, getJSON } from "@/lib/examGuard";
 import type { Exam, Question } from "../types";
+import { syncExamToBackend } from "@/lib/backend-exams";
+import type { User } from "@/lib/examGuard";
 
 export const useExamManagement = (params: {
   exams: Exam[];
   setExams: (next: Exam[]) => void;
   showToast: (message: string) => void;
+  currentUser?: User | null;
 }) => {
-  const { exams, setExams, showToast } = params;
+  const { exams, setExams, showToast, currentUser } = params;
   const [scheduleTitle, setScheduleTitle] = useState("");
   const [scheduleDate, setScheduleDate] = useState("");
   const [examTitle, setExamTitle] = useState("");
@@ -25,7 +28,7 @@ export const useExamManagement = (params: {
   const [durationMinutes, setDurationMinutes] = useState(45);
   const sidebarTimerRef = useRef<number | null>(null);
 
-  const persistExams = (next: Exam[]) => {
+  const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
     const ok = setJSON("exams", next);
     if (!ok) {
@@ -43,7 +46,7 @@ export const useExamManagement = (params: {
           : "Хадгалах орон зай дүүрсэн байна. Зургийн хэмжээ/тоо их байж магадгүй.",
       );
     }
-  };
+  }, [setExams, showToast]);
 
   useEffect(() => {
     const checkNotifications = () => {
@@ -70,7 +73,7 @@ export const useExamManagement = (params: {
     checkNotifications();
     const interval = setInterval(checkNotifications, 60000);
     return () => clearInterval(interval);
-  }, [showToast]);
+  }, [persistExams, showToast]);
 
   const handleSchedule = () => {
     if (!scheduleTitle || !scheduleDate) {
@@ -195,7 +198,7 @@ export const useExamManagement = (params: {
     );
   };
 
-  const saveExam = () => {
+  const saveExam = async () => {
     if (!examTitle || questions.length === 0) {
       showToast("Шалгалтын нэр болон асуултууд оруулна уу.");
       return;
@@ -219,13 +222,30 @@ export const useExamManagement = (params: {
       createdAt: new Date().toISOString(),
     };
     persistExams([...exams, newExam]);
+    try {
+      await syncExamToBackend(currentUser, {
+        title: newExam.title,
+        duration: newExam.duration ?? 45,
+        questions: newExam.questions.map((question) => ({
+          type: question.type,
+          text: question.text,
+          points: question.points,
+          correctAnswer: question.correctAnswer,
+          imageUrl: question.imageUrl,
+          options: question.options,
+        })),
+      });
+      showToast("Шалгалт local болон backend дээр хадгалагдлаа.");
+    } catch (error) {
+      console.error("Backend sync failed:", error);
+      showToast("Local хадгалалт амжилттай. Backend sync түр амжилтгүй боллоо.");
+    }
     setExamTitle("");
     setCreateDate("");
     setQuestions([]);
     setDurationMinutes(45);
     setQuestionPoints(1);
     setRoomCode(newExam.roomCode);
-    showToast("Шалгалт амжилттай хадгалагдлаа.");
   };
 
   const copyCode = async (code: string) => {

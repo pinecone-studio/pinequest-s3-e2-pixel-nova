@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { User, getSessionUser, getJSON, getJSONForRole } from "@/lib/examGuard";
-import { getTeacherRoles, getStoredRole } from "@/lib/role-session";
+import { getTeacherRoles } from "@/lib/role-session";
 import type { Exam, NotificationItem } from "../types";
 
 export const useStudentData = (overrideUser?: User | null) => {

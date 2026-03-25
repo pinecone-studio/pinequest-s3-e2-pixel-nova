@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getJSON, getJSONForRole, setJSON, setJSONForRole } from "@/lib/examGuard";
 import type { StudentProfile } from "@/lib/backend-auth";
 import { cardClass } from "../styles";
