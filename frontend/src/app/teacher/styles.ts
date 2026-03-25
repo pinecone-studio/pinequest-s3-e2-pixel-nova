@@ -1,7 +1,7 @@
 export const cardClass =
-  "rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
+  "rounded-2xl border border-border bg-card p-5 shadow-sm";
 export const mutedCardClass =
-  "rounded-2xl border border-border bg-muted p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md";
+  "rounded-2xl border border-border bg-muted p-4 shadow-sm";
 export const inputClass =
   "w-full rounded-xl border border-border bg-muted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 export const selectClass =

@@ -253,6 +253,7 @@ export default function QuestionPreviewPanel({
         ) : (
           <div className="mt-2 grid gap-2">
             {activeQuestion.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={activeQuestion.imageUrl}
                 alt="Асуултын зураг"

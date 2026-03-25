@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getJSON, setJSON } from "@/lib/examGuard";
+import { setJSON } from "@/lib/examGuard";
 import type {
   Exam,
   ExamSession,

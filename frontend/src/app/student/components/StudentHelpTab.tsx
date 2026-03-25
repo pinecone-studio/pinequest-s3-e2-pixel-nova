@@ -1,10 +1,4 @@
-import {
-  Contact,
-  Contact2,
-  ContactIcon,
-  HelpCircle,
-  Phone,
-} from "lucide-react";
+import { HelpCircle, Phone } from "lucide-react";
 import { cardClass } from "../styles";
 
 const tips = [

@@ -5,6 +5,7 @@ export type Question = {
   options?: string[];
   correctAnswer: string;
   points: number;
+  imageUrl?: string;
 };
 
 export type Grade = "A" | "B" | "C" | "D" | "F";
