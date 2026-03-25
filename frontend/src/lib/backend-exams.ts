@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./backend-auth";
+import { API_BASE_URL } from "./api-client";
 
 type RoleUser = {
   id: string;
