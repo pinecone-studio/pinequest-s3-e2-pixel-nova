@@ -115,7 +115,7 @@ const tableExports = {
   questionBankOptions: createTable(["id", "bankQuestionId", "label", "text", "imageUrl", "isCorrect", "orderIndex"]),
 };
 
-// Mock auth middleware — bypass Clerk and DB, use x-user-id/x-user-role headers directly
+// Mock auth middleware — bypass DB lookup, use x-user-id/x-user-role headers directly
 // Consumes one queued result for backward compatibility (tests queue an "auth" result first)
 jest.mock("../../src/middleware/auth", () => ({
   __esModule: true,

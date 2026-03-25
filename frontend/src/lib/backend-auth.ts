@@ -1,7 +1,6 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8787";
 
-type SyncRole = "teacher" | "student";
 type ApiResponse<T> = { data?: T };
 
 const unwrapData = <T,>(value: ApiResponse<T> | T): T => {
@@ -92,24 +91,6 @@ export type CheatFlaggedStudent = {
   fullName: string;
   flagCount: number;
   eventCount: number;
-};
-
-export const syncClerkUser = async (role: SyncRole, token: string) => {
-  const res = await fetch(`${API_BASE_URL}/api/auth/sync`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ role }),
-  });
-
-  if (!res.ok) {
-    const message = await res.text();
-    throw new Error(message || "Failed to sync user");
-  }
-
-  return res.json();
 };
 
 export const getStudentProfile = async (token: string): Promise<StudentProfile> => {

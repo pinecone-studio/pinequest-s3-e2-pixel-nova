@@ -2,7 +2,6 @@ import { createMiddleware } from "hono/factory";
 import { eq } from "drizzle-orm";
 import { getDb, teachers, students } from "../db";
 import type { AppEnv } from "../types";
-import { getClerkUserId } from "../utils/clerk";
 
 const unauthorized = (message: string) => ({
   success: false as const,
@@ -12,62 +11,25 @@ const unauthorized = (message: string) => ({
   },
 });
 
-// Supports Clerk auth in real app usage and x-user-* headers in tests/local mocks.
 export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
-  const db = getDb(c.env.educore);
-  const clerkUserId = await getClerkUserId(c);
-  const headerUserId = c.req.header("x-user-id");
-  const headerUserRole = c.req.header("x-user-role") as "teacher" | "student" | undefined;
+  const userId = c.req.header("x-user-id");
+  const userRole = c.req.header("x-user-role") as "teacher" | "student" | undefined;
 
-  if (!clerkUserId && (!headerUserId || !headerUserRole)) {
+  if (!userId || !userRole) {
     return c.json(unauthorized("Missing x-user-id or x-user-role header"), 401);
   }
 
-  if (clerkUserId) {
+  const db = getDb(c.env.educore);
+
+  if (userRole === "teacher") {
     const [teacher] = await db
       .select()
       .from(teachers)
-      .where(eq(teachers.id, clerkUserId))
-      .limit(1);
-
-    if (teacher) {
-      c.set("user", {
-        id: teacher.id,
-        role: "teacher",
-        fullName: teacher.fullName,
-      });
-      await next();
-      return;
-    }
-
-    const [student] = await db
-      .select()
-      .from(students)
-      .where(eq(students.id, clerkUserId))
-      .limit(1);
-
-    if (student) {
-      c.set("user", {
-        id: student.id,
-        role: "student",
-        fullName: student.fullName,
-      });
-      await next();
-      return;
-    }
-
-    return c.json(unauthorized("User not registered. Call /api/auth/sync first."), 401);
-  }
-
-  if (headerUserRole === "teacher") {
-    const [teacher] = await db
-      .select()
-      .from(teachers)
-      .where(eq(teachers.id, headerUserId!))
+      .where(eq(teachers.id, userId))
       .limit(1);
 
     if (!teacher) {
-      return c.json(unauthorized("User not registered. Call /api/auth/sync first."), 401);
+      return c.json(unauthorized("Teacher not found"), 401);
     }
 
     c.set("user", {
@@ -79,15 +41,15 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     return;
   }
 
-  if (headerUserRole === "student") {
+  if (userRole === "student") {
     const [student] = await db
       .select()
       .from(students)
-      .where(eq(students.id, headerUserId!))
+      .where(eq(students.id, userId))
       .limit(1);
 
     if (!student) {
-      return c.json(unauthorized("User not registered. Call /api/auth/sync first."), 401);
+      return c.json(unauthorized("Student not found"), 401);
     }
 
     c.set("user", {
@@ -99,5 +61,5 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
     return;
   }
 
-  return c.json(unauthorized("Missing x-user-id or x-user-role header"), 401);
+  return c.json(unauthorized("Invalid x-user-role header"), 401);
 });

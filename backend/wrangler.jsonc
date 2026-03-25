@@ -27,7 +27,4 @@
   "ai": {
     "binding": "AI",
   },
-  "vars": {
-    "CLERK_SECRET_KEY": "",
-  },
 }
