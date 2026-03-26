@@ -231,7 +231,7 @@ export default function StudentExamsTab({
   }
 
   return (
-    <section className="mx-auto max-w-[760px] space-y-5">
+    <section className="w-full space-y-5">
       <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
         Exam Detail
       </div>
