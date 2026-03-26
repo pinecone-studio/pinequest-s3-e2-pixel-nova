@@ -16,7 +16,7 @@ const DEMO_STUDENT: User = {
   createdAt: "",
 };
 
-const buildNotifications = (
+const buildStudentNotifications = (
   results: Awaited<ReturnType<typeof getStudentResults>>,
 ): NotificationItem[] =>
   results.slice(0, 4).map((item, index) => ({
@@ -93,7 +93,7 @@ export const useStudentData = (overrideUser?: User | null) => {
         }));
 
         setExams(mappedExams);
-        setNotifications(buildNotifications(results));
+        setNotifications(buildStudentNotifications(results));
       } catch {
         if (cancelled) return;
         setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
@@ -132,7 +132,7 @@ export const useStudentData = (overrideUser?: User | null) => {
           createdAt: item.submittedAt ?? new Date().toISOString(),
         }));
         setExams(mappedExams);
-        setNotifications(buildNotifications(results));
+        setNotifications(buildStudentNotifications(results));
       } catch {
         setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
         setNotifications(
