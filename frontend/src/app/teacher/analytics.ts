@@ -13,24 +13,11 @@ import type {
   TeacherStat,
   XpLeaderboardEntry,
 } from "./types";
-
-const violationKeys = [
-  "tabSwitch",
-  "windowBlur",
-  "copyAttempt",
-  "pasteAttempt",
-  "fullscreenExit",
-  "keyboardShortcut",
-] as const;
-
-const violationLabels: Record<(typeof violationKeys)[number], string> = {
-  tabSwitch: "Tab солисон",
-  windowBlur: "Window blur",
-  copyAttempt: "Copy оролдлого",
-  pasteAttempt: "Paste оролдлого",
-  fullscreenExit: "Fullscreen гарсан",
-  keyboardShortcut: "Shortcut дарсан",
-};
+import {
+  buildPerformanceBands,
+  violationKeys,
+  violationLabels,
+} from "./teacher-analytics-helpers";
 
 type RawSubmission = Partial<Submission> & {
   studentНэр?: string;
@@ -291,31 +278,6 @@ export const buildExamStats = (params: {
       const basePoints = submission.totalPoints || totalPoints;
       return sum + Math.max(basePoints - submission.score, 0);
     }, 0),
-    performanceBands: [
-      {
-        label: "90-100%",
-        count: activeSubmissions.filter((submission) => submission.percentage >= 90).length,
-        color: "#4f46e5",
-      },
-      {
-        label: "75-89%",
-        count: activeSubmissions.filter(
-          (submission) => submission.percentage >= 75 && submission.percentage < 90,
-        ).length,
-        color: "#0f766e",
-      },
-      {
-        label: "60-74%",
-        count: activeSubmissions.filter(
-          (submission) => submission.percentage >= 60 && submission.percentage < 75,
-        ).length,
-        color: "#d97706",
-      },
-      {
-        label: "0-59%",
-        count: activeSubmissions.filter((submission) => submission.percentage < 60).length,
-        color: "#dc2626",
-      },
-    ],
+    performanceBands: buildPerformanceBands(activeSubmissions),
   };
 };

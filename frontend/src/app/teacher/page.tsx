@@ -23,17 +23,14 @@ import {
 import TeacherHeader from "./components/TeacherHeader";
 import ExamScheduleCard from "./components/ExamScheduleCard";
 import ExamListCard from "./components/ExamListCard";
-
 import TeacherXpOverviewCard from "./components/TeacherXpOverviewCard";
 import ResultsTab from "./components/ResultsTab";
 import TeacherStudentsTab from "./components/TeacherStudentsTab";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
-
 import { useExamStats } from "./hooks/useExamStats";
 import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { contentCanvasClass, pageShellClass } from "./styles";
-
 const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
 
 type TeacherTab = (typeof teacherTabs)[number];
