@@ -9,7 +9,6 @@ const highlights = [
   "AI-ийн хууль бус шалгалтын илрүүлэлт",
   "Бодит цагийн аналитик",
 ];
-
 export default function Home() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
@@ -26,7 +25,6 @@ export default function Home() {
       return next;
     });
   };
-
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden relative">
       {/* Animated gradient background */}
@@ -38,7 +36,6 @@ export default function Home() {
       </div>
 
       <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[60%_40%] items-stretch relative">
-        {/* Left side - 60% Image */}
         <div
           className="hidden lg:flex items-center justify-center px-6 py-10 animate-slide-in-left"
           style={{ animationDelay: "0.3s" }}>
@@ -56,9 +53,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right side - 40% Forms and Content */}
         <div className="flex flex-col justify-center items-center px-6 py-10 lg:py-0 lg:px-8 space-y-6 lg:space-y-8 bg-linear-to-b lg:bg-linear-to-l from-primary/5 to-transparent">
-          {/* Header Section */}
           <div className="w-full max-w-sm space-y-4 animate-fade-in">
             <div
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground shadow-sm hover:shadow-md transition-shadow duration-300 animate-slide-in"
@@ -122,7 +117,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile Image - Shows only on mobile */}
           <div
             className="lg:hidden w-full max-w-sm animate-slide-in-up"
             style={{ animationDelay: "0.5s" }}>
@@ -139,7 +133,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Access Cards */}
           <div
             className="w-full max-w-sm space-y-4 animate-slide-in-up"
             style={{ animationDelay: "0.6s" }}>
@@ -208,7 +201,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Animation Styles */}
       <style>{`
         @keyframes fade-in {
           from {
