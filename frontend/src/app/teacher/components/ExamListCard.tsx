@@ -5,9 +5,14 @@ import type { Exam } from "../types";
 type ExamListCardProps = {
   exams: Exam[];
   onCopyCode: (code: string) => void;
+  onCreateExam?: () => void;
 };
 
-export default function ExamListCard({ exams, onCopyCode }: ExamListCardProps) {
+export default function ExamListCard({
+  exams,
+  onCopyCode,
+  onCreateExam,
+}: ExamListCardProps) {
   const sortedExams = [...exams].sort((left, right) =>
     right.createdAt.localeCompare(left.createdAt),
   );
@@ -26,6 +31,7 @@ export default function ExamListCard({ exams, onCopyCode }: ExamListCardProps) {
         <button
           type="button"
           className="inline-flex items-center gap-2 rounded-2xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+          onClick={onCreateExam}
         >
           <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />

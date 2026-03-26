@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  badgeClass,
   buttonGhost,
   buttonPrimary,
   cardClass,
-  sectionDescriptionClass,
 } from "../styles";
 import type { Question } from "../types";
 import { Plus } from "lucide-react";
@@ -130,18 +128,11 @@ export default function ExamCreateCard({
     <div className={cardClass}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <span className={badgeClass}>Шалгалт үүсгэх</span>
-          <h2 className="mt-3 flex items-center gap-2 text-xl font-semibold text-slate-900">
+          <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-900">
             <Plus className="w-4 h-4" />
             Шалгалт үүсгэх
           </h2>
-          <p className={`mt-2 ${sectionDescriptionClass}`}>
-            Гараар эсвэл файл импортолж асуултаа оруулаад нэг ижил бүтэцтэйгээр шалгалт хадгална.
-          </p>
         </div>
-        <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-xs font-semibold text-slate-500">
-          PDF / Review / Preview
-        </span>
       </div>
 
       <div className="mt-6 grid gap-4">

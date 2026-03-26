@@ -38,6 +38,7 @@ app.use(
       "x-user-id",
       "x-user-role",
       "x-user-name",
+      "x-user-name-encoded",
     ],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),

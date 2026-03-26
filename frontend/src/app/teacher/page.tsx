@@ -24,10 +24,8 @@ import TeacherHeader from "./components/TeacherHeader";
 import ExamScheduleCard from "./components/ExamScheduleCard";
 import ExamCreateCard from "./components/ExamCreateCard";
 import ExamListCard from "./components/ExamListCard";
-import ExamStatsCards from "./components/ExamStatsCards";
 import TeacherXpOverviewCard from "./components/TeacherXpOverviewCard";
 import ResultsTab from "./components/ResultsTab";
-import SettingsTab from "./components/SettingsTab";
 import TeacherStudentsTab from "./components/TeacherStudentsTab";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
@@ -36,11 +34,10 @@ import { useExamStats } from "./hooks/useExamStats";
 import { contentCanvasClass, pageShellClass } from "./styles";
 
 const teacherTabs = [
+  "Хуваарь",
   "Шалгалт үүсгэх",
   "Шалгалтын сан",
   "Гүйцэтгэл",
-  "Хуваарь",
-  "Тохиргоо",
 ] as const;
 
 type TeacherTab = (typeof teacherTabs)[number];
@@ -184,67 +181,59 @@ export default function TeacherPage() {
   const renderActiveTab = () => {
     if (activeTab === "Шалгалт үүсгэх") {
       return (
-        <div className="space-y-6">
-          <ExamStatsCards loading={data.loading} stats={examStatsState.stats} />
-          <section className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-            <ExamScheduleCard
-              scheduleTitle={management.scheduleTitle}
-              setScheduleTitle={management.setScheduleTitle}
-              scheduleDate={management.scheduleDate}
-              setScheduleDate={management.setScheduleDate}
-              durationMinutes={management.durationMinutes}
-              setDurationMinutes={management.setDurationMinutes}
-              onSchedule={management.handleSchedule}
-            />
-            <ExamCreateCard
-              examTitle={management.examTitle}
-              setExamTitle={management.setExamTitle}
-              createDate={management.createDate}
-              setCreateDate={management.setCreateDate}
-              durationMinutes={management.durationMinutes}
-              setDurationMinutes={management.setDurationMinutes}
-              questionText={management.questionText}
-              setQuestionText={management.setQuestionText}
-              questionType={management.questionType}
-              setQuestionType={management.setQuestionType}
-              mcqOptions={management.mcqOptions}
-              setMcqOptions={management.setMcqOptions}
-              questionAnswer={management.questionAnswer}
-              setQuestionAnswer={management.setQuestionAnswer}
-              questionImageUrl={management.questionImageUrl}
-              setQuestionImageUrl={management.setQuestionImageUrl}
-              questionPoints={management.questionPoints}
-              setQuestionPoints={management.setQuestionPoints}
-              questionCorrectIndex={management.questionCorrectIndex}
-              setQuestionCorrectIndex={management.setQuestionCorrectIndex}
-              questions={management.questions}
-              addQuestion={management.addQuestion}
-              removeQuestion={management.removeQuestion}
-              updateQuestion={management.updateQuestion}
-              updateQuestionOption={management.updateQuestionOption}
-              addQuestionOption={management.addQuestionOption}
-              removeQuestionOption={management.removeQuestionOption}
-              saveExam={management.saveExam}
-              pdfUseOcr={imports.pdfUseOcr}
-              setPdfUseOcr={imports.setPdfUseOcr}
-              answerKeyPage={imports.answerKeyPage}
-              setAnswerKeyPage={imports.setAnswerKeyPage}
-              pdfLoading={imports.pdfLoading}
-              pdfError={imports.pdfError}
-              importError={imports.importError}
-              importLoading={imports.importLoading}
-              importLoadingLabel={imports.importLoadingLabel}
-              onPdfUpload={imports.handlePdfUpload}
-              onImageUpload={imports.handleImageUpload}
-              onDocxUpload={imports.handleDocxUpload}
-            />
-          </section>
-        </div>
+        <ExamCreateCard
+          examTitle={management.examTitle}
+          setExamTitle={management.setExamTitle}
+          createDate={management.createDate}
+          setCreateDate={management.setCreateDate}
+          durationMinutes={management.durationMinutes}
+          setDurationMinutes={management.setDurationMinutes}
+          questionText={management.questionText}
+          setQuestionText={management.setQuestionText}
+          questionType={management.questionType}
+          setQuestionType={management.setQuestionType}
+          mcqOptions={management.mcqOptions}
+          setMcqOptions={management.setMcqOptions}
+          questionAnswer={management.questionAnswer}
+          setQuestionAnswer={management.setQuestionAnswer}
+          questionImageUrl={management.questionImageUrl}
+          setQuestionImageUrl={management.setQuestionImageUrl}
+          questionPoints={management.questionPoints}
+          setQuestionPoints={management.setQuestionPoints}
+          questionCorrectIndex={management.questionCorrectIndex}
+          setQuestionCorrectIndex={management.setQuestionCorrectIndex}
+          questions={management.questions}
+          addQuestion={management.addQuestion}
+          removeQuestion={management.removeQuestion}
+          updateQuestion={management.updateQuestion}
+          updateQuestionOption={management.updateQuestionOption}
+          addQuestionOption={management.addQuestionOption}
+          removeQuestionOption={management.removeQuestionOption}
+          saveExam={management.saveExam}
+          pdfUseOcr={imports.pdfUseOcr}
+          setPdfUseOcr={imports.setPdfUseOcr}
+          answerKeyPage={imports.answerKeyPage}
+          setAnswerKeyPage={imports.setAnswerKeyPage}
+          pdfLoading={imports.pdfLoading}
+          pdfError={imports.pdfError}
+          importError={imports.importError}
+          importLoading={imports.importLoading}
+          importLoadingLabel={imports.importLoadingLabel}
+          onPdfUpload={imports.handlePdfUpload}
+          onImageUpload={imports.handleImageUpload}
+          onDocxUpload={imports.handleDocxUpload}
+        />
       );
     }
 
     if (activeTab === "Шалгалтын сан") {
-      return <ExamListCard exams={data.exams} onCopyCode={management.copyCode} />;
+      return (
+        <ExamListCard
+          exams={data.exams}
+          onCopyCode={management.copyCode}
+          onCreateExam={() => setActiveTab("Шалгалт үүсгэх")}
+        />
+      );
     }
 
     if (activeTab === "Гүйцэтгэл") {
@@ -302,13 +291,7 @@ export default function TeacherPage() {
       );
     }
 
-    return (
-      <SettingsTab
-        activeExam={examStatsState.activeExam}
-        submissions={examStatsState.activeSubmissions}
-        currentUserName={currentUser.username}
-      />
-    );
+    return null;
   };
 
   return (
@@ -319,10 +302,6 @@ export default function TeacherPage() {
         </div>
       )}
       <TeacherHeader
-        theme={data.theme}
-        onToggleTheme={() =>
-          data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
-        }
         notifications={data.notifications}
         onMarkRead={data.markNotificationRead}
         activeTab={activeTab}

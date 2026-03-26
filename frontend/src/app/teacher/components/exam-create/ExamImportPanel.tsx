@@ -30,7 +30,7 @@ export default function ExamImportPanel({
   return (
     <div className="rounded-[24px] border border-dashed border-[#d5dfeb] bg-[#f8fbff] px-4 py-4 text-sm text-slate-500">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-slate-700">Файл импорт (PDF / IMAGE / DOCX)</span>
+        <span className="font-medium text-slate-700">Файл оруулах</span>
         <div className="flex flex-wrap items-center gap-2">
           <label className={`flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "opacity-60 pointer-events-none" : ""}`}>
             PDF
@@ -82,20 +82,19 @@ export default function ExamImportPanel({
             checked={pdfUseOcr}
             onChange={(event) => setPdfUseOcr(event.target.checked)}
           />
-          <span>Зөв хариултын зураг OCR ашиглах</span>
+          <span>OCR ашиглах</span>
         </label>
         <input
           type="number"
           min={1}
           className="ml-auto w-28 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs text-slate-700"
-          placeholder="Page"
+          placeholder="Хуудас"
           value={answerKeyPage === "last" ? "" : answerKeyPage}
           onChange={(event) => {
             const value = event.target.value;
             setAnswerKeyPage(value ? Number(value) : "last");
           }}
         />
-        <span className="text-[11px] text-slate-400">(blank = last)</span>
       </div>
 
       {importLoading && (
