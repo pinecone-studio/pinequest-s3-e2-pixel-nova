@@ -18,10 +18,10 @@ export default function ExamMetaFields({
   setDurationMinutes,
 }: ExamMetaFieldsProps) {
   return (
-    <div className="grid gap-2 md:grid-cols-[1.4fr_1fr_140px]">
+    <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_160px]">
       <input
         className={inputClass}
-        placeholder="Шалгалтын нэр"
+        placeholder="Шалгалтын нэр оруулна уу"
         value={examTitle ?? ""}
         onChange={(event) => setExamTitle(event.target.value)}
       />
@@ -37,7 +37,7 @@ export default function ExamMetaFields({
         className={inputClass}
         value={Number.isFinite(durationMinutes) ? durationMinutes : 0}
         onChange={(event) => setDurationMinutes(Number(event.target.value))}
-        placeholder="Мин"
+        placeholder="45 мин"
       />
     </div>
   );

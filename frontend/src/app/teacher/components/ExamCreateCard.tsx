@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  badgeClass,
   buttonGhost,
   buttonPrimary,
   cardClass,
+  sectionDescriptionClass,
 } from "../styles";
 import type { Question } from "../types";
 import { Plus } from "lucide-react";
@@ -118,17 +120,23 @@ export default function ExamCreateCard({
 
   return (
     <div className={cardClass}>
-      <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <span className={badgeClass}>Create Exam</span>
+          <h2 className="mt-3 flex items-center gap-2 text-xl font-semibold text-slate-900">
           <Plus className="w-4 h-4" />
           Шалгалт үүсгэх
-        </h2>
-        <span className="text-xs text-muted-foreground">
+          </h2>
+          <p className={`mt-2 ${sectionDescriptionClass}`}>
+            Гараар эсвэл файл импортолж асуултаа оруулаад нэг ижил бүтэцтэйгээр шалгалт хадгална.
+          </p>
+        </div>
+        <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-xs font-semibold text-slate-500">
           PDF / Review / Preview
         </span>
       </div>
 
-      <div className="mt-3 grid gap-3">
+      <div className="mt-6 grid gap-4">
         <ExamImportPanel
           pdfUseOcr={pdfUseOcr}
           setPdfUseOcr={setPdfUseOcr}
@@ -166,16 +174,15 @@ export default function ExamCreateCard({
           setQuestionCorrectIndex={setQuestionCorrectIndex}
         />
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           <button className={buttonGhost} onClick={addQuestion}>
             + Асуулт нэмэх
           </button>
-          <button className={buttonPrimary} onClick={saveExam}>
+          <button className={buttonPrimary} onClick={saveExam} type="button">
             Шалгалт хадгалах
           </button>
           {missingCorrectCount > 0 && (
-            <span className="rounded-full border border-amber-300/60 bg-amber-200/30 px-3 py-2 text-xs font-semibold text-amber-700">
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
               ⚠️ Зөв хариулт сонгоогүй: {missingCorrectCount}
             </span>
           )}

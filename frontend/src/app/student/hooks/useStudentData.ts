@@ -1,7 +1,33 @@
 import { useEffect, useState } from "react";
-import { User, getSessionUser } from "@/lib/examGuard";
-import type { Exam, NotificationItem } from "../types";
+import {
+  STORAGE_KEYS,
+  getJSON,
+  getSessionUser,
+  type User,
+} from "@/lib/examGuard";
 import { getStudentResults } from "@/lib/backend-auth";
+import type { Exam, NotificationItem } from "../types";
+
+const DEMO_STUDENT: User = {
+  id: "demo",
+  username: "DemoStudent",
+  password: "",
+  role: "student",
+  createdAt: "",
+};
+
+const buildStudentNotifications = (
+  results: Awaited<ReturnType<typeof getStudentResults>>,
+): NotificationItem[] =>
+  results.slice(0, 4).map((item, index) => ({
+    examId: item.examId,
+    message:
+      index === 0
+        ? `${item.title} шалгалтын дүн шинэчлэгдлээ.`
+        : `${item.title} шалгалтын тайланг дахин хараарай.`,
+    read: index > 1,
+    createdAt: item.submittedAt ?? new Date().toISOString(),
+  }));
 
 const buildNotifications = (
   results: Awaited<ReturnType<typeof getStudentResults>>,
@@ -17,6 +43,12 @@ const buildNotifications = (
   }));
 
 export const useStudentData = (overrideUser?: User | null) => {
+  const overrideUserId = overrideUser?.id ?? null;
+  const overrideUsername = overrideUser?.username ?? null;
+  const overridePassword = overrideUser?.password ?? "";
+  const overrideRole = overrideUser?.role ?? null;
+  const overrideCreatedAt = overrideUser?.createdAt ?? "";
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(true);
@@ -24,24 +56,32 @@ export const useStudentData = (overrideUser?: User | null) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
-    const user = overrideUser ?? getSessionUser();
-    setCurrentUser(
-      user ?? {
-        id: "demo",
-        username: "DemoСурагч",
-        password: "",
-        role: "student",
-        createdAt: "",
-      },
-    );
+    const user =
+      overrideUserId && overrideUsername && overrideRole
+        ? {
+            id: overrideUserId,
+            username: overrideUsername,
+            password: overridePassword,
+            role: overrideRole,
+            createdAt: overrideCreatedAt,
+          }
+        : getSessionUser();
+
+    setCurrentUser(user ?? DEMO_STUDENT);
+
     const storedTheme =
       typeof window !== "undefined"
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    const load = async () => {
+
+    let cancelled = false;
+
+    const loadRemote = async () => {
       try {
         const results = await getStudentResults();
+        if (cancelled) return;
+
         const mappedExams: Exam[] = results.map((item) => ({
           id: item.examId,
           title: item.title,
@@ -51,15 +91,32 @@ export const useStudentData = (overrideUser?: User | null) => {
           duration: undefined,
           createdAt: item.submittedAt ?? new Date().toISOString(),
         }));
+
         setExams(mappedExams);
-        setNotifications(buildNotifications(results));
+        setNotifications(buildStudentNotifications(results));
       } catch {
-        setExams([]);
-        setNotifications([]);
+        if (cancelled) return;
+        setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
+        setNotifications(
+          getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
-    void load();
-  }, [overrideUser]);
+
+    void loadRemote();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    overrideCreatedAt,
+    overridePassword,
+    overrideRole,
+    overrideUserId,
+    overrideUsername,
+  ]);
 
   useEffect(() => {
     const sync = async () => {
@@ -75,12 +132,15 @@ export const useStudentData = (overrideUser?: User | null) => {
           createdAt: item.submittedAt ?? new Date().toISOString(),
         }));
         setExams(mappedExams);
-        setNotifications(buildNotifications(results));
+        setNotifications(buildStudentNotifications(results));
       } catch {
-        setExams([]);
-        setNotifications([]);
+        setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
+        setNotifications(
+          getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
+        );
       }
     };
+
     void sync();
     const interval = setInterval(sync, 15000);
     return () => clearInterval(interval);
@@ -93,11 +153,6 @@ export const useStudentData = (overrideUser?: User | null) => {
     else root.classList.remove("dark");
     localStorage.setItem("theme", theme);
   }, [theme]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 700);
-    return () => clearTimeout(timer);
-  }, []);
 
   return {
     currentUser,

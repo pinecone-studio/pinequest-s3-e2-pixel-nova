@@ -1,18 +1,35 @@
 import { useCallback, useEffect, useState } from "react";
-import { User, getSessionUser } from "@/lib/examGuard";
-import type { StudentProgress } from "@/lib/examGuard";
+import {
+  STORAGE_KEYS,
+  getJSON,
+  getSessionUser,
+  setJSON,
+  type StudentProgress,
+  type User,
+} from "@/lib/examGuard";
+import type { NotificationItem, Exam, Submission } from "../types";
 import { normalizeSubmission } from "../analytics";
-import type { Exam, NotificationItem, Submission } from "../types";
 import {
   fetchTeacherExams,
   fetchTeacherSubmissions,
   fetchXpLeaderboard,
 } from "./teacher-api";
 
-export const useTeacherData = (
-  overrideUser?: User | null,
-  useRemote: boolean = false,
-) => {
+const DEMO_TEACHER: User = {
+  id: "demo",
+  username: "DemoTeacher",
+  password: "",
+  role: "teacher",
+  createdAt: "",
+};
+
+export const useTeacherData = (overrideUser?: User | null) => {
+  const overrideUserId = overrideUser?.id ?? null;
+  const overrideUsername = overrideUser?.username ?? null;
+  const overridePassword = overrideUser?.password ?? "";
+  const overrideRole = overrideUser?.role ?? null;
+  const overrideCreatedAt = overrideUser?.createdAt ?? "";
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -24,45 +41,67 @@ export const useTeacherData = (
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const syncFromStorage = useCallback(() => {
-    setUsers([]);
-    setExams([]);
-    setSubmissions([]);
-    setStudentProgress({});
-    setNotifications([]);
+    setUsers(getJSON<User[]>(STORAGE_KEYS.users, []));
+    setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
+    setSubmissions(
+      getJSON<Submission[]>(STORAGE_KEYS.submissions, []).map((item) =>
+        normalizeSubmission(item),
+      ).filter((item): item is Submission => Boolean(item)),
+    );
+    setStudentProgress(getJSON<StudentProgress>(STORAGE_KEYS.progress, {}));
+    setNotifications(
+      getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
+    );
   }, []);
 
   useEffect(() => {
-    const user = overrideUser ?? getSessionUser();
-    setCurrentUser(
-      user ?? {
-        id: "demo",
-        username: "DemoБагш",
-        password: "",
-        role: "teacher",
-        createdAt: "",
-      },
-    );
-    syncFromStorage();
+    const user =
+      overrideUserId && overrideUsername && overrideRole
+        ? {
+            id: overrideUserId,
+            username: overrideUsername,
+            password: overridePassword,
+            role: overrideRole,
+            createdAt: overrideCreatedAt,
+          }
+        : getSessionUser();
+
+    setCurrentUser(user ?? DEMO_TEACHER);
+
     const storedTheme =
       typeof window !== "undefined"
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-    if (!useRemote) return;
+
+    syncFromStorage();
+
+    let cancelled = false;
+
     const loadRemote = async () => {
       try {
-        setLoading(true);
         const remoteExams = await fetchTeacherExams();
+        if (cancelled) return;
+
         setExams(remoteExams);
+        setJSON(STORAGE_KEYS.exams, remoteExams);
+
         const submissionsByExam = await Promise.all(
           remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
         );
-        const allSubmissions = submissionsByExam
+        if (cancelled) return;
+
+        const remoteSubmissions = submissionsByExam
           .flat()
-          .map((item) => normalizeSubmission(item as Submission))
+          .map((item) => normalizeSubmission(item))
           .filter((item): item is Submission => Boolean(item));
-        setSubmissions(allSubmissions);
+
+        setSubmissions(remoteSubmissions);
+        setJSON(STORAGE_KEYS.submissions, remoteSubmissions);
+
         const leaderboard = await fetchXpLeaderboard();
+        if (cancelled) return;
+
         const progress: StudentProgress = {};
         const mappedUsers: User[] = leaderboard.map((student) => {
           progress[student.studentId] = {
@@ -78,33 +117,57 @@ export const useTeacherData = (
             createdAt: new Date().toISOString(),
           };
         });
+
         setUsers(mappedUsers);
+        setJSON(STORAGE_KEYS.users, mappedUsers);
         setStudentProgress(progress);
+        setJSON(STORAGE_KEYS.progress, progress);
         setNotifications([]);
+      } catch {
+        if (!cancelled) syncFromStorage();
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
+
     void loadRemote();
-  }, [overrideUser, syncFromStorage, useRemote]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    overrideCreatedAt,
+    overridePassword,
+    overrideRole,
+    overrideUserId,
+    overrideUsername,
+    syncFromStorage,
+  ]);
 
   useEffect(() => {
-    if (!useRemote) return;
     const interval = setInterval(async () => {
-      const remoteExams = await fetchTeacherExams();
-      setExams(remoteExams);
-      const submissionsByExam = await Promise.all(
-        remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
-      );
-      setSubmissions(submissionsByExam.flat());
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [useRemote]);
+      try {
+        const remoteExams = await fetchTeacherExams();
+        setExams(remoteExams);
+        setJSON(STORAGE_KEYS.exams, remoteExams);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 700);
-    return () => clearTimeout(timer);
-  }, []);
+        const submissionsByExam = await Promise.all(
+          remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
+        );
+        const remoteSubmissions = submissionsByExam
+          .flat()
+          .map((item) => normalizeSubmission(item))
+          .filter((item): item is Submission => Boolean(item));
+
+        setSubmissions(remoteSubmissions);
+        setJSON(STORAGE_KEYS.submissions, remoteSubmissions);
+      } catch {
+        syncFromStorage();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [syncFromStorage]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -121,18 +184,23 @@ export const useTeacherData = (
 
   const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
+    setJSON(STORAGE_KEYS.exams, next);
   }, []);
 
   const persistNotifications = useCallback((next: NotificationItem[]) => {
     setNotifications(next);
+    setJSON(STORAGE_KEYS.notifications, next);
   }, []);
 
-  const markNotificationRead = useCallback((index: number) => {
-    const next = notifications.map((item, idx) =>
-      idx === index ? { ...item, read: true } : item,
-    );
-    persistNotifications(next);
-  }, [notifications, persistNotifications]);
+  const markNotificationRead = useCallback(
+    (index: number) => {
+      const next = notifications.map((item, idx) =>
+        idx === index ? { ...item, read: true } : item,
+      );
+      persistNotifications(next);
+    },
+    [notifications, persistNotifications],
+  );
 
   return {
     currentUser,
@@ -143,13 +211,13 @@ export const useTeacherData = (
     toast,
     showToast,
     exams,
-    setExams,
+    setExams: persistExams,
     persistExams,
     submissions,
     setSubmissions,
     studentProgress,
     notifications,
-    setNotifications,
+    setNotifications: persistNotifications,
     persistNotifications,
     markNotificationRead,
   };

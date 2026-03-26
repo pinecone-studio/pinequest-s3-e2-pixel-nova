@@ -25,14 +25,14 @@ export default function CheatMonitoringCard({ students }: CheatMonitoringCardPro
       </h2>
       <div className="mt-4 space-y-3 text-sm">
         {students.length === 0 && (
-          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+          <div className="rounded-2xl border border-[#dce5ef] bg-[#f8fafc] px-3 py-3 text-xs text-slate-500">
             Одоогоор сэжигтэй үйлдэл илрээгүй.
           </div>
         )}
         {students.map((student, idx) => (
           <div
             key={`${student.studentId ?? student.id ?? student.name}-${student.examTitle ?? "exam"}-${idx}`}
-            className="flex items-center justify-between rounded-xl border border-border bg-muted px-3 py-2"
+            className="flex items-center justify-between rounded-2xl border border-[#dce5ef] bg-[#fbfdff] px-4 py-3"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -56,8 +56,8 @@ export default function CheatMonitoringCard({ students }: CheatMonitoringCardPro
                 {student.cheat}
               </span>
             </div>
-            <div className="mt-3 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-              <div className="text-xs text-muted-foreground">
+            <div className="mt-3 rounded-xl border border-[#dce5ef] bg-white px-3 py-2 text-xs text-slate-500">
+              <div className="text-xs text-slate-500">
                 Оноо: {student.score}% · Зөрчил: {student.events ?? 0}
               </div>
             </div>

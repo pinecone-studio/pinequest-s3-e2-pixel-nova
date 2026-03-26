@@ -91,6 +91,18 @@ export const apiRequest = async <T,>(
   { user, headers, ...init }: RequestOptions = {},
 ): Promise<T> => {
   let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: buildHeaders(headers, user),
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Network request failed";
+    throw new Error(`API unreachable: ${message}`);
+  }
 
   try {
     response = await fetch(`${getApiBaseUrl()}${path}`, {
