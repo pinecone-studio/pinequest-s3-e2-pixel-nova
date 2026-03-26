@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import StudentLeaderboardTab from "@/app/student/components/StudentLeaderboardTab";
 
 const entries = [
@@ -10,7 +10,7 @@ const entries = [
 ];
 
 describe("StudentLeaderboardTab", () => {
-  it("renders the redesigned leaderboard banner, podium, and ranked list", () => {
+  it("switches between class and subject leaderboard views", () => {
     render(<StudentLeaderboardTab currentUserId="student-4" entries={entries} />);
 
     expect(screen.getByText("Тэргүүлэгчид")).toBeInTheDocument();
@@ -21,5 +21,11 @@ describe("StudentLeaderboardTab", () => {
     expect(screen.getByText("Sara")).toBeInTheDocument();
     expect(screen.getByText("Zoloo")).toBeInTheDocument();
     expect(screen.getByText("YOU")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Хичээл" }));
+
+    expect(screen.getByText("Чиний хичээлийн байр")).toBeInTheDocument();
+    expect(screen.getByText("Сонгосон хичээлийн XP чансаа")).toBeInTheDocument();
+    expect(screen.getByText(/Lvl 12/)).toBeInTheDocument();
   });
 });
