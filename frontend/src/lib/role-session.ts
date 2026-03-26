@@ -3,18 +3,13 @@ import type { User } from "@/lib/examGuard";
 
 export type RoleKey = "teacher" | "student";
 
-const ROLE_KEY = "educoreRole";
-const USER_KEY_PREFIX = "educoreSelectedUser";
+let inMemoryRole: RoleKey = "student";
+const inMemorySelectedUsers = new Map<RoleKey, string>();
 
-export const getStoredRole = (): RoleKey => {
-  if (typeof window === "undefined") return "student";
-  const stored = window.localStorage.getItem(ROLE_KEY);
-  return stored === "teacher" || stored === "student" ? stored : "student";
-};
+export const getStoredRole = (): RoleKey => inMemoryRole;
 
 export const setStoredRole = (role: RoleKey) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(ROLE_KEY, role);
+  inMemoryRole = role;
 };
 
 export const isTeacherRole = (role: RoleKey) => role === "teacher";
@@ -25,16 +20,12 @@ export const getRoleLabel = (role: RoleKey) =>
 export const getLinkedTeacherRole = (role: RoleKey): RoleKey =>
   role === "student" ? "teacher" : role;
 
-const getUserStorageKey = (role: RoleKey) => `${USER_KEY_PREFIX}:${role}`;
-
 export const getStoredSelectedUserId = (role: RoleKey): string | null => {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(getUserStorageKey(role));
+  return inMemorySelectedUsers.get(role) ?? null;
 };
 
 export const setStoredSelectedUserId = (role: RoleKey, userId: string) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(getUserStorageKey(role), userId);
+  inMemorySelectedUsers.set(role, userId);
 };
 
 export const getTeacherRoles = (): RoleKey[] => ["teacher"];

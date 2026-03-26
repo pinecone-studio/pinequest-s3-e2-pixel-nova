@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getJSON,
-  getSessionUser,
-  STORAGE_KEYS,
-  type User,
-} from "@/lib/examGuard";
+import { getSessionUser, type User } from "@/lib/examGuard";
 import { getStudentResults } from "@/lib/backend-auth";
 import type { Exam, NotificationItem } from "../types";
 
@@ -48,20 +43,12 @@ export const useStudentData = (overrideUser?: User | null) => {
 
     setCurrentUser(user ?? null);
 
-    const storedTheme =
-      typeof window !== "undefined"
-        ? (localStorage.getItem("theme") as "dark" | "light" | null)
-        : null;
-    if (storedTheme) setTheme(storedTheme);
-
     let cancelled = false;
 
     const loadRemote = async () => {
       if (!user) {
-        setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
-        setNotifications(
-          getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
-        );
+        setExams([]);
+        setNotifications([]);
         setLoading(false);
         return;
       }
@@ -108,10 +95,8 @@ export const useStudentData = (overrideUser?: User | null) => {
     const sync = async () => {
       const user = getSessionUser();
       if (!user) {
-        setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
-        setNotifications(
-          getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
-        );
+        setExams([]);
+        setNotifications([]);
         return;
       }
 
@@ -135,7 +120,7 @@ export const useStudentData = (overrideUser?: User | null) => {
     };
 
     void sync();
-    const interval = setInterval(sync, 15000);
+    const interval = setInterval(sync, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -144,7 +129,6 @@ export const useStudentData = (overrideUser?: User | null) => {
     const root = document.documentElement;
     if (theme === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
-    localStorage.setItem("theme", theme);
   }, [theme]);
 
   return {
