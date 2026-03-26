@@ -2,7 +2,6 @@ import type { Exam } from "../types";
 import { sectionTitleClass } from "../styles";
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14];
-const DAYS_TO_SHOW = 5;
 const ROW_HEIGHT = 76;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -46,13 +45,15 @@ function buildScheduleData(exams: Exam[]) {
         new Date(right.scheduledAt ?? "").getTime(),
     );
 
-  const baseDate = scheduled[0]?.scheduledAt
-    ? startOfDay(new Date(scheduled[0].scheduledAt))
-    : startOfDay(new Date());
+  const baseDate = startOfDay(new Date());
+  baseDate.setDate(baseDate.getDate() + 7);
+  const endDate = startOfDay(new Date(baseDate));
+  endDate.setMonth(endDate.getMonth() + 1);
 
-  const days = Array.from({ length: DAYS_TO_SHOW }, (_, index) =>
-    addDays(baseDate, index),
-  );
+  const days: Date[] = [];
+  for (let cursor = new Date(baseDate); cursor <= endDate; cursor = addDays(cursor, 1)) {
+    days.push(new Date(cursor));
+  }
 
   const items = scheduled
     .map<ScheduleItem | null>((exam, index) => {
@@ -63,7 +64,7 @@ function buildScheduleData(exams: Exam[]) {
         (startOfDay(scheduledAt).getTime() - baseDate.getTime()) / DAY_MS,
       );
 
-      if (dayIndex < 0 || dayIndex >= DAYS_TO_SHOW) return null;
+      if (dayIndex < 0 || dayIndex >= days.length) return null;
 
       return {
         id: exam.id,
@@ -98,7 +99,13 @@ function LegendDot({ category }: { category: ScheduleCategory }) {
   );
 }
 
-function ScheduleCard({ item }: { item: ScheduleItem }) {
+function ScheduleCard({
+  item,
+  daysCount,
+}: {
+  item: ScheduleItem;
+  daysCount: number;
+}) {
   const tone =
     item.category === "required"
       ? {
@@ -114,8 +121,8 @@ function ScheduleCard({ item }: { item: ScheduleItem }) {
     <div
       className={`absolute rounded-2xl bg-white px-3 py-3 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.25)] ${tone.border}`}
       style={{
-        left: `calc(${item.dayIndex} * (100% / ${DAYS_TO_SHOW}) + 12px)`,
-        width: `calc((100% / ${DAYS_TO_SHOW}) - 16px)`,
+        left: `calc(${item.dayIndex} * (100% / ${daysCount}) + 12px)`,
+        width: `calc((100% / ${daysCount}) - 16px)`,
         top: `${Math.max(8, (item.startMinutes / 60) * ROW_HEIGHT + 8)}px`,
         height: `${Math.max((item.duration / 60) * ROW_HEIGHT - 10, 52)}px`,
       }}
@@ -141,6 +148,7 @@ export default function TeacherStudentsTab({
 }: TeacherStudentsTabProps) {
   const { days, items } = buildScheduleData(exams);
   const hasScheduledItems = items.length > 0;
+  const daysCount = days.length;
 
   return (
     <section className="space-y-6">
@@ -181,14 +189,17 @@ export default function TeacherStudentsTab({
       </div>
 
       <div className="overflow-x-auto">
-        <div className="min-w-[980px] rounded-[34px] border border-[#dce5ef] bg-white p-4 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.2)]">
+        <div
+          className="rounded-[34px] border border-[#dce5ef] bg-white p-4 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.2)]"
+          style={{ minWidth: `${Math.max(980, daysCount * 170 + 88)}px` }}
+        >
           <div className="overflow-hidden rounded-[28px] bg-[#f8fbff]">
             <div className="grid grid-cols-[88px_1fr]">
               <div className="border-r border-[#dce5ef] bg-white/70" />
               <div
                 className="grid border-b border-[#dce5ef] bg-white/70"
                 style={{
-                  gridTemplateColumns: `repeat(${DAYS_TO_SHOW}, minmax(0, 1fr))`,
+                  gridTemplateColumns: `repeat(${daysCount}, minmax(0, 1fr))`,
                 }}
               >
                 {days.map((day, index) => (
@@ -217,10 +228,10 @@ export default function TeacherStudentsTab({
                 <div
                   className="grid"
                   style={{
-                    gridTemplateColumns: `repeat(${DAYS_TO_SHOW}, minmax(0, 1fr))`,
+                    gridTemplateColumns: `repeat(${daysCount}, minmax(0, 1fr))`,
                   }}
                 >
-                  {Array.from({ length: DAYS_TO_SHOW }, (_, dayIndex) => (
+                  {Array.from({ length: daysCount }, (_, dayIndex) => (
                     <div
                       key={`column-${dayIndex}`}
                       className="border-r border-[#dce5ef] last:border-r-0"
@@ -247,7 +258,7 @@ export default function TeacherStudentsTab({
                     </div>
                   )}
                   {items.map((item) => (
-                    <ScheduleCard key={item.id} item={item} />
+                    <ScheduleCard key={item.id} item={item} daysCount={daysCount} />
                   ))}
                 </div>
               </div>

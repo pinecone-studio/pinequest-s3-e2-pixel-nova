@@ -5,18 +5,14 @@ import type { Exam } from "../types";
 import ExamScheduleCard from "./ExamScheduleCard";
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
-const DAYS_COUNT = 5;
-
-function getWeekDays(ref: Date): Date[] {
-  const monday = new Date(ref);
-  const day = monday.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  monday.setDate(monday.getDate() + diff);
-  return Array.from({ length: DAYS_COUNT }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
+function getRangeDays(start: Date, end: Date): Date[] {
+  const days: Date[] = [];
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    days.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
 }
 
 function isOptionalExam(title: string) {
@@ -88,7 +84,12 @@ export default function ScheduleCalendarView({
   onSchedule,
 }: Props) {
   const [showForm, setShowForm] = useState(false);
-  const weekDays = getWeekDays(new Date());
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() + 7);
+  const maxDate = new Date();
+  maxDate.setMonth(maxDate.getMonth() + 1);
+  const calendarDays = getRangeDays(minDate, maxDate);
+  const selectedDate = scheduleDate ? new Date(scheduleDate) : null;
   const scheduledExams = exams.filter((e) => e.scheduledAt);
 
   return (
@@ -125,19 +126,27 @@ export default function ScheduleCalendarView({
         <div
           className="grid"
           style={{
-            gridTemplateColumns: `80px repeat(${DAYS_COUNT}, minmax(150px, 1fr))`,
+            gridTemplateColumns: `80px repeat(${calendarDays.length}, minmax(150px, 1fr))`,
           }}
         >
           {/* Corner + day headers */}
           <div className="border-b border-[#dce5ef]" />
-          {weekDays.map((d, i) => (
+          {calendarDays.map((d, i) => {
+            const isSelected =
+              selectedDate &&
+              d.toDateString() === selectedDate.toDateString();
+            return (
             <div
               key={i}
-              className="border-b border-l border-[#dce5ef] py-3 text-center text-sm font-medium text-slate-600"
+              className={`border-b border-l border-[#dce5ef] py-3 text-center text-sm font-medium ${
+                isSelected
+                  ? "bg-[#eef2ff] text-slate-900"
+                  : "text-slate-600"
+              }`}
             >
               {d.getMonth() + 1} сарын {d.getDate()}
             </div>
-          ))}
+          )})}
 
           {/* Time rows */}
           {HOURS.map((hour) => (
@@ -145,9 +154,9 @@ export default function ScheduleCalendarView({
               <div className="border-b border-[#dce5ef] px-3 py-4 text-right text-[13px] text-slate-400">
                 {String(hour).padStart(2, "0")} цаг
               </div>
-              {weekDays.map((_, dayIndex) => {
+              {calendarDays.map((_, dayIndex) => {
                 const exam = scheduledExams.find((e) => {
-                  const cell = getExamCell(e, weekDays);
+                  const cell = getExamCell(e, calendarDays);
                   return cell?.dayIndex === dayIndex && cell?.hour === hour;
                 });
                 const colors = exam ? getExamColors(exam) : null;

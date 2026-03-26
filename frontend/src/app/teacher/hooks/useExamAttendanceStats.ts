@@ -54,7 +54,7 @@ export const useExamAttendanceStats = (examId: string | null) => {
     };
 
     void fetchStats();
-    timer = window.setInterval(fetchStats, 5000);
+    timer = window.setInterval(fetchStats, 3000);
 
     return () => {
       active = false;

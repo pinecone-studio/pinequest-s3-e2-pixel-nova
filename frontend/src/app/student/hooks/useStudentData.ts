@@ -120,7 +120,7 @@ export const useStudentData = (overrideUser?: User | null) => {
     };
 
     void sync();
-    const interval = setInterval(sync, 5000);
+    const interval = setInterval(sync, 3000);
     return () => clearInterval(interval);
   }, []);
 
