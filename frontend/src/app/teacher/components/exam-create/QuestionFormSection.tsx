@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { inputClass, selectClass } from "../../styles";
+import { useRef, useState, type ChangeEvent } from "react";
+import { buttonGhost, inputClass, selectClass } from "../../styles";
 
 type QuestionFormSectionProps = {
   questionText: string;
@@ -10,6 +10,8 @@ type QuestionFormSectionProps = {
   setMcqOptions: (value: string[]) => void;
   questionAnswer: string;
   setQuestionAnswer: (value: string) => void;
+  questionImageUrl?: string;
+  setQuestionImageUrl: (value: string | undefined) => void;
   questionPoints: number;
   setQuestionPoints: (value: number) => void;
   questionCorrectIndex: number;
@@ -27,12 +29,32 @@ export default function QuestionFormSection({
   setMcqOptions,
   questionAnswer,
   setQuestionAnswer,
+  questionImageUrl,
+  setQuestionImageUrl,
   questionPoints,
   setQuestionPoints,
   questionCorrectIndex,
   setQuestionCorrectIndex,
 }: QuestionFormSectionProps) {
   const [correctOpen, setCorrectOpen] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setQuestionImageUrl(reader.result);
+        return;
+      }
+      window.alert("Зураг уншиж чадсангүй.");
+    };
+    reader.onerror = () => window.alert("Зураг уншиж чадсангүй.");
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="grid gap-3 rounded-[24px] border border-[#dce5ef] bg-[#fbfdff] p-4">
@@ -71,6 +93,49 @@ export default function QuestionFormSection({
             />
           </div>
         </div>
+      </div>
+
+      <div className="grid gap-2 rounded-2xl border border-[#dce5ef] bg-white p-3">
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageSelect}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            className={buttonGhost}
+            onClick={() => imageInputRef.current?.click()}
+            type="button"
+          >
+            {questionImageUrl ? "Зураг солих" : "Зураг нэмэх"}
+          </button>
+          {questionImageUrl && (
+            <button
+              className="rounded-xl border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+              onClick={() => setQuestionImageUrl(undefined)}
+              type="button"
+            >
+              Зураг устгах
+            </button>
+          )}
+          <span className="text-xs text-muted-foreground">
+            Задгай, сонголттой, зурагтай асуултыг гараар нэмэхэд ашиглана.
+          </span>
+        </div>
+
+        {questionImageUrl && (
+          <div className="overflow-hidden rounded-2xl border border-[#dce5ef] bg-[#f8fbff] p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={questionImageUrl}
+              alt="Шинэ асуултын зураг"
+              className="w-full rounded-xl border border-border object-contain"
+              style={{ maxHeight: 280 }}
+            />
+          </div>
+        )}
       </div>
 
       {questionType === "mcq" ? (

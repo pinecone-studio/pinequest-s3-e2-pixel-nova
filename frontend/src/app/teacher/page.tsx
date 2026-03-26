@@ -228,6 +228,8 @@ export default function TeacherPage() {
             setMcqOptions={management.setMcqOptions}
             questionAnswer={management.questionAnswer}
             setQuestionAnswer={management.setQuestionAnswer}
+            questionImageUrl={management.questionImageUrl}
+            setQuestionImageUrl={management.setQuestionImageUrl}
             questionPoints={management.questionPoints}
             setQuestionPoints={management.setQuestionPoints}
             questionCorrectIndex={management.questionCorrectIndex}

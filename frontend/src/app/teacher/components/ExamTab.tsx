@@ -39,6 +39,8 @@ type ExamTabProps = {
   setMcqOptions: (value: string[]) => void;
   questionAnswer: string;
   setQuestionAnswer: (value: string) => void;
+  questionImageUrl?: string;
+  setQuestionImageUrl: (value: string | undefined) => void;
   questionPoints: number;
   setQuestionPoints: (value: number) => void;
   questionCorrectIndex: number;
@@ -118,6 +120,8 @@ export default function ExamTab(props: ExamTabProps) {
           setMcqOptions={props.setMcqOptions}
           questionAnswer={props.questionAnswer}
           setQuestionAnswer={props.setQuestionAnswer}
+          questionImageUrl={props.questionImageUrl}
+          setQuestionImageUrl={props.setQuestionImageUrl}
           questionPoints={props.questionPoints}
           setQuestionPoints={props.setQuestionPoints}
           questionCorrectIndex={props.questionCorrectIndex}
