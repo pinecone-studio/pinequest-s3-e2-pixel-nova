@@ -184,8 +184,6 @@ export default function ScheduleCalendarView({
               setScheduleDate={setScheduleDate}
               durationMinutes={durationMinutes}
               setDurationMinutes={setDurationMinutes}
-              roomCode={null}
-              onCopyCode={() => undefined}
               onSchedule={() => {
                 onSchedule();
                 setShowForm(false);
