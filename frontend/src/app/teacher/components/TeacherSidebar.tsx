@@ -1,12 +1,21 @@
 import type { MutableRefObject } from "react";
+import {
+  BookOpen,
+  ClipboardList,
+  GraduationCap,
+  LayoutGrid,
+  Settings,
+  Trophy,
+} from "lucide-react";
+import { badgeClass } from "../styles";
 
 const tabs = [
-  { key: "Шалгалт үүсгэх", icon: "create" },
-  { key: "Хадгалсан шалгалт", icon: "saved" },
-  { key: "XP харах", icon: "xp" },
-  { key: "Дүн", icon: "results" },
-  { key: "Сурагч", icon: "students" },
-  { key: "Тохиргоо", icon: "settings" },
+  { key: "Шалгалт үүсгэх", icon: LayoutGrid },
+  { key: "Хадгалсан шалгалт", icon: ClipboardList },
+  { key: "XP харах", icon: Trophy },
+  { key: "Дүн", icon: BookOpen },
+  { key: "Сурагч", icon: GraduationCap },
+  { key: "Тохиргоо", icon: Settings },
 ] as const;
 
 type TabKey = (typeof tabs)[number]["key"];
@@ -30,9 +39,9 @@ export default function TeacherSidebar({
 }: TeacherSidebarProps) {
   return (
     <aside
-      className={`border-r border-border bg-card/70 backdrop-blur transition-all duration-500 ease-in-out overflow-hidden flex flex-col group ${
-        collapsed ? "w-20" : "w-64"
-      }`}
+      className={`border-r border-[#dce5ef] bg-white/88 backdrop-blur transition-all duration-300 ease-out ${
+        collapsed ? "w-[84px]" : "w-[280px]"
+      } overflow-hidden`}
       onMouseEnter={() => {
         if (sidebarTimerRef.current) {
           window.clearTimeout(sidebarTimerRef.current);
@@ -49,275 +58,84 @@ export default function TeacherSidebar({
         }, 800);
       }}
     >
-      <div className="p-4 pb-3 transition-all duration-500">
-        <div className="flex items-center gap-3 transition-all duration-500">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-500 flex-shrink-0 group-hover:scale-110">
-            <svg
-              className="h-5 w-5 transition-transform duration-500"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              stroke="none"
-            >
-              <path
-                d="M3 7l9-4 9 4-9 4-9-4Z"
-                fill="currentColor"
-                opacity="0.8"
-              />
-              <path
-                d="M12 11l-9-4v4c0 2.5 4 4 9 4s9-1.5 9-4v-4l-9 4Z"
-                fill="currentColor"
-                opacity="0.6"
-              />
-              <path
-                d="M21 15.5v4c0 2.5-4 4-9 4s-9-1.5-9-4v-4l9 4 9-4Z"
-                fill="currentColor"
-                opacity="0.4"
-              />
-            </svg>
+      <div className="flex h-full flex-col px-3 py-4">
+        <div className="rounded-[28px] border border-[#dce5ef] bg-[#f8fbff] p-3 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.2)]">
+          <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#2563eb] text-white shadow-[0_16px_32px_-20px_rgba(37,99,235,0.7)]">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            {!collapsed && (
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-slate-900">EduCore</div>
+                <div className="text-xs text-slate-500">Teacher Panel</div>
+              </div>
+            )}
           </div>
-          <div
-            className={`transition-all duration-500 ${
-              collapsed ? "hidden opacity-0" : "block opacity-100"
-            }`}
-          >
-            <h1 className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              EduCore
-            </h1>
-            <p className="text-[10px] text-muted-foreground font-medium">
-              Багшийн төв
-            </p>
-          </div>
+          {!collapsed && (
+            <div className="mt-4 flex items-center justify-between gap-2">
+              <span className={badgeClass}>UX Standard</span>
+              <button
+                className="rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-[#eff6ff]"
+                onClick={() => setCollapsed((prev) => !prev)}
+                type="button"
+              >
+                Хураах
+              </button>
+            </div>
+          )}
         </div>
 
-        <button
-          className={`mt-4 w-full group/btn relative rounded-2xl border border-border/50 bg-muted/60 hover:bg-muted hover:border-border px-3 py-3 text-[11px] uppercase tracking-widest font-semibold text-muted-foreground hover:text-foreground transition-all duration-500 overflow-hidden flex items-center gap-2 justify-center group-hover:gap-3 ${
-            collapsed ? "justify-center" : "justify-between"
-          }`}
-          onClick={() => setCollapsed((prev) => !prev)}
-        >
-          <span
-            className={`transition-all duration-500 ${
-              collapsed ? "hidden opacity-0 w-0" : "inline opacity-100 w-auto"
-            }`}
-          >
-            {collapsed ? "Өргөх" : "Хураах"}
-          </span>
-          <svg
-            className={`h-4 w-4 transition-transform duration-500 flex-shrink-0 ${
-              collapsed ? "rotate-0" : "rotate-180"
-            }`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-      </div>
+        <nav className="mt-6 flex-1 space-y-2">
+          {tabs.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.key;
 
-      <nav className="flex-1 space-y-3 px-3 py-4 overflow-y-auto scrollbar-hide">
-        {tabs.map((item) => (
-          <button
-            key={item.key}
-            className={`group/nav relative w-full flex items-center transition-all duration-500 ease-in-out ${
-              collapsed ? "justify-center px-2" : "gap-3 px-4"
-            } py-3 rounded-2xl overflow-hidden ${
-              activeTab === item.key
-                ? "bg-gradient-to-r from-primary/25 to-primary/5 border border-primary/40 shadow-lg"
-                : "border border-transparent hover:border-border/50 hover:bg-muted/40"
-            }`}
-            onClick={() => setActiveTab(item.key)}
-          >
-            <div
-              className={`absolute inset-0 bg-gradient-to-r from-primary/15 via-transparent to-transparent opacity-0 transition-opacity duration-500 ${
-                activeTab === item.key
-                  ? "opacity-100"
-                  : "group-hover/nav:opacity-50"
-              }`}
-            />
-            <span
-              className={`relative grid h-11 w-11 place-items-center rounded-2xl border flex-shrink-0 transition-all duration-500 ${
-                activeTab === item.key
-                  ? "border-primary/50 bg-gradient-to-br from-primary/30 to-primary/10 text-primary shadow-md scale-100"
-                  : "border-border/40 bg-card text-muted-foreground group-hover/nav:text-foreground group-hover/nav:border-border/60 group-hover/nav:bg-muted/60 group-hover/nav:scale-105"
-              }`}
-            >
-              {item.key === "Шалгалт үүсгэх" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
+            return (
+              <button
+                key={item.key}
+                className={`group relative flex w-full items-center rounded-2xl px-3 py-3 text-left transition ${
+                  collapsed ? "justify-center" : "gap-3"
+                } ${
+                  isActive
+                    ? "border border-[#bfdbfe] bg-[#eff6ff] text-[#1d4ed8] shadow-[0_16px_32px_-28px_rgba(37,99,235,0.55)]"
+                    : "border border-transparent text-slate-600 hover:border-[#dce5ef] hover:bg-white"
+                }`}
+                onClick={() => setActiveTab(item.key)}
+                type="button"
+              >
+                <span
+                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl border ${
+                    isActive
+                      ? "border-[#bfdbfe] bg-white text-[#2563eb]"
+                      : "border-[#dce5ef] bg-[#f8fafc] text-slate-500"
                   }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
                 >
-                  <path d="M4 5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2Z" />
-                  <path d="M6 3v15" />
-                  <path d="M10 7h4" />
-                  <path d="M10 11h4" />
-                </svg>
-              )}
-              {item.key === "Хадгалсан шалгалт" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M8 6h13" />
-                  <path d="M8 12h13" />
-                  <path d="M8 18h13" />
-                  <path d="M3 6h.01" />
-                  <path d="M3 12h.01" />
-                  <path d="M3 18h.01" />
-                </svg>
-              )}
-              {item.key === "XP харах" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2v4" />
-                  <path d="M12 18v4" />
-                  <path d="M4.93 4.93l2.83 2.83" />
-                  <path d="M16.24 16.24l2.83 2.83" />
-                  <path d="M2 12h4" />
-                  <path d="M18 12h4" />
-                  <path d="M4.93 19.07l2.83-2.83" />
-                  <path d="M16.24 7.76l2.83-2.83" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              )}
-              {item.key === "Дүн" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 3v18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z" />
-                  <path d="M3 7h18" />
-                  <path d="M7 11v6" />
-                  <path d="M12 11v6" />
-                  <path d="M17 11v6" />
-                </svg>
-              )}
-              {item.key === "Сурагч" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="9" cy="8" r="3" />
-                  <path d="M2 21c0-3.5 3-6 7-6" />
-                  <path d="M17 11a3 3 0 1 0-2.8-4" />
-                  <path d="M16 21c0-2.1-1.4-3.9-3.4-4.6" />
-                </svg>
-              )}
-              {item.key === "Тохиргоо" && (
-                <svg
-                  className={`h-5 w-5 transition-all duration-500 ${
-                    activeTab === item.key
-                      ? "text-primary"
-                      : "text-muted-foreground group-hover/nav:text-foreground"
-                  }`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m6.08 0l4.24-4.24M1 12h6m6 0h6m-1.78 7.78l-4.24-4.24m-6.08 0l-4.24 4.24" />
-                </svg>
-              )}
-
-              {collapsed && (
-                <span className="pointer-events-none absolute left-full top-1/2 ml-2 -translate-y-1/2 whitespace-nowrap rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-lg opacity-0 transition-all duration-500 ease-out group-hover/nav:ml-4 group-hover/nav:opacity-100 group-hover/nav:shadow-xl translate-x-4 scale-90 group-hover/nav:translate-x-0 group-hover/nav:scale-100 z-50">
-                  {item.key}
-                  <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-card" />
+                  <Icon className="h-4.5 w-4.5" />
                 </span>
-              )}
-            </span>
+                {!collapsed && (
+                  <span className="truncate text-sm font-medium">{item.key}</span>
+                )}
+                {collapsed && (
+                  <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-xl border border-[#dce5ef] bg-white px-3 py-2 text-xs font-semibold text-slate-700 opacity-0 shadow-lg transition group-hover:opacity-100">
+                    {item.key}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
 
-            <span
-              className={`relative font-medium text-sm transition-all duration-500 overflow-hidden ${
-                collapsed
-                  ? "w-0 -translate-x-4 opacity-0"
-                  : "w-auto translate-x-0 opacity-100"
-              }`}
-            >
-              {item.key}
-            </span>
-
-            {activeTab === item.key && !collapsed && (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 bg-gradient-to-b from-primary via-primary to-primary/50 rounded-l-full transition-all duration-500 shadow-lg" />
-            )}
-          </button>
-        ))}
-      </nav>
-
-      <div
-        className={`border-t border-border/30 p-3 transition-all duration-500 ${
-          collapsed ? "text-center" : ""
-        }`}
-      >
-        <div
-          className={`w-full flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-500 justify-center ${
-            collapsed ? "" : "justify-start"
-          }`}
-        >
-          <svg
-            className="h-4 w-4 flex-shrink-0 transition-transform duration-500 group-hover:rotate-180"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M9 9h6M9 15h6" />
-          </svg>
+        <div className="rounded-[24px] border border-[#dce5ef] bg-white px-3 py-3 text-center shadow-[0_18px_38px_-34px_rgba(15,23,42,0.2)]">
+          <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-[#eff6ff] text-sm font-semibold text-[#1d4ed8]">
+            {(currentUserName ?? "Б").slice(0, 1).toUpperCase()}
+          </div>
           {!collapsed && (
-            <span className="transition-opacity duration-500">
-              {currentUserName ?? "Багш"}
-            </span>
+            <>
+              <div className="mt-2 text-sm font-semibold text-slate-900">
+                {currentUserName ?? "Багш"}
+              </div>
+              <div className="text-xs text-slate-500">Teacher account</div>
+            </>
           )}
         </div>
       </div>

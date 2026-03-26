@@ -1,4 +1,4 @@
-import { cardClass } from "../styles";
+import { badgeClass, cardClass, sectionDescriptionClass, sectionTitleClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { XpLeaderboardEntry } from "../types";
 
@@ -20,30 +20,31 @@ export default function TeacherXpOverviewCard({
     <div className={`${cardClass} overflow-hidden`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">XP ба level-up</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Сурагчдын game vibe progression самбар
+          <span className={badgeClass}>Student Progress</span>
+          <h2 className={`mt-3 ${sectionTitleClass}`}>XP ба ахиц</h2>
+          <p className={`mt-2 ${sectionDescriptionClass}`}>
+            Сурагчдын идэвх, түвшин, хамгийн сүүлд хийсэн шалгалтын явцыг харуулна.
           </p>
         </div>
-        <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
+        <div className="rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-3 py-1 text-[11px] font-semibold text-[#1d4ed8]">
           {students.length} сурагч идэвхтэй
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-primary/80">
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-[24px] border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-[#1d4ed8]">
             Total XP
           </div>
           <div className="mt-2 text-2xl font-semibold">{totalXp}</div>
         </div>
-        <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
+        <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-3">
           <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
             Average Level
           </div>
           <div className="mt-2 text-2xl font-semibold">{averageLevel}</div>
         </div>
-        <div className="rounded-2xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-3">
           <div className="text-[11px] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-300">
             Top Progress
           </div>
@@ -55,7 +56,7 @@ export default function TeacherXpOverviewCard({
 
       <div className="mt-4 space-y-3">
         {topStudents.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-border bg-muted/60 px-4 py-6 text-sm text-muted-foreground">
+          <div className="rounded-[24px] border border-dashed border-[#d5dfeb] bg-[#f8fafc] px-4 py-6 text-sm text-slate-500">
             XP өгөгдөл хараахан алга. Сурагчид шалгалт өгч эхэлмэгц progression энд гарч ирнэ.
           </div>
         )}
@@ -63,7 +64,7 @@ export default function TeacherXpOverviewCard({
         {topStudents.map((student, index) => (
           <div
             key={student.studentId}
-            className="rounded-2xl border border-border bg-muted/60 px-4 py-3"
+            className="rounded-[24px] border border-[#dce5ef] bg-[#fbfdff] px-4 py-4"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">

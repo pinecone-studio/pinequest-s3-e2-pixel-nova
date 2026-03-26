@@ -12,6 +12,12 @@ type ApiEnvelope<T> = {
 
 type RemoteExamDetail = {
   id: string;
+  title: string;
+  scheduledAt?: string | null;
+  startedAt?: string | null;
+  roomCode?: string | null;
+  durationMin?: number;
+  createdAt?: string;
 };
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
@@ -33,6 +39,7 @@ const buildHeaders = (user: RoleUser) => ({
 export type SyncExamPayload = {
   title: string;
   duration: number;
+  scheduledAt?: string | null;
   questions: Array<{
     type: "text" | "open" | "mcq";
     text: string;
@@ -92,6 +99,23 @@ export const syncExamToBackend = async (
       const message = await questionRes.text();
       throw new Error(message || "Backend question create failed");
     }
+  }
+
+  if (exam.scheduledAt && exam.questions.length > 0) {
+    const scheduleRes = await fetch(`${API_BASE_URL}/api/exams/${created.id}/schedule`, {
+      method: "POST",
+      headers: buildHeaders(user),
+      body: JSON.stringify({
+        scheduledAt: exam.scheduledAt,
+      }),
+    });
+
+    if (!scheduleRes.ok) {
+      const message = await scheduleRes.text();
+      throw new Error(message || "Backend exam schedule failed");
+    }
+
+    return await unwrap<RemoteExamDetail>(scheduleRes);
   }
 
   return created;

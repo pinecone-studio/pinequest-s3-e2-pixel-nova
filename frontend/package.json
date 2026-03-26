@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "test": "jest --runInBand",
-    "deploy": "next build && wrangler pages deploy out --project-name=educore",
-    "preview": "next build && wrangler pages dev out",
+    "deploy": "next build --webpack && wrangler pages deploy out --project-name=educore",
+    "preview": "next build --webpack && wrangler pages dev out",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
   },
   "dependencies": {

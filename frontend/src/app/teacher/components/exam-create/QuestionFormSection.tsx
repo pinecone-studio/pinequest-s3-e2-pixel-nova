@@ -35,11 +35,11 @@ export default function QuestionFormSection({
   const [correctOpen, setCorrectOpen] = useState(false);
 
   return (
-    <div className="grid gap-2">
-      <div className="grid gap-2 md:grid-cols-[1fr_200px]">
+    <div className="grid gap-3 rounded-[24px] border border-[#dce5ef] bg-[#fbfdff] p-4">
+      <div className="grid gap-3 md:grid-cols-[1fr_220px]">
         <input
           className={inputClass}
-          placeholder="Асуултын текст"
+          placeholder="Асуултаа оруулна уу"
           value={questionText ?? ""}
           onChange={(event) => setQuestionText(event.target.value)}
         />
@@ -74,11 +74,11 @@ export default function QuestionFormSection({
       </div>
 
       {questionType === "mcq" ? (
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {optionLabels.map((label, index) => (
             <div
               key={label}
-              className="flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 py-2"
+              className="flex items-center gap-2 rounded-2xl border border-[#dce5ef] bg-white px-3 py-3"
             >
               <span className="grid h-6 w-6 place-items-center rounded-lg border border-border bg-card text-xs font-semibold text-muted-foreground">
                 {label}
@@ -136,7 +136,7 @@ export default function QuestionFormSection({
                 {optionLabels.map((label, index) => (
                   <button
                     key={label}
-                    className={`w-full rounded-lg px-3 py-2 text-left transition ${
+                    className={`w-full rounded-xl px-3 py-2 text-left transition ${
                       questionCorrectIndex === index
                         ? "bg-primary text-primary-foreground"
                         : "hover:bg-muted"

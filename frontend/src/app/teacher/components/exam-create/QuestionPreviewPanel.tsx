@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { buttonGhost, inputClass, selectClass } from "../../styles";
 import type { Question } from "../../types";
 
@@ -40,7 +39,7 @@ export default function QuestionPreviewPanel({
   if (!activeQuestion) return null;
 
   return (
-    <div className="rounded-2xl border border-border bg-muted/40 p-3">
+    <div className="rounded-[28px] border border-[#dce5ef] bg-[#f8fbff] p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-base font-semibold">Student Preview</div>
@@ -61,10 +60,22 @@ export default function QuestionPreviewPanel({
         </div>
       </div>
 
-      <div className="mt-3 rounded-2xl border border-border bg-card p-3">
-        <div className="text-sm text-muted-foreground">
+      <div className="mt-4 rounded-[24px] border border-[#dce5ef] bg-white p-4">
+        <div className="text-sm text-slate-500">
           Асуулт {previewIndex + 1} · Оноо {activeQuestion.points ?? 1}
         </div>
+
+        {activeQuestion.imageUrl && (
+          <div className="mt-3 overflow-hidden rounded-2xl border border-[#dce5ef] bg-[#f8fbff] p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={activeQuestion.imageUrl}
+              alt="Асуултын зураг"
+              className="w-full rounded-xl border border-border object-contain"
+              style={{ maxHeight: 320 }}
+            />
+          </div>
+        )}
 
         {editMode ? (
           <div className="mt-2 grid gap-2">
@@ -214,7 +225,7 @@ export default function QuestionPreviewPanel({
                         {activeOptions.map((option, idx) => (
                           <button
                             key={`${option}-${idx}`}
-                            className={`w-full rounded-lg px-3 py-2 text-left transition ${
+                      className={`w-full rounded-xl px-3 py-2 text-left transition ${
                               activeQuestion.correctAnswer === option
                                 ? "bg-primary text-primary-foreground"
                                 : "hover:bg-muted"
@@ -253,18 +264,6 @@ export default function QuestionPreviewPanel({
           </div>
         ) : (
           <div className="mt-2 grid gap-2">
-            {activeQuestion.imageUrl && (
-              <div className="relative w-full overflow-hidden rounded-xl border border-border">
-                <Image
-                  src={activeQuestion.imageUrl}
-                  alt="Асуултын зураг"
-                  width={960}
-                  height={280}
-                  className="h-auto w-full object-contain"
-                  unoptimized
-                />
-              </div>
-            )}
             <div className="text-lg font-semibold leading-7">
               {activeQuestion.text}
             </div>
@@ -285,7 +284,7 @@ export default function QuestionPreviewPanel({
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-border bg-background px-3 py-2 text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-[#d5dfeb] bg-[#f8fafc] px-3 py-3 text-sm text-slate-500">
                 Сурагч энд хариултаа бичнэ.
               </div>
             )}

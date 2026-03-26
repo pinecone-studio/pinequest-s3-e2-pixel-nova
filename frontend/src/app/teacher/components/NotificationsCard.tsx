@@ -30,22 +30,23 @@ export default function NotificationsCard({
       </h2>
       <div className="mt-4 space-y-3 text-sm">
         {notifications.length === 0 && (
-          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+          <div className="rounded-2xl border border-[#dce5ef] bg-[#f8fafc] px-3 py-3 text-xs text-slate-500">
             Одоогоор мэдэгдэл алга.
           </div>
         )}
         {notifications.map((item, index) => (
           <button
             key={`${item.examId}-${item.createdAt}`}
-            className={`w-full rounded-xl border px-3 py-2 text-left text-xs transition ${
+            className={`w-full rounded-2xl border px-4 py-3 text-left text-xs transition ${
               item.read
-                ? "border-border bg-muted text-muted-foreground"
-                : "border-primary/40 bg-primary/5"
+                ? "border-[#dce5ef] bg-[#f8fafc] text-slate-500"
+                : "border-[#bfdbfe] bg-[#eff6ff]"
             }`}
             onClick={() => onMarkRead(index)}
+            type="button"
           >
             <div className="text-xs">{item.message}</div>
-            <div className="mt-1 text-[11px] text-muted-foreground">
+            <div className="mt-1 text-[11px] text-slate-500">
               {formatDateTime(item.createdAt)}
             </div>
           </button>
