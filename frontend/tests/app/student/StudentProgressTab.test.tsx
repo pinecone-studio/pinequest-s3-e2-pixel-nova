@@ -40,13 +40,10 @@ describe("StudentProgressTab", () => {
       />,
     );
 
-    expect(screen.getByText("Your Progress")).toBeInTheDocument();
-    expect(screen.getByText("This Week")).toBeInTheDocument();
-    expect(screen.getByText("Score Trend")).toBeInTheDocument();
-    expect(screen.getByText("Subject Scores")).toBeInTheDocument();
-    expect(screen.getByText("Math")).toBeInTheDocument();
-    expect(screen.getByText("Physics")).toBeInTheDocument();
-    expect(screen.getByText("English")).toBeInTheDocument();
+    expect(screen.getByText("Миний ахиц")).toBeInTheDocument();
+    expect(screen.getByText("Энэ долоо хоног")).toBeInTheDocument();
+    expect(screen.getByText("Одоогийн түвшин")).toBeInTheDocument();
+    expect(screen.getByText("Дундаж оноо")).toBeInTheDocument();
     expect(screen.getByText("Сүүлийн дүн")).toBeInTheDocument();
   });
 });
