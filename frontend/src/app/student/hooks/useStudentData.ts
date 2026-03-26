@@ -3,6 +3,19 @@ import { User, getSessionUser } from "@/lib/examGuard";
 import type { Exam, NotificationItem } from "../types";
 import { getStudentResults } from "@/lib/backend-auth";
 
+const buildNotifications = (
+  results: Awaited<ReturnType<typeof getStudentResults>>,
+): NotificationItem[] =>
+  results.slice(0, 4).map((item, index) => ({
+    examId: item.examId,
+    message:
+      index === 0
+        ? `${item.title} шалгалтын дүн шинэчлэгдлээ.`
+        : `${item.title} шалгалтын тайланг дахин хараарай.`,
+    read: index > 1,
+    createdAt: item.submittedAt ?? new Date().toISOString(),
+  }));
+
 export const useStudentData = (overrideUser?: User | null) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -39,7 +52,7 @@ export const useStudentData = (overrideUser?: User | null) => {
           createdAt: item.submittedAt ?? new Date().toISOString(),
         }));
         setExams(mappedExams);
-        setNotifications([]);
+        setNotifications(buildNotifications(results));
       } catch {
         setExams([]);
         setNotifications([]);
@@ -62,7 +75,7 @@ export const useStudentData = (overrideUser?: User | null) => {
           createdAt: item.submittedAt ?? new Date().toISOString(),
         }));
         setExams(mappedExams);
-        setNotifications([]);
+        setNotifications(buildNotifications(results));
       } catch {
         setExams([]);
         setNotifications([]);
