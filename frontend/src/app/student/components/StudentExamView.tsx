@@ -40,7 +40,7 @@ export default function StudentExamView({
   const progressPercent =
     totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   return (
-    <div className="min-h-screen bg-background px-6 py-8 text-foreground">
+    <div className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
       {warning && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm">
           <div className="relative w-[min(92vw,460px)] overflow-hidden rounded-3xl border border-red-400/40 bg-card/90 px-6 py-5 text-center shadow-[0_20px_60px_rgba(239,68,68,0.25)]">
@@ -57,7 +57,7 @@ export default function StudentExamView({
           </div>
         </div>
       )}
-      <header className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+      <header className="flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
         <div className="font-semibold">
           {activeExam ? activeExam.title : "Шалгалтын өрөө"}
         </div>
@@ -74,7 +74,7 @@ export default function StudentExamView({
           </span>
         </div>
       </header>
-      <div className="mx-auto mt-3 w-full max-w-5xl rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+      <div className="mt-3 w-full rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Явц</span>
           <span>
@@ -89,7 +89,7 @@ export default function StudentExamView({
         </div>
       </div>
 
-      <div className="mx-auto mt-6 grid w-full max-w-5xl gap-4 lg:grid-cols-[1fr_140px]">
+      <div className="mt-6 grid w-full gap-4 xl:grid-cols-[minmax(0,1fr)_180px]">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="text-lg font-semibold">
             {currentQuestion ? currentQuestion.text : "Асуулт хараахан алга"}
@@ -162,7 +162,7 @@ export default function StudentExamView({
         </div>
       </div>
 
-      <div className="mx-auto mt-6 flex w-full max-w-5xl flex-wrap justify-between gap-3">
+      <div className="mt-6 flex w-full flex-wrap justify-between gap-3">
         <button
           className="rounded-xl border border-border bg-muted px-4 py-2 text-sm transition hover:bg-muted/70"
           onClick={onExit}

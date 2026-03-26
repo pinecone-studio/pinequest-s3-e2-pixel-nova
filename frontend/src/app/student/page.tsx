@@ -216,8 +216,8 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
   return (
     <div className="min-h-screen bg-[#f6f8fc] text-foreground">
       {exam.view === "dashboard" && (
-        <main className="px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-[1280px] space-y-5">
+        <main className="px-4 py-6 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+          <div className="w-full space-y-5">
             <StudentHeader
               activeTab={exam.activeTab}
               currentUserName={currentUserName}

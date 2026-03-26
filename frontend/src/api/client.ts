@@ -1,19 +1,5 @@
 import { getSessionUser, type User } from "@/lib/examGuard";
-
-const getApiBaseUrl = () => {
-  // Build-time env var takes priority
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL;
-  }
-  // Runtime: if running in browser on a deployed domain, use the backend URL
-  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
-    return "https://backend.zbymba4.workers.dev";
-  }
-  // Local dev fallback
-  return "http://localhost:8787";
-};
-
-export const API_BASE_URL = getApiBaseUrl();
+import { getApiBaseUrl } from "@/lib/api-client";
 
 type ApiEnvelope<T> = {
   data?: T;
@@ -21,6 +7,7 @@ type ApiEnvelope<T> = {
     code?: string;
     message?: string;
   };
+  message?: string;
 };
 
 type RequestOptions = RequestInit & {
@@ -34,36 +21,92 @@ const unwrapResponse = <T,>(value: ApiEnvelope<T> | T): T => {
   return value as T;
 };
 
-const buildHeaders = (headers: HeadersInit | undefined, user?: User | null) => {
+const buildHeaders = (
+  headers: HeadersInit | undefined,
+  body: BodyInit | null | undefined,
+  user?: User | null,
+) => {
   const resolvedUser = user ?? getSessionUser();
-  const next = new Headers(headers);
+  const nextHeaders = new Headers(headers);
 
   if (resolvedUser) {
-    next.set("x-user-id", resolvedUser.id);
-    next.set("x-user-role", resolvedUser.role);
+    nextHeaders.set("x-user-id", resolvedUser.id);
+    nextHeaders.set("x-user-role", resolvedUser.role);
   }
 
-  return next;
+  const hasBody = body !== undefined && body !== null;
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
+
+  if (hasBody && !isFormData && !nextHeaders.has("Content-Type")) {
+    nextHeaders.set("Content-Type", "application/json");
+  }
+
+  return nextHeaders;
 };
+
+const readErrorMessage = async (response: Response) => {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      const payload = (await response.json()) as ApiEnvelope<unknown>;
+      return (
+        payload.error?.message ||
+        payload.message ||
+        `Request failed: ${response.status}`
+      );
+    } catch {
+      return `Request failed: ${response.status}`;
+    }
+  }
+
+  const text = await response.text();
+  return text || `Request failed: ${response.status}`;
+};
+
+const readPayload = async <T,>(response: Response): Promise<T> => {
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("application/json")) {
+    return (await response.text()) as T;
+  }
+
+  const text = await response.text();
+  if (!text.trim()) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export const apiRequest = async <T,>(
   path: string,
   { user, headers, ...init }: RequestOptions = {},
 ): Promise<T> => {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: buildHeaders(headers, user),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      ...init,
+      headers: buildHeaders(headers, init.body, user),
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown network error";
+    throw new Error(`Failed to reach API: ${message}`);
+  }
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed: ${response.status}`);
+    throw new Error(await readErrorMessage(response));
   }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  const json = (await response.json()) as ApiEnvelope<T> | T;
-  return unwrapResponse<T>(json);
+  const payload = await readPayload<ApiEnvelope<T> | T>(response);
+  return unwrapResponse<T>(payload);
 };

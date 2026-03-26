@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./api-client";
+import { getApiBaseUrl } from "./api-client";
 
 type RoleUser = {
   id: string;
@@ -48,8 +48,9 @@ export const syncExamToBackend = async (
   exam: SyncExamPayload,
 ) => {
   if (!user || user.role !== "teacher") return null;
+  const apiBaseUrl = getApiBaseUrl();
 
-  const createRes = await fetch(`${API_BASE_URL}/api/exams`, {
+  const createRes = await fetch(`${apiBaseUrl}/api/exams`, {
     method: "POST",
     headers: buildHeaders(user),
     body: JSON.stringify({
@@ -73,7 +74,7 @@ export const syncExamToBackend = async (
     }));
 
     const questionRes = await fetch(
-      `${API_BASE_URL}/api/exams/${created.id}/questions`,
+      `${apiBaseUrl}/api/exams/${created.id}/questions`,
       {
         method: "POST",
         headers: buildHeaders(user),

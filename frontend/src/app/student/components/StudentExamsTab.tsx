@@ -231,21 +231,21 @@ export default function StudentExamsTab({
   }
 
   return (
-    <section className="mx-auto max-w-[760px] space-y-5">
+    <section className="w-full space-y-5">
       <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
         Exam Detail
       </div>
 
-      <div className="flex items-start gap-4">
+      <div className="grid gap-5 xl:grid-cols-[72px_minmax(0,1fr)]">
         <button
           aria-label="Go back to exam list"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#eef1f7] bg-white text-slate-500 shadow-sm transition hover:border-[#d8dff0] hover:text-slate-700"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#eef1f7] bg-white text-slate-500 shadow-sm transition hover:border-[#d8dff0] hover:text-slate-700 xl:mt-3"
           onClick={onClearSelection}
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
 
-        <div className="min-w-0 flex-1 rounded-[28px] border border-[#e8edf9] bg-white p-4 shadow-[0_22px_55px_rgba(68,84,125,0.08)] sm:p-5">
+        <div className="min-w-0 rounded-[28px] border border-[#e8edf9] bg-white p-4 shadow-[0_22px_55px_rgba(68,84,125,0.08)] sm:p-5 lg:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-[1.7rem] font-semibold tracking-[-0.035em] text-slate-900">
@@ -290,7 +290,7 @@ export default function StudentExamsTab({
           Хугацаа
         </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
           <div className="rounded-[20px] border border-[#bfd4ff] bg-[#f4f8ff] px-4 py-4 text-center">
             <CalendarDays className="mx-auto h-5 w-5 text-slate-500" />
             <div className="mt-3 text-xs text-slate-400">Огноо</div>

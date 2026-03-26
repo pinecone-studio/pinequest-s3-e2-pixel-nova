@@ -27,8 +27,8 @@ export default function StudentResultView({
 
   if (!lastSubmission) {
     return (
-      <div className="min-h-screen bg-background text-foreground px-6 py-10">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+        <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Дүн боловсруулж байна...</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Хэсэг хүлээнэ үү. Хэрэв энэ дэлгэц удаан үргэлжилбэл самбар руу
@@ -46,8 +46,8 @@ export default function StudentResultView({
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground px-6 py-10">
-      <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+      <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Дүнгийн хураангуй</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="rounded-xl border border-border bg-muted p-4">
