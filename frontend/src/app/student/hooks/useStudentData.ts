@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { getSessionUser, type User } from "@/lib/examGuard";
+import {
+  getJSON,
+  getSessionUser,
+  STORAGE_KEYS,
+  type User,
+} from "@/lib/examGuard";
 import { getStudentResults } from "@/lib/backend-auth";
 import type { Exam, NotificationItem } from "../types";
 
