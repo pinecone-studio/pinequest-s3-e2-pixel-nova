@@ -87,8 +87,39 @@ export default function StudentSettingsTab({
   }, [profile, userId, username]);
 
   return (
-    <section className="grid gap-4 lg:grid-cols-2">
-      <div className={cardClass}>
+    <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-4">
+        <div className={cardClass}>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/70">
+                Миний профайл
+              </p>
+              <h2 className="mt-2 text-lg font-semibold">
+                {profile.fullName || username}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {profile.email || "Имэйл оруулаагүй"}
+              </p>
+            </div>
+            <div className="flex w-full max-w-xs flex-col gap-2 rounded-2xl border border-border bg-muted/50 px-4 py-3 text-sm md:w-auto">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Түвшин</span>
+                <span className="font-semibold text-foreground">
+                  {typeof profile.level === "number" ? `Lv.${profile.level}` : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>XP</span>
+                <span className="font-semibold text-foreground">
+                  {typeof profile.xp === "number" ? profile.xp : "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={cardClass}>
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <User className="w-4 h-4" />
           Профайл
@@ -191,15 +222,22 @@ export default function StudentSettingsTab({
           )}
         </div>
       </div>
+      </div>
       <div className={cardClass}>
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Settings className="w-4 h-4" />
           Тохиргоо
         </h2>
-        <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-          <div>Авто хадгалалт: Асаалттай</div>
-          <div>Шалгалтын сануулга: Асаалттай</div>
-          <div>Төвлөрөх горим: Идэвхтэй</div>
+        <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-border bg-muted px-3 py-2">
+            Авто хадгалалт: Асаалттай
+          </div>
+          <div className="rounded-xl border border-border bg-muted px-3 py-2">
+            Шалгалтын сануулга: Асаалттай
+          </div>
+          <div className="rounded-xl border border-border bg-muted px-3 py-2">
+            Төвлөрөх горим: Идэвхтэй
+          </div>
         </div>
       </div>
     </section>

@@ -149,7 +149,7 @@ export default function QuestionPreviewPanel({
     <div className="rounded-[28px] border border-[#dce5ef] bg-[#f8fbff] p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-base font-semibold">Student Preview</div>
+          <div className="text-base font-semibold">Сурагчийн харагдах байдал</div>
           <div className="text-[11px] text-muted-foreground">
             Сурагчийн харагдах байдал.
           </div>
@@ -162,7 +162,7 @@ export default function QuestionPreviewPanel({
             className={buttonGhost}
             onClick={() => setEditMode((prev) => !prev)}
           >
-            {editMode ? "Хаах" : "Edit"}
+            {editMode ? "Хаах" : "Засах"}
           </button>
         </div>
       </div>

@@ -6,6 +6,8 @@ type ExamImportPanelProps = {
   pdfLoading: boolean;
   pdfError: string | null;
   importError: string | null;
+  importLoading: boolean;
+  importLoadingLabel: string | null;
   onPdfUpload: (file: File) => void;
   onImageUpload: (file: File) => void;
   onDocxUpload: (file: File) => void;
@@ -19,6 +21,8 @@ export default function ExamImportPanel({
   pdfLoading,
   pdfError,
   importError,
+  importLoading,
+  importLoadingLabel,
   onPdfUpload,
   onImageUpload,
   onDocxUpload,
@@ -28,7 +32,7 @@ export default function ExamImportPanel({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-medium text-slate-700">Файл импорт (PDF / IMAGE / DOCX)</span>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff]">
+          <label className={`flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "opacity-60 pointer-events-none" : ""}`}>
             PDF
             <input
               type="file"
@@ -41,7 +45,7 @@ export default function ExamImportPanel({
               }}
             />
           </label>
-          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff]">
+          <label className={`flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "opacity-60 pointer-events-none" : ""}`}>
             Image
             <input
               type="file"
@@ -54,7 +58,7 @@ export default function ExamImportPanel({
               }}
             />
           </label>
-          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff]">
+          <label className={`flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "opacity-60 pointer-events-none" : ""}`}>
             DOCX
             <input
               type="file"
@@ -94,6 +98,11 @@ export default function ExamImportPanel({
         <span className="text-[11px] text-slate-400">(blank = last)</span>
       </div>
 
+      {importLoading && (
+        <div className="mt-2 text-xs">
+          {importLoadingLabel ?? "Файл боловсруулж байна..."}
+        </div>
+      )}
       {pdfLoading && <div className="mt-2 text-xs">PDF уншиж байна...</div>}
       {pdfError && <div className="mt-2 text-xs text-red-500">{pdfError}</div>}
       {importError && (
