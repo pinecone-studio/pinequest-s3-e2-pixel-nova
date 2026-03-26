@@ -1,8 +1,21 @@
-import { Bell, ChevronDown, CircleHelp, MoonIcon, Settings, User2 } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  CircleHelp,
+  MoonIcon,
+  Settings,
+  User2,
+} from "lucide-react";
 import { useState, type FocusEvent, type ReactNode } from "react";
 import type { NotificationItem, StudentTab } from "../types";
 
 const primaryTabs = ["Home", "Exams", "Progress", "Leaderboard"] as const;
+const tabLabels: Record<(typeof primaryTabs)[number], string> = {
+  Home: "Нүүр",
+  Exams: "Шалгалт",
+  Progress: "Ахиц",
+  Leaderboard: "Тэргүүлэгчид",
+};
 
 type HeaderTab = (typeof primaryTabs)[number];
 
@@ -21,8 +34,7 @@ type StudentHeaderProps = {
 };
 
 const closeOnBlur =
-  (setter: (value: boolean) => void) =>
-  (event: FocusEvent<HTMLDivElement>) => {
+  (setter: (value: boolean) => void) => (event: FocusEvent<HTMLDivElement>) => {
     const nextTarget = event.relatedTarget;
     if (
       nextTarget instanceof Node &&
@@ -72,9 +84,9 @@ export default function StudentHeader({
           </div>
           <div>
             <div className="text-lg font-semibold tracking-[-0.02em] text-slate-900">
-              Smart Exam
+              EduCore LMS
             </div>
-            <div className="text-xs text-slate-400">Student workspace</div>
+            <div className="text-xs text-slate-400">Сурагчийн орчин</div>
           </div>
         </div>
 
@@ -84,14 +96,14 @@ export default function StudentHeader({
             return (
               <button
                 key={tab}
-                className={`relative rounded-xl px-3 py-2 text-sm font-medium transition sm:px-4 ${
+                className={`relative rounded-xl px-3 py-2 text-sm font-medium transition cursor-pointer sm:px-4 ${
                   selected
                     ? "bg-[#f5f4ff] text-slate-900 shadow-[inset_0_-2px_0_0_#5c6cff]"
                     : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                 }`}
                 onClick={() => onTabChange(tab)}
               >
-                {tab}
+                {tabLabels[tab]}
               </button>
             );
           })}
@@ -104,7 +116,7 @@ export default function StudentHeader({
             onBlur={closeOnBlur(setNotificationsOpen)}
           >
             <button
-              aria-label="Open notifications"
+              aria-label="Мэдэгдэл нээх"
               className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#ebe8f8] bg-white text-slate-500 transition hover:border-[#d7d2ff] hover:text-slate-700"
               onClick={() => setNotificationsOpen((prev) => !prev)}
             >
@@ -126,14 +138,14 @@ export default function StudentHeader({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-semibold text-slate-900">
-                    Notifications
+                    Мэдэгдэл
                   </div>
                   <div className="text-xs text-slate-400">
-                    Latest updates for {currentUserName}
+                    {currentUserName} · Сүүлийн мэдээллүүд
                   </div>
                 </div>
                 <span className="rounded-full bg-[#fff1e8] px-2.5 py-1 text-[11px] font-semibold text-[#ff8a3d]">
-                  {notifications.length} items
+                  {notifications.length} мэдээлэл
                 </span>
               </div>
 
@@ -156,7 +168,7 @@ export default function StudentHeader({
                           {item.message}
                         </div>
                         <div className="mt-1 text-xs text-slate-400">
-                          {new Date(item.createdAt).toLocaleString("en-US", {
+                          {new Date(item.createdAt).toLocaleString("mn-MN", {
                             month: "short",
                             day: "numeric",
                             hour: "2-digit",
@@ -192,7 +204,7 @@ export default function StudentHeader({
             onBlur={closeOnBlur(setMenuOpen)}
           >
             <button
-              aria-label="Open account menu"
+              aria-label="Дансны цэс нээх"
               className="flex items-center gap-2 rounded-full border border-[#ebe8f8] bg-white px-2 py-1.5 text-left shadow-sm transition hover:border-[#d7d2ff]"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
@@ -214,7 +226,7 @@ export default function StudentHeader({
               }`}
             >
               <div className="rounded-[20px] bg-gradient-to-r from-[#f2f6ff] via-[#f8f1ff] to-[#fff3f1] p-4">
-                <div className="text-sm text-slate-400">Signed in as</div>
+                <div className="text-sm text-slate-400">Нэвтэрсэн хэрэглэгч</div>
                 <div className="mt-1 text-base font-semibold text-slate-900">
                   {currentUserName}
                 </div>
@@ -229,7 +241,7 @@ export default function StudentHeader({
                   }}
                 >
                   <User2 className="h-4 w-4 text-[#5c6cff]" />
-                  Profile
+                  Профайл
                 </button>
                 <button
                   className="flex items-center gap-2 rounded-2xl border border-[#eceaf7] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
@@ -239,7 +251,7 @@ export default function StudentHeader({
                   }}
                 >
                   <Settings className="h-4 w-4 text-[#5c6cff]" />
-                  Settings
+                  Тохиргоо
                 </button>
                 <button
                   className="flex items-center gap-2 rounded-2xl border border-[#eceaf7] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
@@ -249,7 +261,7 @@ export default function StudentHeader({
                   }}
                 >
                   <CircleHelp className="h-4 w-4 text-[#5c6cff]" />
-                  Help
+                  Тусламж
                 </button>
                 <button
                   className="flex items-center gap-2 rounded-2xl border border-[#eceaf7] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
@@ -259,7 +271,7 @@ export default function StudentHeader({
                   }}
                 >
                   <MoonIcon className="h-4 w-4 text-[#5c6cff]" />
-                  Toggle theme
+                  Өнгө солих
                 </button>
               </div>
 

@@ -1,6 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { Bell, MoonStar, SunMedium } from "lucide-react";
-import { badgeClass, buttonSecondary, sectionDescriptionClass, sectionTitleClass } from "../styles";
+import {
+  badgeClass,
+  buttonSecondary,
+  sectionDescriptionClass,
+  sectionTitleClass,
+} from "../styles";
 
 type TeacherHeaderProps = {
   theme: "light" | "dark";
@@ -22,11 +27,12 @@ export default function TeacherHeader({
   return (
     <header className="flex flex-wrap items-start justify-between gap-4 rounded-[30px] border border-[#dce5ef] bg-white/90 px-5 py-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.24)] backdrop-blur">
       <div className="space-y-2">
-        <span className={badgeClass}>Teacher Workspace</span>
+        <span className={badgeClass}>Багшийн орчин</span>
         <div>
           <h1 className={sectionTitleClass}>Багшийн самбар</h1>
           <p className={sectionDescriptionClass}>
-            Шалгалт үүсгэх, товлох, сурагчийн гүйцэтгэл болон дүнг нэг загвараар удирдана.
+            Шалгалт үүсгэх, товлох, сурагчийн гүйцэтгэл болон дүнг нэг
+            загвараар удирдана.
           </p>
         </div>
       </div>

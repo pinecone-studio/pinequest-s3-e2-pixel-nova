@@ -41,7 +41,11 @@ Rules:
 - If you cannot determine the correct answer, set all isCorrect to false and needsReview to true.
 - Default difficulty to "medium" unless the exam indicates otherwise.
 - Handle both Mongolian and English text.
-- Preserve the original language of questions and options exactly as written.`;
+- Preserve the original language of questions and options exactly as written.
+- Respect page boundaries and question numbering. Never merge content from two different question numbers into one question.
+- If a page contains an answer key or solution section, use it only to mark correct answers for already-extracted questions. Do not output answer-key rows as questions.
+- If question text references a graph, diagram, figure, image, table, coordinate plane, or chart, keep that reference inside questionText instead of dropping it.
+- When extraction confidence is low, keep the question but set needsReview to true.`;
 
 /**
  * Send extracted PDF text to Workers AI and parse the response into structured questions.
@@ -49,15 +53,11 @@ Rules:
  */
 export async function extractQuestions(
   ai: Ai,
-  text: string,
+  source: string | string[],
   pageCount: number,
 ): Promise<ExtractionResult> {
-  // Chunk text if too long (~3000 chars per chunk is safe for context window)
-  const CHUNK_SIZE = 3000;
-  const chunks =
-    text.length <= CHUNK_SIZE
-      ? [text]
-      : splitIntoChunks(text, CHUNK_SIZE);
+  const pages = Array.isArray(source) ? source : [source];
+  const chunks = splitPagesIntoChunks(pages, 4500);
 
   const allQuestions: ExtractedQuestion[] = [];
   let globalIndex = 0;
@@ -68,7 +68,10 @@ export async function extractQuestions(
         { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
-          content: `Extract all exam questions from this text:\n\n${chunk}`,
+          content:
+            `Extract all exam questions from this page chunk.\n` +
+            `Page chunk:\n${chunk}\n\n` +
+            `Return only JSON.`,
         },
       ],
       max_tokens: 4096,
@@ -153,24 +156,59 @@ function parseAiResponse(response: unknown): ExtractedQuestion[] {
 /**
  * Split text into chunks, trying to break at paragraph boundaries.
  */
-function splitIntoChunks(text: string, maxSize: number): string[] {
+function splitPagesIntoChunks(pages: string[], maxSize: number): string[] {
+  const chunks: string[] = [];
+  let currentChunk = "";
+
+  pages.forEach((pageText, pageIndex) => {
+    const normalizedPage = pageText.trim();
+    if (!normalizedPage) return;
+
+    const decoratedPage = `[[PAGE ${pageIndex + 1}]]\n${normalizedPage}`;
+
+    if (!currentChunk) {
+      currentChunk = decoratedPage;
+      return;
+    }
+
+    if (currentChunk.length + decoratedPage.length + 2 <= maxSize) {
+      currentChunk = `${currentChunk}\n\n${decoratedPage}`;
+      return;
+    }
+
+    chunks.push(currentChunk);
+
+    if (decoratedPage.length <= maxSize) {
+      currentChunk = decoratedPage;
+      return;
+    }
+
+    const splitPageChunks = splitTextIntoChunks(decoratedPage, maxSize);
+    const lastPageChunk = splitPageChunks.pop();
+    chunks.push(...splitPageChunks);
+    currentChunk = lastPageChunk ?? "";
+  });
+
+  if (currentChunk) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
+function splitTextIntoChunks(text: string, maxSize: number): string[] {
   const chunks: string[] = [];
   let remaining = text;
 
   while (remaining.length > 0) {
     if (remaining.length <= maxSize) {
       chunks.push(remaining);
-      break;
+      return chunks;
     }
 
-    // Try to break at a double newline within the chunk size
     let breakPoint = remaining.lastIndexOf("\n\n", maxSize);
-    if (breakPoint <= 0) {
-      breakPoint = remaining.lastIndexOf("\n", maxSize);
-    }
-    if (breakPoint <= 0) {
-      breakPoint = maxSize;
-    }
+    if (breakPoint <= 0) breakPoint = remaining.lastIndexOf("\n", maxSize);
+    if (breakPoint <= 0) breakPoint = maxSize;
 
     chunks.push(remaining.slice(0, breakPoint));
     remaining = remaining.slice(breakPoint).trimStart();

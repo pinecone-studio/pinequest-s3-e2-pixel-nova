@@ -25,6 +25,8 @@ export default function RoleNavbar({
   const [open, setOpen] = useState(false);
   const activeUser =
     users.find((user) => user.id === activeUserId) ?? users[0] ?? null;
+  const activeUserName =
+    typeof activeUser?.fullName === "string" ? activeUser.fullName : "";
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card/80 px-4 py-3 shadow-sm backdrop-blur">
@@ -54,9 +56,11 @@ export default function RoleNavbar({
         >
           {loading
             ? "Ачааллаж байна..."
-            : activeUser?.fullName ?? `${getRoleLabel(activeRole)} байхгүй`}
+            : activeUserName || `${getRoleLabel(activeRole)} байхгүй`}
           <svg
-            className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`h-3.5 w-3.5 transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -86,7 +90,9 @@ export default function RoleNavbar({
               }}
             >
               <div>{user.fullName}</div>
-              <div className="text-[10px] opacity-70">{user.code ?? user.id}</div>
+              <div className="text-[10px] opacity-70">
+                {user.code ?? user.id}
+              </div>
             </button>
           ))}
         </div>

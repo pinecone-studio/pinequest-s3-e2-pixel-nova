@@ -22,6 +22,7 @@ type StudentExamsTabProps = {
   loading: boolean;
   roomCodeInput: string;
   setRoomCodeInput: (value: string) => void;
+  joinLoading: boolean;
   joinError: string | null;
   onLookup: () => void;
   selectedExam: Exam | null;
@@ -45,7 +46,7 @@ const subjectFromExam = (exam: Exam) => {
 };
 
 const formatClock = (value: Date) =>
-  value.toLocaleTimeString("en-US", {
+  value.toLocaleTimeString("mn-MN", {
     hour: "numeric",
     minute: "2-digit",
     hour12: false,
@@ -55,6 +56,7 @@ function JoinExamPanel({
   loading,
   roomCodeInput,
   setRoomCodeInput,
+  joinLoading,
   joinError,
   onLookup,
   studentHistory,
@@ -66,20 +68,20 @@ function JoinExamPanel({
     <section className="grid gap-5 xl:grid-cols-[minmax(340px,0.9fr)_minmax(0,1.1fr)]">
       <div className="rounded-[30px] border border-[#e8edf9] bg-white p-6 shadow-[0_22px_55px_rgba(68,84,125,0.08)]">
         <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-          Exam Detail
+          Шалгалтын мэдээлэл
         </div>
         <div className="mt-5">
           <h2 className="text-3xl font-semibold tracking-[-0.04em] text-slate-900">
-            Join your next exam
+            Дараагийн шалгалтад нэвтрэх
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Enter the room code to open the exam detail page before you start.
+            Өрөөний кодоо оруулаад шалгалтын мэдээллээ шалгана уу.
           </p>
         </div>
 
         <div className="mt-8 space-y-3">
           <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Room code
+            Өрөөний код
           </label>
           <input
             className="w-full rounded-2xl border border-[#dbe5ff] bg-[#fbfcff] px-4 py-3 text-base font-medium tracking-[0.18em] text-slate-900 uppercase outline-none transition focus:border-[#7aa5ff] focus:bg-white"
@@ -88,10 +90,11 @@ function JoinExamPanel({
             onChange={(event) => setRoomCodeInput(event.target.value.toUpperCase())}
           />
           <button
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#5c4fe6] to-[#5148df] px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(92,79,230,0.25)] transition hover:brightness-105"
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#5c4fe6] to-[#5148df] px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(92,79,230,0.25)] transition hover:brightness-105 ${joinLoading ? "opacity-70" : ""}`}
             onClick={onLookup}
+            disabled={joinLoading}
           >
-            Open exam detail
+            {joinLoading ? "Уншиж байна..." : "Шалгалт шалгах"}
             <Play className="h-4 w-4" />
           </button>
           {joinError && (
@@ -104,12 +107,12 @@ function JoinExamPanel({
         <div className="mt-8 rounded-[24px] border border-[#e6ecfb] bg-[#f8fbff] p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <Info className="h-4 w-4 text-[#62a9ff]" />
-            Before you start
+            Эхлэхийн өмнө
           </div>
           <ul className="mt-3 space-y-2 text-sm text-slate-500">
-            <li>Check the exam rules and timing first.</li>
-            <li>Fullscreen and anti-cheat protection will turn on automatically.</li>
-            <li>Once the exam starts, your answers will auto-save.</li>
+            <li>Шалгалтын дүрэм, хугацааг урьдчилан шалгаарай.</li>
+            <li>Бүтэн дэлгэц ба хуулалтын эсрэг хамгаалалт автоматаар асна.</li>
+            <li>Шалгалт эхэлмэгц хариултууд автоматаар хадгалагдана.</li>
           </ul>
         </div>
       </div>
@@ -118,14 +121,14 @@ function JoinExamPanel({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold text-slate-900">
-              Previous sessions
+              Өмнөх шалгалтууд
             </h2>
             <p className="mt-1 text-sm text-slate-400">
-              Your recent graded exams will show up here.
+              Дүн гарсан шалгалтууд энд харагдана.
             </p>
           </div>
           <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#5c6cff]">
-            {studentHistory.length} items
+            {studentHistory.length} шалгалт
           </span>
         </div>
 
@@ -140,7 +143,7 @@ function JoinExamPanel({
 
           {!loading && studentHistory.length === 0 && (
             <div className="rounded-[24px] border border-dashed border-[#dbe3f6] bg-[#fbfcff] px-5 py-8 text-center text-sm text-slate-400">
-              No graded exams yet.
+              Дүн гарсан шалгалт хараахан алга.
             </div>
           )}
 
@@ -161,7 +164,7 @@ function JoinExamPanel({
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-400">
                         <span>{formatDate(exam.date)}</span>
                         <span>
-                          Score {exam.score ?? "—"}/{exam.totalPoints ?? "—"}
+                          Оноо {exam.score ?? "—"}/{exam.totalPoints ?? "—"}
                         </span>
                         <span>{exam.percentage}%</span>
                       </div>
@@ -183,6 +186,7 @@ export default function StudentExamsTab({
   loading,
   roomCodeInput,
   setRoomCodeInput,
+  joinLoading,
   joinError,
   onLookup,
   selectedExam,
@@ -205,8 +209,8 @@ export default function StudentExamsTab({
     return {
       subject: subjectFromExam(selectedExam),
       status: selectedExam.examStartedAt ? "Идэвхтэй" : "Бэлэн",
-      teacher: teacherName?.trim() || "Smart Exam Team",
-      room: selectedExam.roomCode || "OPEN",
+      teacher: teacherName?.trim() || "EduCore баг",
+      room: selectedExam.roomCode || "Нээлттэй",
       dateLabel: formatDate(safeStart.toISOString()),
       startLabel: formatClock(safeStart),
       endLabel: formatClock(end),
@@ -223,6 +227,7 @@ export default function StudentExamsTab({
         loading={loading}
         roomCodeInput={roomCodeInput}
         setRoomCodeInput={setRoomCodeInput}
+        joinLoading={joinLoading}
         joinError={joinError}
         onLookup={onLookup}
         studentHistory={studentHistory}
@@ -231,9 +236,9 @@ export default function StudentExamsTab({
   }
 
   return (
-    <section className="mx-auto max-w-[760px] space-y-5">
+    <section className="w-full space-y-5">
       <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-        Exam Detail
+        Шалгалтын дэлгэрэнгүй
       </div>
 
       <div className="flex items-start gap-4">
@@ -264,7 +269,7 @@ export default function StudentExamsTab({
             <div className="rounded-[18px] border border-[#eaf2ff] bg-[#fbfdff] px-4 py-3">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#7fbef9]">
                 <UserSquare2 className="h-4 w-4" />
-                Teacher
+                Багш
               </div>
               <div className="mt-2 text-sm font-semibold text-slate-800">
                 {examMeta.teacher}
@@ -274,7 +279,7 @@ export default function StudentExamsTab({
             <div className="rounded-[18px] border border-[#eaf2ff] bg-[#fbfdff] px-4 py-3">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#7fbef9]">
                 <LockKeyhole className="h-4 w-4" />
-                Room
+                Өрөө
               </div>
               <div className="mt-2 text-sm font-semibold text-slate-800">
                 {examMeta.room}
@@ -346,37 +351,37 @@ export default function StudentExamsTab({
             <div className="rounded-[18px] border border-[#ffe2ae] bg-[#fffaf0] px-4 py-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                 <ArrowLeft className="h-4 w-4 text-[#f0a12c]" />
-                Go Back
+                Буцах
               </div>
               <div className="mt-1 text-xs text-slate-400">
-                Cannot return to previous
+                Өмнөх хуудас руу буцах боломжгүй
               </div>
             </div>
 
             <div className="rounded-[18px] border border-[#ffe2ae] bg-[#fffaf0] px-4 py-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                 <Clock3 className="h-4 w-4 text-[#f0a12c]" />
-                Auto Submit
+                Авто илгээх
               </div>
               <div className="mt-1 text-xs text-slate-400">
-                Submits when time ends
+                Цаг дуусмагц автоматаар илгээнэ
               </div>
             </div>
 
             <div className="rounded-[18px] border border-[#ffd5d3] bg-[#fff5f5] px-4 py-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                 <ClipboardX className="h-4 w-4 text-[#ef6d63]" />
-                Copy/Paste
+                Хуулах/Буулгах
               </div>
-              <div className="mt-1 text-xs text-slate-400">Disabled</div>
+              <div className="mt-1 text-xs text-slate-400">Хориглосон</div>
             </div>
 
             <div className="rounded-[18px] border border-[#ffd5d3] bg-[#fff5f5] px-4 py-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                 <Camera className="h-4 w-4 text-[#ef6d63]" />
-                Camera
+                Камер
               </div>
-              <div className="mt-1 text-xs text-slate-400">Required</div>
+              <div className="mt-1 text-xs text-slate-400">Заавал</div>
             </div>
           </div>
         )}
@@ -406,7 +411,7 @@ export default function StudentExamsTab({
         disabled={!canStart}
       >
         <Play className="h-4 w-4" />
-        Start Exam
+        Шалгалт эхлүүлэх
       </button>
     </section>
   );

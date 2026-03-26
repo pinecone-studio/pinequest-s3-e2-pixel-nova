@@ -3,8 +3,6 @@ import {
   ArrowRight,
   BookOpen,
   CalendarDays,
-  CheckCircle2,
-  Circle,
   Clock3,
   Flame,
   Sparkles,
@@ -53,9 +51,7 @@ const examAccentPalette = [
   },
 ] as const;
 
-const defaultTrend = [70, 74, 73, 77, 79, 82];
-
-const weekLabels = ["M", "T", "W", "T", "F", "S", "S"];
+const weekLabels = ["Да", "Мя", "Лх", "Пү", "Ба", "Бя", "Ня"];
 
 const toDayKey = (value: string | number | Date) => {
   const date = new Date(value);
@@ -66,16 +62,16 @@ const toDayKey = (value: string | number | Date) => {
 const formatExamDate = (value: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return { dateLabel: "TBA", timeLabel: "Flexible" };
+    return { dateLabel: "Тодорхойгүй", timeLabel: "Дараа" };
   }
 
   return {
-    dateLabel: date.toLocaleDateString("en-US", {
+    dateLabel: date.toLocaleDateString("mn-MN", {
       month: "short",
       day: "numeric",
       year: "numeric",
     }),
-    timeLabel: date.toLocaleTimeString("en-US", {
+    timeLabel: date.toLocaleTimeString("mn-MN", {
       hour: "2-digit",
       minute: "2-digit",
     }),
@@ -122,7 +118,7 @@ export default function StudentDashboardTab({
     if (selectedExam) {
       displayItems.push({
         title: selectedExam.title,
-        subtitle: "ready to start",
+        subtitle: "Эхлэхэд бэлэн",
         questions: selectedExam.questions.length || 0,
         date: selectedExam.createdAt,
       });
@@ -131,22 +127,11 @@ export default function StudentDashboardTab({
     studentHistory.slice(0, 3).forEach((item) => {
       displayItems.push({
         title: item.title,
-        subtitle: item.percentage >= 80 ? "strong result" : "review session",
+        subtitle: item.percentage >= 80 ? "Сайн үр дүн" : "Дахин давтах",
         questions: item.totalPoints ?? 25,
         date: item.date,
       });
     });
-
-    while (displayItems.length < 3) {
-      displayItems.push({
-        title: `Practice Session ${displayItems.length + 1}`,
-        subtitle: "upcoming",
-        questions: 30 + displayItems.length * 10,
-        date: new Date(
-          Date.now() + (displayItems.length + 1) * 86400000,
-        ).toISOString(),
-      });
-    }
 
     return displayItems.slice(0, 3).map((item, index) => ({
       ...item,
@@ -161,13 +146,10 @@ export default function StudentDashboardTab({
       .reverse()
       .map((item) => Math.max(0, Math.min(100, item.percentage)));
 
-    const values =
-      recentValues.length === 0
-        ? defaultTrend
-        : [...defaultTrend.slice(0, Math.max(6 - recentValues.length, 0)), ...recentValues].slice(-6);
+    const values = recentValues.length === 0 ? [0] : recentValues;
 
     const points = values.map((value, index) => ({
-      label: `W${index + 1}`,
+      label: `#${index + 1}`,
       value,
     }));
 
@@ -175,6 +157,7 @@ export default function StudentDashboardTab({
     const previous = points[points.length - 2]?.value ?? latest;
 
     return {
+      hasData: recentValues.length > 0,
       points,
       latest,
       delta: latest - previous,
@@ -183,44 +166,32 @@ export default function StudentDashboardTab({
     };
   }, [studentHistory]);
 
-  const dailyQuests = useMemo(() => {
-    const historyCount = studentHistory.length;
-    const completePractice = Math.min(historyCount, 3);
-    const flashcardsProgress = Math.min(historyCount * 2, 10);
-    const scoredHigh = studentHistory.some((item) => item.percentage >= 80);
-    const activeLearner = studentProgress.xp > 0 || Boolean(selectedExam);
-
-    return [
-      {
-        title: "Complete 3 practice tests",
-        progressLabel: `${completePractice}/3`,
-        progress: (completePractice / 3) * 100,
-        reward: "+100 XP",
-        done: completePractice >= 3,
-      },
-      {
-        title: "Score 80%+ in any exam",
-        progressLabel: scoredHigh ? "done" : "in progress",
-        progress: scoredHigh ? 100 : 64,
-        reward: "+150 XP",
-        done: scoredHigh,
-      },
-      {
-        title: "Study for 30 minutes",
-        progressLabel: activeLearner ? "done" : "start now",
-        progress: activeLearner ? 100 : 42,
-        reward: "+50 XP",
-        done: activeLearner,
-      },
-      {
-        title: "Review 10 flashcards",
-        progressLabel: `${flashcardsProgress}/10`,
-        progress: (flashcardsProgress / 10) * 100,
-        reward: "+75 XP",
-        done: flashcardsProgress >= 10,
-      },
-    ];
-  }, [selectedExam, studentHistory, studentProgress.xp]);
+  const summaryStats = useMemo(() => {
+    if (studentHistory.length === 0) return null;
+    const total = studentHistory.length;
+    const totalPercent = studentHistory.reduce(
+      (sum, item) => sum + item.percentage,
+      0,
+    );
+    const average = Math.round(totalPercent / Math.max(total, 1));
+    const best = Math.max(...studentHistory.map((item) => item.percentage));
+    const latest = studentHistory.reduce((prev, next) =>
+      new Date(next.date).getTime() > new Date(prev.date).getTime()
+        ? next
+        : prev,
+    );
+    return {
+      total,
+      average,
+      best,
+      latestTitle: latest.title,
+      latestDate: new Date(latest.date).toLocaleDateString("mn-MN", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    };
+  }, [studentHistory]);
 
   const streak = useMemo(() => {
     const historyDays = new Set(
@@ -274,10 +245,10 @@ export default function StudentDashboardTab({
       <section className="flex flex-col gap-4 rounded-[28px] border border-[#eceaf7] bg-gradient-to-r from-[#eef3ff] via-[#f8f1ff] to-[#fff0f3] p-5 shadow-[0_18px_45px_rgba(78,93,132,0.08)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>
           <h2 className="text-[1.85rem] font-semibold tracking-[-0.03em] text-slate-900">
-            Welcome back, {firstName}!
+            Тавтай морил, {firstName}!
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Ready to conquer your exams today?
+            Өнөөдрийн шалгалтаа амжилттай өгье.
           </p>
         </div>
 
@@ -285,10 +256,13 @@ export default function StudentDashboardTab({
           <Sparkles className="h-4 w-4 text-[#b74bf6]" />
           {currentRank ? (
             <span>
-              Rank #{currentRank} <span className="font-normal text-slate-400">of {studentCount || 1}</span>
+              Чансаа #{currentRank}{" "}
+              <span className="font-normal text-slate-400">
+                / {studentCount || 1}
+              </span>
             </span>
           ) : (
-            <span className="text-slate-500">Ranking updates soon</span>
+            <span className="text-slate-500">Чансаа удахгүй шинэчлэгдэнэ</span>
           )}
         </div>
       </section>
@@ -298,17 +272,17 @@ export default function StudentDashboardTab({
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-xl font-semibold text-slate-900">
-                Upcoming Exams
+                Ирэх шалгалтууд
               </h3>
               <p className="mt-1 text-sm text-slate-400">
-                Keep your next sessions front and center.
+                Дараагийн шалгалтаа хурдан харах боломж.
               </p>
             </div>
             <button
               className="inline-flex items-center gap-2 text-sm font-semibold text-[#5c6cff] transition hover:text-[#4052f7]"
               onClick={onOpenExams}
             >
-              View All
+              Бүгдийг харах
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -321,7 +295,8 @@ export default function StudentDashboardTab({
                     className="h-[104px] animate-pulse rounded-[24px] border border-[#eceaf7] bg-[#f8f9ff]"
                   />
                 ))
-              : overview.map((item, index) => (
+              : overview.length > 0
+                ? overview.map((item, index) => (
                   <div
                     key={`${item.title}-${index}`}
                     className="flex flex-col gap-4 rounded-[24px] border border-[#eceaf7] bg-white p-4 shadow-[0_10px_30px_rgba(88,94,138,0.06)] sm:flex-row sm:items-center sm:justify-between"
@@ -354,7 +329,7 @@ export default function StudentDashboardTab({
                             <Clock3 className="h-4 w-4" />
                             {item.timeLabel}
                           </span>
-                          <span>{item.questions} questions</span>
+                          <span>{item.questions} асуулт</span>
                         </div>
                       </div>
                     </div>
@@ -363,11 +338,16 @@ export default function StudentDashboardTab({
                       className="inline-flex items-center gap-2 self-start rounded-2xl bg-[#f5f4ff] px-4 py-2 text-sm font-semibold text-[#5c6cff] transition hover:bg-[#ece9ff] sm:self-center"
                       onClick={onOpenExams}
                     >
-                      Open
+                      Нээх
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
-                ))}
+                ))
+                : (
+                  <div className="rounded-[24px] border border-dashed border-[#eceaf7] bg-[#fbfbff] px-4 py-6 text-center text-sm text-slate-400">
+                    Одоогоор харах шалгалт алга.
+                  </div>
+                )}
           </div>
         </div>
 
@@ -378,56 +358,50 @@ export default function StudentDashboardTab({
             </div>
             <div>
               <h3 className="text-xl font-semibold text-slate-900">
-                Daily Quests
+                Сүүлийн үзүүлэлт
               </h3>
               <p className="text-sm text-slate-400">
-                {dailyQuests.filter((item) => item.done).length}/4 completed
+                Таны бодит дүн дээр суурилсан хураангуй
               </p>
             </div>
           </div>
 
           <div className="mt-5 space-y-3">
-            {dailyQuests.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-[22px] bg-[#fbfcff] px-4 py-4"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="pt-1">
-                    {item.done ? (
-                      <CheckCircle2 className="h-5 w-5 text-[#4ab88f]" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-slate-300" />
-                    )}
+            {!summaryStats ? (
+              <div className="rounded-[22px] border border-dashed border-[#eceaf7] bg-[#fbfcff] px-4 py-5 text-sm text-slate-400">
+                Одоогоор шалгалтын бодит мэдээлэл алга.
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[22px] border border-[#eceaf7] bg-[#fbfcff] px-4 py-4">
+                  <div className="text-xs text-slate-400">Нийт өгсөн</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">
+                    {summaryStats.total}
                   </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className={`text-sm font-medium ${
-                        item.done ? "text-slate-400 line-through" : "text-slate-800"
-                      }`}
-                    >
-                      {item.title}
-                    </div>
-                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#eceeff]">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#4c67ff] to-[#b84df5]"
-                        style={{ width: `${Math.max(item.progress, 8)}%` }}
-                      />
-                    </div>
+                </div>
+                <div className="rounded-[22px] border border-[#eceaf7] bg-[#fbfcff] px-4 py-4">
+                  <div className="text-xs text-slate-400">Дундаж хувь</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">
+                    {summaryStats.average}%
                   </div>
-
-                  <div className="text-right">
-                    <div className="rounded-full bg-[#fff4e8] px-3 py-1 text-xs font-semibold text-[#ff9a43]">
-                      {item.reward}
-                    </div>
-                    <div className="mt-2 text-[11px] text-slate-400">
-                      {item.progressLabel}
-                    </div>
+                </div>
+                <div className="rounded-[22px] border border-[#eceaf7] bg-[#fbfcff] px-4 py-4">
+                  <div className="text-xs text-slate-400">Хамгийн өндөр</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">
+                    {summaryStats.best}%
+                  </div>
+                </div>
+                <div className="rounded-[22px] border border-[#eceaf7] bg-[#fbfcff] px-4 py-4">
+                  <div className="text-xs text-slate-400">Сүүлийн шалгалт</div>
+                  <div className="mt-2 text-sm font-semibold text-slate-900">
+                    {summaryStats.latestTitle}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    {summaryStats.latestDate}
                   </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -441,9 +415,11 @@ export default function StudentDashboardTab({
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-slate-900">
-                  Progress Preview
+                  Ахицын тойм
                 </h3>
-                <p className="text-sm text-slate-400">Last 6 checkpoints</p>
+                <p className="text-sm text-slate-400">
+                  Сүүлийн шалгалтуудын дундаж
+                </p>
               </div>
             </div>
 
@@ -451,7 +427,7 @@ export default function StudentDashboardTab({
               className="inline-flex items-center gap-2 text-sm font-semibold text-[#5c6cff] transition hover:text-[#4052f7]"
               onClick={onOpenProgress}
             >
-              Details
+              Дэлгэрэнгүй
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -471,46 +447,54 @@ export default function StudentDashboardTab({
           </div>
 
           <div className="mt-6 overflow-hidden rounded-[24px] bg-gradient-to-b from-[#f6f3ff] via-[#fcfbff] to-white p-4">
-            <svg
-              viewBox="0 0 100 34"
-              preserveAspectRatio="none"
-              className="h-40 w-full"
-              aria-label="Student progress chart"
-              role="img"
-            >
-              <defs>
-                <linearGradient id="student-progress-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#b84df5" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
-                </linearGradient>
-              </defs>
-              <path d={progressSeries.areaPath} fill="url(#student-progress-fill)" />
-              <path
-                d={progressSeries.linePath}
-                fill="none"
-                stroke="#7b61ff"
-                strokeWidth="0.8"
-                strokeLinecap="round"
-              />
-            </svg>
+            {progressSeries.hasData ? (
+              <>
+                <svg
+                  viewBox="0 0 100 34"
+                  preserveAspectRatio="none"
+                  className="h-40 w-full"
+                  aria-label="Сурагчийн ахицын график"
+                  role="img"
+                >
+                  <defs>
+                    <linearGradient id="student-progress-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#b84df5" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
+                    </linearGradient>
+                  </defs>
+                  <path d={progressSeries.areaPath} fill="url(#student-progress-fill)" />
+                  <path
+                    d={progressSeries.linePath}
+                    fill="none"
+                    stroke="#7b61ff"
+                    strokeWidth="0.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
 
-            <div className="mt-4 grid grid-cols-6 text-center text-xs text-slate-300">
-              {progressSeries.points.map((point) => (
-                <span key={point.label}>{point.label}</span>
-              ))}
-            </div>
+                <div className="mt-4 grid grid-cols-6 text-center text-xs text-slate-300">
+                  {progressSeries.points.map((point) => (
+                    <span key={point.label}>{point.label}</span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex h-40 items-center justify-center text-sm text-slate-400">
+                Одоогоор ахицын мэдээлэл алга.
+              </div>
+            )}
           </div>
         </div>
 
         <div className="rounded-[28px] bg-[#f7762a] p-5 text-white shadow-[0_22px_50px_rgba(247,118,42,0.25)] sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-sm text-white/80">Current Streak</div>
+              <div className="text-sm text-white/80">Тасралтгүй өдрүүд</div>
               <div className="mt-2 flex items-end gap-2">
                 <span className="text-5xl font-semibold tracking-[-0.04em]">
                   {streak.days}
                 </span>
-                <span className="pb-2 text-lg text-white/80">days</span>
+                <span className="pb-2 text-lg text-white/80">өдөр</span>
               </div>
             </div>
 
@@ -520,7 +504,7 @@ export default function StudentDashboardTab({
           </div>
 
           <div className="mt-8">
-            <div className="text-sm text-white/80">This Week</div>
+            <div className="text-sm text-white/80">Энэ долоо хоног</div>
             <div className="mt-4 grid grid-cols-7 gap-2 text-center">
               {streak.week.map((active, index) => (
                 <div key={`${weekLabels[index]}-${index}`}>
@@ -542,8 +526,9 @@ export default function StudentDashboardTab({
           </div>
 
           <div className="mt-8 rounded-[20px] bg-white/14 px-4 py-3 text-center text-sm text-white/90">
-            Keep it up! {xpToNext > 0 ? `${xpToNext} XP` : "You are there"} away from
-            level {levelInfo.level + (xpToNext > 0 ? 1 : 0)}.
+            Сайн байна! {xpToNext > 0 ? `${xpToNext} XP` : "Та аль хэдийн"}
+            {xpToNext > 0 ? " хэрэгтэй" : ""} байна. Дараагийн түвшин{" "}
+            {levelInfo.level + (xpToNext > 0 ? 1 : 0)}.
           </div>
         </div>
       </section>

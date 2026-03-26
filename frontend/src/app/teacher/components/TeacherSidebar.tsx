@@ -11,10 +11,10 @@ import { badgeClass } from "../styles";
 
 const tabs = [
   { key: "Шалгалт үүсгэх", icon: LayoutGrid },
-  { key: "Хадгалсан шалгалт", icon: ClipboardList },
+  { key: "Шалгалтын сан", icon: ClipboardList },
   { key: "XP харах", icon: Trophy },
-  { key: "Дүн", icon: BookOpen },
-  { key: "Сурагч", icon: GraduationCap },
+  { key: "Гүйцэтгэл", icon: BookOpen },
+  { key: "Хуваарь", icon: GraduationCap },
   { key: "Тохиргоо", icon: Settings },
 ] as const;
 
@@ -60,20 +60,22 @@ export default function TeacherSidebar({
     >
       <div className="flex h-full flex-col px-3 py-4">
         <div className="rounded-[28px] border border-[#dce5ef] bg-[#f8fbff] p-3 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.2)]">
-          <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
+          <div
+            className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}
+          >
             <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#2563eb] text-white shadow-[0_16px_32px_-20px_rgba(37,99,235,0.7)]">
               <GraduationCap className="h-5 w-5" />
             </div>
             {!collapsed && (
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-slate-900">EduCore</div>
-                <div className="text-xs text-slate-500">Teacher Panel</div>
+                <div className="text-xs text-slate-500">Багшийн самбар</div>
               </div>
             )}
           </div>
           {!collapsed && (
             <div className="mt-4 flex items-center justify-between gap-2">
-              <span className={badgeClass}>UX Standard</span>
+              <span className={badgeClass}>EduCore стандарт</span>
               <button
                 className="rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-[#eff6ff]"
                 onClick={() => setCollapsed((prev) => !prev)}
@@ -113,7 +115,9 @@ export default function TeacherSidebar({
                   <Icon className="h-4.5 w-4.5" />
                 </span>
                 {!collapsed && (
-                  <span className="truncate text-sm font-medium">{item.key}</span>
+                  <span className="truncate text-sm font-medium">
+                    {item.key}
+                  </span>
                 )}
                 {collapsed && (
                   <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-xl border border-[#dce5ef] bg-white px-3 py-2 text-xs font-semibold text-slate-700 opacity-0 shadow-lg transition group-hover:opacity-100">
@@ -134,7 +138,7 @@ export default function TeacherSidebar({
               <div className="mt-2 text-sm font-semibold text-slate-900">
                 {currentUserName ?? "Багш"}
               </div>
-              <div className="text-xs text-slate-500">Teacher account</div>
+              <div className="text-xs text-slate-500">Багшийн бүртгэл</div>
             </>
           )}
         </div>

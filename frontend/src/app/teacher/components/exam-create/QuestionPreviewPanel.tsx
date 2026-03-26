@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { buttonGhost, inputClass, selectClass } from "../../styles";
 import type { Question } from "../../types";
 
@@ -17,6 +17,76 @@ type QuestionPreviewPanelProps = {
 
 const optionLabels = ["A", "B", "C", "D", "E", "F"];
 
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Зураг уншиж чадсангүй."));
+    reader.readAsDataURL(file);
+  });
+
+const fetchImageAsDataUrl = async (imageUrl: string) => {
+  if (imageUrl.startsWith("data:image/")) return imageUrl;
+
+  const response = await fetch(imageUrl, {
+    credentials: "omit",
+    mode: "cors",
+  });
+  if (!response.ok) {
+    throw new Error("Зургийг татаж чадсангүй.");
+  }
+
+  const blob = await response.blob();
+  return readFileAsDataUrl(
+    new File([blob], "question-image", {
+      type: blob.type || "image/jpeg",
+    }),
+  );
+};
+
+const cropImageDataUrl = async (
+  dataUrl: string,
+  topPercent: number,
+  bottomPercent: number,
+) =>
+  new Promise<string>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const top = Math.max(0, Math.min(0.95, topPercent));
+      const bottom = Math.max(top + 0.02, Math.min(1, bottomPercent));
+      const sourceY = Math.round(image.height * top);
+      const sourceHeight = Math.max(
+        1,
+        Math.round(image.height * (bottom - top)),
+      );
+
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = sourceHeight;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        reject(new Error("Canvas үүсгэж чадсангүй."));
+        return;
+      }
+
+      context.drawImage(
+        image,
+        0,
+        sourceY,
+        image.width,
+        sourceHeight,
+        0,
+        0,
+        image.width,
+        sourceHeight,
+      );
+
+      resolve(canvas.toDataURL("image/jpeg", 0.86));
+    };
+    image.onerror = () => reject(new Error("Зураг ачаалж чадсангүй."));
+    image.src = dataUrl;
+  });
+
 export default function QuestionPreviewPanel({
   questions,
   previewIndex,
@@ -30,6 +100,12 @@ export default function QuestionPreviewPanel({
   removeQuestion,
 }: QuestionPreviewPanelProps) {
   const [editCorrectOpen, setEditCorrectOpen] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropSource, setCropSource] = useState<string | null>(null);
+  const [cropTop, setCropTop] = useState(0);
+  const [cropBottom, setCropBottom] = useState(1);
+  const [imageBusy, setImageBusy] = useState(false);
+  const attachInputRef = useRef<HTMLInputElement | null>(null);
   const activeQuestion = questions[previewIndex] ?? null;
   const activeOptions = useMemo(
     () => activeQuestion?.options ?? [],
@@ -38,11 +114,42 @@ export default function QuestionPreviewPanel({
 
   if (!activeQuestion) return null;
 
+  const openCropEditor = async (sourceUrl: string) => {
+    setImageBusy(true);
+    try {
+      const nextSource = await fetchImageAsDataUrl(sourceUrl);
+      setCropSource(nextSource);
+      setCropTop(0);
+      setCropBottom(1);
+      setCropOpen(true);
+    } catch {
+      window.alert("Зургийг crop хийхэд бэлдэж чадсангүй.");
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
+  const applyCrop = async () => {
+    if (!cropSource) return;
+    setImageBusy(true);
+    try {
+      const cropped = await cropImageDataUrl(cropSource, cropTop, cropBottom);
+      updateQuestion(activeQuestion.id, {
+        imageUrl: cropped,
+      });
+      setCropOpen(false);
+    } catch {
+      window.alert("Зураг crop хийх үед алдаа гарлаа.");
+    } finally {
+      setImageBusy(false);
+    }
+  };
+
   return (
     <div className="rounded-[28px] border border-[#dce5ef] bg-[#f8fbff] p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-base font-semibold">Student Preview</div>
+          <div className="text-base font-semibold">Сурагчийн харагдах байдал</div>
           <div className="text-[11px] text-muted-foreground">
             Сурагчийн харагдах байдал.
           </div>
@@ -55,7 +162,7 @@ export default function QuestionPreviewPanel({
             className={buttonGhost}
             onClick={() => setEditMode((prev) => !prev)}
           >
-            {editMode ? "Хаах" : "Edit"}
+            {editMode ? "Хаах" : "Засах"}
           </button>
         </div>
       </div>
@@ -79,6 +186,63 @@ export default function QuestionPreviewPanel({
 
         {editMode ? (
           <div className="mt-2 grid gap-2">
+            <input
+              ref={attachInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                setImageBusy(true);
+                try {
+                  const dataUrl = await readFileAsDataUrl(file);
+                  setCropSource(dataUrl);
+                  setCropTop(0);
+                  setCropBottom(1);
+                  setCropOpen(true);
+                } catch {
+                  window.alert("Зураг хавсаргаж чадсангүй.");
+                } finally {
+                  setImageBusy(false);
+                }
+              }}
+            />
+
+            <div className="flex flex-wrap gap-2 rounded-2xl border border-[#dce5ef] bg-[#f8fbff] p-3">
+              <button
+                className={buttonGhost}
+                disabled={!activeQuestion.imageUrl || imageBusy}
+                onClick={() => {
+                  if (!activeQuestion.imageUrl) return;
+                  void openCropEditor(activeQuestion.imageUrl);
+                }}
+                type="button"
+              >
+                {imageBusy ? "Ачаалж байна..." : "Re-crop image"}
+              </button>
+              <button
+                className={buttonGhost}
+                onClick={() => attachInputRef.current?.click()}
+                type="button"
+              >
+                Attach page crop
+              </button>
+              <button
+                className="rounded-xl border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                disabled={!activeQuestion.imageUrl}
+                onClick={() =>
+                  updateQuestion(activeQuestion.id, {
+                    imageUrl: undefined,
+                  })
+                }
+                type="button"
+              >
+                Remove wrong image
+              </button>
+            </div>
+
             <div className="grid gap-2 md:grid-cols-[1fr_140px]">
               <textarea
                 className={`${inputClass} min-h-24 resize-y`}
@@ -330,6 +494,118 @@ export default function QuestionPreviewPanel({
           Энэ асуултыг устгах
         </button>
       </div>
+
+      {cropOpen && cropSource && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 px-4 py-6">
+          <div className="w-full max-w-4xl rounded-[28px] border border-[#dce5ef] bg-white p-5 shadow-2xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-lg font-semibold">Question Image Crop</div>
+                <div className="text-xs text-slate-500">
+                  Дээш, доош crop-оо тааруулаад хадгална.
+                </div>
+              </div>
+              <button
+                className={buttonGhost}
+                onClick={() => setCropOpen(false)}
+                type="button"
+              >
+                Хаах
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="rounded-[24px] border border-[#dce5ef] bg-[#f8fbff] p-4">
+                <div className="text-xs font-semibold text-slate-500">
+                  Original
+                </div>
+                <div className="mt-3 max-h-[480px] overflow-auto rounded-2xl border border-border bg-white p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cropSource}
+                    alt="Crop source"
+                    className="w-full rounded-xl border border-border object-contain"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-[#dce5ef] bg-[#f8fbff] p-4">
+                <div className="text-xs font-semibold text-slate-500">
+                  Cropped preview
+                </div>
+                <div className="mt-3 h-[320px] overflow-hidden rounded-2xl border border-border bg-white">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cropSource}
+                    alt="Crop preview"
+                    className="w-full object-cover"
+                    style={{
+                      height: `${100 / Math.max(cropBottom - cropTop, 0.02)}%`,
+                      transform: `translateY(-${cropTop * 100}%)`,
+                      transformOrigin: "top center",
+                    }}
+                  />
+                </div>
+
+                <div className="mt-4 space-y-4">
+                  <label className="grid gap-2 text-sm">
+                    <span className="font-medium text-slate-700">
+                      Top crop: {Math.round(cropTop * 100)}%
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={95}
+                      value={Math.round(cropTop * 100)}
+                      onChange={(event) => {
+                        const nextTop = Number(event.target.value) / 100;
+                        setCropTop(Math.min(nextTop, cropBottom - 0.02));
+                      }}
+                    />
+                  </label>
+
+                  <label className="grid gap-2 text-sm">
+                    <span className="font-medium text-slate-700">
+                      Bottom crop: {Math.round(cropBottom * 100)}%
+                    </span>
+                    <input
+                      type="range"
+                      min={5}
+                      max={100}
+                      value={Math.round(cropBottom * 100)}
+                      onChange={(event) => {
+                        const nextBottom = Number(event.target.value) / 100;
+                        setCropBottom(Math.max(nextBottom, cropTop + 0.02));
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <button
+                    className={buttonGhost}
+                    onClick={() => {
+                      setCropTop(0);
+                      setCropBottom(1);
+                    }}
+                    type="button"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                    disabled={imageBusy}
+                    onClick={() => void applyCrop()}
+                    type="button"
+                  >
+                    {imageBusy ? "Хадгалж байна..." : "Apply crop"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

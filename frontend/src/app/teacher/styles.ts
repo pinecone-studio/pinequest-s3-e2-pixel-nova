@@ -28,7 +28,7 @@ export const selectClass =
   "w-full rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]";
 
 export const buttonPrimary =
-  "inline-flex items-center justify-center rounded-2xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] focus:outline-none focus:ring-4 focus:ring-[#dbeafe]";
+  "inline-flex items-center gap-2 justify-center rounded-2xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8] focus:outline-none focus:ring-4 focus:ring-[#dbeafe]";
 
 export const buttonSecondary =
   "inline-flex items-center justify-center rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-[#bfdbfe] hover:bg-[#eff6ff]";

@@ -84,6 +84,35 @@
   --font-geist-mono: "SFMono-Regular", "JetBrains Mono", "Menlo", monospace;
 }
 
+@keyframes pageFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: pageFadeSlide 220ms ease both;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled,
+button[disabled] {
+  cursor: not-allowed;
+}
+
+a,
+[role="button"] {
+  cursor: pointer;
+}
+
 .dark {
   --background: #0b0f1a;
   --foreground: #e6e8ee;

@@ -30,6 +30,7 @@ describe("StudentExamsTab", () => {
     render(
       <StudentExamsTab
         loading={false}
+        joinLoading={false}
         roomCodeInput="AX7K2P"
         setRoomCodeInput={jest.fn()}
         joinError={null}
@@ -45,9 +46,9 @@ describe("StudentExamsTab", () => {
     expect(screen.getByText("Англи хэлний авцын шалгалт")).toBeInTheDocument();
     expect(screen.getByText("Г. Сарантуяа")).toBeInTheDocument();
     expect(screen.getByText("AX7K2P")).toBeInTheDocument();
-    expect(screen.getByText("Start Exam")).toBeInTheDocument();
+    expect(screen.getByText("Шалгалт эхлүүлэх")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Start Exam" }));
+    fireEvent.click(screen.getByRole("button", { name: "Шалгалт эхлүүлэх" }));
     expect(onStartExam).toHaveBeenCalledTimes(1);
 
     fireEvent.click(
@@ -60,6 +61,7 @@ describe("StudentExamsTab", () => {
     render(
       <StudentExamsTab
         loading={false}
+        joinLoading={false}
         roomCodeInput=""
         setRoomCodeInput={jest.fn()}
         joinError={null}
@@ -72,7 +74,7 @@ describe("StudentExamsTab", () => {
       />,
     );
 
-    expect(screen.getByText("Join your next exam")).toBeInTheDocument();
+    expect(screen.getByText("Дараагийн шалгалтад нэвтрэх")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("AX7K2P")).toBeInTheDocument();
   });
 });

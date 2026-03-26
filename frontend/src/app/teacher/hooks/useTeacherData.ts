@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  STORAGE_KEYS,
-  getJSON,
-  getSessionUser,
-  setJSON,
-  type StudentProgress,
-  type User,
-} from "@/lib/examGuard";
+import { getSessionUser, type StudentProgress, type User } from "@/lib/examGuard";
 import type { NotificationItem, Exam, Submission } from "../types";
 import { normalizeSubmission } from "../analytics";
 import {
@@ -14,14 +7,6 @@ import {
   fetchTeacherSubmissions,
   fetchXpLeaderboard,
 } from "./teacher-api";
-
-const DEMO_TEACHER: User = {
-  id: "demo",
-  username: "DemoTeacher",
-  password: "",
-  role: "teacher",
-  createdAt: "",
-};
 
 export const useTeacherData = (overrideUser?: User | null) => {
   const overrideUserId = overrideUser?.id ?? null;
@@ -40,20 +25,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
   const [studentProgress, setStudentProgress] = useState<StudentProgress>({});
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const syncFromStorage = useCallback(() => {
-    setUsers(getJSON<User[]>(STORAGE_KEYS.users, []));
-    setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
-    setSubmissions(
-      getJSON<Submission[]>(STORAGE_KEYS.submissions, []).map((item) =>
-        normalizeSubmission(item),
-      ).filter((item): item is Submission => Boolean(item)),
-    );
-    setStudentProgress(getJSON<StudentProgress>(STORAGE_KEYS.progress, {}));
-    setNotifications(
-      getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
-    );
-  }, []);
-
   useEffect(() => {
     const user =
       overrideUserId && overrideUsername && overrideRole
@@ -66,15 +37,13 @@ export const useTeacherData = (overrideUser?: User | null) => {
           }
         : getSessionUser();
 
-    setCurrentUser(user ?? DEMO_TEACHER);
+    setCurrentUser(user ?? null);
 
     const storedTheme =
       typeof window !== "undefined"
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
         : null;
     if (storedTheme) setTheme(storedTheme);
-
-    syncFromStorage();
 
     let cancelled = false;
 
@@ -84,7 +53,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
         if (cancelled) return;
 
         setExams(remoteExams);
-        setJSON(STORAGE_KEYS.exams, remoteExams);
 
         const submissionsByExam = await Promise.all(
           remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
@@ -97,7 +65,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
           .filter((item): item is Submission => Boolean(item));
 
         setSubmissions(remoteSubmissions);
-        setJSON(STORAGE_KEYS.submissions, remoteSubmissions);
 
         const leaderboard = await fetchXpLeaderboard();
         if (cancelled) return;
@@ -119,12 +86,16 @@ export const useTeacherData = (overrideUser?: User | null) => {
         });
 
         setUsers(mappedUsers);
-        setJSON(STORAGE_KEYS.users, mappedUsers);
         setStudentProgress(progress);
-        setJSON(STORAGE_KEYS.progress, progress);
         setNotifications([]);
       } catch {
-        if (!cancelled) syncFromStorage();
+        if (!cancelled) {
+          setExams([]);
+          setSubmissions([]);
+          setUsers([]);
+          setStudentProgress({});
+          setNotifications([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -141,7 +112,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
     overrideRole,
     overrideUserId,
     overrideUsername,
-    syncFromStorage,
   ]);
 
   useEffect(() => {
@@ -149,7 +119,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
       try {
         const remoteExams = await fetchTeacherExams();
         setExams(remoteExams);
-        setJSON(STORAGE_KEYS.exams, remoteExams);
 
         const submissionsByExam = await Promise.all(
           remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
@@ -160,14 +129,13 @@ export const useTeacherData = (overrideUser?: User | null) => {
           .filter((item): item is Submission => Boolean(item));
 
         setSubmissions(remoteSubmissions);
-        setJSON(STORAGE_KEYS.submissions, remoteSubmissions);
       } catch {
-        syncFromStorage();
+        return;
       }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [syncFromStorage]);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -184,12 +152,10 @@ export const useTeacherData = (overrideUser?: User | null) => {
 
   const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
-    setJSON(STORAGE_KEYS.exams, next);
   }, []);
 
   const persistNotifications = useCallback((next: NotificationItem[]) => {
     setNotifications(next);
-    setJSON(STORAGE_KEYS.notifications, next);
   }, []);
 
   const markNotificationRead = useCallback(

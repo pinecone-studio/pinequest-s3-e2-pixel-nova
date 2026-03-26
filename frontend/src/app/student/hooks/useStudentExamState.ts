@@ -31,6 +31,7 @@ export const useStudentExamState = (params: {
   const [activeTab, setActiveTab] = useState<StudentTab>("Home");
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [joinLoading, setJoinLoading] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -62,6 +63,7 @@ export const useStudentExamState = (params: {
       setJoinError("Өрөөний код оруулна уу.");
       return;
     }
+    setJoinLoading(true);
     try {
       const payload = await apiFetch<
         { data?: { sessionId: string; exam: { id: string; title: string; durationMin: number; questionCount: number } } } | {
@@ -151,9 +153,28 @@ export const useStudentExamState = (params: {
         createdAt: new Date().toISOString(),
       });
       setJoinError(null);
-    } catch {
-      setJoinError("Өрөөний код олдсонгүй эсвэл шалгалт идэвхгүй байна.");
+    } catch (err) {
+      let message = "Өрөөний код олдсонгүй эсвэл шалгалт идэвхгүй байна.";
+      if (err instanceof Error && err.message) {
+        try {
+          const parsed = JSON.parse(err.message) as { message?: string; error?: string };
+          message = parsed.message || parsed.error || message;
+        } catch {
+          message = err.message;
+        }
+      }
+      if (
+        typeof message === "string" &&
+        (message.toLowerCase().includes("load failed") ||
+          message.toLowerCase().includes("failed to fetch"))
+      ) {
+        message =
+          "Сервертэй холбогдож чадсангүй. Backend ажиллаж байгаа эсэхийг шалгана уу.";
+      }
+      setJoinError(message);
       setSelectedExam(null);
+    } finally {
+      setJoinLoading(false);
     }
   };
   const showWarning = (message: string) => {
@@ -408,6 +429,7 @@ export const useStudentExamState = (params: {
     handleLookup,
     roomCodeInput,
     setRoomCodeInput,
+    joinLoading,
     joinError,
     setJoinError,
     selectedExam,

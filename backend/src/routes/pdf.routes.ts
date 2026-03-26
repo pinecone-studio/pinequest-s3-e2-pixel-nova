@@ -13,10 +13,55 @@ import { extractQuestions } from "../utils/ai-extractor";
 
 const pdfRoutes = new Hono<AppEnv>();
 
+pdfRoutes.get("/assets/:assetId", async (c) => {
+  const assetId = c.req.param("assetId");
+  const object = await c.env.EXAM_FILES.get(`pdf-assets/${assetId}`);
+
+  if (!object) {
+    return notFound(c, "PDF asset");
+  }
+
+  const contentType = object.httpMetadata?.contentType ?? "image/jpeg";
+  c.header("Content-Type", contentType);
+  c.header("Cache-Control", "public, max-age=31536000, immutable");
+  return c.body(await object.arrayBuffer());
+});
+
 pdfRoutes.use("*", authMiddleware);
 pdfRoutes.use("*", requireRole("teacher"));
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_ASSET_BATCH = 40;
+
+const assetUploadSchema = z.object({
+  assets: z.array(
+    z.object({
+      dataUrl: z.string().min(1),
+      fileName: z.string().optional(),
+      sourceIndex: z.number().int().min(0),
+    }),
+  ).min(1).max(MAX_ASSET_BATCH),
+});
+
+const parseImageDataUrl = (dataUrl: string) => {
+  const match = dataUrl.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,(.+)$/i);
+  if (!match) {
+    throw new Error("Unsupported image data URL");
+  }
+
+  const rawMime = match[1].toLowerCase();
+  const contentType = rawMime === "image/jpg" ? "image/jpeg" : rawMime;
+  const base64Payload = match[2];
+  const buffer = Uint8Array.from(Buffer.from(base64Payload, "base64"));
+  const extension =
+    contentType === "image/png"
+      ? "png"
+      : contentType === "image/webp"
+        ? "webp"
+        : "jpg";
+
+  return { buffer, contentType, extension };
+};
 
 // ---------------------------------------------------------------------------
 // POST /upload — Upload a PDF file to R2
@@ -71,6 +116,46 @@ pdfRoutes.post("/upload", async (c) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /assets — Upload question crop images and return stable URLs
+// ---------------------------------------------------------------------------
+pdfRoutes.post("/assets", zValidator("json", assetUploadSchema), async (c) => {
+  try {
+    const teacherId = c.get("user").id;
+    const { assets } = c.req.valid("json");
+
+    const uploaded = await Promise.all(
+      assets.map(async (asset, index) => {
+        const { buffer, contentType, extension } = parseImageDataUrl(asset.dataUrl);
+        const assetId = `${newId()}.${extension}`;
+        const r2Key = `pdf-assets/${assetId}`;
+
+        await c.env.EXAM_FILES.put(r2Key, buffer, {
+          httpMetadata: {
+            contentType,
+          },
+          customMetadata: {
+            teacherId,
+            source: "pdf-import-crop",
+            fileName: asset.fileName ?? `pdf-question-${index + 1}.${extension}`,
+          },
+        });
+
+        return {
+          index,
+          sourceIndex: asset.sourceIndex,
+          assetId,
+          url: new URL(`/api/pdf/assets/${assetId}`, c.req.url).toString(),
+        };
+      }),
+    );
+
+    return success(c, { assets: uploaded }, 201);
+  } catch {
+    return error(c, "BAD_REQUEST", "Failed to upload PDF assets", 400);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // POST /extract — Parse PDF and extract questions via AI
 // ---------------------------------------------------------------------------
 const extractSchema = z.object({
@@ -104,7 +189,7 @@ pdfRoutes.post("/extract", zValidator("json", extractSchema), async (c) => {
     }
 
     // Extract questions via AI
-    const result = await extractQuestions(c.env.AI, parsed.text, parsed.pageCount);
+    const result = await extractQuestions(c.env.AI, parsed.pages, parsed.pageCount);
 
     return success(c, result);
   } catch (err) {

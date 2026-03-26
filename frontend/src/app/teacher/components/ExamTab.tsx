@@ -39,6 +39,8 @@ type ExamTabProps = {
   setMcqOptions: (value: string[]) => void;
   questionAnswer: string;
   setQuestionAnswer: (value: string) => void;
+  questionImageUrl?: string;
+  setQuestionImageUrl: (value: string | undefined) => void;
   questionPoints: number;
   setQuestionPoints: (value: number) => void;
   questionCorrectIndex: number;
@@ -58,6 +60,8 @@ type ExamTabProps = {
   pdfLoading: boolean;
   pdfError: string | null;
   importError: string | null;
+  importLoading: boolean;
+  importLoadingLabel: string | null;
   onPdfUpload: (file: File) => void;
   onImageUpload: (file: File) => void;
   onDocxUpload: (file: File) => void;
@@ -99,9 +103,7 @@ export default function ExamTab(props: ExamTabProps) {
           setScheduleDate={props.setScheduleDate}
           durationMinutes={props.durationMinutes}
           setDurationMinutes={props.setDurationMinutes}
-          roomCode={props.roomCode}
           onSchedule={props.onSchedule}
-          onCopyCode={props.onCopyCode}
         />
         <ExamCreateCard
           examTitle={props.examTitle}
@@ -118,6 +120,8 @@ export default function ExamTab(props: ExamTabProps) {
           setMcqOptions={props.setMcqOptions}
           questionAnswer={props.questionAnswer}
           setQuestionAnswer={props.setQuestionAnswer}
+          questionImageUrl={props.questionImageUrl}
+          setQuestionImageUrl={props.setQuestionImageUrl}
           questionPoints={props.questionPoints}
           setQuestionPoints={props.setQuestionPoints}
           questionCorrectIndex={props.questionCorrectIndex}
@@ -137,6 +141,8 @@ export default function ExamTab(props: ExamTabProps) {
           pdfLoading={props.pdfLoading}
           pdfError={props.pdfError}
           importError={props.importError}
+          importLoading={props.importLoading}
+          importLoadingLabel={props.importLoadingLabel}
           onPdfUpload={props.onPdfUpload}
           onImageUpload={props.onImageUpload}
           onDocxUpload={props.onDocxUpload}

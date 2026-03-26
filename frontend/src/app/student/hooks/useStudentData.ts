@@ -1,33 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  STORAGE_KEYS,
-  getJSON,
-  getSessionUser,
-  type User,
-} from "@/lib/examGuard";
+import { getSessionUser, type User } from "@/lib/examGuard";
 import { getStudentResults } from "@/lib/backend-auth";
 import type { Exam, NotificationItem } from "../types";
-
-const DEMO_STUDENT: User = {
-  id: "demo",
-  username: "DemoStudent",
-  password: "",
-  role: "student",
-  createdAt: "",
-};
-
-const buildStudentNotifications = (
-  results: Awaited<ReturnType<typeof getStudentResults>>,
-): NotificationItem[] =>
-  results.slice(0, 4).map((item, index) => ({
-    examId: item.examId,
-    message:
-      index === 0
-        ? `${item.title} шалгалтын дүн шинэчлэгдлээ.`
-        : `${item.title} шалгалтын тайланг дахин хараарай.`,
-    read: index > 1,
-    createdAt: item.submittedAt ?? new Date().toISOString(),
-  }));
 
 const buildNotifications = (
   results: Awaited<ReturnType<typeof getStudentResults>>,
@@ -67,7 +41,7 @@ export const useStudentData = (overrideUser?: User | null) => {
           }
         : getSessionUser();
 
-    setCurrentUser(user ?? DEMO_STUDENT);
+    setCurrentUser(user ?? null);
 
     const storedTheme =
       typeof window !== "undefined"
@@ -102,13 +76,11 @@ export const useStudentData = (overrideUser?: User | null) => {
         }));
 
         setExams(mappedExams);
-        setNotifications(buildStudentNotifications(results));
+        setNotifications(buildNotifications(results));
       } catch {
         if (cancelled) return;
-        setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
-        setNotifications(
-          getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
-        );
+        setExams([]);
+        setNotifications([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -150,12 +122,10 @@ export const useStudentData = (overrideUser?: User | null) => {
           createdAt: item.submittedAt ?? new Date().toISOString(),
         }));
         setExams(mappedExams);
-        setNotifications(buildStudentNotifications(results));
+        setNotifications(buildNotifications(results));
       } catch {
-        setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
-        setNotifications(
-          getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
-        );
+        setExams([]);
+        setNotifications([]);
       }
     };
 
