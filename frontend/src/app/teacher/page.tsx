@@ -182,7 +182,10 @@ export default function TeacherPage() {
     let active = true;
     const loadProfile = async () => {
       try {
-        const profile = await getStudentProfileForTeacher(studentId);
+        const profile = await getStudentProfileForTeacher(
+          studentId,
+          sessionUser ?? data.currentUser,
+        );
         if (!active) return;
         setStudentProfile(profile);
       } catch {

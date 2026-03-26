@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getSessionUser } from "@/lib/examGuard";
 import {
   getStudentProfile,
   updateStudentProfile,
@@ -38,7 +39,7 @@ export default function StudentSettingsTab({
       setLoading(true);
       setError(null);
       try {
-        const remote = await getStudentProfile();
+        const remote = await getStudentProfile(getSessionUser());
         if (!active) return;
         setProfile({
           ...defaultProfile(username),
@@ -75,7 +76,10 @@ export default function StudentSettingsTab({
     };
     try {
       setLoading(true);
-      const savedProfile = await updateStudentProfile(nextProfile);
+      const savedProfile = await updateStudentProfile(
+        nextProfile,
+        getSessionUser(),
+      );
       setProfile({ ...defaultProfile(username), ...savedProfile });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);

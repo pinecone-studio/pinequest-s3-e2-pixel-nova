@@ -78,8 +78,17 @@ export const useStudentData = (overrideUser?: User | null) => {
     let cancelled = false;
 
     const loadRemote = async () => {
+      if (!user) {
+        setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
+        setNotifications(
+          getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
+        );
+        setLoading(false);
+        return;
+      }
+
       try {
-        const results = await getStudentResults();
+        const results = await getStudentResults(user);
         if (cancelled) return;
 
         const mappedExams: Exam[] = results.map((item) => ({
@@ -120,8 +129,17 @@ export const useStudentData = (overrideUser?: User | null) => {
 
   useEffect(() => {
     const sync = async () => {
+      const user = getSessionUser();
+      if (!user) {
+        setExams(getJSON<Exam[]>(STORAGE_KEYS.exams, []));
+        setNotifications(
+          getJSON<NotificationItem[]>(STORAGE_KEYS.notifications, []),
+        );
+        return;
+      }
+
       try {
-        const results = await getStudentResults();
+        const results = await getStudentResults(user);
         const mappedExams: Exam[] = results.map((item) => ({
           id: item.examId,
           title: item.title,
