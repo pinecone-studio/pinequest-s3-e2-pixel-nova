@@ -10,9 +10,19 @@ export type Question = {
 
 export type Grade = "A" | "B" | "C" | "D" | "F";
 
+export type StudentTab =
+  | "Home"
+  | "Exams"
+  | "Progress"
+  | "Leaderboard"
+  | "Profile"
+  | "Settings"
+  | "Help";
+
 export type Exam = {
   id: string;
   title: string;
+  description?: string | null;
   scheduledAt: string | null;
   examStartedAt?: string | null;
   roomCode: string;
