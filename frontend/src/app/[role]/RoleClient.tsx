@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import TeacherPage from "../teacher/page";
-import StudentPage from "../student/page";
+import TeacherPageContent from "../teacher/TeacherPageContent";
+import StudentPageContent from "../student/StudentPageContent";
 import {
 	getStoredRole,
 	isTeacherRole,
@@ -41,9 +41,16 @@ export default function RoleClient() {
 
 	if (!ready) return null;
 
+<<<<<<< HEAD
 return isTeacherRole(resolvedRole) ? (
 		<TeacherPage />
 	) : (
 		<StudentPage />
+=======
+	return isTeacherRole(resolvedRole) ? (
+		<TeacherPageContent forcedRole={resolvedRole} />
+	) : (
+		<StudentPageContent forcedRole={resolvedRole} />
+>>>>>>> bd713b3 (conflict repair)
 	);
 }

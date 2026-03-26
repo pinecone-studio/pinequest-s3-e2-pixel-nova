@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
@@ -363,4 +364,10 @@ export default function TeacherPage() {
       </div>
     </div>
   );
+=======
+import TeacherPageContent from "./TeacherPageContent";
+
+export default function TeacherPage() {
+  return <TeacherPageContent forcedRole="teacher" />;
+>>>>>>> bd713b3 (conflict repair)
 }
