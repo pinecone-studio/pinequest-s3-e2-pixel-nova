@@ -31,6 +31,8 @@ app.use(
       "https://educore.pages.dev",
       "https://educore-1zs.pages.dev",
       "https://frontend.zbymba4.workers.dev",
+      "https://educore-eight.vercel.app",
+      "https://educore-eq27uyibd-zoloos-projects-fb96b78b.vercel.app",
     ],
     allowHeaders: [
       "Content-Type",
