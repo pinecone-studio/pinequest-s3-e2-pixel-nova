@@ -26,6 +26,7 @@ export const students = sqliteTable("students", {
   phone: text("phone"),
   school: text("school"),
   grade: text("grade"),
+  groupName: text("group_name"),
   bio: text("bio"),
   xp: integer("xp").notNull().default(0),
   level: integer("level").notNull().default(1),
@@ -58,6 +59,9 @@ export const exams = sqliteTable("exams", {
     .references(() => subjects.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description"),
+  examType: text("exam_type"),
+  className: text("class_name"),
+  groupName: text("group_name"),
   status: text("status").notNull().default("draft"), // draft | scheduled | active | finished | archived
   scheduledAt: text("scheduled_at"),
   startedAt: text("started_at"),
