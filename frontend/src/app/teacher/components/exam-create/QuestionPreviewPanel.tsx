@@ -9,7 +9,11 @@ type QuestionPreviewPanelProps = {
   editMode: boolean;
   setEditMode: (value: boolean | ((value: boolean) => boolean)) => void;
   updateQuestion: (id: string, patch: Partial<Question>) => void;
-  updateQuestionOption: (id: string, optionIndex: number, value: string) => void;
+  updateQuestionOption: (
+    id: string,
+    optionIndex: number,
+    value: string,
+  ) => void;
   addQuestionOption: (id: string) => void;
   removeQuestionOption: (id: string, optionIndex: number) => void;
   removeQuestion: (id: string) => void;
@@ -114,6 +118,10 @@ export default function QuestionPreviewPanel({
 
   if (!activeQuestion) return null;
 
+  const missingCorrect =
+    activeQuestion.type === "mcq" &&
+    (!activeQuestion.correctAnswer || !activeQuestion.correctAnswer.trim());
+
   const openCropEditor = async (sourceUrl: string) => {
     setImageBusy(true);
     try {
@@ -146,12 +154,13 @@ export default function QuestionPreviewPanel({
   };
 
   return (
-    <div className="rounded-[28px] border border-[#dce5ef] bg-[#f8fbff] p-4">
-      <div className="flex items-center justify-between gap-3">
+    <div
+      className={`rounded-[28px] border bg-[#f8fbff] flex flex-col items-center p-4 ${missingCorrect ? "border-amber-400" : "border-[#dce5ef]"}`}
+    >
+      <div className="flex items-center w-[98%] justify-between gap-3">
         <div>
-          <div className="text-base font-semibold">Сурагчийн харагдах байдал</div>
-          <div className="text-[11px] text-muted-foreground">
-            Сурагчийн харагдах байдал.
+          <div className="text-base font-semibold">
+            Сурагчийн харагдах байдал
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -167,9 +176,14 @@ export default function QuestionPreviewPanel({
         </div>
       </div>
 
-      <div className="mt-4 rounded-[24px] border border-[#dce5ef] bg-white p-4">
-        <div className="text-sm text-slate-500">
-          Асуулт {previewIndex + 1} · Оноо {activeQuestion.points ?? 1}
+      <div className="mt-4 w-[98%] rounded-[24px] border border-[#dce5ef] bg-white p-4">
+        <div className="w-full flex justify-between">
+          <div className="text-[16px] text-slate-500">
+            Асуулт {previewIndex + 1}
+          </div>
+          <div className="text-[16px] text-black">
+            Оноо {activeQuestion.points ?? 1}
+          </div>
         </div>
 
         {activeQuestion.imageUrl && (
@@ -359,8 +373,7 @@ export default function QuestionPreviewPanel({
                             const idx = Math.max(
                               0,
                               activeOptions.findIndex(
-                                (opt) =>
-                                  opt === activeQuestion.correctAnswer,
+                                (opt) => opt === activeQuestion.correctAnswer,
                               ),
                             );
                             const label = optionLabels[idx] ?? "A";
@@ -389,7 +402,7 @@ export default function QuestionPreviewPanel({
                         {activeOptions.map((option, idx) => (
                           <button
                             key={`${option}-${idx}`}
-                      className={`w-full rounded-xl px-3 py-2 text-left transition ${
+                            className={`w-full rounded-xl px-3 py-2 text-left transition ${
                               activeQuestion.correctAnswer === option
                                 ? "bg-primary text-primary-foreground"
                                 : "hover:bg-muted"
@@ -456,23 +469,32 @@ export default function QuestionPreviewPanel({
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {questions.map((question, index) => (
-          <button
-            key={question.id}
-            className={`rounded-xl border px-3 py-2 text-sm transition ${
-              index === previewIndex
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-card hover:bg-muted"
-            }`}
-            onClick={() => setPreviewIndex(index)}
-          >
-            {index + 1}
-          </button>
-        ))}
+      <div className="mt-3 w-[98%] flex flex-wrap gap-2">
+        {questions.map((question, index) => {
+          const isMissingCorrect =
+            question.type === "mcq" &&
+            (!question.correctAnswer || !question.correctAnswer.trim());
+          const isActive = index === previewIndex;
+          const style = isActive
+            ? isMissingCorrect
+              ? "border-amber-400 bg-amber-50 text-amber-600"
+              : "border-primary bg-primary/10 text-primary"
+            : isMissingCorrect
+              ? "border-amber-300 bg-amber-50 text-amber-500 hover:bg-amber-100"
+              : "border-border bg-card hover:bg-muted";
+          return (
+            <button
+              key={question.id}
+              className={`rounded-xl border px-3 py-2 text-sm transition ${style}`}
+              onClick={() => setPreviewIndex(index)}
+            >
+              {index + 1}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 w-[98%] flex flex-wrap gap-4">
         <button
           className={buttonGhost}
           onClick={() => setPreviewIndex(Math.max(previewIndex - 1, 0))}

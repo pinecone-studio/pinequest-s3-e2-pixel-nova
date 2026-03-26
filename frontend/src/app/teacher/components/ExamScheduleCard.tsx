@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   buttonPrimary,
@@ -9,10 +9,18 @@ import {
 } from "../styles";
 
 type ExamScheduleCardProps = {
-  scheduleTitle: string;
-  setScheduleTitle: (value: string) => void;
   scheduleDate: string;
   setScheduleDate: (value: string) => void;
+  scheduleExamType: string;
+  setScheduleExamType: (value: string) => void;
+  scheduleClassName: string;
+  setScheduleClassName: (value: string) => void;
+  scheduleGroupName: string;
+  setScheduleGroupName: (value: string) => void;
+  scheduleSubjectName: string;
+  setScheduleSubjectName: (value: string) => void;
+  scheduleDescription: string;
+  setScheduleDescription: (value: string) => void;
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
   onSchedule: () => void;
@@ -20,10 +28,18 @@ type ExamScheduleCardProps = {
 };
 
 export default function ExamScheduleCard({
-  scheduleTitle,
-  setScheduleTitle,
   scheduleDate,
   setScheduleDate,
+  scheduleExamType,
+  setScheduleExamType,
+  scheduleClassName,
+  setScheduleClassName,
+  scheduleGroupName,
+  setScheduleGroupName,
+  scheduleSubjectName,
+  setScheduleSubjectName,
+  scheduleDescription,
+  setScheduleDescription,
   durationMinutes,
   setDurationMinutes,
   onSchedule,
@@ -52,12 +68,8 @@ export default function ExamScheduleCard({
   ];
   const minuteOptions = ["15", "30", "45", "60", "90"];
   const secondOptions = ["00", "15", "30", "45"];
+  const groupOptions = ["А", "Б", "В", "Г"];
 
-  const [examType, setExamType] =
-    useState<(typeof examTypes)[number]["value"]>("progress");
-  const [selectedClass, setSelectedClass] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
-  const [description, setDescription] = useState("");
   const [seconds, setSeconds] = useState("00");
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedTime, setSelectedTime] = useState("09:00");
@@ -90,24 +102,6 @@ export default function ExamScheduleCard({
   const displayDate = selectedDate
     ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")} ${selectedTime}`
     : "";
-
-  const examTypeLabel =
-    examTypes.find((item) => item.value === examType)?.label ?? "";
-
-  useEffect(() => {
-    const nextTitle = [selectedClass, selectedSubject, examTypeLabel]
-      .filter(Boolean)
-      .join(" ");
-    if (nextTitle !== scheduleTitle) {
-      setScheduleTitle(nextTitle);
-    }
-  }, [
-    examTypeLabel,
-    scheduleTitle,
-    selectedClass,
-    selectedSubject,
-    setScheduleTitle,
-  ]);
 
   return (
     <div className={`${cardClass} h-full font-sans overflow-auto`}>
@@ -145,12 +139,12 @@ export default function ExamScheduleCard({
               <div className="text-[16px] font-semibold text-black">Төрөл</div>
               <div className="flex flex-wrap items-center gap-[30px]">
                 {examTypes.map((item) => {
-                  const checked = examType === item.value;
+                  const checked = scheduleExamType === item.value;
                   return (
                     <button
                       key={item.value}
                       className="inline-flex items-center gap-[10px]"
-                      onClick={() => setExamType(item.value)}
+                      onClick={() => setScheduleExamType(item.value)}
                       type="button"
                     >
                       <span
@@ -171,21 +165,39 @@ export default function ExamScheduleCard({
               </div>
             </div>
 
-            <label className="grid gap-3">
-              <span className="text-[16px] font-semibold text-black">Анги</span>
-              <select
-                className={figmaFieldClass}
-                value={selectedClass}
-                onChange={(event) => setSelectedClass(event.target.value)}
-              >
-                <option value="">Анги сонгоно уу.</option>
-                {classOptions.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="grid gap-3">
+                <span className="text-[16px] font-semibold text-black">Анги</span>
+                <select
+                  className={figmaFieldClass}
+                  value={scheduleClassName}
+                  onChange={(event) => setScheduleClassName(event.target.value)}
+                >
+                  <option value="">Анги сонгоно уу.</option>
+                  {classOptions.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-3">
+                <span className="text-[16px] font-semibold text-black">Бүлэг</span>
+                <select
+                  className={figmaFieldClass}
+                  value={scheduleGroupName}
+                  onChange={(event) => setScheduleGroupName(event.target.value)}
+                >
+                  <option value="">Бүлэг сонгоно уу.</option>
+                  {groupOptions.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
             <label className="grid gap-3">
               <span className="text-[16px] font-semibold text-black">
@@ -193,8 +205,8 @@ export default function ExamScheduleCard({
               </span>
               <select
                 className={figmaFieldClass}
-                value={selectedSubject}
-                onChange={(event) => setSelectedSubject(event.target.value)}
+                value={scheduleSubjectName}
+                onChange={(event) => setScheduleSubjectName(event.target.value)}
               >
                 <option value="">Хичээл сонгоно уу.</option>
                 {subjectOptions.map((item) => (
@@ -212,8 +224,8 @@ export default function ExamScheduleCard({
               <textarea
                 className={figmaTextareaClass}
                 placeholder="Жишээ нь: Шалгалтын сэдэв"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
+                value={scheduleDescription}
+                onChange={(event) => setScheduleDescription(event.target.value)}
               />
             </label>
 

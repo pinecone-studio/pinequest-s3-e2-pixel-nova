@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
 import {
+  STORAGE_KEYS,
+  ensureDemoAccounts,
+  getJSON,
+  setJSON,
   setSessionUser,
   type User,
 } from "@/lib/examGuard";
@@ -18,26 +22,34 @@ import {
 } from "@/lib/role-session";
 import TeacherHeader from "./components/TeacherHeader";
 import ExamScheduleCard from "./components/ExamScheduleCard";
-import ExamCreateCard from "./components/ExamCreateCard";
 import ExamListCard from "./components/ExamListCard";
+
 import TeacherXpOverviewCard from "./components/TeacherXpOverviewCard";
 import ResultsTab from "./components/ResultsTab";
 import TeacherStudentsTab from "./components/TeacherStudentsTab";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
-import { useExamImport } from "./hooks/useExamImport";
+
 import { useExamStats } from "./hooks/useExamStats";
 import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { contentCanvasClass, pageShellClass } from "./styles";
 
-const teacherTabs = [
-  "Хуваарь",
-  "Шалгалт үүсгэх",
-  "Шалгалтын сан",
-  "Гүйцэтгэл",
-] as const;
+const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
 
 type TeacherTab = (typeof teacherTabs)[number];
+
+const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
+  ensureDemoAccounts();
+  return getJSON<User[]>(STORAGE_KEYS.users, [])
+    .filter((user) => user.role === role)
+    .map((user) => ({
+      id: user.id,
+      fullName: user.username,
+      role: user.role,
+      email: null,
+      avatarUrl: null,
+    }));
+};
 
 export default function TeacherPage() {
   const router = useRouter();
@@ -45,7 +57,7 @@ export default function TeacherPage() {
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
-  const [activeTab, setActiveTab] = useState<TeacherTab>(teacherTabs[0]);
+  const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын сан");
   const [showScheduleForm, setShowScheduleForm] = useState(false);
 
   const sessionUser = useMemo(
@@ -61,13 +73,7 @@ export default function TeacherPage() {
     showToast: data.showToast,
     currentUser: data.currentUser,
   });
-  const imports = useExamImport({
-    setQuestions: management.setQuestions,
-    examTitle: management.examTitle,
-    setExamTitle: management.setExamTitle,
-    showToast: data.showToast,
-    currentUser: data.currentUser,
-  });
+
   const examStatsState = useExamStats({
     exams: data.exams,
     submissions: data.submissions,
@@ -78,10 +84,14 @@ export default function TeacherPage() {
 
   useEffect(() => {
     document.body.style.overflow = showScheduleForm ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [showScheduleForm]);
 
-  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
+    null,
+  );
   const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
@@ -93,7 +103,9 @@ export default function TeacherPage() {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const authUsers = await getAuthUsers();
+        const authUsers = await getAuthUsers().catch(() =>
+          getLocalAuthUsers(role),
+        );
         if (cancelled) return;
         const nextUsers = authUsers.filter((user) => user.role === role);
         const storedUserId = getStoredSelectedUserId(role);
@@ -103,6 +115,10 @@ export default function TeacherPage() {
           null;
         setUsers(nextUsers);
         setSelectedUser(nextUser);
+        setJSON(
+          STORAGE_KEYS.users,
+          nextUsers.map((user) => buildSessionUser(user)),
+        );
         if (nextUser) {
           setStoredSelectedUserId(role, nextUser.id);
           setSessionUser(buildSessionUser(nextUser));
@@ -116,7 +132,9 @@ export default function TeacherPage() {
       }
     };
     loadUsers();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [role]);
 
   const handleRoleChange = (nextRole: RoleKey) => {
@@ -134,7 +152,10 @@ export default function TeacherPage() {
 
   useEffect(() => {
     const studentId = examStatsState.selectedSubmission?.studentId;
-    if (!studentId) { setStudentProfile(null); return; }
+    if (!studentId) {
+      setStudentProfile(null);
+      return;
+    }
     setProfileLoading(true);
     let active = true;
     const loadProfile = async () => {
@@ -150,68 +171,21 @@ export default function TeacherPage() {
       }
     };
     void loadProfile();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [examStatsState.selectedSubmission?.studentId]);
 
   if (!data.currentUser) return null;
   const currentUser = data.currentUser;
 
   const renderActiveTab = () => {
-    if (activeTab === "Шалгалт үүсгэх") {
-      return (
-        <ExamCreateCard
-          examTitle={management.examTitle}
-          setExamTitle={management.setExamTitle}
-          createDate={management.createDate}
-          setCreateDate={management.setCreateDate}
-          expectedStudentsCount={management.expectedStudentsCount}
-          setExpectedStudentsCount={management.setExpectedStudentsCount}
-          durationMinutes={management.durationMinutes}
-          setDurationMinutes={management.setDurationMinutes}
-          questionText={management.questionText}
-          setQuestionText={management.setQuestionText}
-          questionType={management.questionType}
-          setQuestionType={management.setQuestionType}
-          mcqOptions={management.mcqOptions}
-          setMcqOptions={management.setMcqOptions}
-          questionAnswer={management.questionAnswer}
-          setQuestionAnswer={management.setQuestionAnswer}
-          questionImageUrl={management.questionImageUrl}
-          setQuestionImageUrl={management.setQuestionImageUrl}
-          questionPoints={management.questionPoints}
-          setQuestionPoints={management.setQuestionPoints}
-          questionCorrectIndex={management.questionCorrectIndex}
-          setQuestionCorrectIndex={management.setQuestionCorrectIndex}
-          questions={management.questions}
-          addQuestion={management.addQuestion}
-          removeQuestion={management.removeQuestion}
-          updateQuestion={management.updateQuestion}
-          updateQuestionOption={management.updateQuestionOption}
-          addQuestionOption={management.addQuestionOption}
-          removeQuestionOption={management.removeQuestionOption}
-          saveExam={management.saveExam}
-          pdfUseOcr={imports.pdfUseOcr}
-          setPdfUseOcr={imports.setPdfUseOcr}
-          answerKeyPage={imports.answerKeyPage}
-          setAnswerKeyPage={imports.setAnswerKeyPage}
-          pdfLoading={imports.pdfLoading}
-          pdfError={imports.pdfError}
-          importError={imports.importError}
-          importLoading={imports.importLoading}
-          importLoadingLabel={imports.importLoadingLabel}
-          onPdfUpload={imports.handlePdfUpload}
-          onImageUpload={imports.handleImageUpload}
-          onDocxUpload={imports.handleDocxUpload}
-        />
-      );
-    }
-
     if (activeTab === "Шалгалтын сан") {
       return (
         <ExamListCard
           exams={data.exams}
           onCopyCode={management.copyCode}
-          onCreateExam={() => setActiveTab("Шалгалт үүсгэх")}
+          onCreateExam={() => router.push(`/teacher/createExam`)}
         />
       );
     }
@@ -257,10 +231,18 @@ export default function TeacherPage() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <ExamScheduleCard
-                  scheduleTitle={management.scheduleTitle}
-                  setScheduleTitle={management.setScheduleTitle}
                   scheduleDate={management.scheduleDate}
                   setScheduleDate={management.setScheduleDate}
+                  scheduleExamType={management.scheduleExamType}
+                  setScheduleExamType={management.setScheduleExamType}
+                  scheduleClassName={management.scheduleClassName}
+                  setScheduleClassName={management.setScheduleClassName}
+                  scheduleGroupName={management.scheduleGroupName}
+                  setScheduleGroupName={management.setScheduleGroupName}
+                  scheduleSubjectName={management.scheduleSubjectName}
+                  setScheduleSubjectName={management.setScheduleSubjectName}
+                  scheduleDescription={management.scheduleDescription}
+                  setScheduleDescription={management.setScheduleDescription}
                   durationMinutes={management.durationMinutes}
                   setDurationMinutes={management.setDurationMinutes}
                   onSchedule={management.handleSchedule}
@@ -302,7 +284,13 @@ export default function TeacherPage() {
       />
       <main className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1480px] space-y-6">
-          <section className={contentCanvasClass}>{renderActiveTab()}</section>
+          {activeTab === "Шалгалтын сан" || activeTab === "Хуваарь" ? (
+            <div>{renderActiveTab()}</div>
+          ) : (
+            <section className={contentCanvasClass}>
+              {renderActiveTab()}
+            </section>
+          )}
         </div>
       </main>
     </div>
