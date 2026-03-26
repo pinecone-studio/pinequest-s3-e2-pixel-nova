@@ -51,10 +51,19 @@ const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
     }));
 };
 
+const getInitials = (value: string) =>
+  value
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "ST";
+
 export default function StudentPage() {
   const router = useRouter();
   const role: RoleKey = "student";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [teacherUsers, setTeacherUsers] = useState<AuthUser[]>([]);
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
@@ -159,9 +168,11 @@ export default function StudentPage() {
         }
       } catch {
         if (cancelled) return;
+        const fallbackTeachers = getLocalAuthUsers("teacher");
         const fallbackUsers = getLocalAuthUsers(role);
         const nextUser = fallbackUsers[0] ?? null;
 
+        setTeacherUsers(fallbackTeachers);
         setUsers(fallbackUsers);
         setSelectedUser(nextUser);
 
