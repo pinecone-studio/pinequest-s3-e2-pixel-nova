@@ -48,10 +48,18 @@ function getExamCell(
 
 type Props = {
   exams: Exam[];
-  scheduleTitle: string;
-  setScheduleTitle: (v: string) => void;
   scheduleDate: string;
   setScheduleDate: (v: string) => void;
+  scheduleExamType: string;
+  setScheduleExamType: (v: string) => void;
+  scheduleClassName: string;
+  setScheduleClassName: (v: string) => void;
+  scheduleGroupName: string;
+  setScheduleGroupName: (v: string) => void;
+  scheduleSubjectName: string;
+  setScheduleSubjectName: (v: string) => void;
+  scheduleDescription: string;
+  setScheduleDescription: (v: string) => void;
   durationMinutes: number;
   setDurationMinutes: (v: number) => void;
   onSchedule: () => void;
@@ -59,10 +67,18 @@ type Props = {
 
 export default function ScheduleCalendarView({
   exams,
-  scheduleTitle,
-  setScheduleTitle,
   scheduleDate,
   setScheduleDate,
+  scheduleExamType,
+  setScheduleExamType,
+  scheduleClassName,
+  setScheduleClassName,
+  scheduleGroupName,
+  setScheduleGroupName,
+  scheduleSubjectName,
+  setScheduleSubjectName,
+  scheduleDescription,
+  setScheduleDescription,
   durationMinutes,
   setDurationMinutes,
   onSchedule,
@@ -178,10 +194,18 @@ export default function ScheduleCalendarView({
         >
           <div className="w-full max-w-md overflow-y-auto" style={{ maxHeight: "90vh" }}>
             <ExamScheduleCard
-              scheduleTitle={scheduleTitle}
-              setScheduleTitle={setScheduleTitle}
               scheduleDate={scheduleDate}
               setScheduleDate={setScheduleDate}
+              scheduleExamType={scheduleExamType}
+              setScheduleExamType={setScheduleExamType}
+              scheduleClassName={scheduleClassName}
+              setScheduleClassName={setScheduleClassName}
+              scheduleGroupName={scheduleGroupName}
+              setScheduleGroupName={setScheduleGroupName}
+              scheduleSubjectName={scheduleSubjectName}
+              setScheduleSubjectName={setScheduleSubjectName}
+              scheduleDescription={scheduleDescription}
+              setScheduleDescription={setScheduleDescription}
               durationMinutes={durationMinutes}
               setDurationMinutes={setDurationMinutes}
               onSchedule={() => {

@@ -13,6 +13,10 @@ type ApiEnvelope<T> = {
 type RemoteExamDetail = {
   id: string;
   title: string;
+  description?: string | null;
+  examType?: string | null;
+  className?: string | null;
+  groupName?: string | null;
   scheduledAt?: string | null;
   startedAt?: string | null;
   roomCode?: string | null;
@@ -39,6 +43,10 @@ const buildHeaders = (user: RoleUser) => ({
 
 export type SyncExamPayload = {
   title: string;
+  description?: string | null;
+  examType?: string | null;
+  className?: string | null;
+  groupName?: string | null;
   duration: number;
   scheduledAt?: string | null;
   expectedStudentsCount?: number;
@@ -63,6 +71,10 @@ export const syncExamToBackend = async (
     headers: buildHeaders(user),
     body: JSON.stringify({
       title: exam.title,
+      description: exam.description,
+      examType: exam.examType,
+      className: exam.className,
+      groupName: exam.groupName,
       durationMin: exam.duration,
       expectedStudentsCount: exam.expectedStudentsCount ?? 0,
     }),

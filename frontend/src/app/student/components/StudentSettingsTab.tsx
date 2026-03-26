@@ -19,6 +19,7 @@ const defaultProfile = (username: string): StudentProfile => ({
   phone: "",
   school: "",
   grade: "",
+  groupName: "",
   bio: "",
 });
 

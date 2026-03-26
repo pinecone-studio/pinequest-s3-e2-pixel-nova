@@ -18,10 +18,18 @@ import type {
 type ExamTabProps = {
   loading: boolean;
   stats: TeacherStat[];
-  scheduleTitle: string;
-  setScheduleTitle: (value: string) => void;
   scheduleDate: string;
   setScheduleDate: (value: string) => void;
+  scheduleExamType: string;
+  setScheduleExamType: (value: string) => void;
+  scheduleClassName: string;
+  setScheduleClassName: (value: string) => void;
+  scheduleGroupName: string;
+  setScheduleGroupName: (value: string) => void;
+  scheduleSubjectName: string;
+  setScheduleSubjectName: (value: string) => void;
+  scheduleDescription: string;
+  setScheduleDescription: (value: string) => void;
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
   roomCode: string | null;
@@ -51,7 +59,11 @@ type ExamTabProps = {
   addQuestion: () => void;
   removeQuestion: (id: string) => void;
   updateQuestion: (id: string, patch: Partial<Question>) => void;
-  updateQuestionOption: (id: string, optionIndex: number, value: string) => void;
+  updateQuestionOption: (
+    id: string,
+    optionIndex: number,
+    value: string,
+  ) => void;
   addQuestionOption: (id: string) => void;
   removeQuestionOption: (id: string, optionIndex: number) => void;
   saveExam: () => void;
@@ -99,10 +111,18 @@ export default function ExamTab(props: ExamTabProps) {
       <ExamStatsCards loading={props.loading} stats={props.stats} />
       <section className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
         <ExamScheduleCard
-          scheduleTitle={props.scheduleTitle}
-          setScheduleTitle={props.setScheduleTitle}
           scheduleDate={props.scheduleDate}
           setScheduleDate={props.setScheduleDate}
+          scheduleExamType={props.scheduleExamType}
+          setScheduleExamType={props.setScheduleExamType}
+          scheduleClassName={props.scheduleClassName}
+          setScheduleClassName={props.setScheduleClassName}
+          scheduleGroupName={props.scheduleGroupName}
+          setScheduleGroupName={props.setScheduleGroupName}
+          scheduleSubjectName={props.scheduleSubjectName}
+          setScheduleSubjectName={props.setScheduleSubjectName}
+          scheduleDescription={props.scheduleDescription}
+          setScheduleDescription={props.setScheduleDescription}
           durationMinutes={props.durationMinutes}
           setDurationMinutes={props.setDurationMinutes}
           onSchedule={props.onSchedule}

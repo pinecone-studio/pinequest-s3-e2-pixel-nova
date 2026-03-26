@@ -4,6 +4,10 @@ import type { Exam, Question, Submission, XpLeaderboardEntry } from "../types";
 type TeacherExamSummary = {
   id: string;
   title: string;
+  description?: string | null;
+  examType?: string | null;
+  className?: string | null;
+  groupName?: string | null;
   scheduledAt: string | null;
   durationMin: number;
   roomCode: string | null;
@@ -66,6 +70,10 @@ export const fetchTeacherExams = async (): Promise<Exam[]> => {
     return {
       id: exam.id,
       title: exam.title,
+      description: exam.description ?? null,
+      examType: exam.examType ?? null,
+      className: exam.className ?? null,
+      groupName: exam.groupName ?? null,
       scheduledAt: exam.scheduledAt ?? null,
       examStartedAt: exam.startedAt ?? null,
       roomCode: exam.roomCode ?? "",

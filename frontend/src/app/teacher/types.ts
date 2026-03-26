@@ -11,6 +11,10 @@ export type Question = {
 export type Exam = {
   id: string;
   title: string;
+  description?: string | null;
+  examType?: string | null;
+  className?: string | null;
+  groupName?: string | null;
   scheduledAt: string | null;
   examStartedAt?: string | null;
   roomCode: string;

@@ -16,6 +16,11 @@ export const useExamManagement = (params: {
   const { exams, setExams, showToast, currentUser } = params;
   const [scheduleTitle, setScheduleTitle] = useState("");
   const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleExamType, setScheduleExamType] = useState("progress");
+  const [scheduleClassName, setScheduleClassName] = useState("");
+  const [scheduleGroupName, setScheduleGroupName] = useState("");
+  const [scheduleSubjectName, setScheduleSubjectName] = useState("");
+  const [scheduleDescription, setScheduleDescription] = useState("");
   const [examTitle, setExamTitle] = useState("");
   const [createDate, setCreateDate] = useState("");
   const [expectedStudentsCount, setExpectedStudentsCount] = useState(0);
@@ -35,6 +40,29 @@ export const useExamManagement = (params: {
   const [durationMinutes, setDurationMinutes] = useState(45);
   const sidebarTimerRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    const examTypeLabel =
+      scheduleExamType === "term" ? "Улирлын шалгалт" : "Явцын шалгалт";
+    const nextTitle = [
+      scheduleClassName,
+      scheduleGroupName,
+      scheduleSubjectName,
+      examTypeLabel,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    if (nextTitle !== scheduleTitle) {
+      setScheduleTitle(nextTitle);
+    }
+  }, [
+    scheduleClassName,
+    scheduleExamType,
+    scheduleGroupName,
+    scheduleSubjectName,
+    scheduleTitle,
+  ]);
+
   const toSyncQuestions = useCallback(
     (sourceQuestions: Question[]) =>
       sourceQuestions.map((question) => ({
@@ -52,12 +80,20 @@ export const useExamManagement = (params: {
     (
       payload: {
         title: string;
+        description?: string | null;
+        examType?: string | null;
+        className?: string | null;
+        groupName?: string | null;
         scheduledAt: string | null;
         expectedStudentsCount: number;
         questions: Question[];
       },
       remote?: {
         id: string;
+        description?: string | null;
+        examType?: string | null;
+        className?: string | null;
+        groupName?: string | null;
         roomCode?: string | null;
         scheduledAt?: string | null;
         durationMin?: number;
@@ -67,6 +103,10 @@ export const useExamManagement = (params: {
     ): Exam => ({
       id: remote?.id ?? generateId(),
       title: payload.title,
+      description: remote?.description ?? payload.description ?? null,
+      examType: remote?.examType ?? payload.examType ?? null,
+      className: remote?.className ?? payload.className ?? null,
+      groupName: remote?.groupName ?? payload.groupName ?? null,
       scheduledAt: remote?.scheduledAt ?? payload.scheduledAt,
       examStartedAt: null,
       roomCode: remote?.roomCode ?? generateRoomCode(),
@@ -126,6 +166,10 @@ export const useExamManagement = (params: {
 
     let newExam = buildLocalExam({
       title: scheduleTitle,
+      description: scheduleDescription,
+      examType: scheduleExamType,
+      className: scheduleClassName,
+      groupName: scheduleGroupName,
       scheduledAt: scheduleDate,
       expectedStudentsCount,
       questions: [],
@@ -139,6 +183,10 @@ export const useExamManagement = (params: {
     try {
       const syncedExam = await syncExamToBackend(currentUser, {
         title: scheduleTitle,
+        description: scheduleDescription,
+        examType: scheduleExamType,
+        className: scheduleClassName,
+        groupName: scheduleGroupName,
         duration: durationMinutes,
         scheduledAt: scheduleDate,
         expectedStudentsCount,
@@ -148,6 +196,10 @@ export const useExamManagement = (params: {
       newExam = buildLocalExam(
         {
           title: scheduleTitle,
+          description: scheduleDescription,
+          examType: scheduleExamType,
+          className: scheduleClassName,
+          groupName: scheduleGroupName,
           scheduledAt: scheduleDate,
           expectedStudentsCount,
           questions,
@@ -175,6 +227,11 @@ export const useExamManagement = (params: {
     persistExams([...exams, newExam]);
     setScheduleTitle("");
     setScheduleDate("");
+    setScheduleExamType("progress");
+    setScheduleClassName("");
+    setScheduleGroupName("");
+    setScheduleSubjectName("");
+    setScheduleDescription("");
     setRoomCode(newExam.roomCode);
   };
 
@@ -366,6 +423,7 @@ export const useExamManagement = (params: {
     setQuestionPoints(1);
     setExpectedStudentsCount(0);
     setRoomCode(newExam.roomCode);
+    return true;
   };
 
   const copyCode = async (code: string) => {
@@ -382,6 +440,16 @@ export const useExamManagement = (params: {
     setScheduleTitle,
     scheduleDate,
     setScheduleDate,
+    scheduleExamType,
+    setScheduleExamType,
+    scheduleClassName,
+    setScheduleClassName,
+    scheduleGroupName,
+    setScheduleGroupName,
+    scheduleSubjectName,
+    setScheduleSubjectName,
+    scheduleDescription,
+    setScheduleDescription,
     examTitle,
     setExamTitle,
     createDate,

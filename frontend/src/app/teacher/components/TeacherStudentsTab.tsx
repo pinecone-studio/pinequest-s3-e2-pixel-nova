@@ -1,10 +1,5 @@
 import type { Exam } from "../types";
-import {
-  badgeClass,
-  buttonPrimary,
-  sectionDescriptionClass,
-  sectionTitleClass,
-} from "../styles";
+import { sectionTitleClass } from "../styles";
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14];
 const DAYS_TO_SHOW = 5;
@@ -21,6 +16,7 @@ type ScheduleCategory = "required" | "elective";
 type ScheduleItem = {
   id: string;
   title: string;
+  subtitle?: string;
   dayIndex: number;
   startMinutes: number;
   duration: number;
@@ -72,9 +68,14 @@ function buildScheduleData(exams: Exam[]) {
       return {
         id: exam.id,
         title: exam.title,
+        subtitle: [exam.className, exam.groupName, exam.description]
+          .filter(Boolean)
+          .join(" · "),
         dayIndex,
         startMinutes:
-          scheduledAt.getHours() * 60 + scheduledAt.getMinutes() - HOURS[0] * 60,
+          scheduledAt.getHours() * 60 +
+          scheduledAt.getMinutes() -
+          HOURS[0] * 60,
         duration: exam.duration ?? 45,
         category: index % 2 === 0 ? "required" : "elective",
       };
@@ -140,24 +141,28 @@ function LegendDot({ category }: { category: ScheduleCategory }) {
       ? "border-blue-500 text-blue-500"
       : "border-amber-400 text-amber-400";
 
-  return <span className={`inline-block h-3.5 w-3.5 rounded-full border-[3px] ${tone}`} />;
+  return (
+    <span
+      className={`inline-block h-3.5 w-3.5 rounded-full border-[3px] ${tone}`}
+    />
+  );
 }
 
 function ScheduleCard({ item }: { item: ScheduleItem }) {
   const tone =
     item.category === "required"
       ? {
-          border: "border-t-blue-500",
+          border: "border-t-2 border-t-blue-500",
           dot: "required" as const,
         }
       : {
-          border: "border-t-amber-400",
+          border: "border-t-2 border-t-amber-400",
           dot: "elective" as const,
         };
 
   return (
     <div
-      className={`absolute rounded-2xl border border-[#dce5ef] bg-white px-3 py-3 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.25)] ${tone.border}`}
+      className={`absolute rounded-2xl bg-white px-3 py-3 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.25)] ${tone.border}`}
       style={{
         left: `calc(${item.dayIndex} * (100% / ${DAYS_TO_SHOW}) + 12px)`,
         width: `calc((100% / ${DAYS_TO_SHOW}) - 16px)`,
@@ -165,9 +170,16 @@ function ScheduleCard({ item }: { item: ScheduleItem }) {
         height: `${Math.max((item.duration / 60) * ROW_HEIGHT - 10, 52)}px`,
       }}
     >
-      <div className="flex h-full items-center gap-2 text-sm font-semibold text-foreground/85">
+      <div className="flex h-full gap-2 text-foreground/85">
         <LegendDot category={tone.dot} />
-        <span className="line-clamp-2">{item.title}</span>
+        <div className="min-w-0">
+          <div className="line-clamp-2 text-sm font-semibold">{item.title}</div>
+          {item.subtitle && (
+            <div className="mt-1 line-clamp-1 text-[11px] text-slate-500">
+              {item.subtitle}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -183,14 +195,9 @@ export default function TeacherStudentsTab({
     <section className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <span className={badgeClass}>Schedule Board</span>
-          <h2 className={`mt-3 ${sectionTitleClass}`}>
-            Шалгалтын хуваарь
-          </h2>
-          <p className={`mt-2 ${sectionDescriptionClass}`}>
-            Өдрийн багана, цагийн мөрөөр шалгалтын нягтралыг харах цэвэр calendar layout.
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+          <h2 className={sectionTitleClass}>Шалгалтын хуваарь</h2>
+
+          <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-slate-500">
             <div className="flex items-center gap-2">
               <LegendDot category="required" />
               <span>Заавал судлах</span>
@@ -203,7 +210,7 @@ export default function TeacherStudentsTab({
         </div>
 
         <button
-          className={buttonPrimary}
+          className="inline-flex items-center gap-2 justify-center rounded-2xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-500"
           onClick={onAddSchedule}
           type="button"
         >
@@ -247,7 +254,7 @@ export default function TeacherStudentsTab({
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="border-b border-[#dce5ef] px-5 pt-1 text-sm text-slate-500 last:border-b-0"
+                    className="px-5 pt-1 text-sm text-slate-500"
                     style={{ height: `${ROW_HEIGHT}px` }}
                   >
                     {hour.toString().padStart(2, "0")} цаг
@@ -270,7 +277,7 @@ export default function TeacherStudentsTab({
                       {HOURS.map((hour, rowIndex) => (
                         <div
                           key={`${dayIndex}-${hour}`}
-                          className="border-b border-[#dce5ef] last:border-b-0"
+                          className=""
                           style={{
                             height: `${ROW_HEIGHT}px`,
                             opacity: rowIndex === HOURS.length - 1 ? 0.7 : 1,

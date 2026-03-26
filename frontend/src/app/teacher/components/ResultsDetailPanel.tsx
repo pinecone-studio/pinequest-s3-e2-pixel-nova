@@ -90,6 +90,9 @@ export default function ResultsDetailPanel({
                 {studentProfile.grade && (
                   <div>Анги: {studentProfile.grade}</div>
                 )}
+                {studentProfile.groupName && (
+                  <div>Бүлэг: {studentProfile.groupName}</div>
+                )}
                 {studentProfile.bio && (
                   <div>Танилцуулга: {studentProfile.bio}</div>
                 )}

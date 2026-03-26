@@ -1,9 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  buttonGhost,
-  buttonPrimary,
-  cardClass,
-} from "../styles";
+import { buttonGhost, buttonPrimary, cardClass } from "../styles";
 import type { Question } from "../types";
 import { Plus } from "lucide-react";
 import ExamImportPanel from "./exam-create/ExamImportPanel";
@@ -64,12 +60,6 @@ type ExamCreateCardProps = {
 export default function ExamCreateCard({
   examTitle,
   setExamTitle,
-  createDate,
-  setCreateDate,
-  expectedStudentsCount,
-  setExpectedStudentsCount,
-  durationMinutes,
-  setDurationMinutes,
   questionText,
   setQuestionText,
   questionType,
@@ -123,7 +113,8 @@ export default function ExamCreateCard({
     () =>
       questions.filter(
         (question) =>
-          question.type === "mcq" && (!question.correctAnswer || !question.correctAnswer.trim()),
+          question.type === "mcq" &&
+          (!question.correctAnswer || !question.correctAnswer.trim()),
       ).length,
     [questions],
   );
@@ -133,7 +124,6 @@ export default function ExamCreateCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-900">
-            <Plus className="w-4 h-4" />
             Шалгалт үүсгэх
           </h2>
         </div>
@@ -155,16 +145,7 @@ export default function ExamCreateCard({
           onDocxUpload={onDocxUpload}
         />
 
-        <ExamMetaFields
-          examTitle={examTitle}
-          setExamTitle={setExamTitle}
-          createDate={createDate}
-          setCreateDate={setCreateDate}
-          expectedStudentsCount={expectedStudentsCount}
-          setExpectedStudentsCount={setExpectedStudentsCount}
-          durationMinutes={durationMinutes}
-          setDurationMinutes={setDurationMinutes}
-        />
+        <ExamMetaFields examTitle={examTitle} setExamTitle={setExamTitle} />
 
         <QuestionFormSection
           questionText={questionText}

@@ -10,6 +10,7 @@ export type StudentProfile = {
   phone?: string | null;
   school?: string | null;
   grade?: string | null;
+  groupName?: string | null;
   bio?: string | null;
   xp?: number;
   level?: number;
