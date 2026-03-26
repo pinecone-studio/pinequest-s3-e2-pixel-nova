@@ -13,13 +13,13 @@ This is a full-stack exam platform (PineQuest) deployed entirely on Cloudflare, 
 
 14 tables in the D1 SQLite database, organized by domain:
 
-| Domain | Tables |
-|---|---|
-| Auth | `teachers`, `students` (code-based, no passwords) |
-| Exams | `subjects`, `exams`, `questions`, `options`, `materials` |
-| Question Bank | `question_bank`, `question_bank_options` |
-| Sessions | `exam_sessions`, `student_answers`, `cheat_events` |
-| Gamification | `xp_transactions`, `saved_exams` |
+| Domain        | Tables                                                   |
+| ------------- | -------------------------------------------------------- |
+| Auth          | `teachers`, `students` (code-based, no passwords)        |
+| Exams         | `subjects`, `exams`, `questions`, `options`, `materials` |
+| Question Bank | `question_bank`, `question_bank_options`                 |
+| Sessions      | `exam_sessions`, `student_answers`, `cheat_events`       |
+| Gamification  | `xp_transactions`, `saved_exams`                         |
 
 All primary keys are nanoid text. Foreign keys cascade on delete. Schema changes require running `npm run db:generate` then applying with `npm run db:migrate`.
 
@@ -69,7 +69,9 @@ npm run cf-typegen
 ## Memory
 
 At the **start of every session**, read all files in `C:/Users/user/.claude/projects/D--zozo-pinequest-s3-e2-pixel-nova/memory/`:
+
 - `user.md` — who the user is
+- `language.md` — language preferences
 - `people.md` — team members and stakeholders
 - `decisions.md` — key architectural and product decisions
 - `preferences.md` — working style and feedback
