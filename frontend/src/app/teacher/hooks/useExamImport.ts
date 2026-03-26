@@ -22,6 +22,8 @@ export const useExamImport = (params: {
   const [pdfUseOcr, setPdfUseOcr] = useState(true);
   const [answerKeyPage, setAnswerKeyPage] = useState<number | "last">("last");
   const [importError, setImportError] = useState<string | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importLoadingLabel, setImportLoadingLabel] = useState<string | null>(null);
 
   type BackendPdfQuestion = {
     type: "multiple_choice" | "true_false" | "short_answer";
@@ -217,6 +219,8 @@ export const useExamImport = (params: {
 
   const handleCsvUpload = async (file: File) => {
     setImportError(null);
+    setImportLoading(true);
+    setImportLoadingLabel("CSV уншиж байна...");
     try {
       const text = await file.text();
       const parsed = parseCsvQuestions(text);
@@ -229,11 +233,16 @@ export const useExamImport = (params: {
       showToast(`${parsed.length} асуулт CSV‑ээс бөглөгдлөө.`);
     } catch {
       setImportError("CSV боловсруулах үед алдаа гарлаа.");
+    } finally {
+      setImportLoading(false);
+      setImportLoadingLabel(null);
     }
   };
 
   const handleImageUpload = async (file: File) => {
     setImportError(null);
+    setImportLoading(true);
+    setImportLoadingLabel("Зураг уншиж байна...");
     try {
       const questionLimit = promptQuestionLimit(
         "Энэ зурагнаас хэдэн асуулт гаргах вэ? (жишээ: 5)",
@@ -247,6 +256,10 @@ export const useExamImport = (params: {
         file,
         questionLimit,
       );
+      if (questions.length === 0) {
+        setImportError("Зурагнаас асуулт олдсонгүй. Илүү тод зураг оруулна уу.");
+        return;
+      }
       setQuestions((prev) => [...prev, ...questions]);
       showToast(
         usedFallback
@@ -256,11 +269,16 @@ export const useExamImport = (params: {
       if (!examTitle) setExamTitle(file.name.replace(/\.[^.]+$/, ""));
     } catch {
       setImportError("Зураг боловсруулах үед алдаа гарлаа.");
+    } finally {
+      setImportLoading(false);
+      setImportLoadingLabel(null);
     }
   };
 
   const handleDocxUpload = async (file: File) => {
     setImportError(null);
+    setImportLoading(true);
+    setImportLoadingLabel("DOCX уншиж байна...");
     try {
       const parsedQuestions = await parseDocxQuestions(file);
       if (parsedQuestions.length === 0) {
@@ -272,12 +290,17 @@ export const useExamImport = (params: {
       showToast(`${parsedQuestions.length} асуулт DOCX‑ээс бөглөгдлөө.`);
     } catch {
       setImportError("DOCX боловсруулах үед алдаа гарлаа.");
+    } finally {
+      setImportLoading(false);
+      setImportLoadingLabel(null);
     }
   };
 
   const handlePdfUpload = async (file: File) => {
     setPdfLoading(true);
     setPdfError(null);
+    setImportLoading(true);
+    setImportLoadingLabel("PDF уншиж байна...");
     try {
       const questionLimit = promptQuestionLimit(
         "PDF-ээс хэдэн асуулт үүсгэх вэ? (жишээ: 20)",
@@ -362,6 +385,8 @@ export const useExamImport = (params: {
       setPdfError(`PDF боловсруулах үед алдаа гарлаа. (${message})`);
     } finally {
       setPdfLoading(false);
+      setImportLoading(false);
+      setImportLoadingLabel(null);
     }
   };
 
@@ -373,6 +398,8 @@ export const useExamImport = (params: {
     answerKeyPage,
     setAnswerKeyPage,
     importError,
+    importLoading,
+    importLoadingLabel,
     handleCsvUpload,
     handleImageUpload,
     handleDocxUpload,

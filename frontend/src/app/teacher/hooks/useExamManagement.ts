@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   generateId,
   generateRoomCode,
-  getJSON,
-  setJSON,
   type User,
 } from "@/lib/examGuard";
 import { syncExamToBackend } from "@/lib/backend-exams";
@@ -79,59 +77,45 @@ export const useExamManagement = (params: {
   const persistExams = useCallback(
     (next: Exam[]) => {
       setExams(next);
-      const ok = setJSON("exams", next);
-      if (!ok) {
-        const stripped = next.map((exam) => ({
-          ...exam,
-          questions: exam.questions.map((question) => ({
-            ...question,
-            imageUrl: undefined,
-          })),
-        }));
-        const fallbackOk = setJSON("exams", stripped);
-        showToast(
-          fallbackOk
-            ? "Орон зай дүүрсэн тул зураг хадгалагдсангүй. Асуултууд хадгалагдлаа."
-            : "Хадгалах орон зай дүүрсэн байна. Зургийн хэмжээ/тоо их байж магадгүй.",
-        );
-      }
     },
-    [setExams, showToast],
+    [setExams],
   );
 
   useEffect(() => {
     const checkNotifications = () => {
-      const stored = getJSON<Exam[]>("exams", []);
       const now = new Date();
       const tomorrow = new Date(now);
       tomorrow.setDate(now.getDate() + 1);
       let changed = false;
-
-      stored.forEach((exam) => {
-        if (!exam.scheduledAt || exam.notified) return;
+      const nextExams = exams.map((exam) => {
+        if (!exam.scheduledAt || exam.notified) return exam;
         const scheduled = new Date(exam.scheduledAt);
         const isTomorrow =
           scheduled.getFullYear() === tomorrow.getFullYear() &&
           scheduled.getMonth() === tomorrow.getMonth() &&
           scheduled.getDate() === tomorrow.getDate();
-        if (isTomorrow) {
-          exam.notified = true;
-          changed = true;
-          showToast(`📢 Маргааш "${exam.title}" шалгалт эхэлнэ!`);
-        }
+        if (!isTomorrow) return exam;
+        changed = true;
+        showToast(`📢 Маргааш "${exam.title}" шалгалт эхэлнэ!`);
+        return { ...exam, notified: true };
       });
 
-      if (changed) persistExams(stored);
+      if (changed) persistExams(nextExams);
     };
 
     checkNotifications();
     const interval = setInterval(checkNotifications, 60000);
     return () => clearInterval(interval);
-  }, [persistExams, showToast]);
+  }, [exams, persistExams, showToast]);
 
   const handleSchedule = async () => {
     if (!scheduleTitle || !scheduleDate) {
       showToast("Шалгалтын нэр болон огноо оруулна уу.");
+      return;
+    }
+
+    if (!currentUser) {
+      showToast("Багшийн хэрэглэгч олдсонгүй.");
       return;
     }
 
@@ -141,42 +125,49 @@ export const useExamManagement = (params: {
       questions: [],
     });
 
-    if (currentUser && questions.length > 0) {
-      try {
-        const syncedExam = await syncExamToBackend(currentUser, {
-          title: scheduleTitle,
-          duration: durationMinutes,
-          scheduledAt: scheduleDate,
-          questions: toSyncQuestions(questions),
-        });
+    if (questions.length === 0) {
+      showToast("Хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.");
+      return;
+    }
 
-        newExam = buildLocalExam(
-          {
-            title: scheduleTitle,
-            scheduledAt: scheduleDate,
-            questions,
-          },
-          syncedExam,
-        );
-        showToast("Шалгалт backend дээр хуваарьлагдлаа.");
-      } catch {
-        showToast(
-          "Local schedule хадгалагдлаа. Backend schedule амжилтгүй боллоо.",
-        );
-      }
-    } else if (currentUser) {
-      showToast(
-        "Backend дээр хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.",
+    try {
+      const syncedExam = await syncExamToBackend(currentUser, {
+        title: scheduleTitle,
+        duration: durationMinutes,
+        scheduledAt: scheduleDate,
+        questions: toSyncQuestions(questions),
+      });
+
+      newExam = buildLocalExam(
+        {
+          title: scheduleTitle,
+          scheduledAt: scheduleDate,
+          questions,
+        },
+        syncedExam,
       );
+      showToast("Шалгалт backend дээр хуваарьлагдлаа.");
+    } catch (err) {
+      let message = "Хуваарьлах үед алдаа гарлаа. Дахин оролдоно уу.";
+      if (err instanceof Error && err.message) {
+        if (
+          err.message.toLowerCase().includes("load failed") ||
+          err.message.toLowerCase().includes("failed to fetch")
+        ) {
+          message =
+            "Backend-тэй холбогдож чадсангүй. Сервер ажиллаж байгаа эсэхийг шалгана уу.";
+        } else {
+          message = err.message;
+        }
+      }
+      showToast(message);
+      return;
     }
 
     persistExams([...exams, newExam]);
     setScheduleTitle("");
     setScheduleDate("");
     setRoomCode(newExam.roomCode);
-    if (!currentUser || questions.length === 0) {
-      showToast("Шалгалт товлогдлоо.");
-    }
   };
 
   const addQuestion = () => {
@@ -291,6 +282,11 @@ export const useExamManagement = (params: {
       return;
     }
 
+    if (!currentUser) {
+      showToast("Багшийн хэрэглэгч олдсонгүй.");
+      return;
+    }
+
     const missingCorrect = questions.filter(
       (question) =>
         question.type === "mcq" &&
@@ -315,24 +311,40 @@ export const useExamManagement = (params: {
         questions: toSyncQuestions(newExam.questions),
       });
 
-      if (syncedExam) {
-        newExam = buildLocalExam(
-          {
-            title: examTitle,
-            scheduledAt: createDate || null,
-            questions,
-          },
-          syncedExam,
-        );
+      if (!syncedExam) {
+        showToast("Шалгалтыг backend дээр хадгалах боломжгүй байна.");
+        return;
       }
+
+      newExam = buildLocalExam(
+        {
+          title: examTitle,
+          scheduledAt: createDate || null,
+          questions,
+        },
+        syncedExam,
+      );
 
       showToast(
         createDate
           ? "Шалгалт backend дээр хадгалагдаж, хуваарьлагдлаа."
-          : "Шалгалт local болон backend дээр хадгалагдлаа.",
+          : "Шалгалт backend дээр амжилттай хадгалагдлаа.",
       );
-    } catch {
-      showToast("Local хадгалалт амжилттай. Backend sync түр амжилтгүй боллоо.");
+    } catch (err) {
+      let message = "Backend хадгалалт амжилтгүй боллоо.";
+      if (err instanceof Error && err.message) {
+        if (
+          err.message.toLowerCase().includes("load failed") ||
+          err.message.toLowerCase().includes("failed to fetch")
+        ) {
+          message =
+            "Backend-тэй холбогдож чадсангүй. Сервер ажиллаж байгаа эсэхийг шалгана уу.";
+        } else {
+          message = err.message;
+        }
+      }
+      showToast(message);
+      return;
     }
 
     persistExams([...exams, newExam]);

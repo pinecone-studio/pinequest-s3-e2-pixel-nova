@@ -27,15 +27,54 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
   const user = c.get("user");
   const db = getDb(c.env.educore);
 
-  // Find active exam by roomCode
+  // Find exam by roomCode (scheduled or active)
   const [exam] = await db
     .select()
     .from(exams)
-    .where(and(eq(exams.roomCode, roomCode), eq(exams.status, "active")))
+    .where(
+      and(
+        eq(exams.roomCode, roomCode),
+        sql`${exams.status} IN (${sql.join(["scheduled", "active"].map((s) => sql`${s}`), sql`, `)})`,
+      ),
+    )
     .limit(1);
 
   if (!exam) {
     return error(c, "EXAM_NOT_FOUND", "No active exam found with this room code", 404);
+  }
+
+  const now = new Date();
+  const scheduledAt = exam.scheduledAt ? new Date(exam.scheduledAt) : null;
+
+  if (exam.status === "scheduled") {
+    if (scheduledAt && now < scheduledAt) {
+      return error(
+        c,
+        "NOT_STARTED",
+        "Шалгалт хараахан эхлээгүй байна. Хүлээнэ үү.",
+        409,
+      );
+    }
+    // Auto-start if scheduled time has passed
+    const startedAt = exam.startedAt ?? now.toISOString();
+    await db
+      .update(exams)
+      .set({
+        status: "active",
+        startedAt,
+        updatedAt: now.toISOString(),
+      })
+      .where(eq(exams.id, exam.id));
+  }
+
+  const startTime = exam.startedAt ? new Date(exam.startedAt) : scheduledAt;
+  if (startTime && now.getTime() - startTime.getTime() > 5 * 60 * 1000) {
+    return error(
+      c,
+      "ENTRY_CLOSED",
+      "Шалгалтад нэвтрэх хугацаа дууссан байна.",
+      403,
+    );
   }
 
   // Check if student already joined

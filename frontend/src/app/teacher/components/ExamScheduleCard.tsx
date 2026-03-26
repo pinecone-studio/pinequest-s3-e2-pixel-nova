@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   buttonPrimary,
-  buttonSecondary,
   cardClass,
   figmaCompactSelectClass,
   figmaFieldClass,
@@ -16,9 +15,7 @@ type ExamScheduleCardProps = {
   setScheduleDate: (value: string) => void;
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
-  roomCode: string | null;
   onSchedule: () => void;
-  onCopyCode: (code: string) => void;
   onClose?: () => void;
 };
 
@@ -29,9 +26,7 @@ export default function ExamScheduleCard({
   setScheduleDate,
   durationMinutes,
   setDurationMinutes,
-  roomCode,
   onSchedule,
-  onCopyCode,
   onClose,
 }: ExamScheduleCardProps) {
   const examTypes = [

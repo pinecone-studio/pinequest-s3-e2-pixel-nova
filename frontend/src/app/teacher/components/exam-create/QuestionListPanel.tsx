@@ -37,7 +37,7 @@ export default function QuestionListPanel({
                   {question.type === "mcq"
                     ? "Test"
                     : question.type === "open"
-                      ? "Open"
+                      ? "Нээлттэй"
                       : "Text"}
                 </span>
                 {question.imageUrl && (

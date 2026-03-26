@@ -54,6 +54,8 @@ type ExamCreateCardProps = {
   pdfLoading: boolean;
   pdfError: string | null;
   importError: string | null;
+  importLoading: boolean;
+  importLoadingLabel: string | null;
   onPdfUpload: (file: File) => void;
   onImageUpload: (file: File) => void;
   onDocxUpload: (file: File) => void;
@@ -95,6 +97,8 @@ export default function ExamCreateCard({
   pdfLoading,
   pdfError,
   importError,
+  importLoading,
+  importLoadingLabel,
   onPdfUpload,
   onImageUpload,
   onDocxUpload,
@@ -126,7 +130,7 @@ export default function ExamCreateCard({
     <div className={cardClass}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <span className={badgeClass}>Create Exam</span>
+          <span className={badgeClass}>Шалгалт үүсгэх</span>
           <h2 className="mt-3 flex items-center gap-2 text-xl font-semibold text-slate-900">
           <Plus className="w-4 h-4" />
           Шалгалт үүсгэх
@@ -149,6 +153,8 @@ export default function ExamCreateCard({
           pdfLoading={pdfLoading}
           pdfError={pdfError}
           importError={importError}
+          importLoading={importLoading}
+          importLoadingLabel={importLoadingLabel}
           onPdfUpload={onPdfUpload}
           onImageUpload={onImageUpload}
           onDocxUpload={onDocxUpload}

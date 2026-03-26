@@ -30,7 +30,7 @@ describe("StudentHeader", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Exams" }));
+    fireEvent.click(screen.getByRole("button", { name: "Шалгалт" }));
     expect(onTabChange).toHaveBeenCalledWith("Exams");
     expect(screen.getByText("2,450 XP")).toBeInTheDocument();
   });
@@ -53,15 +53,13 @@ describe("StudentHeader", () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Open notifications" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Мэдэгдэл нээх" }));
     expect(
       screen.getByText("Mathematics Final Exam шалгалтын дүн шинэчлэгдлээ."),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Open account menu" }));
-    fireEvent.click(screen.getByRole("button", { name: "Profile" }));
+    fireEvent.click(screen.getByRole("button", { name: "Дансны цэс нээх" }));
+    fireEvent.click(screen.getByRole("button", { name: "Профайл" }));
     expect(onOpenProfile).toHaveBeenCalledTimes(1);
   });
 });

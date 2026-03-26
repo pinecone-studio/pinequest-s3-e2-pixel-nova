@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-const mockHighlights = [
+const highlights = [
   "Дэлгэцийн шалгалт",
   "AI-ийн хууль бус шалгалтын илрүүлэлт",
   "Бодит цагийн аналитик",
@@ -120,7 +120,7 @@ export default function Home() {
             <div
               className="grid gap-2 sm:grid-cols-3 animate-slide-in pt-2"
               style={{ animationDelay: "0.4s" }}>
-              {mockHighlights.map((item, idx) => (
+              {highlights.map((item, idx) => (
                 <div
                   key={item}
                   className="group rounded-xl border border-border bg-card px-3 py-2 text-center text-xs font-medium shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-300 cursor-default"
@@ -209,9 +209,9 @@ export default function Home() {
                   Бодит цагийн хамгаалалт
                 </div>
                 <ul className="space-y-1">
-                  <li>• Tab switch, copy/paste, screenshot илрүүлэлт</li>
+                  <li>• Таб солих, хуулалт/буулгалтыг илрүүлэх</li>
                   <li>• AI дүн шинжилгээ + автомат тайлан</li>
-                  <li>• Гүйцэтгэлийн live analytics</li>
+                  <li>• Гүйцэтгэлийн бодит цагийн аналитик</li>
                 </ul>
               </div>
             </div>
@@ -220,7 +220,7 @@ export default function Home() {
       </div>
 
       {/* Animation Styles */}
-      <style jsx>{`
+      <style>{`
         @keyframes fade-in {
           from {
             opacity: 0;

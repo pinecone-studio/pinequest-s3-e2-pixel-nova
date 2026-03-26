@@ -15,6 +15,23 @@ type StudentResultsTabProps = {
 export default function StudentResultsTab({
   studentHistory,
 }: StudentResultsTabProps) {
+  const total = studentHistory.length;
+  const average = total
+    ? Math.round(
+        studentHistory.reduce((sum, item) => sum + item.percentage, 0) / total,
+      )
+    : 0;
+  const best = total
+    ? Math.max(...studentHistory.map((item) => item.percentage))
+    : 0;
+  const latest = total
+    ? studentHistory.reduce((prev, next) =>
+        new Date(next.date).getTime() > new Date(prev.date).getTime()
+          ? next
+          : prev,
+      )
+    : null;
+
   return (
     <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
       <div className={cardClass}>
@@ -82,20 +99,18 @@ export default function StudentResultsTab({
             <path d="M12 16h.01" />
             <path d="M21 12a9 9 0 1 0-9 9" />
           </svg>
-          AI санал
+          Дүнгийн хураангуй
         </h2>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Ерөнхий гүйцэтгэл сайн байна. Хугацаагаа зөв хуваарилж,
-          олон алхамтай бодлогод тооцоогоо дахин нягтлаарай.
-        </p>
-        <div className="mt-4 rounded-xl border border-border bg-muted px-3 py-2 text-xs">
-          Дундаж дүн: {studentHistory.length
-            ? Math.round(
-                studentHistory.reduce((sum, item) => sum + item.percentage, 0) /
-                  studentHistory.length,
-              )
-            : 0}
-          %
+        <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs">
+            Дундаж дүн: {average}%
+          </div>
+          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs">
+            Хамгийн өндөр дүн: {best}%
+          </div>
+          <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs">
+            Сүүлийн шалгалт: {latest ? latest.title : "—"}
+          </div>
         </div>
       </div>
     </section>

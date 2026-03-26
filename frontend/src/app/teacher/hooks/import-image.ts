@@ -36,18 +36,7 @@ export const parseImageQuestions = async (
   const limited = forcedMcq.slice(0, questionLimit);
 
   if (limited.length === 0) {
-    const fallbackQuestions = Array.from({ length: questionLimit }).map(
-      (_, idx) => ({
-        id: crypto.randomUUID(),
-        text: `${file.name.replace(/\.[^.]+$/, "") || "Зургийн асуулт"} ${idx + 1}`,
-        type: "mcq" as const,
-        options: ["Сонголт A", "Сонголт B", "Сонголт C", "Сонголт D"],
-        correctAnswer: "",
-        imageUrl: idx === 0 ? dataUrl : undefined,
-        points: 1,
-      }),
-    );
-    return { dataUrl, questions: fallbackQuestions, usedFallback: true };
+    return { dataUrl, questions: [], usedFallback: false };
   }
 
   return { dataUrl, questions: limited, usedFallback: false };
