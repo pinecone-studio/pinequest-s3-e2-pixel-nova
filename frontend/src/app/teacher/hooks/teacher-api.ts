@@ -30,11 +30,12 @@ type TeacherExamDetail = TeacherExamSummary & {
   }[];
 };
 
-export const fetchTeacherExams = async (): Promise<Exam[]> => {
+export const fetchTeacherExams = async (teacherId?: string): Promise<Exam[]> => {
   const listData = await apiFetch<{ data?: TeacherExamSummary[] } | TeacherExamSummary[]>(
     "/api/exams",
     {},
     "teacher",
+    teacherId,
   );
   const summaries = unwrapApi(listData);
   const details = await Promise.all(
@@ -43,6 +44,7 @@ export const fetchTeacherExams = async (): Promise<Exam[]> => {
         `/api/exams/${exam.id}`,
         {},
         "teacher",
+        teacherId,
       );
       return unwrapApi(detailData);
     }),
@@ -89,11 +91,13 @@ export const fetchTeacherExams = async (): Promise<Exam[]> => {
 
 export const fetchTeacherSubmissions = async (
   examId: string,
+  teacherId?: string,
 ): Promise<Submission[]> => {
   const data = await apiFetch<{ data?: Submission[] } | Submission[]>(
     `/api/teacher/exams/${examId}/submissions`,
     {},
     "teacher",
+    teacherId,
   );
   return unwrapApi(data).map((item) => ({
     ...item,

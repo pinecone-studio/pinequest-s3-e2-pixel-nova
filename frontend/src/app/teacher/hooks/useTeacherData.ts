@@ -39,17 +39,19 @@ export const useTeacherData = (overrideUser?: User | null) => {
 
     setCurrentUser(user ?? null);
 
+    if (!overrideUserId) return;
+
     let cancelled = false;
 
     const loadRemote = async () => {
       try {
-        const remoteExams = await fetchTeacherExams();
+        const remoteExams = await fetchTeacherExams(overrideUserId);
         if (cancelled) return;
 
         setExams(remoteExams);
 
         const submissionsByExam = await Promise.all(
-          remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
+          remoteExams.map((exam) => fetchTeacherSubmissions(exam.id, overrideUserId)),
         );
         if (cancelled) return;
 
@@ -109,13 +111,15 @@ export const useTeacherData = (overrideUser?: User | null) => {
   ]);
 
   useEffect(() => {
+    if (!overrideUserId) return;
+    const teacherId = overrideUserId;
     const interval = setInterval(async () => {
       try {
-        const remoteExams = await fetchTeacherExams();
+        const remoteExams = await fetchTeacherExams(teacherId);
         setExams(remoteExams);
 
         const submissionsByExam = await Promise.all(
-          remoteExams.map((exam) => fetchTeacherSubmissions(exam.id)),
+          remoteExams.map((exam) => fetchTeacherSubmissions(exam.id, teacherId)),
         );
         const remoteSubmissions = submissionsByExam
           .flat()
@@ -129,7 +133,7 @@ export const useTeacherData = (overrideUser?: User | null) => {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [overrideUserId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

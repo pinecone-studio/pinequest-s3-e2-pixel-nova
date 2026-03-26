@@ -4,7 +4,8 @@ import type { User } from "@/lib/examGuard";
 export type RoleKey = "teacher" | "student";
 
 let inMemoryRole: RoleKey = "student";
-const inMemorySelectedUsers = new Map<RoleKey, string>();
+
+const LS_SELECTED_USER_KEY = (role: RoleKey) => `pq_selected_user_${role}`;
 
 export const getStoredRole = (): RoleKey => inMemoryRole;
 
@@ -21,11 +22,13 @@ export const getLinkedTeacherRole = (role: RoleKey): RoleKey =>
   role === "student" ? "teacher" : role;
 
 export const getStoredSelectedUserId = (role: RoleKey): string | null => {
-  return inMemorySelectedUsers.get(role) ?? null;
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(LS_SELECTED_USER_KEY(role));
 };
 
 export const setStoredSelectedUserId = (role: RoleKey, userId: string) => {
-  inMemorySelectedUsers.set(role, userId);
+  if (typeof window === "undefined") return;
+  localStorage.setItem(LS_SELECTED_USER_KEY(role), userId);
 };
 
 export const getTeacherRoles = (): RoleKey[] => ["teacher"];
