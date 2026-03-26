@@ -53,6 +53,7 @@ app.get("/", (c) => c.json({ status: "ok", service: "pinequest-api" }));
 // Mount routes
 app.route("/api/auth", auth);
 app.route("/api/exams", examRoutes);
+app.route("/api/exam", examRoutes);
 app.route("/api/sessions", sessionRoutes);
 app.route("/api/cheat", cheatRoutes);
 app.route("/api/student", studentRoutes);

@@ -18,6 +18,7 @@ export const useExamManagement = (params: {
   const [scheduleDate, setScheduleDate] = useState("");
   const [examTitle, setExamTitle] = useState("");
   const [createDate, setCreateDate] = useState("");
+  const [expectedStudentsCount, setExpectedStudentsCount] = useState(0);
   const [questionText, setQuestionText] = useState("");
   const [questionType, setQuestionType] = useState<"text" | "open" | "mcq">(
     "text",
@@ -52,6 +53,7 @@ export const useExamManagement = (params: {
       payload: {
         title: string;
         scheduledAt: string | null;
+        expectedStudentsCount: number;
         questions: Question[];
       },
       remote?: {
@@ -59,6 +61,7 @@ export const useExamManagement = (params: {
         roomCode?: string | null;
         scheduledAt?: string | null;
         durationMin?: number;
+        expectedStudentsCount?: number | null;
         createdAt?: string;
       } | null,
     ): Exam => ({
@@ -67,6 +70,8 @@ export const useExamManagement = (params: {
       scheduledAt: remote?.scheduledAt ?? payload.scheduledAt,
       examStartedAt: null,
       roomCode: remote?.roomCode ?? generateRoomCode(),
+      expectedStudentsCount:
+        remote?.expectedStudentsCount ?? payload.expectedStudentsCount,
       questions: payload.questions,
       duration: remote?.durationMin ?? durationMinutes,
       createdAt: remote?.createdAt ?? new Date().toISOString(),
@@ -122,6 +127,7 @@ export const useExamManagement = (params: {
     let newExam = buildLocalExam({
       title: scheduleTitle,
       scheduledAt: scheduleDate,
+      expectedStudentsCount,
       questions: [],
     });
 
@@ -135,6 +141,7 @@ export const useExamManagement = (params: {
         title: scheduleTitle,
         duration: durationMinutes,
         scheduledAt: scheduleDate,
+        expectedStudentsCount,
         questions: toSyncQuestions(questions),
       });
 
@@ -142,6 +149,7 @@ export const useExamManagement = (params: {
         {
           title: scheduleTitle,
           scheduledAt: scheduleDate,
+          expectedStudentsCount,
           questions,
         },
         syncedExam,
@@ -300,6 +308,7 @@ export const useExamManagement = (params: {
     let newExam = buildLocalExam({
       title: examTitle,
       scheduledAt: createDate || null,
+      expectedStudentsCount,
       questions,
     });
 
@@ -308,6 +317,7 @@ export const useExamManagement = (params: {
         title: newExam.title,
         duration: newExam.duration ?? 45,
         scheduledAt: createDate || null,
+        expectedStudentsCount,
         questions: toSyncQuestions(newExam.questions),
       });
 
@@ -320,6 +330,7 @@ export const useExamManagement = (params: {
         {
           title: examTitle,
           scheduledAt: createDate || null,
+          expectedStudentsCount,
           questions,
         },
         syncedExam,
@@ -353,6 +364,7 @@ export const useExamManagement = (params: {
     setQuestions([]);
     setDurationMinutes(45);
     setQuestionPoints(1);
+    setExpectedStudentsCount(0);
     setRoomCode(newExam.roomCode);
   };
 
@@ -374,6 +386,8 @@ export const useExamManagement = (params: {
     setExamTitle,
     createDate,
     setCreateDate,
+    expectedStudentsCount,
+    setExpectedStudentsCount,
     questionText,
     setQuestionText,
     questionType,

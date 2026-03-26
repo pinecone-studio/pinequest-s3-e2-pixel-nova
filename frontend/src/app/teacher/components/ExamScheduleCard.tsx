@@ -110,7 +110,7 @@ export default function ExamScheduleCard({
   ]);
 
   return (
-    <div className={`${cardClass} h-full font-sans`}>
+    <div className={`${cardClass} h-full font-sans overflow-auto`}>
       <div className="grid gap-6">
         {onClose && (
           <div className="flex items-center justify-between">

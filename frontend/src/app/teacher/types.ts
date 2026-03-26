@@ -14,6 +14,7 @@ export type Exam = {
   scheduledAt: string | null;
   examStartedAt?: string | null;
   roomCode: string;
+  expectedStudentsCount?: number;
   questions: Question[];
   duration?: number;
   createdAt: string;
@@ -71,6 +72,7 @@ export type ExamStatsSummary = {
   totalPoints: number;
   mostMissed: QuestionInsight[];
   mostCorrect: QuestionInsight[];
+  questionStats: QuestionInsight[];
   scoreDistribution: { name: string; score: number }[];
   correctTotal: number;
   incorrectTotal: number;

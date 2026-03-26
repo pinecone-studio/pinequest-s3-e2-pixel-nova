@@ -4,7 +4,6 @@ import type { User } from "@/lib/examGuard";
 
 type Params = {
   view: "dashboard" | "exam" | "result";
-  sessionKey: string | null;
   currentUser: User | null;
   activeExam: Exam | null;
   setTimeLeft: (value: number | ((prev: number) => number)) => void;
@@ -13,14 +12,13 @@ type Params = {
 
 export const useExamTimer = ({
   view,
-  sessionKey,
   currentUser,
   activeExam,
   setTimeLeft,
   submitExam,
 }: Params) => {
   useEffect(() => {
-    if (view !== "exam" || !sessionKey || !currentUser || !activeExam) return;
+    if (view !== "exam" || !currentUser || !activeExam) return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -32,5 +30,5 @@ export const useExamTimer = ({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [view, sessionKey, currentUser, activeExam, submitExam, setTimeLeft]);
+  }, [view, currentUser, activeExam, submitExam, setTimeLeft]);
 };

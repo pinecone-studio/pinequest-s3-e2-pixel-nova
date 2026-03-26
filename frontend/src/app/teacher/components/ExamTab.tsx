@@ -31,6 +31,8 @@ type ExamTabProps = {
   setExamTitle: (value: string) => void;
   createDate: string;
   setCreateDate: (value: string) => void;
+  expectedStudentsCount: number;
+  setExpectedStudentsCount: (value: number) => void;
   questionText: string;
   setQuestionText: (value: string) => void;
   questionType: "text" | "open" | "mcq";
@@ -110,6 +112,8 @@ export default function ExamTab(props: ExamTabProps) {
           setExamTitle={props.setExamTitle}
           createDate={props.createDate}
           setCreateDate={props.setCreateDate}
+          expectedStudentsCount={props.expectedStudentsCount}
+          setExpectedStudentsCount={props.setExpectedStudentsCount}
           durationMinutes={props.durationMinutes}
           setDurationMinutes={props.setDurationMinutes}
           questionText={props.questionText}

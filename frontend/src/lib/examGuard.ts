@@ -91,6 +91,8 @@ export const STORAGE_KEYS = {
   sessionRole: "sessionRole",
 };
 
+let inMemorySession: User | null = null;
+
 export const LEVELS = [
   { level: 1, name: "Анхдагч", minXP: 0, icon: "🌱" },
   { level: 2, name: "Суралцагч", minXP: 200, icon: "📖" },
@@ -125,18 +127,14 @@ export const generateRoomCode = () =>
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 6);
 
-const ROLE_KEY = "educoreRole";
+const memoryStore = new Map<string, string>();
 
-const withRolePrefix = (key: string, roleOverride?: string) => {
-  if (typeof window === "undefined") return key;
-  const role = roleOverride ?? localStorage.getItem(ROLE_KEY);
-  return role ? `${role}:${key}` : key;
-};
+const withRolePrefix = (key: string, roleOverride?: string) =>
+  roleOverride ? `${roleOverride}:${key}` : key;
 
 export const getJSON = <T,>(key: string, fallback: T): T => {
-  if (typeof window === "undefined") return fallback;
   try {
-    const raw = localStorage.getItem(withRolePrefix(key));
+    const raw = memoryStore.get(withRolePrefix(key));
     if (!raw) return fallback;
     return JSON.parse(raw) as T;
   } catch {
@@ -145,12 +143,11 @@ export const getJSON = <T,>(key: string, fallback: T): T => {
 };
 
 export const setJSON = (key: string, value: unknown): boolean => {
-  if (typeof window === "undefined") return false;
   try {
-    localStorage.setItem(withRolePrefix(key), JSON.stringify(value));
+    memoryStore.set(withRolePrefix(key), JSON.stringify(value));
     return true;
   } catch (err) {
-    console.error("localStorage quota error:", err);
+    console.error("memoryStore quota error:", err);
     return false;
   }
 };
@@ -160,9 +157,8 @@ export const getJSONForRole = <T,>(
   fallback: T,
   role: string,
 ): T => {
-  if (typeof window === "undefined") return fallback;
   try {
-    const raw = localStorage.getItem(withRolePrefix(key, role));
+    const raw = memoryStore.get(withRolePrefix(key, role));
     if (!raw) return fallback;
     return JSON.parse(raw) as T;
   } catch {
@@ -175,12 +171,11 @@ export const setJSONForRole = (
   value: unknown,
   role: string,
 ): boolean => {
-  if (typeof window === "undefined") return false;
   try {
-    localStorage.setItem(withRolePrefix(key, role), JSON.stringify(value));
+    memoryStore.set(withRolePrefix(key, role), JSON.stringify(value));
     return true;
   } catch (err) {
-    console.error("localStorage quota error:", err);
+    console.error("memoryStore quota error:", err);
     return false;
   }
 };
@@ -226,22 +221,15 @@ export const ensureDemoAccounts = () => {
 };
 
 export const getSessionUser = () => {
-  const userId = getJSON<string | null>(STORAGE_KEYS.sessionUserId, null);
-  const role = getJSON<Role | null>(STORAGE_KEYS.sessionRole, null);
-  if (!userId || !role) return null;
-  const users = getJSON<User[]>(STORAGE_KEYS.users, []);
-  return users.find((u) => u.id === userId && u.role === role) || null;
+  return inMemorySession;
 };
 
 export const setSessionUser = (user: User) => {
-  setJSON(STORAGE_KEYS.sessionUserId, user.id);
-  setJSON(STORAGE_KEYS.sessionRole, user.role);
+  inMemorySession = user;
 };
 
 export const clearSession = () => {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(STORAGE_KEYS.sessionUserId);
-  localStorage.removeItem(STORAGE_KEYS.sessionRole);
+  inMemorySession = null;
 };
 
 export const sleep = (ms: number) =>

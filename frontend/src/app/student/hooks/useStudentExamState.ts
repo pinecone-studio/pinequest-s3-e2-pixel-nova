@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { setJSON } from "@/lib/examGuard";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch, unwrapApi } from "@/lib/api-client";
 import type {
   Exam,
-  ExamSession,
   Question,
   StudentTab,
   Submission,
@@ -53,10 +51,6 @@ export const useStudentExamState = (params: {
     }
     document.body.style.filter = "none";
   }, [view]);
-  const sessionKey = useMemo(() => {
-    if (!currentUser || !sessionId) return null;
-    return `examSession_${sessionId}_${currentUser.id}`;
-  }, [sessionId, currentUser]);
   const handleLookup = async () => {
     const code = roomCodeInput.trim().toUpperCase();
     if (!code) {
@@ -154,24 +148,36 @@ export const useStudentExamState = (params: {
       });
       setJoinError(null);
     } catch (err) {
-      let message = "Өрөөний код олдсонгүй эсвэл шалгалт идэвхгүй байна.";
+      let message: unknown =
+        "Өрөөний код олдсонгүй эсвэл шалгалт идэвхгүй байна.";
       if (err instanceof Error && err.message) {
         try {
-          const parsed = JSON.parse(err.message) as { message?: string; error?: string };
-          message = parsed.message || parsed.error || message;
+          const parsed = JSON.parse(err.message) as {
+            message?: string;
+            error?: string | { message?: string; code?: string };
+          };
+          if (typeof parsed.message === "string") {
+            message = parsed.message;
+          } else if (typeof parsed.error === "string") {
+            message = parsed.error;
+          } else if (parsed.error && typeof parsed.error === "object") {
+            message = parsed.error.message ?? message;
+          }
         } catch {
           message = err.message;
         }
       }
+      const messageText = String(message);
       if (
-        typeof message === "string" &&
-        (message.toLowerCase().includes("load failed") ||
-          message.toLowerCase().includes("failed to fetch"))
+        messageText.toLowerCase().includes("load failed") ||
+        messageText.toLowerCase().includes("failed to fetch")
       ) {
-        message =
-          "Сервертэй холбогдож чадсангүй. Backend ажиллаж байгаа эсэхийг шалгана уу.";
+        setJoinError(
+          "Сервертэй холбогдож чадсангүй. Backend ажиллаж байгаа эсэхийг шалгана уу.",
+        );
+      } else {
+        setJoinError(messageText);
       }
-      setJoinError(message);
       setSelectedExam(null);
     } finally {
       setJoinLoading(false);
@@ -266,17 +272,6 @@ export const useStudentExamState = (params: {
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().catch(() => null);
         }
-        if (sessionKey) {
-          const session: ExamSession = {
-            examId: mappedExam.id,
-            studentId: currentUser.id,
-            answers: {},
-            currentQuestionIndex: 0,
-            timeLeft: totalSeconds,
-            startedAt: new Date().toISOString(),
-          };
-          setJSON(sessionKey, session);
-        }
         setView("exam");
       } catch {
         setJoinError("Шалгалт эхлүүлэхэд алдаа гарлаа.");
@@ -336,7 +331,6 @@ export const useStudentExamState = (params: {
         correct: Boolean(item.isCorrect),
       }));
 
-      if (sessionKey) localStorage.removeItem(sessionKey);
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => null);
       }
@@ -364,7 +358,7 @@ export const useStudentExamState = (params: {
       setActiveTab("Progress");
       setView("result");
     },
-    [activeExam, answers, currentUser, sessionKey, violations, sessionId],
+    [activeExam, answers, currentUser, violations, sessionId],
   );
 
   const terminateExam = useCallback(
@@ -392,19 +386,6 @@ export const useStudentExamState = (params: {
     updateAnswer(value);
   };
 
-  const persistSessionNow = () => {
-    if (!sessionKey || !activeExam || !currentUser) return;
-    const session: ExamSession = {
-      examId: activeExam.id,
-      studentId: currentUser.id,
-      answers,
-      currentQuestionIndex,
-      timeLeft,
-      startedAt: new Date().toISOString(),
-    };
-    setJSON(sessionKey, session);
-  };
-
   const goNext = () => {
     if (!activeExam) return;
     const next = Math.min(
@@ -412,13 +393,11 @@ export const useStudentExamState = (params: {
       activeExam.questions.length - 1,
     );
     setCurrentQuestionIndex(next);
-    persistSessionNow();
   };
 
   const goPrev = () => {
     const prev = Math.max(currentQuestionIndex - 1, 0);
     setCurrentQuestionIndex(prev);
-    persistSessionNow();
   };
 
   return {
@@ -435,7 +414,6 @@ export const useStudentExamState = (params: {
     selectedExam,
     setSelectedExam,
     activeExam,
-    sessionKey,
     answers,
     setAnswers,
     currentQuestionIndex,

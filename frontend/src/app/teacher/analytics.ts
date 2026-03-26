@@ -281,6 +281,7 @@ export const buildExamStats = (params: {
         return left.missCount - right.missCount;
       })
       .slice(0, 5),
+    questionStats,
     scoreDistribution,
     correctTotal: activeSubmissions.reduce(
       (sum, submission) => sum + submission.score,

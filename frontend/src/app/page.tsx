@@ -14,14 +14,6 @@ export default function Home() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const storedTheme =
-      typeof window !== "undefined"
-        ? (localStorage.getItem("theme") as "dark" | "light" | null)
-        : null;
-    if (storedTheme) setTheme(storedTheme);
-  }, []);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
     const root = document.documentElement;
     if (theme === "dark") root.classList.add("dark");
@@ -31,9 +23,6 @@ export default function Home() {
   const toggleTheme = () => {
     setTheme((prev) => {
       const next = prev === "dark" ? "light" : "dark";
-      if (typeof window !== "undefined") {
-        localStorage.setItem("theme", next);
-      }
       return next;
     });
   };

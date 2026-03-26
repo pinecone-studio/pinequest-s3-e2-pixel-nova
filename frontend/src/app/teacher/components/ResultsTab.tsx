@@ -4,6 +4,7 @@ import ResultsSubmissionsList from "./ResultsSubmissionsList";
 import ResultsDetailPanel from "./ResultsDetailPanel";
 import TeacherCardSkeleton from "./TeacherCardSkeleton";
 import type { Exam, ExamStatsSummary, Submission } from "../types";
+import type { ExamAttendanceStats } from "../hooks/useExamAttendanceStats";
 import type { StudentProfile } from "@/lib/backend-auth";
 
 type ResultsTabProps = {
@@ -17,6 +18,8 @@ type ResultsTabProps = {
   selectedSubmissionId: string | null;
   selectedSubmission: Submission | null;
   selectedExam: Exam | null;
+  attendanceStats: ExamAttendanceStats | null;
+  attendanceLoading: boolean;
   studentProfile: StudentProfile | null;
   profileLoading: boolean;
 };
@@ -32,6 +35,8 @@ export default function ResultsTab({
   selectedSubmissionId,
   selectedSubmission,
   selectedExam,
+  attendanceStats,
+  attendanceLoading,
   studentProfile,
   profileLoading,
 }: ResultsTabProps) {
@@ -69,6 +74,9 @@ export default function ResultsTab({
         <ResultsDetailPanel
           selectedSubmission={selectedSubmission}
           selectedExam={selectedExam}
+          examStats={examStats}
+          attendanceStats={attendanceStats}
+          attendanceLoading={attendanceLoading}
           studentProfile={studentProfile}
           profileLoading={profileLoading}
         />

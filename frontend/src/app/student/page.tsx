@@ -26,10 +26,8 @@ import StudentResultView from "./components/StudentResultView";
 import { useStudentData } from "./hooks/useStudentData";
 import { useStudentProgress } from "./hooks/useStudentProgress";
 import { useStudentExamState } from "./hooks/useStudentExamState";
-import { useExamSessionRestore } from "./hooks/useExamSessionRestore";
 import { useExamCheatDetection } from "./hooks/useExamCheatDetection";
 import { useExamTimer } from "./hooks/useExamTimer";
-import { useExamAutosave } from "./hooks/useExamAutosave";
 
 const getInitials = (value: string) =>
   value
@@ -58,14 +56,6 @@ export default function StudentPage() {
   });
   const progress = useStudentProgress(data.currentUser);
 
-  useExamSessionRestore({
-    view: exam.view,
-    sessionKey: exam.sessionKey,
-    setAnswers: exam.setAnswers,
-    setCurrentQuestionIndex: exam.setCurrentQuestionIndex,
-    setTimeLeft: exam.setTimeLeft,
-  });
-
   useExamCheatDetection({
     view: exam.view,
     violations: exam.violations,
@@ -76,21 +66,10 @@ export default function StudentPage() {
 
   useExamTimer({
     view: exam.view,
-    sessionKey: exam.sessionKey,
     currentUser: data.currentUser,
     activeExam: exam.activeExam,
     setTimeLeft: exam.setTimeLeft,
     submitExam: exam.submitExam,
-  });
-
-  useExamAutosave({
-    view: exam.view,
-    sessionKey: exam.sessionKey,
-    currentUser: data.currentUser,
-    activeExam: exam.activeExam,
-    answers: exam.answers,
-    currentQuestionIndex: exam.currentQuestionIndex,
-    timeLeft: exam.timeLeft,
   });
 
   useEffect(() => {
