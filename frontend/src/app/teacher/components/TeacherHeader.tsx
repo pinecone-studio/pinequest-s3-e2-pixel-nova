@@ -1,17 +1,7 @@
 import { useState, type ReactNode } from "react";
-<<<<<<< Updated upstream
-import { Bell, MoonStar, SunMedium } from "lucide-react";
-import {
-  badgeClass,
-  buttonSecondary,
-  sectionDescriptionClass,
-  sectionTitleClass,
-} from "../styles";
-=======
 import { Bell, GraduationCap, MoonStar, SunMedium } from "lucide-react";
 
 export type TeacherNavTab = string;
->>>>>>> Stashed changes
 
 type TeacherHeaderProps = {
   theme: "light" | "dark";
@@ -38,28 +28,14 @@ export default function TeacherHeader({
   const unreadCount = notifications.filter((item) => !item.read).length;
 
   return (
-<<<<<<< Updated upstream
-    <header className="flex flex-wrap items-start justify-between gap-4 rounded-[30px] border border-[#dce5ef] bg-white/90 px-5 py-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.24)] backdrop-blur">
-      <div className="space-y-2">
-        <span className={badgeClass}>Багшийн орчин</span>
-        <div>
-          <h1 className={sectionTitleClass}>Багшийн самбар</h1>
-          <p className={sectionDescriptionClass}>
-            Шалгалт үүсгэх, товлох, сурагчийн гүйцэтгэл болон дүнг нэг
-            загвараар удирдана.
-          </p>
-=======
     <header className="flex items-center justify-between gap-4 border-b border-[#dce5ef] bg-white/95 px-6 py-0 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.12)] backdrop-blur">
-      {/* Logo */}
       <div className="flex shrink-0 items-center gap-2 py-3">
         <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#2563eb] text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)]">
           <GraduationCap className="h-4 w-4" />
->>>>>>> Stashed changes
         </div>
         <span className="text-sm font-bold text-slate-900">PineQuest</span>
       </div>
 
-      {/* Tab navigation */}
       <nav className="flex items-center gap-1 overflow-x-auto">
         {tabs.map((tab) => {
           const isActive = activeTab === tab;
@@ -83,7 +59,6 @@ export default function TeacherHeader({
         })}
       </nav>
 
-      {/* Right controls */}
       <div className="flex shrink-0 items-center gap-2 py-3">
         <button
           className="grid h-9 w-9 place-items-center rounded-xl border border-[#dce5ef] bg-white text-slate-500 transition hover:bg-[#f8fafc]"
