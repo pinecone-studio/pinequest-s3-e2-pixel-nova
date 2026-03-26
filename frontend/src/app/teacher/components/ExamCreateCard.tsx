@@ -132,8 +132,8 @@ export default function ExamCreateCard({
         <div>
           <span className={badgeClass}>Шалгалт үүсгэх</span>
           <h2 className="mt-3 flex items-center gap-2 text-xl font-semibold text-slate-900">
-          <Plus className="w-4 h-4" />
-          Шалгалт үүсгэх
+            <Plus className="w-4 h-4" />
+            Шалгалт үүсгэх
           </h2>
           <p className={`mt-2 ${sectionDescriptionClass}`}>
             Гараар эсвэл файл импортолж асуултаа оруулаад нэг ижил бүтэцтэйгээр шалгалт хадгална.
