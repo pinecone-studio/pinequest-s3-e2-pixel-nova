@@ -15,10 +15,28 @@ const roles: RoleKey[] = ["teacher", "student"];
 
 export default function RoleNavbar({
   activeRole,
+  activeUserId,
+  users,
+  loading,
   onChangeRole,
+  onChangeUser,
 }: RoleNavbarProps) {
   return (
     <div className="flex items-center gap-2">
+      {users.length > 0 && (
+        <select
+          className="rounded-xl border border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground focus:outline-none"
+          value={activeUserId ?? ""}
+          disabled={loading}
+          onChange={(e) => onChangeUser(e.target.value)}
+        >
+          {users.map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.fullName}
+            </option>
+          ))}
+        </select>
+      )}
       {roles.map((role) => (
         <button
           key={role}

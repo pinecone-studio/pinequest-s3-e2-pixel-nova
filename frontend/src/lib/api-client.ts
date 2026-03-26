@@ -60,12 +60,13 @@ export const apiFetch = async <T>(
   path: string,
   options: RequestInit = {},
   roleOverride?: RoleKey,
+  userIdOverride?: string,
 ): Promise<T> => {
   const { userId, userRole, userName } = getApiUserContext(roleOverride);
   const headers = new Headers(options.headers);
 
   headers.set("Content-Type", "application/json");
-  headers.set("x-user-id", userId);
+  headers.set("x-user-id", userIdOverride ?? userId);
   headers.set("x-user-role", userRole);
   headers.set("x-user-name-encoded", encodeHeaderValue(userName));
 
