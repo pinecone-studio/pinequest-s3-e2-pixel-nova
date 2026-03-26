@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import RoleNavbar from "@/components/RoleNavbar";
 import { setSessionUser } from "@/lib/examGuard";
 import type { AuthUser } from "@/lib/backend-auth";
 import { getAuthUsers } from "@/lib/backend-auth";
@@ -13,16 +12,10 @@ import {
   setStoredSelectedUserId,
   type RoleKey,
 } from "@/lib/role-session";
-import StudentHeader from "./components/StudentHeader";
-import StudentDashboardTab from "./components/StudentDashboardTab";
-import StudentExamsTab from "./components/StudentExamsTab";
-import StudentProgressTab from "./components/StudentProgressTab";
-import StudentLeaderboardTab from "./components/StudentLeaderboardTab";
-import StudentSettingsTab from "./components/StudentSettingsTab";
-import StudentPreferencesTab from "./components/StudentPreferencesTab";
-import StudentHelpTab from "./components/StudentHelpTab";
+import StudentDashboardView from "./components/StudentDashboardView";
 import StudentExamView from "./components/StudentExamView";
 import StudentResultView from "./components/StudentResultView";
+import StudentLoadingScreen from "./components/StudentLoadingScreen";
 import { useStudentData } from "./hooks/useStudentData";
 import { useStudentProgress } from "./hooks/useStudentProgress";
 import { useStudentExamState } from "./hooks/useStudentExamState";
@@ -194,131 +187,35 @@ export default function StudentPage() {
 
   if (!data.currentUser) {
     return (
-      <div className="min-h-screen bg-background text-foreground grid place-items-center px-6 text-sm text-muted-foreground">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
-          <div className="text-base font-semibold text-foreground">
-            Өгөгдөл ачаалж байна...
-          </div>
-          <div className="mt-2 text-xs text-muted-foreground">
-            Хэрэв удаан үргэлжилбэл backend ажиллаж байгаа эсэхийг шалгана уу.
-          </div>
-          {!usersLoading && (
-            <div className="mt-4 text-xs text-muted-foreground">
-              Хэрэглэгчийн мэдээлэл авч чадсангүй.
-            </div>
-          )}
-          <button
-            className="mt-4 rounded-xl border border-border bg-muted px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/70"
-            onClick={() => window.location.reload()}
-          >
-            Дахин ачаалах
-          </button>
-        </div>
-      </div>
+      <StudentLoadingScreen
+        usersLoading={usersLoading}
+        onReload={() => window.location.reload()}
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-[#f6f8fc] text-foreground">
       {exam.view === "dashboard" && (
-        <main
-          key={`student-${exam.activeTab}`}
-          className="px-4 py-6 sm:px-6 lg:px-8 page-transition"
-        >
-          <div className="mx-auto w-full max-w-[1280px] space-y-5">
-            <StudentHeader
-              activeTab={exam.activeTab}
-              currentUserName={currentUserName}
-              currentUserInitials={getInitials(currentUserName)}
-              notifications={data.notifications}
-              xp={currentXp}
-              onTabChange={exam.setActiveTab}
-              onOpenProfile={() => exam.setActiveTab("Profile")}
-              onOpenSettings={() => exam.setActiveTab("Settings")}
-              onOpenHelp={() => exam.setActiveTab("Help")}
-              onToggleTheme={() =>
-                data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
-              }
-              roleControl={
-                <RoleNavbar
-                  activeRole={role}
-                  activeUserId={selectedUser?.id ?? null}
-                  users={users}
-                  loading={usersLoading}
-                  onChangeRole={handleRoleChange}
-                  onChangeUser={handleUserChange}
-                />
-              }
-            />
-
-            {exam.activeTab === "Home" && (
-              <StudentDashboardTab
-                loading={data.loading}
-                currentUserName={currentUserName}
-                selectedExam={exam.selectedExam}
-                levelInfo={progress.levelInfo}
-                studentProgress={progress.studentProgress}
-                nextLevel={progress.nextLevel}
-                currentRank={currentRank}
-                studentCount={leaderboardEntries.length}
-                studentHistory={studentHistory}
-                onOpenExams={() => exam.setActiveTab("Exams")}
-                onOpenProgress={() => exam.setActiveTab("Progress")}
-              />
-            )}
-
-            {exam.activeTab === "Exams" && (
-              <StudentExamsTab
-                loading={data.loading}
-                roomCodeInput={exam.roomCodeInput}
-                setRoomCodeInput={exam.setRoomCodeInput}
-                joinLoading={exam.joinLoading}
-                joinError={exam.joinError}
-                onLookup={exam.handleLookup}
-                selectedExam={exam.selectedExam}
-                onStartExam={exam.startExam}
-                onClearSelection={() => {
-                  exam.setSelectedExam(null);
-                  exam.setJoinError(null);
-                }}
-                teacherName={
-                  typeof teacherUsers[0]?.fullName === "string"
-                    ? (teacherUsers[0]?.fullName ?? null)
-                    : null
-                }
-                studentHistory={studentHistory}
-              />
-            )}
-
-            {exam.activeTab === "Progress" && (
-              <StudentProgressTab
-                levelInfo={progress.levelInfo}
-                studentProgress={progress.studentProgress}
-                nextLevel={progress.nextLevel}
-                progressSegments={progress.progressSegments}
-                studentHistory={studentHistory}
-              />
-            )}
-
-            {exam.activeTab === "Leaderboard" && (
-              <StudentLeaderboardTab
-                currentUserId={currentUserId}
-                entries={leaderboardEntries}
-              />
-            )}
-
-            {exam.activeTab === "Profile" && (
-              <StudentSettingsTab
-                userId={data.currentUser.id}
-                username={data.currentUser.username}
-              />
-            )}
-
-            {exam.activeTab === "Settings" && <StudentPreferencesTab />}
-
-            {exam.activeTab === "Help" && <StudentHelpTab />}
-          </div>
-        </main>
+        <StudentDashboardView
+          role={role}
+          users={users}
+          usersLoading={usersLoading}
+          selectedUser={selectedUser}
+          teacherUsers={teacherUsers}
+          currentUserName={currentUserName}
+          currentUserId={currentUserId}
+          currentRank={currentRank}
+          leaderboardEntries={leaderboardEntries}
+          studentHistory={studentHistory}
+          currentXp={currentXp}
+          data={data}
+          exam={exam}
+          progress={progress}
+          onRoleChange={handleRoleChange}
+          onUserChange={handleUserChange}
+          getInitials={getInitials}
+        />
       )}
 
       {exam.view === "exam" && (
