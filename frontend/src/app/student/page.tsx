@@ -3,14 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
-import {
-  STORAGE_KEYS,
-  ensureDemoAccounts,
-  getJSON,
-  setJSON,
-  setSessionUser,
-  type User,
-} from "@/lib/examGuard";
+import { setSessionUser } from "@/lib/examGuard";
 import type { AuthUser } from "@/lib/backend-auth";
 import { getAuthUsers } from "@/lib/backend-auth";
 import {
@@ -38,19 +31,6 @@ import { useExamCheatDetection } from "./hooks/useExamCheatDetection";
 import { useExamTimer } from "./hooks/useExamTimer";
 import { useExamAutosave } from "./hooks/useExamAutosave";
 
-const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
-  ensureDemoAccounts();
-  return getJSON<User[]>(STORAGE_KEYS.users, [])
-    .filter((user) => user.role === role)
-    .map((user) => ({
-      id: user.id,
-      fullName: user.username,
-      role: user.role,
-      email: null,
-      avatarUrl: null,
-    }));
-};
-
 const getInitials = (value: string) =>
   value
     .trim()
@@ -72,9 +52,7 @@ export default function StudentPage() {
     [selectedUser],
   );
 
-  const data = useStudentData(
-    sessionUser,
-  );
+  const data = useStudentData(sessionUser);
   const exam = useStudentExamState({
     currentUser: data.currentUser,
   });
@@ -143,7 +121,7 @@ export default function StudentPage() {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const authUsers = await getAuthUsers().catch(() => getLocalAuthUsers(role));
+        const authUsers = await getAuthUsers();
         if (cancelled) return;
 
         setTeacherUsers(authUsers.filter((user) => user.role === "teacher"));
@@ -156,29 +134,15 @@ export default function StudentPage() {
 
         setUsers(nextUsers);
         setSelectedUser(nextUser);
-        setJSON(
-          STORAGE_KEYS.users,
-          nextUsers.map((user) => buildSessionUser(user)),
-        );
-
         if (nextUser) {
           setStoredSelectedUserId(role, nextUser.id);
           setSessionUser(buildSessionUser(nextUser));
         }
       } catch {
         if (cancelled) return;
-        const fallbackTeachers = getLocalAuthUsers("teacher");
-        const fallbackUsers = getLocalAuthUsers(role);
-        const nextUser = fallbackUsers[0] ?? null;
-
-        setTeacherUsers(fallbackTeachers);
-        setUsers(fallbackUsers);
-        setSelectedUser(nextUser);
-
-        if (nextUser) {
-          setStoredSelectedUserId(role, nextUser.id);
-          setSessionUser(buildSessionUser(nextUser));
-        }
+        setTeacherUsers([]);
+        setUsers([]);
+        setSelectedUser(null);
       } finally {
         if (!cancelled) setUsersLoading(false);
       }
@@ -239,20 +203,50 @@ export default function StudentPage() {
     [users],
   );
 
-  const currentUserName = selectedUser?.fullName ?? data.currentUser?.username ?? "";
+  const currentUserNameRaw =
+    selectedUser?.fullName ?? data.currentUser?.username ?? "";
+  const currentUserName =
+    typeof currentUserNameRaw === "string" ? currentUserNameRaw : "";
   const currentUserId = selectedUser?.id ?? data.currentUser?.id ?? "";
   const currentRank =
-    leaderboardEntries.find((entry) => entry.id === currentUserId)?.rank ?? null;
-  const currentXp =
-    progress.studentProgress.xp || selectedUser?.xp || 0;
+    leaderboardEntries.find((entry) => entry.id === currentUserId)?.rank ??
+    null;
+  const currentXp = progress.studentProgress.xp || selectedUser?.xp || 0;
 
-  if (!data.currentUser) return null;
+  if (!data.currentUser) {
+    return (
+      <div className="min-h-screen bg-background text-foreground grid place-items-center px-6 text-sm text-muted-foreground">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <div className="text-base font-semibold text-foreground">
+            Өгөгдөл ачаалж байна...
+          </div>
+          <div className="mt-2 text-xs text-muted-foreground">
+            Хэрэв удаан үргэлжилбэл backend ажиллаж байгаа эсэхийг шалгана уу.
+          </div>
+          {!usersLoading && (
+            <div className="mt-4 text-xs text-muted-foreground">
+              Хэрэглэгчийн мэдээлэл авч чадсангүй.
+            </div>
+          )}
+          <button
+            className="mt-4 rounded-xl border border-border bg-muted px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/70"
+            onClick={() => window.location.reload()}
+          >
+            Дахин ачаалах
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f6f8fc] text-foreground">
       {exam.view === "dashboard" && (
-        <main className="px-4 py-6 sm:px-6 lg:px-8">
-          <div className="w-full space-y-5">
+        <main
+          key={`student-${exam.activeTab}`}
+          className="px-4 py-6 sm:px-6 lg:px-8 page-transition"
+        >
+          <div className="mx-auto w-full max-w-[1280px] space-y-5">
             <StudentHeader
               activeTab={exam.activeTab}
               currentUserName={currentUserName}
@@ -299,6 +293,7 @@ export default function StudentPage() {
                 loading={data.loading}
                 roomCodeInput={exam.roomCodeInput}
                 setRoomCodeInput={exam.setRoomCodeInput}
+                joinLoading={exam.joinLoading}
                 joinError={exam.joinError}
                 onLookup={exam.handleLookup}
                 selectedExam={exam.selectedExam}
@@ -307,7 +302,11 @@ export default function StudentPage() {
                   exam.setSelectedExam(null);
                   exam.setJoinError(null);
                 }}
-                teacherName={teacherUsers[0]?.fullName ?? null}
+                teacherName={
+                  typeof teacherUsers[0]?.fullName === "string"
+                    ? (teacherUsers[0]?.fullName ?? null)
+                    : null
+                }
                 studentHistory={studentHistory}
               />
             )}
@@ -344,32 +343,36 @@ export default function StudentPage() {
       )}
 
       {exam.view === "exam" && (
-        <StudentExamView
-          activeExam={exam.activeExam}
-          warning={exam.warning}
-          timeLeft={exam.timeLeft}
-          currentQuestionIndex={exam.currentQuestionIndex}
-          setCurrentQuestionIndex={exam.setCurrentQuestionIndex}
-          violations={exam.violations}
-          answers={exam.answers}
-          onUpdateAnswer={exam.updateAnswer}
-          onSelectMcq={exam.selectMcqAnswer}
-          onPrev={exam.goPrev}
-          onNext={exam.goNext}
-          onSubmit={() => exam.submitExam(false)}
-          onExit={() => exam.setView("dashboard")}
-        />
+        <div className="page-transition" key="student-exam">
+          <StudentExamView
+            activeExam={exam.activeExam}
+            warning={exam.warning}
+            timeLeft={exam.timeLeft}
+            currentQuestionIndex={exam.currentQuestionIndex}
+            setCurrentQuestionIndex={exam.setCurrentQuestionIndex}
+            violations={exam.violations}
+            answers={exam.answers}
+            onUpdateAnswer={exam.updateAnswer}
+            onSelectMcq={exam.selectMcqAnswer}
+            onPrev={exam.goPrev}
+            onNext={exam.goNext}
+            onSubmit={() => exam.submitExam(false)}
+            onExit={() => exam.setView("dashboard")}
+          />
+        </div>
       )}
 
       {exam.view === "result" && (
-        <StudentResultView
-          lastSubmission={exam.lastSubmission}
-          answerReport={exam.answerReport}
-          onBack={() => {
-            exam.setView("dashboard");
-            router.push(`/${role}`);
-          }}
-        />
+        <div className="page-transition" key="student-result">
+          <StudentResultView
+            lastSubmission={exam.lastSubmission}
+            answerReport={exam.answerReport}
+            onBack={() => {
+              exam.setView("dashboard");
+              router.push(`/${role}`);
+            }}
+          />
+        </div>
       )}
     </div>
   );
