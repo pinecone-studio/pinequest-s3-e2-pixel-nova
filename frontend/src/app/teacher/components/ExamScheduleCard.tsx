@@ -81,12 +81,27 @@ export default function ExamScheduleCard({
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedTime, setSelectedTime] = useState("09:00");
   const calendarRef = useRef<HTMLDivElement>(null);
+  const today = useMemo(() => new Date(), []);
+  const minDate = useMemo(() => {
+    const next = new Date();
+    next.setDate(next.getDate() + 7);
+    return next;
+  }, []);
+  const maxDate = useMemo(() => {
+    const next = new Date();
+    next.setMonth(next.getMonth() + 1);
+    return next;
+  }, []);
 
   const selectedDate = scheduleDate ? new Date(scheduleDate) : undefined;
   const selectableExams = useMemo(
     () =>
       exams
-        .filter((exam) => exam.questions.length > 0)
+        .filter((exam) => {
+          if (exam.questions.length === 0) return false;
+          const status = exam.status ?? "draft";
+          return status === "draft" || status === "scheduled";
+        })
         .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
     [exams],
   );
@@ -95,6 +110,7 @@ export default function ExamScheduleCard({
 
   const handleDaySelect = (day: Date | undefined) => {
     if (!day) return;
+    if (day < minDate || day > maxDate) return;
     const [hours, mins] = selectedTime.split(":").map(Number);
     const next = new Date(day);
     next.setHours(hours, mins);
@@ -115,13 +131,14 @@ export default function ExamScheduleCard({
     }
   };
 
-  const isValidDate = selectedDate instanceof Date && !isNaN(selectedDate.getTime());
+  const isValidDate =
+    selectedDate instanceof Date && !isNaN(selectedDate.getTime());
   const displayDate = isValidDate
     ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")} ${selectedTime}`
     : "";
 
   return (
-    <div className={`${cardClass} h-full overflow-auto font-sans`}>
+    <div className={`${cardClass} overflow-auto font-sans w-125 h-211 `}>
       <div className="grid gap-6">
         {onClose && (
           <div className="flex items-center justify-between">
@@ -185,7 +202,9 @@ export default function ExamScheduleCard({
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="grid gap-3">
-                <span className="text-[16px] font-semibold text-black">Анги</span>
+                <span className="text-[16px] font-semibold text-black">
+                  Анги
+                </span>
                 <select
                   className={figmaFieldClass}
                   value={scheduleClassName}
@@ -201,7 +220,9 @@ export default function ExamScheduleCard({
               </label>
 
               <label className="grid gap-3">
-                <span className="text-[16px] font-semibold text-black">Бүлэг</span>
+                <span className="text-[16px] font-semibold text-black">
+                  Бүлэг
+                </span>
                 <select
                   className={figmaFieldClass}
                   value={scheduleGroupName}
@@ -218,7 +239,9 @@ export default function ExamScheduleCard({
             </div>
 
             <label className="grid gap-3">
-              <span className="text-[16px] font-semibold text-black">Хичээл</span>
+              <span className="text-[16px] font-semibold text-black">
+                Хичээл
+              </span>
               <select
                 className={figmaFieldClass}
                 value={scheduleSubjectName}
@@ -234,7 +257,9 @@ export default function ExamScheduleCard({
             </label>
 
             <label className="grid gap-3">
-              <span className="text-[16px] font-semibold text-black">Тайлбар</span>
+              <span className="text-[16px] font-semibold text-black">
+                Тайлбар
+              </span>
               <textarea
                 className={figmaTextareaClass}
                 placeholder="Жишээ нь: Шалгалтын сэдэв"
@@ -244,7 +269,9 @@ export default function ExamScheduleCard({
             </label>
 
             <div className="grid gap-3">
-              <span className="text-[16px] font-semibold text-black">Огноо</span>
+              <span className="text-[16px] font-semibold text-black">
+                Огноо
+              </span>
               <button
                 type="button"
                 className={`${figmaFieldClass} flex items-center justify-between text-left`}
@@ -269,6 +296,9 @@ export default function ExamScheduleCard({
                   />
                 </svg>
               </button>
+              <div className="text-xs text-slate-400">
+                Одоогоос 7 хоногоос хойш, 1 сар хүртэл хуваарьлана.
+              </div>
               {showCalendar && (
                 <div
                   ref={calendarRef}
@@ -278,6 +308,14 @@ export default function ExamScheduleCard({
                     mode="single"
                     selected={selectedDate}
                     onSelect={handleDaySelect}
+                    fromDate={minDate}
+                    toDate={maxDate}
+                    defaultMonth={minDate}
+                    disabled={(date) => date < minDate || date > maxDate}
+                    classNames={{
+                      today:
+                        "rounded-md bg-[#eef2ff] text-slate-900 font-semibold ring-2 ring-[#2563eb]/30",
+                    }}
                   />
                   <div className="mt-3 flex items-center gap-3 border-t border-[#dce5ef] pt-3">
                     <span className="text-sm font-medium text-black">Цаг:</span>
@@ -337,7 +375,7 @@ export default function ExamScheduleCard({
               </span>
               {selectableExams.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-[#dce5ef] px-4 py-5 text-sm text-slate-400">
-                  Шалгалтын санд хадгалсан файл алга байна.
+                  Хуваарьлах боломжтой (draft/товлосон) шалгалт алга байна.
                 </div>
               ) : (
                 <div className="grid gap-3">
@@ -397,7 +435,11 @@ export default function ExamScheduleCard({
           </div>
         </div>
 
-        <button className={`w-full ${buttonPrimary}`} onClick={onSchedule} type="button">
+        <button
+          className={`w-full ${buttonPrimary}`}
+          onClick={onSchedule}
+          type="button"
+        >
           Хуваарь үүсгэх
         </button>
       </div>
