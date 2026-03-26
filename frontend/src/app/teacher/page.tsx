@@ -231,6 +231,11 @@ export default function TeacherPage() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <ExamScheduleCard
+                  exams={data.exams}
+                  selectedScheduleExamId={management.selectedScheduleExamId}
+                  setSelectedScheduleExamId={
+                    management.setSelectedScheduleExamId
+                  }
                   scheduleDate={management.scheduleDate}
                   setScheduleDate={management.setScheduleDate}
                   scheduleExamType={management.scheduleExamType}

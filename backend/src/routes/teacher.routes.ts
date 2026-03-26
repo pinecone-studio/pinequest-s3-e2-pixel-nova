@@ -43,6 +43,7 @@ teacherRoutes.get("/students/:id/profile", async (c) => {
     phone: student.phone,
     school: student.school,
     grade: student.grade,
+    groupName: student.groupName,
     bio: student.bio,
     xp: student.xp,
     level: student.level,

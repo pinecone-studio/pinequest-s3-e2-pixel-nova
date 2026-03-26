@@ -174,6 +174,7 @@ const profileSchema = z.object({
   phone: z.string().optional().or(z.literal("")),
   school: z.string().optional().or(z.literal("")),
   grade: z.string().optional().or(z.literal("")),
+  groupName: z.string().optional().or(z.literal("")),
   bio: z.string().optional().or(z.literal("")),
 });
 
@@ -201,6 +202,7 @@ studentRoutes.get("/profile", async (c) => {
     phone: student.phone,
     school: student.school,
     grade: student.grade,
+    groupName: student.groupName,
     bio: student.bio,
     xp: student.xp,
     level: student.level,
@@ -232,6 +234,7 @@ studentRoutes.put("/profile", zValidator("json", profileSchema), async (c) => {
       phone: payload.phone || null,
       school: payload.school || null,
       grade: payload.grade || null,
+      groupName: payload.groupName || null,
       bio: payload.bio || null,
     })
     .where(eq(students.id, user.id));

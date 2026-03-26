@@ -26,6 +26,9 @@ examRoutes.post(
       subjectId: z.string().optional(),
       title: z.string(),
       description: z.string().optional(),
+      examType: z.string().optional(),
+      className: z.string().optional(),
+      groupName: z.string().optional(),
       durationMin: z.number().int().positive().optional(),
       expectedStudentsCount: z.number().int().min(0).optional(),
       passScore: z.number().int().min(0).max(100).optional(),
@@ -68,6 +71,9 @@ examRoutes.post(
         subjectId,
         title: body.title,
         description: body.description,
+        examType: body.examType,
+        className: body.className,
+        groupName: body.groupName,
         durationMin: body.durationMin ?? 60,
         expectedStudentsCount: body.expectedStudentsCount ?? 0,
         passScore: body.passScore ?? 50,
@@ -227,6 +233,9 @@ examRoutes.put(
     z.object({
       title: z.string().optional(),
       description: z.string().optional(),
+      examType: z.string().optional(),
+      className: z.string().optional(),
+      groupName: z.string().optional(),
       durationMin: z.number().int().positive().optional(),
       expectedStudentsCount: z.number().int().min(0).optional(),
       passScore: z.number().int().min(0).max(100).optional(),
@@ -251,23 +260,22 @@ examRoutes.put(
         return notFound(c, "Exam");
       }
 
-      const updates: Record<string, unknown> = {
-        updatedAt: new Date().toISOString(),
-      };
-
-      if (body.title !== undefined) updates.title = body.title;
-      if (body.description !== undefined)
-        updates.description = body.description;
-      if (body.durationMin !== undefined)
-        updates.durationMin = body.durationMin;
-      if (body.expectedStudentsCount !== undefined)
-        updates.expectedStudentsCount = body.expectedStudentsCount;
-      if (body.passScore !== undefined) updates.passScore = body.passScore;
-      if (body.shuffleQuestions !== undefined)
-        updates.shuffleQuestions = body.shuffleQuestions;
-      if (body.subjectId !== undefined) updates.subjectId = body.subjectId;
-
-      await db.update(exams).set(updates).where(eq(exams.id, examId));
+      await db
+        .update(exams)
+        .set({
+          updatedAt: new Date().toISOString(),
+          ...(body.title !== undefined && { title: body.title }),
+          ...(body.description !== undefined && { description: body.description }),
+          ...(body.examType !== undefined && { examType: body.examType }),
+          ...(body.className !== undefined && { className: body.className }),
+          ...(body.groupName !== undefined && { groupName: body.groupName }),
+          ...(body.durationMin !== undefined && { durationMin: body.durationMin }),
+          ...(body.expectedStudentsCount !== undefined && { expectedStudentsCount: body.expectedStudentsCount }),
+          ...(body.passScore !== undefined && { passScore: body.passScore }),
+          ...(body.shuffleQuestions !== undefined && { shuffleQuestions: body.shuffleQuestions }),
+          ...(body.subjectId !== undefined && { subjectId: body.subjectId }),
+        })
+        .where(eq(exams.id, examId));
 
       const [updated] = await db
         .select()
@@ -277,6 +285,7 @@ examRoutes.put(
 
       return success(c, updated);
     } catch (err) {
+      console.error("[PUT exam] Error:", err instanceof Error ? err.message : err);
       return error(c, "INTERNAL_ERROR", "Failed to update exam", 500);
     }
   },
@@ -606,11 +615,11 @@ examRoutes.post(
         return notFound(c, "Exam");
       }
 
-      if (exam.status !== "draft") {
+      if (exam.status !== "draft" && exam.status !== "scheduled") {
         return error(
           c,
           "BAD_REQUEST",
-          "Only draft exams can be scheduled",
+          "Only draft or scheduled exams can be rescheduled",
           400,
         );
       }

@@ -48,6 +48,8 @@ function getExamCell(
 
 type Props = {
   exams: Exam[];
+  selectedScheduleExamId: string;
+  setSelectedScheduleExamId: (v: string) => void;
   scheduleDate: string;
   setScheduleDate: (v: string) => void;
   scheduleExamType: string;
@@ -67,6 +69,8 @@ type Props = {
 
 export default function ScheduleCalendarView({
   exams,
+  selectedScheduleExamId,
+  setSelectedScheduleExamId,
   scheduleDate,
   setScheduleDate,
   scheduleExamType,
@@ -194,6 +198,9 @@ export default function ScheduleCalendarView({
         >
           <div className="w-full max-w-md overflow-y-auto" style={{ maxHeight: "90vh" }}>
             <ExamScheduleCard
+              exams={exams}
+              selectedScheduleExamId={selectedScheduleExamId}
+              setSelectedScheduleExamId={setSelectedScheduleExamId}
               scheduleDate={scheduleDate}
               setScheduleDate={setScheduleDate}
               scheduleExamType={scheduleExamType}
