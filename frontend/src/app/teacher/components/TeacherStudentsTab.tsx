@@ -82,57 +82,7 @@ function buildScheduleData(exams: Exam[]) {
     })
     .filter((item): item is ScheduleItem => Boolean(item));
 
-  if (items.length > 0) {
-    return { days, items };
-  }
-
-  const fallbackItems: ScheduleItem[] = [
-    {
-      id: "demo-1",
-      title: "12а явцын шалгалт",
-      dayIndex: 1,
-      startMinutes: 60,
-      duration: 45,
-      category: "required",
-    },
-    {
-      id: "demo-2",
-      title: "12б явцын шалгалт",
-      dayIndex: 1,
-      startMinutes: 180,
-      duration: 45,
-      category: "elective",
-    },
-    {
-      id: "demo-3",
-      title: "9а явцын шалгалт",
-      dayIndex: 2,
-      startMinutes: 120,
-      duration: 45,
-      category: "required",
-    },
-    {
-      id: "demo-4",
-      title: "10а явцын шалгалт",
-      dayIndex: 3,
-      startMinutes: 0,
-      duration: 45,
-      category: "required",
-    },
-    {
-      id: "demo-5",
-      title: "12а явцын шалгалт",
-      dayIndex: 3,
-      startMinutes: 360,
-      duration: 45,
-      category: "elective",
-    },
-  ];
-
-  return {
-    days,
-    items: fallbackItems,
-  };
+  return { days, items };
 }
 
 function LegendDot({ category }: { category: ScheduleCategory }) {
@@ -190,6 +140,7 @@ export default function TeacherStudentsTab({
   onAddSchedule,
 }: TeacherStudentsTabProps) {
   const { days, items } = buildScheduleData(exams);
+  const hasScheduledItems = items.length > 0;
 
   return (
     <section className="space-y-6">
@@ -277,7 +228,6 @@ export default function TeacherStudentsTab({
                       {HOURS.map((hour, rowIndex) => (
                         <div
                           key={`${dayIndex}-${hour}`}
-                          className=""
                           style={{
                             height: `${ROW_HEIGHT}px`,
                             opacity: rowIndex === HOURS.length - 1 ? 0.7 : 1,
@@ -289,6 +239,13 @@ export default function TeacherStudentsTab({
                 </div>
 
                 <div className="pointer-events-none absolute inset-0">
+                  {!hasScheduledItems && (
+                    <div className="flex h-full items-center justify-center">
+                      <div className="rounded-2xl border border-dashed border-[#dce5ef] bg-white/80 px-5 py-3 text-sm text-slate-500 shadow-sm">
+                        Шалгалт алга
+                      </div>
+                    </div>
+                  )}
                   {items.map((item) => (
                     <ScheduleCard key={item.id} item={item} />
                   ))}

@@ -30,6 +30,8 @@ type ExamTabProps = {
   setScheduleSubjectName: (value: string) => void;
   scheduleDescription: string;
   setScheduleDescription: (value: string) => void;
+  selectedScheduleExamId: string;
+  setSelectedScheduleExamId: (value: string) => void;
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
   roomCode: string | null;
@@ -111,6 +113,9 @@ export default function ExamTab(props: ExamTabProps) {
       <ExamStatsCards loading={props.loading} stats={props.stats} />
       <section className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
         <ExamScheduleCard
+          exams={props.exams}
+          selectedScheduleExamId={props.selectedScheduleExamId}
+          setSelectedScheduleExamId={props.setSelectedScheduleExamId}
           scheduleDate={props.scheduleDate}
           setScheduleDate={props.setScheduleDate}
           scheduleExamType={props.scheduleExamType}

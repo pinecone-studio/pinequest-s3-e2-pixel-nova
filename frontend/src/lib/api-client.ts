@@ -13,6 +13,22 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
+const readErrorMessage = async (res: Response) => {
+  try {
+    const payload = (await res.json()) as
+      | { error?: { message?: string }; message?: string }
+      | undefined;
+    return (
+      payload?.error?.message ||
+      payload?.message ||
+      `Request failed: ${res.status}`
+    );
+  } catch {
+    const text = await res.text();
+    return text || `Request failed: ${res.status}`;
+  }
+};
+
 export type ApiUserContext = {
   roleKey: RoleKey;
   userId: string;
@@ -59,8 +75,7 @@ export const apiFetch = async <T>(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+    throw new Error(await readErrorMessage(res));
   }
 
   return (await res.json()) as T;

@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
+import type { Exam } from "../types";
 import {
   buttonPrimary,
   cardClass,
@@ -9,6 +10,9 @@ import {
 } from "../styles";
 
 type ExamScheduleCardProps = {
+  exams: Exam[];
+  selectedScheduleExamId: string;
+  setSelectedScheduleExamId: (value: string) => void;
   scheduleDate: string;
   setScheduleDate: (value: string) => void;
   scheduleExamType: string;
@@ -28,6 +32,9 @@ type ExamScheduleCardProps = {
 };
 
 export default function ExamScheduleCard({
+  exams,
+  selectedScheduleExamId,
+  setSelectedScheduleExamId,
   scheduleDate,
   setScheduleDate,
   scheduleExamType,
@@ -76,6 +83,15 @@ export default function ExamScheduleCard({
   const calendarRef = useRef<HTMLDivElement>(null);
 
   const selectedDate = scheduleDate ? new Date(scheduleDate) : undefined;
+  const selectableExams = useMemo(
+    () =>
+      exams
+        .filter((exam) => exam.questions.length > 0)
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    [exams],
+  );
+  const selectedExam =
+    selectableExams.find((exam) => exam.id === selectedScheduleExamId) ?? null;
 
   const handleDaySelect = (day: Date | undefined) => {
     if (!day) return;
@@ -89,7 +105,7 @@ export default function ExamScheduleCard({
 
   const handleTimeChange = (value: string) => {
     setSelectedTime(value);
-    if (selectedDate) {
+    if (selectedDate && !isNaN(selectedDate.getTime())) {
       const [hours, mins] = value.split(":").map(Number);
       const next = new Date(selectedDate);
       next.setHours(hours, mins);
@@ -99,12 +115,13 @@ export default function ExamScheduleCard({
     }
   };
 
-  const displayDate = selectedDate
+  const isValidDate = selectedDate instanceof Date && !isNaN(selectedDate.getTime());
+  const displayDate = isValidDate
     ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")} ${selectedTime}`
     : "";
 
   return (
-    <div className={`${cardClass} h-full font-sans overflow-auto`}>
+    <div className={`${cardClass} h-full overflow-auto font-sans`}>
       <div className="grid gap-6">
         {onClose && (
           <div className="flex items-center justify-between">
@@ -133,6 +150,7 @@ export default function ExamScheduleCard({
             </button>
           </div>
         )}
+
         <div className="grid gap-4">
           <div className="grid gap-4">
             <div className="grid gap-4">
@@ -200,9 +218,7 @@ export default function ExamScheduleCard({
             </div>
 
             <label className="grid gap-3">
-              <span className="text-[16px] font-semibold text-black">
-                Хичээл
-              </span>
+              <span className="text-[16px] font-semibold text-black">Хичээл</span>
               <select
                 className={figmaFieldClass}
                 value={scheduleSubjectName}
@@ -218,9 +234,7 @@ export default function ExamScheduleCard({
             </label>
 
             <label className="grid gap-3">
-              <span className="text-[16px] font-semibold text-black">
-                Тайлбар
-              </span>
+              <span className="text-[16px] font-semibold text-black">Тайлбар</span>
               <textarea
                 className={figmaTextareaClass}
                 placeholder="Жишээ нь: Шалгалтын сэдэв"
@@ -230,9 +244,7 @@ export default function ExamScheduleCard({
             </label>
 
             <div className="grid gap-3">
-              <span className="text-[16px] font-semibold text-black">
-                Огноо
-              </span>
+              <span className="text-[16px] font-semibold text-black">Огноо</span>
               <button
                 type="button"
                 className={`${figmaFieldClass} flex items-center justify-between text-left`}
@@ -318,14 +330,74 @@ export default function ExamScheduleCard({
                 </select>
               </div>
             </div>
+
+            <div className="grid gap-3">
+              <span className="text-[16px] font-semibold text-black">
+                Шалгалтын файл
+              </span>
+              {selectableExams.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[#dce5ef] px-4 py-5 text-sm text-slate-400">
+                  Шалгалтын санд хадгалсан файл алга байна.
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  <select
+                    className={figmaFieldClass}
+                    value={selectedScheduleExamId}
+                    onChange={(event) =>
+                      setSelectedScheduleExamId(event.target.value)
+                    }
+                  >
+                    <option value="">Шалгалтын файл сонгоно уу.</option>
+                    {selectableExams.map((exam) => (
+                      <option key={exam.id} value={exam.id}>
+                        {exam.title}
+                      </option>
+                    ))}
+                  </select>
+
+                  {selectedExam && (
+                    <div className="flex items-center gap-3 rounded-2xl border border-[#e5ecf3] bg-[#fafcff] px-4 py-3">
+                      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[#dce5ef] bg-white">
+                        <svg
+                          className="size-5 text-slate-500"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.8}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M14 2v6h6"
+                          />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-slate-900">
+                          {selectedExam.title}
+                        </div>
+                        <div className="mt-1 truncate text-xs text-slate-500">
+                          {selectedExam.questions.length} асуулт
+                          {selectedExam.description
+                            ? ` · ${selectedExam.description}`
+                            : ""}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <button
-          className={`w-full ${buttonPrimary}`}
-          onClick={onSchedule}
-          type="button"
-        >
+        <button className={`w-full ${buttonPrimary}`} onClick={onSchedule} type="button">
           Хуваарь үүсгэх
         </button>
       </div>

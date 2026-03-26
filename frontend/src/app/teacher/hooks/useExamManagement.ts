@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { generateId, generateRoomCode, type User } from "@/lib/examGuard";
 import {
-  generateId,
-  generateRoomCode,
-  type User,
-} from "@/lib/examGuard";
-import { syncExamToBackend } from "@/lib/backend-exams";
+  scheduleExistingExamInBackend,
+  syncExamToBackend,
+} from "@/lib/backend-exams";
 import type { Exam, Question } from "../types";
 
 export const useExamManagement = (params: {
@@ -21,6 +20,7 @@ export const useExamManagement = (params: {
   const [scheduleGroupName, setScheduleGroupName] = useState("");
   const [scheduleSubjectName, setScheduleSubjectName] = useState("");
   const [scheduleDescription, setScheduleDescription] = useState("");
+  const [selectedScheduleExamId, setSelectedScheduleExamId] = useState("");
   const [examTitle, setExamTitle] = useState("");
   const [createDate, setCreateDate] = useState("");
   const [expectedStudentsCount, setExpectedStudentsCount] = useState(0);
@@ -141,7 +141,7 @@ export const useExamManagement = (params: {
           scheduled.getDate() === tomorrow.getDate();
         if (!isTomorrow) return exam;
         changed = true;
-        showToast(`📢 Маргааш "${exam.title}" шалгалт эхэлнэ!`);
+        showToast(`Маргааш "${exam.title}" шалгалт эхэлнэ.`);
         return { ...exam, notified: true };
       });
 
@@ -154,8 +154,8 @@ export const useExamManagement = (params: {
   }, [exams, persistExams, showToast]);
 
   const handleSchedule = async () => {
-    if (!scheduleTitle || !scheduleDate) {
-      showToast("Шалгалтын нэр болон огноо оруулна уу.");
+    if (!scheduleDate || isNaN(new Date(scheduleDate).getTime())) {
+      showToast("Шалгалтын огноо оруулна уу.");
       return;
     }
 
@@ -164,45 +164,66 @@ export const useExamManagement = (params: {
       return;
     }
 
+    const selectedScheduleExam = exams.find(
+      (exam) => exam.id === selectedScheduleExamId,
+    );
+
+    if (!selectedScheduleExam && !scheduleTitle) {
+      showToast("Шалгалтын файл сонгоно уу.");
+      return;
+    }
+
+    if (!selectedScheduleExam && questions.length === 0) {
+      showToast("Хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.");
+      return;
+    }
+
     let newExam = buildLocalExam({
-      title: scheduleTitle,
+      title: selectedScheduleExam?.title ?? scheduleTitle,
       description: scheduleDescription,
       examType: scheduleExamType,
       className: scheduleClassName,
       groupName: scheduleGroupName,
       scheduledAt: scheduleDate,
       expectedStudentsCount,
-      questions: [],
+      questions: selectedScheduleExam?.questions ?? [],
     });
 
-    if (questions.length === 0) {
-      showToast("Хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.");
-      return;
-    }
-
     try {
-      const syncedExam = await syncExamToBackend(currentUser, {
-        title: scheduleTitle,
-        description: scheduleDescription,
-        examType: scheduleExamType,
-        className: scheduleClassName,
-        groupName: scheduleGroupName,
-        duration: durationMinutes,
-        scheduledAt: scheduleDate,
-        expectedStudentsCount,
-        questions: toSyncQuestions(questions),
-      });
+      const syncedExam = selectedScheduleExam
+        ? await scheduleExistingExamInBackend(currentUser, {
+            examId: selectedScheduleExam.id,
+            title: selectedScheduleExam.title,
+            description: scheduleDescription,
+            examType: scheduleExamType,
+            className: scheduleClassName,
+            groupName: scheduleGroupName,
+            duration: durationMinutes,
+            scheduledAt: scheduleDate,
+            expectedStudentsCount,
+          })
+        : await syncExamToBackend(currentUser, {
+            title: scheduleTitle,
+            description: scheduleDescription,
+            examType: scheduleExamType,
+            className: scheduleClassName,
+            groupName: scheduleGroupName,
+            duration: durationMinutes,
+            scheduledAt: scheduleDate,
+            expectedStudentsCount,
+            questions: toSyncQuestions(questions),
+          });
 
       newExam = buildLocalExam(
         {
-          title: scheduleTitle,
+          title: selectedScheduleExam?.title ?? scheduleTitle,
           description: scheduleDescription,
           examType: scheduleExamType,
           className: scheduleClassName,
           groupName: scheduleGroupName,
           scheduledAt: scheduleDate,
           expectedStudentsCount,
-          questions,
+          questions: selectedScheduleExam?.questions ?? questions,
         },
         syncedExam,
       );
@@ -224,7 +245,11 @@ export const useExamManagement = (params: {
       return;
     }
 
-    persistExams([...exams, newExam]);
+    persistExams(
+      selectedScheduleExam
+        ? exams.map((exam) => (exam.id === newExam.id ? newExam : exam))
+        : [...exams, newExam],
+    );
     setScheduleTitle("");
     setScheduleDate("");
     setScheduleExamType("progress");
@@ -232,6 +257,7 @@ export const useExamManagement = (params: {
     setScheduleGroupName("");
     setScheduleSubjectName("");
     setScheduleDescription("");
+    setSelectedScheduleExamId("");
     setRoomCode(newExam.roomCode);
   };
 
@@ -450,6 +476,8 @@ export const useExamManagement = (params: {
     setScheduleSubjectName,
     scheduleDescription,
     setScheduleDescription,
+    selectedScheduleExamId,
+    setSelectedScheduleExamId,
     examTitle,
     setExamTitle,
     createDate,

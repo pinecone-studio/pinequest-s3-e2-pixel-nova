@@ -27,6 +27,18 @@ type RemoteExamDetail = {
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
+const readBackendError = async (response: Response, fallback: string) => {
+  try {
+    const payload = (await response.json()) as
+      | { error?: { message?: string }; message?: string }
+      | undefined;
+    return payload?.error?.message || payload?.message || fallback;
+  } catch {
+    const text = await response.text();
+    return text || fallback;
+  }
+};
+
 const unwrap = async <T,>(response: Response): Promise<T> => {
   const payload = (await response.json()) as ApiEnvelope<T> | T;
   if (payload && typeof payload === "object" && "data" in payload) {
@@ -60,6 +72,18 @@ export type SyncExamPayload = {
   }>;
 };
 
+export type ScheduleExistingExamPayload = {
+  examId: string;
+  title: string;
+  description?: string | null;
+  examType?: string | null;
+  className?: string | null;
+  groupName?: string | null;
+  duration: number;
+  scheduledAt: string;
+  expectedStudentsCount?: number;
+};
+
 export const syncExamToBackend = async (
   user: RoleUser | null | undefined,
   exam: SyncExamPayload,
@@ -81,8 +105,7 @@ export const syncExamToBackend = async (
   });
 
   if (!createRes.ok) {
-    const message = await createRes.text();
-    throw new Error(message || "Backend exam create failed");
+    throw new Error(await readBackendError(createRes, "Backend exam create failed"));
   }
 
   const created = await unwrap<RemoteExamDetail>(createRes);
@@ -111,8 +134,9 @@ export const syncExamToBackend = async (
     );
 
     if (!questionRes.ok) {
-      const message = await questionRes.text();
-      throw new Error(message || "Backend question create failed");
+      throw new Error(
+        await readBackendError(questionRes, "Backend question create failed"),
+      );
     }
   }
 
@@ -126,12 +150,57 @@ export const syncExamToBackend = async (
     });
 
     if (!scheduleRes.ok) {
-      const message = await scheduleRes.text();
-      throw new Error(message || "Backend exam schedule failed");
+      throw new Error(
+        await readBackendError(scheduleRes, "Backend exam schedule failed"),
+      );
     }
 
     return await unwrap<RemoteExamDetail>(scheduleRes);
   }
 
   return created;
+};
+
+export const scheduleExistingExamInBackend = async (
+  user: RoleUser | null | undefined,
+  exam: ScheduleExistingExamPayload,
+) => {
+  if (!user || user.role !== "teacher") return null;
+
+  const updateRes = await fetch(`${API_BASE_URL}/api/exams/${exam.examId}`, {
+    method: "PUT",
+    headers: buildHeaders(user),
+    body: JSON.stringify({
+      title: exam.title,
+      description: exam.description,
+      examType: exam.examType,
+      className: exam.className,
+      groupName: exam.groupName,
+      durationMin: exam.duration,
+      expectedStudentsCount: exam.expectedStudentsCount ?? 0,
+    }),
+  });
+
+  if (!updateRes.ok) {
+    throw new Error(await readBackendError(updateRes, "Backend exam update failed"));
+  }
+
+  const scheduleRes = await fetch(
+    `${API_BASE_URL}/api/exams/${exam.examId}/schedule`,
+    {
+      method: "POST",
+      headers: buildHeaders(user),
+      body: JSON.stringify({
+        scheduledAt: exam.scheduledAt,
+      }),
+    },
+  );
+
+  if (!scheduleRes.ok) {
+    throw new Error(
+      await readBackendError(scheduleRes, "Backend exam schedule failed"),
+    );
+  }
+
+  return await unwrap<RemoteExamDetail>(scheduleRes);
 };
