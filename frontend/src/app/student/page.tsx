@@ -20,10 +20,11 @@ import {
   setStoredSelectedUserId,
   type RoleKey,
 } from "@/lib/role-session";
-import StudentSidebar from "./components/StudentSidebar";
 import StudentHeader from "./components/StudentHeader";
 import StudentDashboardTab from "./components/StudentDashboardTab";
-import StudentResultsTab from "./components/StudentResultsTab";
+import StudentExamsTab from "./components/StudentExamsTab";
+import StudentProgressTab from "./components/StudentProgressTab";
+import StudentLeaderboardTab from "./components/StudentLeaderboardTab";
 import StudentSettingsTab from "./components/StudentSettingsTab";
 import StudentPreferencesTab from "./components/StudentPreferencesTab";
 import StudentHelpTab from "./components/StudentHelpTab";
@@ -137,10 +138,13 @@ export default function StudentPage() {
         const authUsers = await getAuthUsers().catch(() => getLocalAuthUsers(role));
         if (cancelled) return;
 
+        setTeacherUsers(authUsers.filter((user) => user.role === "teacher"));
         const nextUsers = authUsers.filter((user) => user.role === role);
         const storedUserId = getStoredSelectedUserId(role);
         const nextUser =
-          nextUsers.find((user) => user.id === storedUserId) ?? nextUsers[0] ?? null;
+          nextUsers.find((user) => user.id === storedUserId) ??
+          nextUsers[0] ??
+          null;
 
         setUsers(nextUsers);
         setSelectedUser(nextUser);
@@ -170,7 +174,7 @@ export default function StudentPage() {
       }
     };
 
-    loadUsers();
+    void loadUsers();
 
     return () => {
       cancelled = true;
@@ -191,102 +195,142 @@ export default function StudentPage() {
     setSessionUser(buildSessionUser(nextUser));
   };
 
+  const studentHistory = useMemo(
+    () =>
+      progress.studentHistory.map((item) => ({
+        examId: item.examId,
+        title:
+          data.exams.find((examItem) => examItem.id === item.examId)?.title ??
+          `Exam #${item.examId.slice(-4)}`,
+        percentage: item.percentage,
+        score: item.score,
+        totalPoints: item.totalPoints,
+        grade: item.grade,
+        date: item.date,
+      })),
+    [data.exams, progress.studentHistory],
+  );
+
+  const leaderboardEntries = useMemo(
+    () =>
+      [...users]
+        .sort((left, right) => {
+          const xpDiff = (right.xp ?? 0) - (left.xp ?? 0);
+          if (xpDiff !== 0) return xpDiff;
+          return left.fullName.localeCompare(right.fullName);
+        })
+        .map((user, index) => ({
+          id: user.id,
+          fullName: user.fullName,
+          xp: user.xp ?? 0,
+          level: user.level ?? 1,
+          rank: index + 1,
+        })),
+    [users],
+  );
+
+  const currentUserName = selectedUser?.fullName ?? data.currentUser?.username ?? "";
+  const currentUserId = selectedUser?.id ?? data.currentUser?.id ?? "";
+  const currentRank =
+    leaderboardEntries.find((entry) => entry.id === currentUserId)?.rank ?? null;
+  const currentXp =
+    progress.studentProgress.xp || selectedUser?.xp || 0;
+
   if (!data.currentUser) return null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-[#f6f8fc] text-foreground">
       {exam.view === "dashboard" && (
-        <div
-          className={`grid min-h-screen transition-[grid-template-columns] duration-300 ease-out ${
-            sidebarCollapsed
-              ? "lg:grid-cols-[72px_1fr]"
-              : "lg:grid-cols-[260px_1fr]"
-          }`}
-        >
-          <StudentSidebar
-            collapsed={sidebarCollapsed}
-            setCollapsed={setSidebarCollapsed}
-            activeTab={exam.activeTab}
-            setActiveTab={exam.setActiveTab}
-            sidebarTimerRef={exam.sidebarTimerRef}
-          />
-          <main className="px-6 py-8">
-            <div className="mx-auto w-full max-w-7xl space-y-6">
-              <StudentHeader
-                theme={data.theme}
-                onToggleTheme={() =>
-                  data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
-                }
-                notifications={data.notifications}
-                roleControl={
-                  <RoleNavbar
-                    activeRole={role}
-                    activeUserId={selectedUser?.id ?? null}
-                    users={users}
-                    loading={usersLoading}
-                    onChangeRole={handleRoleChange}
-                    onChangeUser={handleUserChange}
-                  />
-                }
+        <main className="px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[1280px] space-y-5">
+            <StudentHeader
+              activeTab={exam.activeTab}
+              currentUserName={currentUserName}
+              currentUserInitials={getInitials(currentUserName)}
+              notifications={data.notifications}
+              xp={currentXp}
+              onTabChange={exam.setActiveTab}
+              onOpenProfile={() => exam.setActiveTab("Profile")}
+              onOpenSettings={() => exam.setActiveTab("Settings")}
+              onOpenHelp={() => exam.setActiveTab("Help")}
+              onToggleTheme={() =>
+                data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+              }
+              roleControl={
+                <RoleNavbar
+                  activeRole={role}
+                  activeUserId={selectedUser?.id ?? null}
+                  users={users}
+                  loading={usersLoading}
+                  onChangeRole={handleRoleChange}
+                  onChangeUser={handleUserChange}
+                />
+              }
+            />
+
+            {exam.activeTab === "Home" && (
+              <StudentDashboardTab
+                loading={data.loading}
+                currentUserName={currentUserName}
+                selectedExam={exam.selectedExam}
+                levelInfo={progress.levelInfo}
+                studentProgress={progress.studentProgress}
+                nextLevel={progress.nextLevel}
+                currentRank={currentRank}
+                studentCount={leaderboardEntries.length}
+                studentHistory={studentHistory}
+                onOpenExams={() => exam.setActiveTab("Exams")}
+                onOpenProgress={() => exam.setActiveTab("Progress")}
               />
+            )}
 
-              {exam.activeTab === "Шалгалт" && (
-                <StudentDashboardTab
-                  loading={data.loading}
-                  roomCodeInput={exam.roomCodeInput}
-                  setRoomCodeInput={exam.setRoomCodeInput}
-                  joinError={exam.joinError}
-                  onLookup={exam.handleLookup}
-                  selectedExam={exam.selectedExam}
-                  onStartExam={exam.startExam}
-                  levelInfo={progress.levelInfo}
-                  studentProgress={progress.studentProgress}
-                  progressSegments={progress.progressSegments}
-                  nextLevel={progress.nextLevel}
-                  notifications={data.notifications}
-                  studentHistory={progress.studentHistory.map((item) => ({
-                    examId: item.examId,
-                    title:
-                      data.exams.find((examItem) => examItem.id === item.examId)
-                        ?.title ?? `Шалгалт #${item.examId.slice(-4)}`,
-                    percentage: item.percentage,
-                    score: item.score,
-                    totalPoints: item.totalPoints,
-                    grade: item.grade,
-                    date: item.date,
-                  }))}
-                />
-              )}
+            {exam.activeTab === "Exams" && (
+              <StudentExamsTab
+                loading={data.loading}
+                roomCodeInput={exam.roomCodeInput}
+                setRoomCodeInput={exam.setRoomCodeInput}
+                joinError={exam.joinError}
+                onLookup={exam.handleLookup}
+                selectedExam={exam.selectedExam}
+                onStartExam={exam.startExam}
+                onClearSelection={() => {
+                  exam.setSelectedExam(null);
+                  exam.setJoinError(null);
+                }}
+                teacherName={teacherUsers[0]?.fullName ?? null}
+                studentHistory={studentHistory}
+              />
+            )}
 
-              {exam.activeTab === "Дүн" && (
-                <StudentResultsTab
-                  studentHistory={progress.studentHistory.map((item) => ({
-                    examId: item.examId,
-                    title:
-                      data.exams.find((examItem) => examItem.id === item.examId)
-                        ?.title ?? `Шалгалт #${item.examId.slice(-4)}`,
-                    percentage: item.percentage,
-                    score: item.score,
-                    totalPoints: item.totalPoints,
-                    grade: item.grade,
-                    date: item.date,
-                  }))}
-                />
-              )}
+            {exam.activeTab === "Progress" && (
+              <StudentProgressTab
+                levelInfo={progress.levelInfo}
+                studentProgress={progress.studentProgress}
+                nextLevel={progress.nextLevel}
+                progressSegments={progress.progressSegments}
+                studentHistory={studentHistory}
+              />
+            )}
 
-              {exam.activeTab === "Профайл" && (
-                <StudentSettingsTab
-                  userId={data.currentUser.id}
-                  username={data.currentUser.username}
-                />
-              )}
+            {exam.activeTab === "Leaderboard" && (
+              <StudentLeaderboardTab
+                currentUserId={currentUserId}
+                entries={leaderboardEntries}
+              />
+            )}
 
-              {exam.activeTab === "Тохиргоо" && <StudentPreferencesTab />}
+            {exam.activeTab === "Profile" && (
+              <StudentSettingsTab
+                userId={data.currentUser.id}
+                username={data.currentUser.username}
+              />
+            )}
 
-              {exam.activeTab === "Тусламж" && <StudentHelpTab />}
-            </div>
-          </main>
-        </div>
+            {exam.activeTab === "Settings" && <StudentPreferencesTab />}
+
+            {exam.activeTab === "Help" && <StudentHelpTab />}
+          </div>
+        </main>
       )}
 
       {exam.view === "exam" && (

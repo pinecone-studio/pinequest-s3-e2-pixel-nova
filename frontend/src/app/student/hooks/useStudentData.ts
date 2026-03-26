@@ -29,6 +29,19 @@ const buildNotifications = (
     createdAt: item.submittedAt ?? new Date().toISOString(),
   }));
 
+const buildNotifications = (
+  results: Awaited<ReturnType<typeof getStudentResults>>,
+): NotificationItem[] =>
+  results.slice(0, 4).map((item, index) => ({
+    examId: item.examId,
+    message:
+      index === 0
+        ? `${item.title} шалгалтын дүн шинэчлэгдлээ.`
+        : `${item.title} шалгалтын тайланг дахин хараарай.`,
+    read: index > 1,
+    createdAt: item.submittedAt ?? new Date().toISOString(),
+  }));
+
 export const useStudentData = (overrideUser?: User | null) => {
   const overrideUserId = overrideUser?.id ?? null;
   const overrideUsername = overrideUser?.username ?? null;

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { setJSON } from "@/lib/examGuard";
 import { apiFetch, unwrapApi } from "@/lib/api-client";
-import type { Exam, ExamSession, Question, Submission, Violations } from "../types";
+import type {
+  Exam,
+  ExamSession,
+  Question,
+  StudentTab,
+  Submission,
+  Violations,
+} from "../types";
 import type { User } from "@/lib/examGuard";
 import { buildAnswerReport } from "./student-exam-helpers";
 
@@ -21,9 +28,7 @@ export const useStudentExamState = (params: {
   const [view, setView] = useState<"dashboard" | "exam" | "result">(
     "dashboard",
   );
-  const [activeTab, setActiveTab] = useState<
-    "Шалгалт" | "Дүн" | "Профайл" | "Тохиргоо" | "Тусламж"
-  >("Шалгалт");
+  const [activeTab, setActiveTab] = useState<StudentTab>("Home");
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
@@ -69,13 +74,80 @@ export const useStudentExamState = (params: {
       });
       const data = unwrapApi(payload);
       setSessionId(data.sessionId);
+      const detailPayload = await apiFetch<
+        | {
+            data?: {
+              session: {
+                id: string;
+                status: string;
+                startedAt: string | null;
+                submittedAt: string | null;
+              };
+              exam: {
+                id: string;
+                title: string;
+                description?: string | null;
+                durationMin: number;
+              };
+              questions: {
+                id: string;
+                type: string;
+                questionText: string;
+                imageUrl?: string | null;
+                points: number;
+                options?: {
+                  id: string;
+                  label: string;
+                  text: string;
+                }[];
+              }[];
+            };
+          }
+        | {
+            session: {
+              id: string;
+              status: string;
+              startedAt: string | null;
+              submittedAt: string | null;
+            };
+            exam: {
+              id: string;
+              title: string;
+              description?: string | null;
+              durationMin: number;
+            };
+            questions: {
+              id: string;
+              type: string;
+              questionText: string;
+              imageUrl?: string | null;
+              points: number;
+              options?: {
+                id: string;
+                label: string;
+                text: string;
+              }[];
+            }[];
+          }
+      >(`/api/sessions/${data.sessionId}`);
+      const detail = unwrapApi(detailPayload);
       setSelectedExam({
-        id: data.exam.id,
-        title: data.exam.title,
-        scheduledAt: null,
+        id: detail.exam.id,
+        title: detail.exam.title,
+        description: detail.exam.description ?? null,
+        scheduledAt: detail.session.startedAt ?? new Date().toISOString(),
+        examStartedAt: detail.session.startedAt ?? null,
         roomCode: code,
-        questions: [],
-        duration: data.exam.durationMin,
+        questions: detail.questions.map((question) => ({
+          id: question.id,
+          text: question.questionText,
+          type: question.type as Question["type"],
+          options: question.options?.map((opt) => opt.text) ?? undefined,
+          correctAnswer: "",
+          points: Number(question.points ?? 1),
+          imageUrl: question.imageUrl ?? undefined,
+        })),
+        duration: detail.exam.durationMin,
         createdAt: new Date().toISOString(),
       });
       setJoinError(null);
@@ -138,8 +210,9 @@ export const useStudentExamState = (params: {
     const run = async () => {
       try {
         const sessionPayload = await apiFetch<
-          { data?: { exam: { id: string; title: string; durationMin: number; questions: { id: string; type: string; questionText: string; imageUrl?: string | null; points: number; options?: { id: string; label: string; text: string }[] }[] } } } | {
-            exam: { id: string; title: string; durationMin: number; questions: { id: string; type: string; questionText: string; imageUrl?: string | null; points: number; options?: { id: string; label: string; text: string }[] }[] };
+          { data?: { exam: { id: string; title: string; description?: string | null; durationMin: number }; questions: { id: string; type: string; questionText: string; imageUrl?: string | null; points: number; options?: { id: string; label: string; text: string }[] }[] } } | {
+            exam: { id: string; title: string; description?: string | null; durationMin: number };
+            questions: { id: string; type: string; questionText: string; imageUrl?: string | null; points: number; options?: { id: string; label: string; text: string }[] }[];
           }
         >(`/api/sessions/${sessionId}`);
         const sessionData = unwrapApi(sessionPayload);
@@ -147,9 +220,10 @@ export const useStudentExamState = (params: {
         const mappedExam: Exam = {
           id: examData.id,
           title: examData.title,
+          description: examData.description ?? null,
           scheduledAt: null,
           roomCode: roomCodeInput.trim().toUpperCase(),
-          questions: examData.questions.map((question) => ({
+          questions: sessionData.questions.map((question) => ({
             id: question.id,
             text: question.questionText,
             type: question.type as Question["type"],
@@ -266,7 +340,7 @@ export const useStudentExamState = (params: {
       };
       setLastSubmission(submission);
       setAnswerReport(backendReport);
-      setActiveTab("Дүн");
+      setActiveTab("Progress");
       setView("result");
     },
     [activeExam, answers, currentUser, sessionKey, violations, sessionId],
