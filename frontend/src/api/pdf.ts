@@ -22,6 +22,19 @@ export const extractPdfQuestions = (fileKey: string, user?: User | null) =>
     body: JSON.stringify({ fileKey }),
   });
 
+export const uploadPdfAssets = (
+  assets: Array<{ dataUrl: string; fileName?: string; sourceIndex: number }>,
+  user?: User | null,
+) =>
+  apiRequest("/api/pdf/assets", {
+    method: "POST",
+    user,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ assets }),
+  });
+
 export const confirmPdfQuestions = (
   payload: Record<string, unknown>,
   user?: User | null,

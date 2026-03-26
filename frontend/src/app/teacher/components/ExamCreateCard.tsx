@@ -29,6 +29,8 @@ type ExamCreateCardProps = {
   setMcqOptions: (value: string[]) => void;
   questionAnswer: string;
   setQuestionAnswer: (value: string) => void;
+  questionImageUrl?: string;
+  setQuestionImageUrl: (value: string | undefined) => void;
   questionPoints: number;
   setQuestionPoints: (value: number) => void;
   questionCorrectIndex: number;
@@ -72,6 +74,8 @@ export default function ExamCreateCard({
   setMcqOptions,
   questionAnswer,
   setQuestionAnswer,
+  questionImageUrl,
+  setQuestionImageUrl,
   questionPoints,
   setQuestionPoints,
   questionCorrectIndex,
@@ -168,6 +172,8 @@ export default function ExamCreateCard({
           setMcqOptions={setMcqOptions}
           questionAnswer={questionAnswer}
           setQuestionAnswer={setQuestionAnswer}
+          questionImageUrl={questionImageUrl}
+          setQuestionImageUrl={setQuestionImageUrl}
           questionPoints={questionPoints}
           setQuestionPoints={setQuestionPoints}
           questionCorrectIndex={questionCorrectIndex}

@@ -25,6 +25,9 @@ export const useExamManagement = (params: {
     "text",
   );
   const [questionAnswer, setQuestionAnswer] = useState("");
+  const [questionImageUrl, setQuestionImageUrl] = useState<string | undefined>(
+    undefined,
+  );
   const [questionPoints, setQuestionPoints] = useState(1);
   const [questionCorrectIndex, setQuestionCorrectIndex] = useState(0);
   const [mcqOptions, setMcqOptions] = useState<string[]>(["", "", "", ""]);
@@ -213,11 +216,13 @@ export const useExamManagement = (params: {
         type: questionType,
         options,
         correctAnswer,
+        imageUrl: questionImageUrl,
         points: Math.max(1, Math.floor(questionPoints)),
       },
     ]);
     setQuestionText("");
     setQuestionAnswer("");
+    setQuestionImageUrl(undefined);
     setQuestionPoints(1);
     setQuestionCorrectIndex(0);
     if (questionType === "mcq") setMcqOptions(["", "", "", ""]);
@@ -363,6 +368,8 @@ export const useExamManagement = (params: {
     setQuestionType,
     questionAnswer,
     setQuestionAnswer,
+    questionImageUrl,
+    setQuestionImageUrl,
     questionPoints,
     setQuestionPoints,
     questionCorrectIndex,
