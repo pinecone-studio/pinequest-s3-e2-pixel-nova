@@ -126,7 +126,7 @@ export const useTeacherData = (overrideUser?: User | null) => {
       } catch {
         return;
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
