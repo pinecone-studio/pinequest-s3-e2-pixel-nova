@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { eq, and } from "drizzle-orm";
-import { getDb, exams, questions, options, subjects } from "../db";
+import { eq, and, sql } from "drizzle-orm";
+import { getDb, exams, questions, options, subjects, examSessions } from "../db";
 import type { AppEnv } from "../types";
 import { success, error, notFound } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
@@ -27,6 +27,7 @@ examRoutes.post(
       title: z.string(),
       description: z.string().optional(),
       durationMin: z.number().int().positive().optional(),
+      expectedStudentsCount: z.number().int().min(0).optional(),
       passScore: z.number().int().min(0).max(100).optional(),
       shuffleQuestions: z.boolean().optional(),
     }),
@@ -68,6 +69,7 @@ examRoutes.post(
         title: body.title,
         description: body.description,
         durationMin: body.durationMin ?? 60,
+        expectedStudentsCount: body.expectedStudentsCount ?? 0,
         passScore: body.passScore ?? 50,
         shuffleQuestions: body.shuffleQuestions ?? false,
         createdAt: now,
@@ -103,6 +105,74 @@ examRoutes.get("/", async (c) => {
     return success(c, teacherExams);
   } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to fetch exams", 500);
+  }
+});
+
+// ──────────────────────────────────────────────
+// GET /:examId/stats — Exam attendance stats
+// ──────────────────────────────────────────────
+examRoutes.get("/:examId/stats", async (c) => {
+  try {
+    const examId = c.req.param("examId");
+    const teacherId = c.get("user").id;
+    const db = getDb(c.env.educore);
+
+    const [exam] = await db
+      .select()
+      .from(exams)
+      .where(and(eq(exams.id, examId), eq(exams.teacherId, teacherId)))
+      .limit(1);
+
+    if (!exam) {
+      return notFound(c, "Exam");
+    }
+
+    const joinedStatuses = ["joined", "in_progress", "submitted", "graded"];
+    const submittedStatuses = ["submitted", "graded"];
+
+    const [joinedRow] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(examSessions)
+      .where(
+        and(
+          eq(examSessions.examId, examId),
+          sql`${examSessions.status} IN (${sql.join(
+            joinedStatuses.map((status) => sql`${status}`),
+            sql`, `,
+          )})`,
+        ),
+      );
+
+    const [submittedRow] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(examSessions)
+      .where(
+        and(
+          eq(examSessions.examId, examId),
+          sql`${examSessions.status} IN (${sql.join(
+            submittedStatuses.map((status) => sql`${status}`),
+            sql`, `,
+          )})`,
+        ),
+      );
+
+    const expected = Number(exam.expectedStudentsCount ?? 0);
+    const joined = Number(joinedRow?.count ?? 0);
+    const submitted = Number(submittedRow?.count ?? 0);
+    const attendanceRate =
+      expected > 0 ? Math.round((joined / expected) * 100) : 0;
+    const submissionRate =
+      expected > 0 ? Math.round((submitted / expected) * 100) : 0;
+
+    return success(c, {
+      expected,
+      joined,
+      submitted,
+      attendance_rate: attendanceRate,
+      submission_rate: submissionRate,
+    });
+  } catch {
+    return error(c, "INTERNAL_ERROR", "Failed to fetch exam stats", 500);
   }
 });
 
@@ -158,6 +228,7 @@ examRoutes.put(
       title: z.string().optional(),
       description: z.string().optional(),
       durationMin: z.number().int().positive().optional(),
+      expectedStudentsCount: z.number().int().min(0).optional(),
       passScore: z.number().int().min(0).max(100).optional(),
       shuffleQuestions: z.boolean().optional(),
       subjectId: z.string().optional(),
@@ -189,6 +260,8 @@ examRoutes.put(
         updates.description = body.description;
       if (body.durationMin !== undefined)
         updates.durationMin = body.durationMin;
+      if (body.expectedStudentsCount !== undefined)
+        updates.expectedStudentsCount = body.expectedStudentsCount;
       if (body.passScore !== undefined) updates.passScore = body.passScore;
       if (body.shuffleQuestions !== undefined)
         updates.shuffleQuestions = body.shuffleQuestions;

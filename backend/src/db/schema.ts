@@ -63,6 +63,9 @@ export const exams = sqliteTable("exams", {
   startedAt: text("started_at"),
   finishedAt: text("finished_at"),
   durationMin: integer("duration_min").notNull().default(60),
+  expectedStudentsCount: integer("expected_students_count")
+    .notNull()
+    .default(0),
   roomCode: text("room_code").unique(),
   passScore: integer("pass_score").default(50),
   shuffleQuestions: integer("shuffle_questions", { mode: "boolean" }).notNull().default(false),
