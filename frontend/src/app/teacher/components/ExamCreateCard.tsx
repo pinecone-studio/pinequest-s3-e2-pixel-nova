@@ -17,6 +17,8 @@ type ExamCreateCardProps = {
   setExamTitle: (value: string) => void;
   createDate: string;
   setCreateDate: (value: string) => void;
+  expectedStudentsCount: number;
+  setExpectedStudentsCount: (value: number) => void;
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
   questionText: string;
@@ -64,6 +66,8 @@ export default function ExamCreateCard({
   setExamTitle,
   createDate,
   setCreateDate,
+  expectedStudentsCount,
+  setExpectedStudentsCount,
   durationMinutes,
   setDurationMinutes,
   questionText,
@@ -156,6 +160,8 @@ export default function ExamCreateCard({
           setExamTitle={setExamTitle}
           createDate={createDate}
           setCreateDate={setCreateDate}
+          expectedStudentsCount={expectedStudentsCount}
+          setExpectedStudentsCount={setExpectedStudentsCount}
           durationMinutes={durationMinutes}
           setDurationMinutes={setDurationMinutes}
         />

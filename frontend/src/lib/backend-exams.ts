@@ -17,6 +17,7 @@ type RemoteExamDetail = {
   startedAt?: string | null;
   roomCode?: string | null;
   durationMin?: number;
+  expectedStudentsCount?: number | null;
   createdAt?: string;
 };
 
@@ -40,6 +41,7 @@ export type SyncExamPayload = {
   title: string;
   duration: number;
   scheduledAt?: string | null;
+  expectedStudentsCount?: number;
   questions: Array<{
     type: "text" | "open" | "mcq";
     text: string;
@@ -62,6 +64,7 @@ export const syncExamToBackend = async (
     body: JSON.stringify({
       title: exam.title,
       durationMin: exam.duration,
+      expectedStudentsCount: exam.expectedStudentsCount ?? 0,
     }),
   });
 

@@ -1,10 +1,15 @@
 import { cardClass, sectionDescriptionClass } from "../styles";
-import type { Exam, Submission } from "../types";
+import type { Exam, Submission, ExamStatsSummary } from "../types";
 import type { StudentProfile } from "@/lib/backend-auth";
+import AttendanceStatsCard from "./AttendanceStatsCard";
+import type { ExamAttendanceStats } from "../hooks/useExamAttendanceStats";
 
 type ResultsDetailPanelProps = {
   selectedSubmission: Submission | null;
   selectedExam: Exam | null;
+  examStats: ExamStatsSummary | null;
+  attendanceStats: ExamAttendanceStats | null;
+  attendanceLoading: boolean;
   studentProfile: StudentProfile | null;
   profileLoading: boolean;
 };
@@ -12,6 +17,9 @@ type ResultsDetailPanelProps = {
 export default function ResultsDetailPanel({
   selectedSubmission,
   selectedExam,
+  examStats,
+  attendanceStats,
+  attendanceLoading,
   studentProfile,
   profileLoading,
 }: ResultsDetailPanelProps) {
@@ -32,6 +40,12 @@ export default function ResultsDetailPanel({
       <p className={`mt-2 ${sectionDescriptionClass}`}>
         Сонгосон сурагчийн профайл, зөрчил, асуулт тус бүрийн хариултыг нэг дороос харна.
       </p>
+      <div className="mt-4">
+        <AttendanceStatsCard
+          stats={attendanceStats}
+          loading={attendanceLoading}
+        />
+      </div>
       {!selectedSubmission && (
         <div className="mt-6 text-sm text-slate-500">
           {selectedExam
@@ -112,6 +126,16 @@ export default function ResultsDetailPanel({
                 const answer = selectedSubmission.answers?.find(
                   (item) => item.questionId === question.id,
                 );
+                const stat = examStats?.questionStats.find(
+                  (item) => item.id === question.id,
+                );
+                const rate = stat?.correctRate ?? 0;
+                const barTone =
+                  rate >= 70
+                    ? "bg-emerald-500"
+                    : rate >= 45
+                      ? "bg-amber-500"
+                      : "bg-rose-500";
                 return (
                   <div
                     key={question.id}
@@ -139,6 +163,20 @@ export default function ResultsDetailPanel({
                         Зөв хариулт: {question.correctAnswer}
                       </div>
                     )}
+                    <div className="mt-3">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-[#e8edf3]">
+                        <div
+                          className={`h-full ${barTone}`}
+                          style={{
+                            width: `${rate}%`,
+                            transition: "width 700ms ease",
+                          }}
+                        />
+                      </div>
+                      <div className="mt-1 text-right text-[11px] font-semibold text-slate-600">
+                        {rate}%
+                      </div>
+                    </div>
                   </div>
                 );
               })}

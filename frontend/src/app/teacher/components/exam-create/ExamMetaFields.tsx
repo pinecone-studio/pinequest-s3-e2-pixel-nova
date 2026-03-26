@@ -5,6 +5,8 @@ type ExamMetaFieldsProps = {
   setExamTitle: (value: string) => void;
   createDate: string;
   setCreateDate: (value: string) => void;
+  expectedStudentsCount: number;
+  setExpectedStudentsCount: (value: number) => void;
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
 };
@@ -14,11 +16,13 @@ export default function ExamMetaFields({
   setExamTitle,
   createDate,
   setCreateDate,
+  expectedStudentsCount,
+  setExpectedStudentsCount,
   durationMinutes,
   setDurationMinutes,
 }: ExamMetaFieldsProps) {
   return (
-    <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_160px]">
+    <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_160px_180px]">
       <input
         className={inputClass}
         placeholder="Шалгалтын нэр оруулна уу"
@@ -38,6 +42,14 @@ export default function ExamMetaFields({
         value={Number.isFinite(durationMinutes) ? durationMinutes : 0}
         onChange={(event) => setDurationMinutes(Number(event.target.value))}
         placeholder="45 мин"
+      />
+      <input
+        type="number"
+        min={0}
+        className={inputClass}
+        value={Number.isFinite(expectedStudentsCount) ? expectedStudentsCount : 0}
+        onChange={(event) => setExpectedStudentsCount(Number(event.target.value))}
+        placeholder="Хүлээгдэж буй сурагч"
       />
     </div>
   );

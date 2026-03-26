@@ -9,6 +9,7 @@ type TeacherExamSummary = {
   roomCode: string | null;
   status: string;
   createdAt: string;
+  expectedStudentsCount?: number | null;
   startedAt?: string | null;
   finishedAt?: string | null;
 };
@@ -28,12 +29,16 @@ type TeacherExamDetail = TeacherExamSummary & {
 export const fetchTeacherExams = async (): Promise<Exam[]> => {
   const listData = await apiFetch<{ data?: TeacherExamSummary[] } | TeacherExamSummary[]>(
     "/api/exams",
+    {},
+    "teacher",
   );
   const summaries = unwrapApi(listData);
   const details = await Promise.all(
     summaries.map(async (exam) => {
       const detailData = await apiFetch<{ data?: TeacherExamDetail } | TeacherExamDetail>(
         `/api/exams/${exam.id}`,
+        {},
+        "teacher",
       );
       return unwrapApi(detailData);
     }),
@@ -64,6 +69,7 @@ export const fetchTeacherExams = async (): Promise<Exam[]> => {
       scheduledAt: exam.scheduledAt ?? null,
       examStartedAt: exam.startedAt ?? null,
       roomCode: exam.roomCode ?? "",
+      expectedStudentsCount: exam.expectedStudentsCount ?? 0,
       questions: mappedQuestions,
       duration: exam.durationMin ?? 60,
       createdAt: exam.createdAt,
@@ -76,6 +82,8 @@ export const fetchTeacherSubmissions = async (
 ): Promise<Submission[]> => {
   const data = await apiFetch<{ data?: Submission[] } | Submission[]>(
     `/api/teacher/exams/${examId}/submissions`,
+    {},
+    "teacher",
   );
   return unwrapApi(data).map((item) => ({
     ...item,
@@ -100,7 +108,7 @@ type LeaderboardItem = {
 export const fetchXpLeaderboard = async (): Promise<XpLeaderboardEntry[]> => {
   const data = await apiFetch<
     { data?: LeaderboardItem[] } | LeaderboardItem[]
-  >("/api/xp/leaderboard");
+  >("/api/xp/leaderboard", {}, "teacher");
   const list = unwrapApi<LeaderboardItem[]>(data);
   return list.map((student) => {
     const rawLevel = student.level;

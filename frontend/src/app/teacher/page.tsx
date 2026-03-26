@@ -4,10 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
 import {
-  STORAGE_KEYS,
-  ensureDemoAccounts,
-  getJSON,
-  setJSON,
   setSessionUser,
   type User,
 } from "@/lib/examGuard";
@@ -31,6 +27,7 @@ import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamImport } from "./hooks/useExamImport";
 import { useExamStats } from "./hooks/useExamStats";
+import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { contentCanvasClass, pageShellClass } from "./styles";
 
 const teacherTabs = [
@@ -41,19 +38,6 @@ const teacherTabs = [
 ] as const;
 
 type TeacherTab = (typeof teacherTabs)[number];
-
-const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
-  ensureDemoAccounts();
-  return getJSON<User[]>(STORAGE_KEYS.users, [])
-    .filter((user) => user.role === role)
-    .map((user) => ({
-      id: user.id,
-      fullName: user.username,
-      role: user.role,
-      email: null,
-      avatarUrl: null,
-    }));
-};
 
 export default function TeacherPage() {
   const router = useRouter();
@@ -90,6 +74,7 @@ export default function TeacherPage() {
     studentProgress: data.studentProgress,
     users: data.users,
   });
+  const attendance = useExamAttendanceStats(examStatsState.activeExamId);
 
   useEffect(() => {
     document.body.style.overflow = showScheduleForm ? "hidden" : "";
@@ -108,7 +93,7 @@ export default function TeacherPage() {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const authUsers = await getAuthUsers().catch(() => getLocalAuthUsers(role));
+        const authUsers = await getAuthUsers();
         if (cancelled) return;
         const nextUsers = authUsers.filter((user) => user.role === role);
         const storedUserId = getStoredSelectedUserId(role);
@@ -118,21 +103,14 @@ export default function TeacherPage() {
           null;
         setUsers(nextUsers);
         setSelectedUser(nextUser);
-        setJSON(STORAGE_KEYS.users, nextUsers.map((user) => buildSessionUser(user)));
         if (nextUser) {
           setStoredSelectedUserId(role, nextUser.id);
           setSessionUser(buildSessionUser(nextUser));
         }
       } catch {
         if (cancelled) return;
-        const fallbackUsers = getLocalAuthUsers(role);
-        const nextUser = fallbackUsers[0] ?? null;
-        setUsers(fallbackUsers);
-        setSelectedUser(nextUser);
-        if (nextUser) {
-          setStoredSelectedUserId(role, nextUser.id);
-          setSessionUser(buildSessionUser(nextUser));
-        }
+        setUsers([]);
+        setSelectedUser(null);
       } finally {
         if (!cancelled) setUsersLoading(false);
       }
@@ -186,6 +164,8 @@ export default function TeacherPage() {
           setExamTitle={management.setExamTitle}
           createDate={management.createDate}
           setCreateDate={management.setCreateDate}
+          expectedStudentsCount={management.expectedStudentsCount}
+          setExpectedStudentsCount={management.setExpectedStudentsCount}
           durationMinutes={management.durationMinutes}
           setDurationMinutes={management.setDurationMinutes}
           questionText={management.questionText}
@@ -251,6 +231,8 @@ export default function TeacherPage() {
             selectedSubmissionId={examStatsState.selectedSubmissionId}
             selectedSubmission={examStatsState.selectedSubmission}
             selectedExam={examStatsState.selectedExam}
+            attendanceStats={attendance.stats}
+            attendanceLoading={attendance.loading}
             studentProfile={studentProfile}
             profileLoading={profileLoading}
           />

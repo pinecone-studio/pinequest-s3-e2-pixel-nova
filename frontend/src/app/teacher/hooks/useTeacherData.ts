@@ -39,12 +39,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
 
     setCurrentUser(user ?? null);
 
-    const storedTheme =
-      typeof window !== "undefined"
-        ? (localStorage.getItem("theme") as "dark" | "light" | null)
-        : null;
-    if (storedTheme) setTheme(storedTheme);
-
     let cancelled = false;
 
     const loadRemote = async () => {
@@ -132,7 +126,7 @@ export const useTeacherData = (overrideUser?: User | null) => {
       } catch {
         return;
       }
-    }, 30000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -142,7 +136,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
     const root = document.documentElement;
     if (theme === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
-    localStorage.setItem("theme", theme);
   }, [theme]);
 
   const showToast = useCallback((message: string) => {
