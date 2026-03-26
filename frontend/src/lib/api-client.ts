@@ -29,7 +29,7 @@ export const getApiUserContext = (roleOverride?: RoleKey): ApiUserContext => {
   };
 };
 
-export const apiFetch = async <T,>(
+export const apiFetch = async <T>(
   path: string,
   options: RequestInit = {},
   roleOverride?: RoleKey,
@@ -54,7 +54,7 @@ export const apiFetch = async <T,>(
   return (await res.json()) as T;
 };
 
-export const unwrapApi = <T,>(payload: { data?: T } | T): T => {
+export const unwrapApi = <T>(payload: { data?: T } | T): T => {
   if (payload && typeof payload === "object" && "data" in payload) {
     return (payload as { data?: T }).data ?? (payload as T);
   }
