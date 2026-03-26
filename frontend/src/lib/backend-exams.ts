@@ -17,8 +17,10 @@ type RemoteExamDetail = {
   examType?: string | null;
   className?: string | null;
   groupName?: string | null;
+  status?: string | null;
   scheduledAt?: string | null;
   startedAt?: string | null;
+  finishedAt?: string | null;
   roomCode?: string | null;
   durationMin?: number;
   expectedStudentsCount?: number | null;
@@ -166,24 +168,6 @@ export const scheduleExistingExamInBackend = async (
   exam: ScheduleExistingExamPayload,
 ) => {
   if (!user || user.role !== "teacher") return null;
-
-  const updateRes = await fetch(`${API_BASE_URL}/api/exams/${exam.examId}`, {
-    method: "PUT",
-    headers: buildHeaders(user),
-    body: JSON.stringify({
-      title: exam.title,
-      description: exam.description,
-      examType: exam.examType,
-      className: exam.className,
-      groupName: exam.groupName,
-      durationMin: exam.duration,
-      expectedStudentsCount: exam.expectedStudentsCount ?? 0,
-    }),
-  });
-
-  if (!updateRes.ok) {
-    throw new Error(await readBackendError(updateRes, "Backend exam update failed"));
-  }
 
   const scheduleRes = await fetch(
     `${API_BASE_URL}/api/exams/${exam.examId}/schedule`,

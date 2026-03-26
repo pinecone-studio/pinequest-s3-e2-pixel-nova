@@ -94,8 +94,11 @@ export const useExamManagement = (params: {
         examType?: string | null;
         className?: string | null;
         groupName?: string | null;
+        status?: string | null;
         roomCode?: string | null;
         scheduledAt?: string | null;
+        startedAt?: string | null;
+        finishedAt?: string | null;
         durationMin?: number;
         expectedStudentsCount?: number | null;
         createdAt?: string;
@@ -107,8 +110,12 @@ export const useExamManagement = (params: {
       examType: remote?.examType ?? payload.examType ?? null,
       className: remote?.className ?? payload.className ?? null,
       groupName: remote?.groupName ?? payload.groupName ?? null,
+      status:
+        remote?.status ??
+        (payload.scheduledAt ? "scheduled" : "draft"),
       scheduledAt: remote?.scheduledAt ?? payload.scheduledAt,
-      examStartedAt: null,
+      examStartedAt: remote?.startedAt ?? null,
+      finishedAt: remote?.finishedAt ?? null,
       roomCode: remote?.roomCode ?? generateRoomCode(),
       expectedStudentsCount:
         remote?.expectedStudentsCount ?? payload.expectedStudentsCount,
@@ -171,6 +178,18 @@ export const useExamManagement = (params: {
     if (!selectedScheduleExam && !scheduleTitle) {
       showToast("Шалгалтын файл сонгоно уу.");
       return;
+    }
+
+    if (selectedScheduleExam) {
+      const status = selectedScheduleExam.status ?? "draft";
+      if (status !== "draft" && status !== "scheduled") {
+        showToast("Зөвхөн ноорог эсвэл товлосон шалгалтыг дахин товлож болно.");
+        return;
+      }
+      if (selectedScheduleExam.questions.length === 0) {
+        showToast("Асуултгүй шалгалтыг хуваарьлах боломжгүй.");
+        return;
+      }
     }
 
     if (!selectedScheduleExam && questions.length === 0) {
