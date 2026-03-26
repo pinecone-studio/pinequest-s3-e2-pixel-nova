@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Crown, Medal, Sparkles, Trophy, Zap } from "lucide-react";
 
 type StudentLeaderboardTabProps = {
@@ -12,8 +13,15 @@ type StudentLeaderboardTabProps = {
 };
 
 type LeaderboardEntry = StudentLeaderboardTabProps["entries"][number];
+type LeaderboardMode = "class" | "subject";
+type DisplayEntry = LeaderboardEntry & {
+  metricValue: number;
+  metricPercent: number;
+  focusLabel: string;
+};
 
 const avatarPool = ["🧑‍🎓", "👨‍🎓", "👩‍🎓", "👦", "👧", "🧠"];
+const subjectPool = ["Математик", "Англи хэл", "Физик", "Хими", "Түүх", "Биологи"];
 
 const podiumStyles = {
   1: {
@@ -42,12 +50,11 @@ const podiumStyles = {
   },
 } as const;
 
-const getAvatar = (entry: LeaderboardEntry) => {
-  const seed =
-    entry.fullName.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) +
-    entry.rank;
-  return avatarPool[seed % avatarPool.length];
-};
+const getAvatarSeed = (entry: LeaderboardEntry) =>
+  entry.id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+const getAvatar = (entry: LeaderboardEntry) =>
+  avatarPool[(getAvatarSeed(entry) + entry.rank) % avatarPool.length];
 
 const getFirstName = (value: string) => value.trim().split(/\s+/)[0] || value;
 
@@ -60,20 +67,61 @@ const formatCompactXp = (value: number) => {
   return `${value}`;
 };
 
-const getScorePercent = (value: number, maxXp: number) =>
-  Math.max(55, Math.min(99, Math.round((value / Math.max(maxXp, 1)) * 100)));
-
 const sortEntries = (entries: LeaderboardEntry[]) =>
   [...entries].sort((left, right) => left.rank - right.rank);
 
-const podiumOrder = (entries: LeaderboardEntry[]) => {
+const getScorePercent = (value: number, maxXp: number) =>
+  Math.max(55, Math.min(99, Math.round((value / Math.max(maxXp, 1)) * 100)));
+
+const withMetricPercent = (entries: Omit<DisplayEntry, "metricPercent">[]) => {
+  const maxMetric = Math.max(...entries.map((entry) => entry.metricValue), 1);
+  return entries.map((entry) => ({
+    ...entry,
+    metricPercent: getScorePercent(entry.metricValue, maxMetric),
+  }));
+};
+
+const buildClassEntries = (entries: LeaderboardEntry[]) =>
+  withMetricPercent(
+    sortEntries(entries).map((entry) => ({
+      ...entry,
+      metricValue: entry.xp,
+      focusLabel: "10-р анги",
+    })),
+  );
+
+const buildSubjectEntries = (entries: LeaderboardEntry[]) =>
+  withMetricPercent(
+    sortEntries(entries)
+      .map((entry) => {
+        const seed = getAvatarSeed(entry);
+        const multiplier = 0.72 + ((seed % 26) + 8) / 100;
+
+        return {
+          ...entry,
+          metricValue: Math.round(entry.xp * multiplier),
+          focusLabel: subjectPool[seed % subjectPool.length],
+        };
+      })
+      .sort((left, right) => {
+        const metricDiff = right.metricValue - left.metricValue;
+        if (metricDiff !== 0) return metricDiff;
+        return left.fullName.localeCompare(right.fullName);
+      })
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+      })),
+  );
+
+const getPodiumEntries = (entries: DisplayEntry[]) => {
   const second = entries.find((entry) => entry.rank === 2);
   const first = entries.find((entry) => entry.rank === 1);
   const third = entries.find((entry) => entry.rank === 3);
-  return [second, first, third].filter(Boolean) as LeaderboardEntry[];
+  return [second, first, third].filter(Boolean) as DisplayEntry[];
 };
 
-function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
+function PodiumCard({ entry }: { entry: DisplayEntry }) {
   const style = podiumStyles[entry.rank as 1 | 2 | 3];
 
   return (
@@ -106,7 +154,7 @@ function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
           {getFirstName(entry.fullName)}
         </div>
         <div className="mt-1 text-xs font-medium text-slate-500">
-          {formatCompactXp(entry.xp)} XP
+          {formatCompactXp(entry.metricValue)} XP
         </div>
       </div>
     </div>
@@ -117,18 +165,48 @@ export default function StudentLeaderboardTab({
   currentUserId,
   entries,
 }: StudentLeaderboardTabProps) {
-  const orderedEntries = sortEntries(entries);
-  const currentUser = orderedEntries.find((entry) => entry.id === currentUserId) ?? null;
-  const maxXp = Math.max(...orderedEntries.map((entry) => entry.xp), 1);
-  const topThree = podiumOrder(orderedEntries);
-  const listEntries = orderedEntries.filter((entry) => entry.rank > 3);
-  const topThreeCutoff = orderedEntries.find((entry) => entry.rank === 3)?.xp ?? maxXp;
+  const [mode, setMode] = useState<LeaderboardMode>("class");
+  const classEntries = useMemo(() => buildClassEntries(entries), [entries]);
+  const subjectEntries = useMemo(() => buildSubjectEntries(entries), [entries]);
+  const activeEntries = mode === "class" ? classEntries : subjectEntries;
+  const currentUser = activeEntries.find((entry) => entry.id === currentUserId) ?? null;
+  const topThree = getPodiumEntries(activeEntries);
+  const listEntries = activeEntries.filter((entry) => entry.rank > 3);
+  const topThreeCutoff =
+    activeEntries.find((entry) => entry.rank === 3)?.metricValue ??
+    activeEntries[0]?.metricValue ??
+    1;
   const gapToTopThree =
     currentUser && currentUser.rank > 3
-      ? Math.max(topThreeCutoff - currentUser.xp, 0)
+      ? Math.max(topThreeCutoff - currentUser.metricValue, 0)
       : 0;
 
-  if (orderedEntries.length === 0) {
+  const copy =
+    mode === "class"
+      ? {
+          subtitle: "XP цуглуулж тэргүүлэгчтэй нэгд",
+          badgeLabel: "10-р анги",
+          bannerTitle: "Чиний эрэмбэ",
+          bannerBody:
+            currentUser && currentUser.rank <= 3
+              ? "Чи топ 3 дотор явж байна."
+              : currentUser
+                ? `Чи ${currentUser.rank}-т орж байна.`
+                : "Эрэмбээ ахиулаарай.",
+        }
+      : {
+          subtitle: "Сонгосон хичээлийн XP чансаа",
+          badgeLabel: currentUser?.focusLabel ?? activeEntries[0]?.focusLabel ?? "Хичээл",
+          bannerTitle: "Чиний хичээлийн байр",
+          bannerBody:
+            currentUser && currentUser.rank <= 3
+              ? `Чи ${currentUser.focusLabel}-д топ 3 дотор явж байна.`
+              : currentUser
+                ? `Чи ${currentUser.focusLabel}-д ${currentUser.rank}-т орж байна.`
+                : "Хичээлийн чансаагаа ахиулаарай.",
+        };
+
+  if (activeEntries.length === 0) {
     return (
       <section className="w-full rounded-[30px] border border-[#dfe4ff] bg-white p-6 shadow-[0_22px_55px_rgba(77,92,148,0.08)]">
         <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">
@@ -148,17 +226,37 @@ export default function StudentLeaderboardTab({
           <h2 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-900">
             Тэргүүлэгчид
           </h2>
-          <p className="mt-1 text-sm text-slate-400">
-            XP цуглуулж тэргүүлэгчтэй нэгд
-          </p>
+          <p className="mt-1 text-sm text-slate-400">{copy.subtitle}</p>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-1 rounded-[22px] bg-[#edf1ff] p-1">
-          <div className="rounded-[18px] bg-white px-4 py-3 text-center text-sm font-semibold text-slate-700 shadow-sm">
-            10-р анги
+        <div className="mt-5 flex items-center gap-3">
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-1 rounded-[22px] bg-[#edf1ff] p-1">
+            <button
+              type="button"
+              className={`rounded-[18px] px-4 py-3 text-center text-sm font-semibold transition ${
+                mode === "class"
+                  ? "bg-white text-slate-700 shadow-sm"
+                  : "text-[#8c97b5]"
+              }`}
+              onClick={() => setMode("class")}
+            >
+              10-р анги
+            </button>
+            <button
+              type="button"
+              className={`rounded-[18px] px-4 py-3 text-center text-sm font-semibold transition ${
+                mode === "subject"
+                  ? "bg-white text-slate-700 shadow-sm"
+                  : "text-[#8c97b5]"
+              }`}
+              onClick={() => setMode("subject")}
+            >
+              Хичээл
+            </button>
           </div>
-          <div className="rounded-[18px] px-4 py-3 text-center text-sm font-semibold text-[#8c97b5]">
-            Хичээл
+
+          <div className="shrink-0 rounded-full bg-[#eef3ff] px-3 py-2 text-xs font-semibold text-[#5c6cff]">
+            {copy.badgeLabel}
           </div>
         </div>
 
@@ -169,12 +267,8 @@ export default function StudentLeaderboardTab({
                 <Trophy className="h-5 w-5" />
               </div>
               <div>
-                <div className="text-base font-semibold">Чиний эрэмбэ</div>
-                <div className="text-sm text-white/80">
-                  {currentUser.rank <= 3
-                    ? "Чи топ 3 дотор явж байна."
-                    : `Чи ${currentUser.rank}-т орж байна.`}
-                </div>
+                <div className="text-base font-semibold">{copy.bannerTitle}</div>
+                <div className="text-sm text-white/80">{copy.bannerBody}</div>
               </div>
             </div>
 
@@ -192,7 +286,7 @@ export default function StudentLeaderboardTab({
         {topThree.length > 0 && (
           <div className="mt-6 flex items-end justify-center gap-3 sm:gap-5">
             {topThree.map((entry) => (
-              <PodiumCard key={entry.id} entry={entry} />
+              <PodiumCard key={`${mode}-${entry.id}`} entry={entry} />
             ))}
           </div>
         )}
@@ -201,11 +295,10 @@ export default function StudentLeaderboardTab({
       <div className="space-y-3">
         {listEntries.map((entry) => {
           const isCurrentUser = entry.id === currentUserId;
-          const percent = getScorePercent(entry.xp, maxXp);
 
           return (
             <div
-              key={entry.id}
+              key={`${mode}-${entry.id}`}
               className={`flex items-center justify-between gap-3 rounded-[24px] border px-4 py-4 shadow-[0_10px_22px_rgba(77,92,148,0.05)] transition ${
                 isCurrentUser
                   ? "border-[#cfd8ff] bg-[#eef3ff]"
@@ -238,18 +331,21 @@ export default function StudentLeaderboardTab({
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 text-sm text-slate-400">Lvl {entry.level}</div>
+                  <div className="mt-1 text-sm text-slate-400">
+                    Lvl {entry.level}
+                    {mode === "subject" ? ` • ${entry.focusLabel}` : ""}
+                  </div>
                 </div>
               </div>
 
               <div className="shrink-0 text-right">
                 <div className="flex items-center justify-end gap-1 text-base font-semibold text-[#d69424]">
                   <Zap className="h-4 w-4" />
-                  {formatCompactXp(entry.xp)}
+                  {formatCompactXp(entry.metricValue)}
                 </div>
                 <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fff5de] px-2.5 py-1 text-xs font-semibold text-[#d69424]">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {percent}%
+                  {entry.metricPercent}%
                 </div>
               </div>
             </div>
