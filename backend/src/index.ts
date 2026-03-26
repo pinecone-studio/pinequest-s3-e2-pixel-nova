@@ -28,10 +28,17 @@ app.use(
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:5173",
+      "https://educore.pages.dev",
       "https://educore-1zs.pages.dev",
       "https://frontend.zbymba4.workers.dev",
     ],
-    allowHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-user-id",
+      "x-user-role",
+      "x-user-name",
+    ],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
 );
