@@ -20,6 +20,8 @@ export type ApiUserContext = {
   userName: string;
 };
 
+const encodeHeaderValue = (value: string) => encodeURIComponent(value);
+
 export const getApiUserContext = (roleOverride?: RoleKey): ApiUserContext => {
   const roleKey = roleOverride ?? getStoredRole();
   const sessionUser = getSessionUser();
@@ -44,15 +46,16 @@ export const apiFetch = async <T>(
   roleOverride?: RoleKey,
 ): Promise<T> => {
   const { userId, userRole, userName } = getApiUserContext(roleOverride);
+  const headers = new Headers(options.headers);
+
+  headers.set("Content-Type", "application/json");
+  headers.set("x-user-id", userId);
+  headers.set("x-user-role", userRole);
+  headers.set("x-user-name-encoded", encodeHeaderValue(userName));
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "x-user-id": userId,
-      "x-user-role": userRole,
-      "x-user-name": userName,
-      ...(options.headers ?? {}),
-    },
+    headers,
   });
 
   if (!res.ok) {

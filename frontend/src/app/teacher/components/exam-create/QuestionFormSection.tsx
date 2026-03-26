@@ -120,9 +120,6 @@ export default function QuestionFormSection({
               Зураг устгах
             </button>
           )}
-          <span className="text-xs text-muted-foreground">
-            Задгай, сонголттой, зурагтай асуултыг гараар нэмэхэд ашиглана.
-          </span>
         </div>
 
         {questionImageUrl && (

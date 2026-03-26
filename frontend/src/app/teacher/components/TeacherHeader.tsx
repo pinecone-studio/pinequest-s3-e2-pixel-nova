@@ -1,11 +1,9 @@
 import { useState, type ReactNode } from "react";
-import { Bell, GraduationCap, MoonStar, SunMedium } from "lucide-react";
+import { Bell, GraduationCap } from "lucide-react";
 
 export type TeacherNavTab = string;
 
 type TeacherHeaderProps = {
-  theme: "light" | "dark";
-  onToggleTheme: () => void;
   notifications: { message: string; createdAt: string; read: boolean }[];
   onMarkRead?: (index: number) => void;
   roleControl?: ReactNode;
@@ -15,8 +13,6 @@ type TeacherHeaderProps = {
 };
 
 export default function TeacherHeader({
-  theme,
-  onToggleTheme,
   notifications,
   onMarkRead,
   roleControl,
@@ -60,19 +56,6 @@ export default function TeacherHeader({
       </nav>
 
       <div className="flex shrink-0 items-center gap-2 py-3">
-        <button
-          className="grid h-9 w-9 place-items-center rounded-xl border border-[#dce5ef] bg-white text-slate-500 transition hover:bg-[#f8fafc]"
-          onClick={onToggleTheme}
-          type="button"
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <SunMedium className="h-4 w-4" />
-          ) : (
-            <MoonStar className="h-4 w-4" />
-          )}
-        </button>
-
         <div className="relative" tabIndex={0} onBlur={() => setOpen(false)}>
           <button
             className="relative grid h-9 w-9 place-items-center rounded-xl border border-[#dce5ef] bg-white text-slate-500 transition hover:bg-[#f8fafc]"

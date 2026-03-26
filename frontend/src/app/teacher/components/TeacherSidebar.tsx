@@ -4,18 +4,16 @@ import {
   ClipboardList,
   GraduationCap,
   LayoutGrid,
-  Settings,
   Trophy,
 } from "lucide-react";
 import { badgeClass } from "../styles";
 
 const tabs = [
+  { key: "Хуваарь", icon: GraduationCap },
   { key: "Шалгалт үүсгэх", icon: LayoutGrid },
   { key: "Шалгалтын сан", icon: ClipboardList },
   { key: "XP харах", icon: Trophy },
   { key: "Гүйцэтгэл", icon: BookOpen },
-  { key: "Хуваарь", icon: GraduationCap },
-  { key: "Тохиргоо", icon: Settings },
 ] as const;
 
 type TabKey = (typeof tabs)[number]["key"];

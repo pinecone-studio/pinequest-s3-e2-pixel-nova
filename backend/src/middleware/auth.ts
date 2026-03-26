@@ -11,10 +11,21 @@ const unauthorized = (message: string) => ({
   },
 });
 
+const decodeHeaderValue = (value?: string) => {
+  if (!value) return undefined;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
 export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const userId = c.req.header("x-user-id");
   const userRole = c.req.header("x-user-role") as "teacher" | "student" | undefined;
-  const userName = c.req.header("x-user-name") ?? undefined;
+  const userName = decodeHeaderValue(
+    c.req.header("x-user-name-encoded") ?? c.req.header("x-user-name") ?? undefined,
+  );
 
   if (!userId || !userRole) {
     return c.json(unauthorized("Missing x-user-id or x-user-role header"), 401);
