@@ -60,6 +60,12 @@ type ExamCreateCardProps = {
 export default function ExamCreateCard({
   examTitle,
   setExamTitle,
+  createDate,
+  setCreateDate,
+  expectedStudentsCount,
+  setExpectedStudentsCount,
+  durationMinutes,
+  setDurationMinutes,
   questionText,
   setQuestionText,
   questionType,
@@ -145,7 +151,16 @@ export default function ExamCreateCard({
           onDocxUpload={onDocxUpload}
         />
 
-        <ExamMetaFields examTitle={examTitle} setExamTitle={setExamTitle} />
+        <ExamMetaFields
+          examTitle={examTitle}
+          setExamTitle={setExamTitle}
+          createDate={createDate}
+          setCreateDate={setCreateDate}
+          durationMinutes={durationMinutes}
+          setDurationMinutes={setDurationMinutes}
+          expectedStudentsCount={expectedStudentsCount}
+          setExpectedStudentsCount={setExpectedStudentsCount}
+        />
 
         <QuestionFormSection
           questionText={questionText}
