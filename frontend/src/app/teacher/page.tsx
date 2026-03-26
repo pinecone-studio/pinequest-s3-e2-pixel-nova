@@ -21,7 +21,11 @@ import ExamListCard from "./components/ExamListCard";
 import ExamStatsCards from "./components/ExamStatsCards";
 import TeacherXpOverviewCard from "./components/TeacherXpOverviewCard";
 import ResultsTab from "./components/ResultsTab";
+<<<<<<< Updated upstream
 import SettingsTab from "./components/SettingsTab";
+=======
+import TeacherStudentsTab from "./components/TeacherStudentsTab";
+>>>>>>> Stashed changes
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamImport } from "./hooks/useExamImport";
@@ -31,10 +35,15 @@ import { contentCanvasClass, pageShellClass } from "./styles";
 const teacherTabs = [
   "Шалгалт үүсгэх",
   "Шалгалтын сан",
+<<<<<<< Updated upstream
   "XP харах",
   "Гүйцэтгэл",
   "Хуваарь",
   "Тохиргоо",
+=======
+  "Гүйцэтгэл",
+  "Хуваарь",
+>>>>>>> Stashed changes
 ] as const;
 
 type TeacherTab = (typeof teacherTabs)[number];
@@ -46,7 +55,11 @@ export default function TeacherPage() {
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
   const [activeTab, setActiveTab] = useState<TeacherTab>(teacherTabs[0]);
+<<<<<<< Updated upstream
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+=======
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+>>>>>>> Stashed changes
 
   const sessionUser = useMemo(
     () => (selectedUser ? buildSessionUser(selectedUser) : null),
@@ -75,9 +88,18 @@ export default function TeacherPage() {
     users: data.users,
   });
 
-  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
-    null,
-  );
+  useEffect(() => {
+    if (showScheduleForm) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showScheduleForm]);
+
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
@@ -90,7 +112,13 @@ export default function TeacherPage() {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
+<<<<<<< Updated upstream
         const authUsers = await getAuthUsers().catch(() => []);
+=======
+        const authUsers = await getAuthUsers().catch(() =>
+          getLocalAuthUsers(role),
+        );
+>>>>>>> Stashed changes
         if (cancelled) return;
 
         const nextUsers = authUsers.filter((user) => user.role === role);
@@ -173,6 +201,7 @@ export default function TeacherPage() {
       return (
         <div className="space-y-6">
           <ExamStatsCards loading={data.loading} stats={examStatsState.stats} />
+<<<<<<< Updated upstream
           <section className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
             <ExamScheduleCard
               scheduleTitle={management.scheduleTitle}
@@ -226,6 +255,46 @@ export default function TeacherPage() {
               onDocxUpload={imports.handleDocxUpload}
             />
           </section>
+=======
+          <ExamCreateCard
+            examTitle={management.examTitle}
+            setExamTitle={management.setExamTitle}
+            createDate={management.createDate}
+            setCreateDate={management.setCreateDate}
+            durationMinutes={management.durationMinutes}
+            setDurationMinutes={management.setDurationMinutes}
+            questionText={management.questionText}
+            setQuestionText={management.setQuestionText}
+            questionType={management.questionType}
+            setQuestionType={management.setQuestionType}
+            mcqOptions={management.mcqOptions}
+            setMcqOptions={management.setMcqOptions}
+            questionAnswer={management.questionAnswer}
+            setQuestionAnswer={management.setQuestionAnswer}
+            questionPoints={management.questionPoints}
+            setQuestionPoints={management.setQuestionPoints}
+            questionCorrectIndex={management.questionCorrectIndex}
+            setQuestionCorrectIndex={management.setQuestionCorrectIndex}
+            questions={management.questions}
+            addQuestion={management.addQuestion}
+            removeQuestion={management.removeQuestion}
+            updateQuestion={management.updateQuestion}
+            updateQuestionOption={management.updateQuestionOption}
+            addQuestionOption={management.addQuestionOption}
+            removeQuestionOption={management.removeQuestionOption}
+            saveExam={management.saveExam}
+            pdfUseOcr={imports.pdfUseOcr}
+            setPdfUseOcr={imports.setPdfUseOcr}
+            answerKeyPage={imports.answerKeyPage}
+            setAnswerKeyPage={imports.setAnswerKeyPage}
+            pdfLoading={imports.pdfLoading}
+            pdfError={imports.pdfError}
+            importError={imports.importError}
+            onPdfUpload={imports.handlePdfUpload}
+            onImageUpload={imports.handleImageUpload}
+            onDocxUpload={imports.handleDocxUpload}
+          />
+>>>>>>> Stashed changes
         </div>
       );
     }
@@ -236,29 +305,71 @@ export default function TeacherPage() {
       );
     }
 
+<<<<<<< Updated upstream
     if (activeTab === "XP харах") {
       return <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />;
     }
 
     if (activeTab === "Гүйцэтгэл") {
+=======
+    if (activeTab === "Гүйцэтгэл") {
       return (
-        <ResultsTab
-          loading={data.loading}
-          examOptions={examStatsState.examOptions}
-          activeExamId={examStatsState.activeExamId}
-          onSelectExam={examStatsState.setSelectedExamId}
-          examStats={examStatsState.examStats}
-          submissions={examStatsState.activeSubmissions}
-          onSelectSubmission={examStatsState.setSelectedSubmissionId}
-          selectedSubmissionId={examStatsState.selectedSubmissionId}
-          selectedSubmission={examStatsState.selectedSubmission}
-          selectedExam={examStatsState.selectedExam}
-          studentProfile={studentProfile}
-          profileLoading={profileLoading}
-        />
+        <div className="space-y-6">
+          <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
+          <ResultsTab
+            loading={data.loading}
+            examOptions={examStatsState.examOptions}
+            activeExamId={examStatsState.activeExamId}
+            onSelectExam={examStatsState.setSelectedExamId}
+            examStats={examStatsState.examStats}
+            submissions={examStatsState.activeSubmissions}
+            onSelectSubmission={examStatsState.setSelectedSubmissionId}
+            selectedSubmissionId={examStatsState.selectedSubmissionId}
+            selectedSubmission={examStatsState.selectedSubmission}
+            selectedExam={examStatsState.selectedExam}
+            studentProfile={studentProfile}
+            profileLoading={profileLoading}
+          />
+        </div>
       );
     }
 
+    if (activeTab === "Хуваарь") {
+>>>>>>> Stashed changes
+      return (
+        <div className="space-y-6">
+          <TeacherStudentsTab
+            exams={data.exams}
+            onAddSchedule={() => setShowScheduleForm((prev) => !prev)}
+          />
+          {showScheduleForm && (
+            <div
+              className="fixed inset-0 z-50 flex justify-center bg-black/10"
+              onClick={() => setShowScheduleForm(false)}
+            >
+              <div
+                className="mt-10 h-[820px] w-full max-w-sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExamScheduleCard
+                  scheduleTitle={management.scheduleTitle}
+                  setScheduleTitle={management.setScheduleTitle}
+                  scheduleDate={management.scheduleDate}
+                  setScheduleDate={management.setScheduleDate}
+                  durationMinutes={management.durationMinutes}
+                  setDurationMinutes={management.setDurationMinutes}
+                  roomCode={management.roomCode ?? null}
+                  onCopyCode={management.copyCode}
+                  onSchedule={management.handleSchedule}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+<<<<<<< Updated upstream
     if (activeTab === "Хуваарь") {
       return (
         <ExamScheduleCard
@@ -282,6 +393,8 @@ export default function TeacherPage() {
       );
     }
 
+=======
+>>>>>>> Stashed changes
     return null;
   };
 
@@ -292,6 +405,7 @@ export default function TeacherPage() {
           {data.toast}
         </div>
       )}
+<<<<<<< Updated upstream
       <div
         className={`grid min-h-screen transition-[grid-template-columns] duration-300 ease-out ${
           sidebarCollapsed
@@ -333,6 +447,34 @@ export default function TeacherPage() {
           </div>
         </main>
       </div>
+=======
+      <TeacherHeader
+        theme={data.theme}
+        onToggleTheme={() =>
+          data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+        }
+        notifications={data.notifications}
+        onMarkRead={data.markNotificationRead}
+        activeTab={activeTab}
+        setActiveTab={(tab) => setActiveTab(tab as TeacherTab)}
+        tabs={teacherTabs}
+        roleControl={
+          <RoleNavbar
+            activeRole={role}
+            activeUserId={selectedUser?.id ?? null}
+            users={users}
+            loading={usersLoading}
+            onChangeRole={handleRoleChange}
+            onChangeUser={handleUserChange}
+          />
+        }
+      />
+      <main className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1480px] space-y-6">
+          <section className={contentCanvasClass}>{renderActiveTab()}</section>
+        </div>
+      </main>
+>>>>>>> Stashed changes
     </div>
   );
 }
