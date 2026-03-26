@@ -1,0 +1,54 @@
+name: EduCore CI
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/educore-ci.yml'
+      - 'educore/**'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/educore-ci.yml'
+      - 'educore/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: educore-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  ci:
+    name: Lint, typecheck, and test educore
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: educore
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: educore/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
