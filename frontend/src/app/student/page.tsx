@@ -62,7 +62,6 @@ const getInitials = (value: string) =>
 export default function StudentPage() {
   const router = useRouter();
   const role: RoleKey = "student";
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [teacherUsers, setTeacherUsers] = useState<AuthUser[]>([]);
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
@@ -253,7 +252,7 @@ export default function StudentPage() {
     <div className="min-h-screen bg-[#f6f8fc] text-foreground">
       {exam.view === "dashboard" && (
         <main className="px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-[1280px] space-y-5">
+          <div className="w-full space-y-5">
             <StudentHeader
               activeTab={exam.activeTab}
               currentUserName={currentUserName}
