@@ -20,7 +20,6 @@ import {
   setStoredSelectedUserId,
   type RoleKey,
 } from "@/lib/role-session";
-import TeacherSidebar from "./components/TeacherSidebar";
 import TeacherHeader from "./components/TeacherHeader";
 import ExamScheduleCard from "./components/ExamScheduleCard";
 import ExamCreateCard from "./components/ExamCreateCard";
@@ -28,7 +27,6 @@ import ExamListCard from "./components/ExamListCard";
 import ExamStatsCards from "./components/ExamStatsCards";
 import TeacherXpOverviewCard from "./components/TeacherXpOverviewCard";
 import ResultsTab from "./components/ResultsTab";
-import SettingsTab from "./components/SettingsTab";
 import TeacherStudentsTab from "./components/TeacherStudentsTab";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
@@ -38,11 +36,9 @@ import { contentCanvasClass, pageShellClass } from "./styles";
 
 const teacherTabs = [
   "Шалгалт үүсгэх",
-  "Хадгалсан шалгалт",
-  "XP харах",
-  "Дүн",
-  "Сурагч",
-  "Тохиргоо",
+  "Шалгалтын сан",
+  "Гүйцэтгэл",
+  "Хуваарь",
 ] as const;
 
 type TeacherTab = (typeof teacherTabs)[number];
@@ -62,21 +58,19 @@ const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
 
 export default function TeacherPage() {
   const router = useRouter();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const role: RoleKey = "teacher";
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
   const [activeTab, setActiveTab] = useState<TeacherTab>(teacherTabs[0]);
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
 
   const sessionUser = useMemo(
     () => (selectedUser ? buildSessionUser(selectedUser) : null),
     [selectedUser],
   );
 
-  const data = useTeacherData(
-    sessionUser,
-  );
+  const data = useTeacherData(sessionUser);
 
   const management = useExamManagement({
     exams: data.exams,
@@ -98,6 +92,17 @@ export default function TeacherPage() {
     users: data.users,
   });
 
+  useEffect(() => {
+    if (showScheduleForm) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showScheduleForm]);
+
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
     null,
   );
@@ -113,7 +118,9 @@ export default function TeacherPage() {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const authUsers = await getAuthUsers().catch(() => getLocalAuthUsers(role));
+        const authUsers = await getAuthUsers().catch(() =>
+          getLocalAuthUsers(role),
+        );
         if (cancelled) return;
 
         const nextUsers = authUsers.filter((user) => user.role === role);
@@ -199,89 +206,66 @@ export default function TeacherPage() {
   }, [examStatsState.selectedSubmission?.studentId]);
 
   if (!data.currentUser) return null;
-  const currentUser = data.currentUser;
 
   const renderActiveTab = () => {
     if (activeTab === "Шалгалт үүсгэх") {
       return (
         <div className="space-y-6">
-          <ExamStatsCards
-            loading={data.loading}
-            stats={examStatsState.stats}
+          <ExamStatsCards loading={data.loading} stats={examStatsState.stats} />
+
+          <ExamCreateCard
+            examTitle={management.examTitle}
+            setExamTitle={management.setExamTitle}
+            createDate={management.createDate}
+            setCreateDate={management.setCreateDate}
+            durationMinutes={management.durationMinutes}
+            setDurationMinutes={management.setDurationMinutes}
+            questionText={management.questionText}
+            setQuestionText={management.setQuestionText}
+            questionType={management.questionType}
+            setQuestionType={management.setQuestionType}
+            mcqOptions={management.mcqOptions}
+            setMcqOptions={management.setMcqOptions}
+            questionAnswer={management.questionAnswer}
+            setQuestionAnswer={management.setQuestionAnswer}
+            questionPoints={management.questionPoints}
+            setQuestionPoints={management.setQuestionPoints}
+            questionCorrectIndex={management.questionCorrectIndex}
+            setQuestionCorrectIndex={management.setQuestionCorrectIndex}
+            questions={management.questions}
+            addQuestion={management.addQuestion}
+            removeQuestion={management.removeQuestion}
+            updateQuestion={management.updateQuestion}
+            updateQuestionOption={management.updateQuestionOption}
+            addQuestionOption={management.addQuestionOption}
+            removeQuestionOption={management.removeQuestionOption}
+            saveExam={management.saveExam}
+            pdfUseOcr={imports.pdfUseOcr}
+            setPdfUseOcr={imports.setPdfUseOcr}
+            answerKeyPage={imports.answerKeyPage}
+            setAnswerKeyPage={imports.setAnswerKeyPage}
+            pdfLoading={imports.pdfLoading}
+            pdfError={imports.pdfError}
+            importError={imports.importError}
+            onPdfUpload={imports.handlePdfUpload}
+            onImageUpload={imports.handleImageUpload}
+            onDocxUpload={imports.handleDocxUpload}
           />
-          <section className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-            <ExamScheduleCard
-              scheduleTitle={management.scheduleTitle}
-              setScheduleTitle={management.setScheduleTitle}
-              scheduleDate={management.scheduleDate}
-              setScheduleDate={management.setScheduleDate}
-              durationMinutes={management.durationMinutes}
-              setDurationMinutes={management.setDurationMinutes}
-              roomCode={management.roomCode}
-              onSchedule={management.handleSchedule}
-              onCopyCode={management.copyCode}
-            />
-            <ExamCreateCard
-              examTitle={management.examTitle}
-              setExamTitle={management.setExamTitle}
-              createDate={management.createDate}
-              setCreateDate={management.setCreateDate}
-              durationMinutes={management.durationMinutes}
-              setDurationMinutes={management.setDurationMinutes}
-              questionText={management.questionText}
-              setQuestionText={management.setQuestionText}
-              questionType={management.questionType}
-              setQuestionType={management.setQuestionType}
-              mcqOptions={management.mcqOptions}
-              setMcqOptions={management.setMcqOptions}
-              questionAnswer={management.questionAnswer}
-              setQuestionAnswer={management.setQuestionAnswer}
-              questionPoints={management.questionPoints}
-              setQuestionPoints={management.setQuestionPoints}
-              questionCorrectIndex={management.questionCorrectIndex}
-              setQuestionCorrectIndex={management.setQuestionCorrectIndex}
-              questions={management.questions}
-              addQuestion={management.addQuestion}
-              removeQuestion={management.removeQuestion}
-              updateQuestion={management.updateQuestion}
-              updateQuestionOption={management.updateQuestionOption}
-              addQuestionOption={management.addQuestionOption}
-              removeQuestionOption={management.removeQuestionOption}
-              saveExam={management.saveExam}
-              pdfUseOcr={imports.pdfUseOcr}
-              setPdfUseOcr={imports.setPdfUseOcr}
-              answerKeyPage={imports.answerKeyPage}
-              setAnswerKeyPage={imports.setAnswerKeyPage}
-              pdfLoading={imports.pdfLoading}
-              pdfError={imports.pdfError}
-              importError={imports.importError}
-              onPdfUpload={imports.handlePdfUpload}
-              onImageUpload={imports.handleImageUpload}
-              onDocxUpload={imports.handleDocxUpload}
-            />
-          </section>
         </div>
       );
     }
 
-    if (activeTab === "Хадгалсан шалгалт") {
+    if (activeTab === "Шалгалтын сан") {
       return (
-        <ExamListCard
-          exams={data.exams}
-          onCopyCode={management.copyCode}
-        />
+        <ExamListCard exams={data.exams} onCopyCode={management.copyCode} />
       );
     }
 
-    if (activeTab === "XP харах") {
+    if (activeTab === "Гүйцэтгэл") {
       return (
-        <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
-      );
-    }
-
-    if (activeTab === "Дүн") {
-      return (
-        <ResultsTab
+        <div className="space-y-6">
+          <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
+          <ResultsTab
           loading={data.loading}
           examOptions={examStatsState.examOptions}
           activeExamId={examStatsState.activeExamId}
@@ -295,72 +279,83 @@ export default function TeacherPage() {
           studentProfile={studentProfile}
           profileLoading={profileLoading}
         />
+        </div>
       );
     }
 
-    if (activeTab === "Сурагч") {
+    if (activeTab === "Хуваарь") {
       return (
-        <TeacherStudentsTab
-          exams={data.exams}
-          onAddSchedule={() => setActiveTab("Шалгалт үүсгэх")}
-        />
+        <div className="space-y-6">
+          <TeacherStudentsTab
+            exams={data.exams}
+            onAddSchedule={() => setShowScheduleForm((prev) => !prev)}
+          />
+          {showScheduleForm && (
+            <div
+              className="fixed inset-0 z-50 flex justify-center bg-black/10"
+              onClick={() => setShowScheduleForm(false)}
+            >
+              <div
+                className="w-full max-w-sm h-[820px] mt-10"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExamScheduleCard
+                  scheduleTitle={management.scheduleTitle}
+                  setScheduleTitle={management.setScheduleTitle}
+                  scheduleDate={management.scheduleDate}
+                  setScheduleDate={management.setScheduleDate}
+                  durationMinutes={management.durationMinutes}
+                  setDurationMinutes={management.setDurationMinutes}
+                  roomCode={management.roomCode}
+                  onSchedule={management.handleSchedule}
+                  onCopyCode={management.copyCode}
+                  onClose={() => setShowScheduleForm(false)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       );
     }
 
-    return (
-      <SettingsTab
-        activeExam={examStatsState.activeExam}
-        submissions={examStatsState.activeSubmissions}
-        currentUserName={currentUser.username}
-      />
-    );
+    return null;
   };
 
   return (
     <div className={pageShellClass}>
       {data.toast && (
-        <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
+        <div className="fixed right-6 top-20 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
           {data.toast}
         </div>
       )}
-      <div
-        className={`grid min-h-screen transition-[grid-template-columns] duration-300 ease-out ${
-          sidebarCollapsed
-            ? "lg:grid-cols-[72px_1fr]"
-            : "lg:grid-cols-[260px_1fr]"
-        }`}>
-        <TeacherSidebar
-          collapsed={sidebarCollapsed}
-          setCollapsed={setSidebarCollapsed}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          sidebarTimerRef={management.sidebarTimerRef}
-          currentUserName={currentUser.username}
-        />
-        <main className="px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mx-auto w-full max-w-[1480px] space-y-6">
-            <TeacherHeader
-              theme={data.theme}
-              onToggleTheme={() =>
-                data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
-              }
-              notifications={data.notifications}
-              onMarkRead={data.markNotificationRead}
-              roleControl={
-                <RoleNavbar
-                  activeRole={role}
-                  activeUserId={selectedUser?.id ?? null}
-                  users={users}
-                  loading={usersLoading}
-                  onChangeRole={handleRoleChange}
-                  onChangeUser={handleUserChange}
-                />
-              }
-            />
-            <section className={contentCanvasClass}>{renderActiveTab()}</section>
-          </div>
-        </main>
-      </div>
+      <TeacherHeader
+        theme={data.theme}
+        onToggleTheme={() =>
+          data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+        }
+        notifications={data.notifications}
+        onMarkRead={data.markNotificationRead}
+        activeTab={activeTab}
+        setActiveTab={(tab) => setActiveTab(tab as TeacherTab)}
+        tabs={teacherTabs}
+        roleControl={
+          <RoleNavbar
+            activeRole={role}
+            activeUserId={selectedUser?.id ?? null}
+            users={users}
+            loading={usersLoading}
+            onChangeRole={handleRoleChange}
+            onChangeUser={handleUserChange}
+          />
+        }
+      />
+      <main className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1480px] space-y-6">
+          <section className={contentCanvasClass}>
+            {renderActiveTab()}
+          </section>
+        </div>
+      </main>
     </div>
   );
 }

@@ -1,11 +1,4 @@
-import {
-  badgeClass,
-  buttonSecondary,
-  cardClass,
-  insetCardClass,
-  sectionDescriptionClass,
-  sectionTitleClass,
-} from "../styles";
+import { sectionDescriptionClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { Exam } from "../types";
 
@@ -18,99 +11,88 @@ export default function ExamListCard({ exams, onCopyCode }: ExamListCardProps) {
   const sortedExams = [...exams].sort((left, right) =>
     right.createdAt.localeCompare(left.createdAt),
   );
-  const savedExams = exams.filter((exam) => exam.questions.length > 0).length;
-  const scheduledExams = exams.filter((exam) => Boolean(exam.scheduledAt)).length;
 
   return (
-    <div className={`${cardClass} overflow-hidden`}>
+    <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <span className={badgeClass}>Exam Library</span>
-          <h2 className={`mt-3 ${sectionTitleClass}`}>Хадгалсан шалгалтууд</h2>
-          <p className={`mt-2 ${sectionDescriptionClass}`}>
-            Draft, хуваарь, room code бүгдийг нэг цэвэр жагсаалтаар харуулна.
+          <h2 className="text-[1.65rem] font-semibold tracking-[-0.02em] text-slate-900 underline underline-offset-4">
+            Шалгалтын сан
+          </h2>
+          <p className={`mt-1 ${sectionDescriptionClass}`}>
+            Таны үүсгэсэн шалгалтын материалууд
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 text-[11px]">
-          <span className="rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-3 py-1 font-semibold text-[#1d4ed8]">
-            Сан: {savedExams}
-          </span>
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-semibold text-emerald-600 dark:text-emerald-300">
-            Товлолт: {scheduledExams}
-          </span>
-        </div>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-2xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+        >
+          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Шалгалт үүсгэх
+        </button>
       </div>
-      <div className="mt-6 space-y-3 text-sm">
-        {sortedExams.length === 0 && (
-          <div className="rounded-[24px] border border-dashed border-[#d5dfeb] bg-[#f8fafc] px-4 py-8 text-center text-sm text-slate-500">
+
+      <div>
+        {sortedExams.length === 0 ? (
+          <div className="py-12 text-center text-sm text-slate-400">
             Одоогоор шалгалт байхгүй байна.
           </div>
-        )}
-        {sortedExams.map((exam) => {
-          const isSaved = exam.questions.length > 0;
-          const statusLabel = exam.scheduledAt
-            ? "Товлосон"
-            : isSaved
-              ? "Санд хадгалсан"
-              : "Ноорог";
-          const statusClass = exam.scheduledAt
-            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
-            : isSaved
-              ? "border-primary/20 bg-primary/10 text-primary"
-              : "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300";
+        ) : (
+          <ul>
+            {sortedExams.map((exam, index) => (
+              <li
+                key={exam.id}
+                className={`flex items-center gap-4 py-4 ${
+                  index !== sortedExams.length - 1 ? "border-b border-[#f0f4f9]" : ""
+                }`}
+              >
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#dce5ef] bg-[#f8fafc]">
+                  <svg className="size-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 2v6h6" />
+                  </svg>
+                </div>
 
-          return (
-            <div
-              key={exam.id}
-              className="rounded-[26px] border border-[#dce5ef] bg-[#fbfdff] px-4 py-4"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-base font-semibold text-slate-900">{exam.title}</div>
-                    <span
-                      className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${statusClass}`}
-                    >
-                      {statusLabel}
-                    </span>
-                  </div>
-                  <div className="mt-2 text-sm text-slate-500">
-                    Код: {exam.roomCode} · {exam.questions.length} асуулт · {exam.duration ?? 45} мин
-                  </div>
-                  <div className="mt-1 text-sm text-slate-500">
-                    Үүсгэсэн: {formatDateTime(exam.createdAt)} · Товлосон:{" "}
-                    {formatDateTime(exam.scheduledAt)}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold text-slate-900">{exam.title}</div>
+                  <div className="mt-0.5 truncate text-xs text-slate-400">
+                    {exam.roomCode}
                   </div>
                 </div>
-                <button
-                  className={buttonSecondary}
-                  onClick={() => onCopyCode(exam.roomCode)}
-                  type="button"
-                >
-                  Room code хуулах
-                </button>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className={`${insetCardClass} text-xs`}>
-                  <div className="text-slate-500">Хадгалалтын төлөв</div>
-                  <div className="mt-1 font-semibold">
-                    {isSaved ? "Асуулттай" : "Зөвхөн room"}
-                  </div>
+
+                <div className="flex shrink-0 items-center gap-3">
+                  <button
+                    type="button"
+                    className="flex size-8 items-center justify-center rounded-full hover:bg-[#f0f4f9]"
+                    onClick={() => onCopyCode(exam.roomCode)}
+                    title="Room code хуулах"
+                  >
+                    <svg className="size-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex size-8 items-center justify-center rounded-full hover:bg-[#f0f4f9]"
+                    title="Татаж авах"
+                  >
+                    <svg className="size-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                  </button>
+                  <span className="w-24 text-right text-xs text-slate-400">
+                    {formatDateTime(exam.createdAt)}
+                  </span>
                 </div>
-                <div className={`${insetCardClass} text-xs`}>
-                  <div className="text-slate-500">Ашиглах үе</div>
-                  <div className="mt-1 font-semibold">
-                    {exam.scheduledAt ? "Хуваарьтай" : "Дахин ашиглахад бэлэн"}
-                  </div>
-                </div>
-                <div className={`${insetCardClass} text-xs`}>
-                  <div className="text-slate-500">Шалгалтын түлхүүр</div>
-                  <div className="mt-1 font-semibold">{exam.roomCode}</div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
