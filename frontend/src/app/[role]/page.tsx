@@ -1,6 +1,7 @@
 import RoleClient from "./RoleClient";
 
 const validRoles = ["teacher", "student"];
+export const dynamicParams = false;
 
 export function generateStaticParams() {
 	return validRoles.map((role) => ({ role }));

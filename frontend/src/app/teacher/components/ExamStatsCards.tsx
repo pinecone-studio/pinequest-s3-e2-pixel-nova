@@ -9,20 +9,20 @@ type ExamStatsCardsProps = {
 export default function ExamStatsCards({ loading, stats }: ExamStatsCardsProps) {
   const tones = {
     primary: {
-      wrapper: "border-primary/15 bg-primary/5",
-      value: "text-primary",
+      wrapper: "border-[#bfdbfe] bg-[#eff6ff]",
+      value: "text-[#1d4ed8]",
     },
     success: {
-      wrapper: "border-emerald-500/15 bg-emerald-500/5",
+      wrapper: "border-emerald-200 bg-emerald-50",
       value: "text-emerald-600 dark:text-emerald-300",
     },
     warning: {
-      wrapper: "border-amber-500/15 bg-amber-500/5",
+      wrapper: "border-amber-200 bg-amber-50",
       value: "text-amber-600 dark:text-amber-300",
     },
     neutral: {
-      wrapper: "border-sky-500/15 bg-sky-500/5",
-      value: "text-sky-600 dark:text-sky-300",
+      wrapper: "border-slate-200 bg-slate-50",
+      value: "text-slate-700 dark:text-slate-300",
     },
   } as const;
 
@@ -38,13 +38,15 @@ export default function ExamStatsCards({ loading, stats }: ExamStatsCardsProps) 
         : stats.map((stat) => (
             <div
               key={stat.label}
-              className={`${mutedCardClass} border ${tones[stat.tone].wrapper}`}
+              className={`${mutedCardClass} border ${tones[stat.tone].wrapper} min-h-[124px]`}
             >
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {stat.label}
+              </div>
               <div className={`mt-2 text-2xl font-semibold ${tones[stat.tone].value}`}>
                 {stat.value}
               </div>
-              <div className="text-xs text-muted-foreground">{stat.trend}</div>
+              <div className="mt-3 text-sm text-slate-500">{stat.trend}</div>
             </div>
           ))}
     </section>

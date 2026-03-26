@@ -3,7 +3,20 @@ import { User, getSessionUser } from "@/lib/examGuard";
 import type { Exam, NotificationItem } from "../types";
 import { getStudentResults } from "@/lib/backend-auth";
 
+const DEMO_STUDENT: User = {
+  id: "demo",
+  username: "DemoStudent",
+  password: "",
+  role: "student",
+  createdAt: "",
+};
+
 export const useStudentData = (overrideUser?: User | null) => {
+  const overrideUserId = overrideUser?.id ?? null;
+  const overrideUsername = overrideUser?.username ?? null;
+  const overridePassword = overrideUser?.password ?? "";
+  const overrideRole = overrideUser?.role ?? null;
+  const overrideCreatedAt = overrideUser?.createdAt ?? "";
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(true);
@@ -11,6 +24,7 @@ export const useStudentData = (overrideUser?: User | null) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
+<<<<<<< Updated upstream
     const user = overrideUser ?? getSessionUser();
     setCurrentUser(
       user ?? {
@@ -21,6 +35,20 @@ export const useStudentData = (overrideUser?: User | null) => {
         createdAt: "",
       },
     );
+=======
+    const user =
+      overrideUserId && overrideUsername && overrideRole
+        ? {
+            id: overrideUserId,
+            username: overrideUsername,
+            password: overridePassword,
+            role: overrideRole,
+            createdAt: overrideCreatedAt,
+          }
+        : getSessionUser();
+    const teacherRoles = getTeacherRoles();
+    setCurrentUser(user ?? DEMO_STUDENT);
+>>>>>>> Stashed changes
     const storedTheme =
       typeof window !== "undefined"
         ? (localStorage.getItem("theme") as "dark" | "light" | null)
@@ -45,8 +73,24 @@ export const useStudentData = (overrideUser?: User | null) => {
         setNotifications([]);
       }
     };
+<<<<<<< Updated upstream
     void load();
   }, [overrideUser]);
+=======
+
+    loadRemote();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    overrideCreatedAt,
+    overridePassword,
+    overrideRole,
+    overrideUserId,
+    overrideUsername,
+  ]);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     const sync = async () => {

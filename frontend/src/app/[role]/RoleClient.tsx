@@ -41,9 +41,9 @@ export default function RoleClient() {
 
 	if (!ready) return null;
 
-	return isTeacherRole(resolvedRole) ? (
-		<TeacherPage forcedRole={resolvedRole} />
+return isTeacherRole(resolvedRole) ? (
+		<TeacherPage />
 	) : (
-		<StudentPage forcedRole={resolvedRole} />
+		<StudentPage />
 	);
 }

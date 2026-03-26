@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "shadcn/tailwind.css";
+@import "../../node_modules/tailwindcss/index.css";
+@import "../../node_modules/shadcn/dist/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -48,43 +48,48 @@
 }
 
 :root {
+<<<<<<< Updated upstream
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
   --background: #f7f8fb;
   --foreground: #0b1220;
+=======
+  --background: #f5f8fc;
+  --foreground: #0f172a;
+>>>>>>> Stashed changes
   --card: #ffffff;
-  --card-foreground: #0b1220;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #0b1220;
-  --primary: #3b5bff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #16b7c4;
-  --secondary-foreground: #0b1220;
-  --muted: #f1f3f8;
-  --muted-foreground: #5b6473;
+  --secondary: #e9f2ff;
+  --secondary-foreground: #1e3a8a;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
   --accent: #22c55e;
-  --accent-foreground: #0b1220;
+  --accent-foreground: #0f172a;
   --destructive: #ef4444;
-  --border: #e6e9f2;
-  --input: #e6e9f2;
-  --ring: #cfd7ff;
-  --chart-1: #3b5bff;
-  --chart-2: #16b7c4;
+  --border: #dbe4f0;
+  --input: #dbe4f0;
+  --ring: #bfdbfe;
+  --chart-1: #2563eb;
+  --chart-2: #0ea5e9;
   --chart-3: #22c55e;
   --chart-4: #f59e0b;
   --chart-5: #ef4444;
   --radius: 0.625rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #0b1220;
-  --sidebar-primary: #3b5bff;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f3f8;
-  --sidebar-accent-foreground: #0b1220;
-  --sidebar-border: #e6e9f2;
-  --sidebar-ring: #cfd7ff;
-  --font-sans: "Inter", "SF Pro Display", system-ui, sans-serif;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #dbe4f0;
+  --sidebar-ring: #bfdbfe;
+  --font-sans: "Manrope", "Inter", "SF Pro Display", system-ui, sans-serif;
   --font-geist-mono: "SFMono-Regular", "JetBrains Mono", "Menlo", monospace;
 }
 

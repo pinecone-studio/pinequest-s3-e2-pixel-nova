@@ -92,6 +92,21 @@ const extractStem = (block: string) => {
   return stem;
 };
 
+export const isQuestionTextSuspicious = (text: string) => {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return true;
+  if (normalized.length <= 2) return true;
+  if (/^\d{1,3}$/.test(normalized)) return true;
+  if (/^\d+(?:\s+\d+){0,2}$/.test(normalized)) return true;
+
+  const letters = (normalized.match(/[A-Za-zА-Яа-яӨөҮүЁё]/g) ?? []).length;
+  const digits = (normalized.match(/\d/g) ?? []).length;
+
+  if (letters === 0 && digits > 0 && normalized.length <= 12) return true;
+
+  return false;
+};
+
 const splitQuestionBlocks = (rawText: string) => {
   const text = sanitizePdfText(rawText)
     .split(/\n/)
@@ -127,7 +142,7 @@ export const parseQuestionsFromText = (
 
   for (const { number, content } of blocks) {
     const stem = extractStem(content);
-    if (!stem) continue;
+    if (!stem || isQuestionTextSuspicious(stem)) continue;
 
     const options = extractOptions(content);
     if (options.length >= 2) {

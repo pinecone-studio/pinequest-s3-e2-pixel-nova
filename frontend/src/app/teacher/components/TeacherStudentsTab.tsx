@@ -1,4 +1,10 @@
 import type { Exam } from "../types";
+import {
+  badgeClass,
+  buttonPrimary,
+  sectionDescriptionClass,
+  sectionTitleClass,
+} from "../styles";
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14];
 const DAYS_TO_SHOW = 5;
@@ -151,7 +157,7 @@ function ScheduleCard({ item }: { item: ScheduleItem }) {
 
   return (
     <div
-      className={`absolute rounded-2xl border border-border bg-card px-3 py-3 shadow-sm ${tone.border}`}
+      className={`absolute rounded-2xl border border-[#dce5ef] bg-white px-3 py-3 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.25)] ${tone.border}`}
       style={{
         left: `calc(${item.dayIndex} * (100% / ${DAYS_TO_SHOW}) + 12px)`,
         width: `calc((100% / ${DAYS_TO_SHOW}) - 16px)`,
@@ -177,10 +183,14 @@ export default function TeacherStudentsTab({
     <section className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <span className={badgeClass}>Schedule Board</span>
+          <h2 className={`mt-3 ${sectionTitleClass}`}>
             Шалгалтын хуваарь
           </h2>
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <p className={`mt-2 ${sectionDescriptionClass}`}>
+            Өдрийн багана, цагийн мөрөөр шалгалтын нягтралыг харах цэвэр calendar layout.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
             <div className="flex items-center gap-2">
               <LegendDot category="required" />
               <span>Заавал судлах</span>
@@ -193,8 +203,9 @@ export default function TeacherStudentsTab({
         </div>
 
         <button
-          className="inline-flex items-center gap-2 rounded-2xl bg-amber-400 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
+          className={buttonPrimary}
           onClick={onAddSchedule}
+          type="button"
         >
           <svg
             className="h-4 w-4"
@@ -212,12 +223,12 @@ export default function TeacherStudentsTab({
       </div>
 
       <div className="overflow-x-auto">
-        <div className="min-w-[980px] rounded-[34px] border border-border bg-card p-4 shadow-sm">
-          <div className="overflow-hidden rounded-[28px] bg-background/70">
+        <div className="min-w-[980px] rounded-[34px] border border-[#dce5ef] bg-white p-4 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.2)]">
+          <div className="overflow-hidden rounded-[28px] bg-[#f8fbff]">
             <div className="grid grid-cols-[88px_1fr]">
-              <div className="border-r border-border/60 bg-card/70" />
+              <div className="border-r border-[#dce5ef] bg-white/70" />
               <div
-                className="grid border-b border-border/60 bg-card/70"
+                className="grid border-b border-[#dce5ef] bg-white/70"
                 style={{
                   gridTemplateColumns: `repeat(${DAYS_TO_SHOW}, minmax(0, 1fr))`,
                 }}
@@ -225,18 +236,18 @@ export default function TeacherStudentsTab({
                 {days.map((day, index) => (
                   <div
                     key={`${day.toISOString()}-${index}`}
-                    className="border-r border-border/60 px-4 py-4 text-center text-lg font-semibold text-foreground last:border-r-0"
+                    className="border-r border-[#dce5ef] px-4 py-4 text-center text-lg font-semibold text-foreground last:border-r-0"
                   >
                     {formatDayLabel(day)}
                   </div>
                 ))}
               </div>
 
-              <div className="border-r border-border/60 bg-card/70">
+              <div className="border-r border-[#dce5ef] bg-white/70">
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="border-b border-border/60 px-5 pt-1 text-sm text-muted-foreground last:border-b-0"
+                    className="border-b border-[#dce5ef] px-5 pt-1 text-sm text-slate-500 last:border-b-0"
                     style={{ height: `${ROW_HEIGHT}px` }}
                   >
                     {hour.toString().padStart(2, "0")} цаг
@@ -254,12 +265,12 @@ export default function TeacherStudentsTab({
                   {Array.from({ length: DAYS_TO_SHOW }, (_, dayIndex) => (
                     <div
                       key={`column-${dayIndex}`}
-                      className="border-r border-border/60 last:border-r-0"
+                      className="border-r border-[#dce5ef] last:border-r-0"
                     >
                       {HOURS.map((hour, rowIndex) => (
                         <div
                           key={`${dayIndex}-${hour}`}
-                          className="border-b border-border/60 last:border-b-0"
+                          className="border-b border-[#dce5ef] last:border-b-0"
                           style={{
                             height: `${ROW_HEIGHT}px`,
                             opacity: rowIndex === HOURS.length - 1 ? 0.7 : 1,

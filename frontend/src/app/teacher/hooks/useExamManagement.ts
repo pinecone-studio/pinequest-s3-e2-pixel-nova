@@ -27,10 +27,72 @@ export const useExamManagement = (params: {
   const [durationMinutes, setDurationMinutes] = useState(45);
   const sidebarTimerRef = useRef<number | null>(null);
 
+<<<<<<< Updated upstream
   const reloadExams = async () => {
     const remote = await fetchTeacherExams();
     setExams(remote);
   };
+=======
+  const toSyncQuestions = useCallback(
+    (sourceQuestions: Question[]) =>
+      sourceQuestions.map((question) => ({
+        type: question.type,
+        text: question.text,
+        points: question.points,
+        correctAnswer: question.correctAnswer,
+        imageUrl: question.imageUrl,
+        options: question.options,
+      })),
+    [],
+  );
+
+  const buildLocalExam = useCallback(
+    (
+      payload: {
+        title: string;
+        scheduledAt: string | null;
+        questions: Question[];
+      },
+      remote?: {
+        id: string;
+        roomCode?: string | null;
+        scheduledAt?: string | null;
+        durationMin?: number;
+        createdAt?: string;
+      } | null,
+    ): Exam => ({
+      id: remote?.id ?? generateId(),
+      title: payload.title,
+      scheduledAt: remote?.scheduledAt ?? payload.scheduledAt,
+      examStartedAt: null,
+      roomCode: remote?.roomCode ?? generateRoomCode(),
+      questions: payload.questions,
+      duration: remote?.durationMin ?? durationMinutes,
+      createdAt: remote?.createdAt ?? new Date().toISOString(),
+    }),
+    [durationMinutes],
+  );
+
+  const persistExams = useCallback((next: Exam[]) => {
+    setExams(next);
+    const ok = setJSON("exams", next);
+    if (!ok) {
+      const stripped = next.map((exam) => ({
+        ...exam,
+        questions: exam.questions.map((question) => ({
+          ...question,
+          imageUrl: undefined,
+        })),
+      }));
+      const fallbackOk = setJSON("exams", stripped);
+      showToast(
+        fallbackOk
+          ? "Орон зай дүүрсэн тул зураг хадгалагдсангүй. Асуултууд хадгалагдлаа."
+          : "Хадгалах орон зай дүүрсэн байна. Зургийн хэмжээ/тоо их байж магадгүй.",
+      );
+    }
+  }, [setExams, showToast]);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     const checkNotifications = () => {
@@ -59,6 +121,7 @@ export const useExamManagement = (params: {
       showToast("Шалгалтын нэр болон огноо оруулна уу.");
       return;
     }
+<<<<<<< Updated upstream
     if (questions.length === 0) {
       showToast("Товлохын өмнө шалгалтын асуулт үүсгэнэ үү.");
       return;
@@ -108,6 +171,47 @@ export const useExamManagement = (params: {
       showToast("Шалгалт товлогдлоо.");
     } catch {
       showToast("Шалгалт товлоход алдаа гарлаа.");
+=======
+
+    let newExam = buildLocalExam({
+      title: scheduleTitle,
+      scheduledAt: scheduleDate,
+      questions: [],
+    });
+
+    if (currentUser && questions.length > 0) {
+      try {
+        const syncedExam = await syncExamToBackend(currentUser, {
+          title: scheduleTitle,
+          duration: durationMinutes,
+          scheduledAt: scheduleDate,
+          questions: toSyncQuestions(questions),
+        });
+
+        newExam = buildLocalExam(
+          {
+            title: scheduleTitle,
+            scheduledAt: scheduleDate,
+            questions,
+          },
+          syncedExam,
+        );
+        showToast("Шалгалт backend дээр хуваарьлагдлаа.");
+      } catch (error) {
+        console.error("Backend schedule sync failed:", error);
+        showToast("Local schedule хадгалагдлаа. Backend schedule амжилтгүй боллоо.");
+      }
+    } else if (currentUser) {
+      showToast("Backend дээр хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.");
+    }
+
+    persistExams([...exams, newExam]);
+    setScheduleTitle("");
+    setScheduleDate("");
+    setRoomCode(newExam.roomCode);
+    if (!currentUser || questions.length === 0) {
+      showToast("Шалгалт товлогдлоо.");
+>>>>>>> Stashed changes
     }
   };
 
@@ -225,6 +329,7 @@ export const useExamManagement = (params: {
       showToast("Зөв хариулт сонгоогүй асуулт байна.");
       return;
     }
+<<<<<<< Updated upstream
     try {
       const created = await apiFetch<{ data?: { id: string } } | { id: string }>(
         "/api/exams",
@@ -276,6 +381,49 @@ export const useExamManagement = (params: {
     } catch {
       showToast("Шалгалт хадгалахад алдаа гарлаа.");
     }
+=======
+    let newExam = buildLocalExam({
+      title: examTitle,
+      scheduledAt: createDate || null,
+      questions,
+    });
+
+    try {
+      const syncedExam = await syncExamToBackend(currentUser, {
+        title: newExam.title,
+        duration: newExam.duration ?? 45,
+        scheduledAt: createDate || null,
+        questions: toSyncQuestions(newExam.questions),
+      });
+
+      if (syncedExam) {
+        newExam = buildLocalExam(
+          {
+            title: examTitle,
+            scheduledAt: createDate || null,
+            questions,
+          },
+          syncedExam,
+        );
+      }
+
+      showToast(
+        createDate
+          ? "Шалгалт backend дээр хадгалагдаж, хуваарьлагдлаа."
+          : "Шалгалт local болон backend дээр хадгалагдлаа.",
+      );
+    } catch (error) {
+      console.error("Backend sync failed:", error);
+      showToast("Local хадгалалт амжилттай. Backend sync түр амжилтгүй боллоо.");
+    }
+    persistExams([...exams, newExam]);
+    setExamTitle("");
+    setCreateDate("");
+    setQuestions([]);
+    setDurationMinutes(45);
+    setQuestionPoints(1);
+    setRoomCode(newExam.roomCode);
+>>>>>>> Stashed changes
   };
 
   const copyCode = async (code: string) => {

@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
 import {
   STORAGE_KEYS,
+<<<<<<< Updated upstream
+=======
+  ensureDemoAccounts,
+  getJSON,
+>>>>>>> Stashed changes
   setJSON,
   setSessionUser,
+  type User,
 } from "@/lib/examGuard";
 import type { AuthUser, StudentProfile } from "@/lib/backend-auth";
 import { getAuthUsers, getStudentProfileForTeacher } from "@/lib/backend-auth";
@@ -31,6 +37,7 @@ import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamImport } from "./hooks/useExamImport";
 import { useExamStats } from "./hooks/useExamStats";
+import { contentCanvasClass, pageShellClass } from "./styles";
 
 const teacherTabs = [
   "Шалгалт үүсгэх",
@@ -43,21 +50,35 @@ const teacherTabs = [
 
 type TeacherTab = (typeof teacherTabs)[number];
 
-type TeacherPageProps = {
-  forcedRole?: RoleKey;
+const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
+  ensureDemoAccounts();
+  return getJSON<User[]>(STORAGE_KEYS.users, [])
+    .filter((user) => user.role === role)
+    .map((user) => ({
+      id: user.id,
+      fullName: user.username,
+      role: user.role,
+      email: null,
+      avatarUrl: null,
+    }));
 };
 
-export default function TeacherPage({ forcedRole }: TeacherPageProps) {
+export default function TeacherPage() {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const role: RoleKey = forcedRole ?? "teacher";
+  const role: RoleKey = "teacher";
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
   const [activeTab, setActiveTab] = useState<TeacherTab>(teacherTabs[0]);
 
+  const sessionUser = useMemo(
+    () => (selectedUser ? buildSessionUser(selectedUser) : null),
+    [selectedUser],
+  );
+
   const data = useTeacherData(
-    selectedUser ? buildSessionUser(selectedUser) : null,
+    sessionUser,
   );
 
   const management = useExamManagement({
@@ -70,6 +91,7 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
     examTitle: management.examTitle,
     setExamTitle: management.setExamTitle,
     showToast: data.showToast,
+    currentUser: data.currentUser,
   });
   const examStatsState = useExamStats({
     exams: data.exams,
@@ -93,7 +115,7 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const authUsers = await getAuthUsers();
+        const authUsers = await getAuthUsers().catch(() => getLocalAuthUsers(role));
         if (cancelled) return;
 
         const nextUsers = authUsers.filter((user) => user.role === role);
@@ -109,6 +131,18 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
           STORAGE_KEYS.users,
           nextUsers.map((user) => buildSessionUser(user)),
         );
+
+        if (nextUser) {
+          setStoredSelectedUserId(role, nextUser.id);
+          setSessionUser(buildSessionUser(nextUser));
+        }
+      } catch {
+        if (cancelled) return;
+        const fallbackUsers = getLocalAuthUsers(role);
+        const nextUser = fallbackUsers[0] ?? null;
+
+        setUsers(fallbackUsers);
+        setSelectedUser(nextUser);
 
         if (nextUser) {
           setStoredSelectedUserId(role, nextUser.id);
@@ -167,11 +201,127 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
   }, [examStatsState.selectedSubmission?.studentId]);
 
   if (!data.currentUser) return null;
+  const currentUser = data.currentUser;
+
+  const renderActiveTab = () => {
+    if (activeTab === "Шалгалт үүсгэх") {
+      return (
+        <div className="space-y-6">
+          <ExamStatsCards
+            loading={data.loading}
+            stats={examStatsState.stats}
+          />
+          <section className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+            <ExamScheduleCard
+              scheduleTitle={management.scheduleTitle}
+              setScheduleTitle={management.setScheduleTitle}
+              scheduleDate={management.scheduleDate}
+              setScheduleDate={management.setScheduleDate}
+              durationMinutes={management.durationMinutes}
+              setDurationMinutes={management.setDurationMinutes}
+              roomCode={management.roomCode}
+              onSchedule={management.handleSchedule}
+              onCopyCode={management.copyCode}
+            />
+            <ExamCreateCard
+              examTitle={management.examTitle}
+              setExamTitle={management.setExamTitle}
+              createDate={management.createDate}
+              setCreateDate={management.setCreateDate}
+              durationMinutes={management.durationMinutes}
+              setDurationMinutes={management.setDurationMinutes}
+              questionText={management.questionText}
+              setQuestionText={management.setQuestionText}
+              questionType={management.questionType}
+              setQuestionType={management.setQuestionType}
+              mcqOptions={management.mcqOptions}
+              setMcqOptions={management.setMcqOptions}
+              questionAnswer={management.questionAnswer}
+              setQuestionAnswer={management.setQuestionAnswer}
+              questionPoints={management.questionPoints}
+              setQuestionPoints={management.setQuestionPoints}
+              questionCorrectIndex={management.questionCorrectIndex}
+              setQuestionCorrectIndex={management.setQuestionCorrectIndex}
+              questions={management.questions}
+              addQuestion={management.addQuestion}
+              removeQuestion={management.removeQuestion}
+              updateQuestion={management.updateQuestion}
+              updateQuestionOption={management.updateQuestionOption}
+              addQuestionOption={management.addQuestionOption}
+              removeQuestionOption={management.removeQuestionOption}
+              saveExam={management.saveExam}
+              pdfUseOcr={imports.pdfUseOcr}
+              setPdfUseOcr={imports.setPdfUseOcr}
+              answerKeyPage={imports.answerKeyPage}
+              setAnswerKeyPage={imports.setAnswerKeyPage}
+              pdfLoading={imports.pdfLoading}
+              pdfError={imports.pdfError}
+              importError={imports.importError}
+              onPdfUpload={imports.handlePdfUpload}
+              onImageUpload={imports.handleImageUpload}
+              onDocxUpload={imports.handleDocxUpload}
+            />
+          </section>
+        </div>
+      );
+    }
+
+    if (activeTab === "Хадгалсан шалгалт") {
+      return (
+        <ExamListCard
+          exams={data.exams}
+          onCopyCode={management.copyCode}
+        />
+      );
+    }
+
+    if (activeTab === "XP харах") {
+      return (
+        <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
+      );
+    }
+
+    if (activeTab === "Дүн") {
+      return (
+        <ResultsTab
+          loading={data.loading}
+          examOptions={examStatsState.examOptions}
+          activeExamId={examStatsState.activeExamId}
+          onSelectExam={examStatsState.setSelectedExamId}
+          examStats={examStatsState.examStats}
+          submissions={examStatsState.activeSubmissions}
+          onSelectSubmission={examStatsState.setSelectedSubmissionId}
+          selectedSubmissionId={examStatsState.selectedSubmissionId}
+          selectedSubmission={examStatsState.selectedSubmission}
+          selectedExam={examStatsState.selectedExam}
+          studentProfile={studentProfile}
+          profileLoading={profileLoading}
+        />
+      );
+    }
+
+    if (activeTab === "Сурагч") {
+      return (
+        <TeacherStudentsTab
+          exams={data.exams}
+          onAddSchedule={() => setActiveTab("Шалгалт үүсгэх")}
+        />
+      );
+    }
+
+    return (
+      <SettingsTab
+        activeExam={examStatsState.activeExam}
+        submissions={examStatsState.activeSubmissions}
+        currentUserName={currentUser.username}
+      />
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className={pageShellClass}>
       {data.toast && (
-        <div className="fixed right-6 top-6 z-50 rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-lg">
+        <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
           {data.toast}
         </div>
       )}
@@ -187,10 +337,10 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           sidebarTimerRef={management.sidebarTimerRef}
-          currentUserName={data.currentUser.username}
+          currentUserName={currentUser.username}
         />
-        <main className="px-6 py-8">
-          <div className="mx-auto w-full max-w-7xl space-y-6">
+        <main className="px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+          <div className="mx-auto w-full max-w-[1480px] space-y-6">
             <TeacherHeader
               theme={data.theme}
               onToggleTheme={() =>
@@ -209,115 +359,7 @@ export default function TeacherPage({ forcedRole }: TeacherPageProps) {
                 />
               }
             />
-
-            {activeTab === "Шалгалт үүсгэх" && (
-              <>
-                <ExamStatsCards
-                  loading={data.loading}
-                  stats={examStatsState.stats}
-                />
-                <section className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-                  <ExamScheduleCard
-                    scheduleTitle={management.scheduleTitle}
-                    setScheduleTitle={management.setScheduleTitle}
-                    scheduleDate={management.scheduleDate}
-                    setScheduleDate={management.setScheduleDate}
-                    durationMinutes={management.durationMinutes}
-                    setDurationMinutes={management.setDurationMinutes}
-                    roomCode={management.roomCode}
-                    onSchedule={management.handleSchedule}
-                    onCopyCode={management.copyCode}
-                  />
-                  <ExamCreateCard
-                    examTitle={management.examTitle}
-                    setExamTitle={management.setExamTitle}
-                    createDate={management.createDate}
-                    setCreateDate={management.setCreateDate}
-                    durationMinutes={management.durationMinutes}
-                    setDurationMinutes={management.setDurationMinutes}
-                    questionText={management.questionText}
-                    setQuestionText={management.setQuestionText}
-                    questionType={management.questionType}
-                    setQuestionType={management.setQuestionType}
-                    mcqOptions={management.mcqOptions}
-                    setMcqOptions={management.setMcqOptions}
-                    questionAnswer={management.questionAnswer}
-                    setQuestionAnswer={management.setQuestionAnswer}
-                    questionPoints={management.questionPoints}
-                    setQuestionPoints={management.setQuestionPoints}
-                    questionCorrectIndex={management.questionCorrectIndex}
-                    setQuestionCorrectIndex={management.setQuestionCorrectIndex}
-                    questions={management.questions}
-                    addQuestion={management.addQuestion}
-                    removeQuestion={management.removeQuestion}
-                    updateQuestion={management.updateQuestion}
-                    updateQuestionOption={management.updateQuestionOption}
-                    addQuestionOption={management.addQuestionOption}
-                    removeQuestionOption={management.removeQuestionOption}
-                    saveExam={management.saveExam}
-                    pdfUseOcr={imports.pdfUseOcr}
-                    setPdfUseOcr={imports.setPdfUseOcr}
-                    answerKeyPage={imports.answerKeyPage}
-                    setAnswerKeyPage={imports.setAnswerKeyPage}
-                    pdfLoading={imports.pdfLoading}
-                    pdfError={imports.pdfError}
-                    importError={imports.importError}
-                    onPdfUpload={imports.handlePdfUpload}
-                    onImageUpload={imports.handleImageUpload}
-                    onDocxUpload={imports.handleDocxUpload}
-                  />
-                </section>
-              </>
-            )}
-
-            {activeTab === "Хадгалсан шалгалт" && (
-              <section className="grid gap-4">
-                <ExamListCard
-                  exams={data.exams}
-                  onCopyCode={management.copyCode}
-                />
-              </section>
-            )}
-
-            {activeTab === "XP харах" && (
-              <section className="grid gap-4">
-                <TeacherXpOverviewCard
-                  students={examStatsState.xpLeaderboard}
-                />
-              </section>
-            )}
-
-            {activeTab === "Дүн" && (
-              <ResultsTab
-                loading={data.loading}
-                examOptions={examStatsState.examOptions}
-                activeExamId={examStatsState.activeExamId}
-                onSelectExam={examStatsState.setSelectedExamId}
-                examStats={examStatsState.examStats}
-                submissions={examStatsState.activeSubmissions}
-                onSelectSubmission={examStatsState.setSelectedSubmissionId}
-                selectedSubmissionId={examStatsState.selectedSubmissionId}
-                selectedSubmission={examStatsState.selectedSubmission}
-                selectedExam={examStatsState.selectedExam}
-                studentProfile={studentProfile}
-                profileLoading={profileLoading}
-              />
-            )}
-
-            {activeTab === "Сурагч" && (
-              <TeacherStudentsTab
-                exams={data.exams}
-                onAddSchedule={() => setActiveTab("Шалгалт үүсгэх")}
-              />
-            )}
-
-            {activeTab === "Тохиргоо" && (
-              <SettingsTab
-                activeExam={examStatsState.activeExam}
-                submissions={examStatsState.activeSubmissions}
-                currentUserName={data.currentUser.username}
-              />
-            )}
+            <section className={contentCanvasClass}>{renderActiveTab()}</section>
           </div>
         </main>
       </div>

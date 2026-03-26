@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
-import { STORAGE_KEYS, setJSON, setSessionUser } from "@/lib/examGuard";
+import {
+  STORAGE_KEYS,
+  ensureDemoAccounts,
+  getJSON,
+  setJSON,
+  setSessionUser,
+  type User,
+} from "@/lib/examGuard";
 import type { AuthUser } from "@/lib/backend-auth";
 import { getAuthUsers } from "@/lib/backend-auth";
 import {
@@ -30,20 +37,34 @@ import { useExamCheatDetection } from "./hooks/useExamCheatDetection";
 import { useExamTimer } from "./hooks/useExamTimer";
 import { useExamAutosave } from "./hooks/useExamAutosave";
 
-type StudentPageProps = {
-  forcedRole?: RoleKey;
+const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
+  ensureDemoAccounts();
+  return getJSON<User[]>(STORAGE_KEYS.users, [])
+    .filter((user) => user.role === role)
+    .map((user) => ({
+      id: user.id,
+      fullName: user.username,
+      role: user.role,
+      email: null,
+      avatarUrl: null,
+    }));
 };
 
-export default function StudentPage({ forcedRole }: StudentPageProps) {
+export default function StudentPage() {
   const router = useRouter();
-  const role: RoleKey = forcedRole ?? "student";
+  const role: RoleKey = "student";
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
 
+  const sessionUser = useMemo(
+    () => (selectedUser ? buildSessionUser(selectedUser) : null),
+    [selectedUser],
+  );
+
   const data = useStudentData(
-    selectedUser ? buildSessionUser(selectedUser) : null,
+    sessionUser,
   );
   const exam = useStudentExamState({
     currentUser: data.currentUser,
@@ -113,7 +134,7 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const authUsers = await getAuthUsers();
+        const authUsers = await getAuthUsers().catch(() => getLocalAuthUsers(role));
         if (cancelled) return;
 
         const nextUsers = authUsers.filter((user) => user.role === role);
@@ -127,6 +148,18 @@ export default function StudentPage({ forcedRole }: StudentPageProps) {
           STORAGE_KEYS.users,
           nextUsers.map((user) => buildSessionUser(user)),
         );
+
+        if (nextUser) {
+          setStoredSelectedUserId(role, nextUser.id);
+          setSessionUser(buildSessionUser(nextUser));
+        }
+      } catch {
+        if (cancelled) return;
+        const fallbackUsers = getLocalAuthUsers(role);
+        const nextUser = fallbackUsers[0] ?? null;
+
+        setUsers(fallbackUsers);
+        setSelectedUser(nextUser);
 
         if (nextUser) {
           setStoredSelectedUserId(role, nextUser.id);
