@@ -5,11 +5,8 @@ import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
 import {
   STORAGE_KEYS,
-<<<<<<< Updated upstream
-=======
   ensureDemoAccounts,
   getJSON,
->>>>>>> Stashed changes
   setJSON,
   setSessionUser,
   type User,
@@ -85,6 +82,7 @@ export default function TeacherPage() {
     exams: data.exams,
     setExams: data.setExams,
     showToast: data.showToast,
+    currentUser: data.currentUser,
   });
   const imports = useExamImport({
     setQuestions: management.setQuestions,

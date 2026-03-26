@@ -88,7 +88,6 @@ export default function ResultsDetailPanel({
               </div>
             )}
           </div>
-<<<<<<< Updated upstream
           {violationEntries.length > 0 && (
             <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs">
               <div className="font-semibold text-foreground">Хяналтын тэмдэглэл</div>
@@ -105,16 +104,6 @@ export default function ResultsDetailPanel({
                   </div>
                 ))}
               </div>
-=======
-          {selectedSubmission.violations && (
-            <div className="rounded-2xl border border-[#dce5ef] bg-[#f8fafc] px-4 py-4 text-xs">
-              Зөрчил: Таб {selectedSubmission.violations.tabSwitch} · Цонх алдалт{" "}
-              {selectedSubmission.violations.windowBlur} · Хуулах{" "}
-              {selectedSubmission.violations.copyAttempt} · Буулгах{" "}
-              {selectedSubmission.violations.pasteAttempt} · Бүтэн дэлгэц{" "}
-              {selectedSubmission.violations.fullscreenExit} · Товч{" "}
-              {selectedSubmission.violations.keyboardShortcut}
->>>>>>> Stashed changes
             </div>
           )}
           {selectedExam && selectedSubmission.answers && (

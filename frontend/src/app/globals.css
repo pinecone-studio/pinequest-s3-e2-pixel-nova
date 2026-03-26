@@ -48,17 +48,8 @@
 }
 
 :root {
-<<<<<<< Updated upstream
-  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  --background: #f7f8fb;
-  --foreground: #0b1220;
-=======
   --background: #f5f8fc;
   --foreground: #0f172a;
->>>>>>> Stashed changes
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;

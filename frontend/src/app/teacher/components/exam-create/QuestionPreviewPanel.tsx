@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { buttonGhost, inputClass, selectClass } from "../../styles";
 import type { Question } from "../../types";
 
@@ -265,21 +264,6 @@ export default function QuestionPreviewPanel({
           </div>
         ) : (
           <div className="mt-2 grid gap-2">
-<<<<<<< Updated upstream
-            {activeQuestion.imageUrl && (
-              <div className="relative w-full overflow-hidden rounded-xl border border-border">
-                <Image
-                  src={activeQuestion.imageUrl}
-                  alt="Асуултын зураг"
-                  width={960}
-                  height={280}
-                  className="h-auto w-full object-contain"
-                  unoptimized
-                />
-              </div>
-            )}
-=======
->>>>>>> Stashed changes
             <div className="text-lg font-semibold leading-7">
               {activeQuestion.text}
             </div>
