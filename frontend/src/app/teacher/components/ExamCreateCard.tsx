@@ -43,6 +43,8 @@ type ExamCreateCardProps = {
   addQuestionOption: (id: string) => void;
   removeQuestionOption: (id: string, optionIndex: number) => void;
   saveExam: () => void;
+  saving: boolean;
+  hasUser: boolean;
   pdfUseOcr: boolean;
   setPdfUseOcr: (value: boolean) => void;
   answerKeyPage: number | "last";
@@ -88,6 +90,8 @@ export default function ExamCreateCard({
   addQuestionOption,
   removeQuestionOption,
   saveExam,
+  saving,
+  hasUser,
   pdfUseOcr,
   setPdfUseOcr,
   answerKeyPage,
@@ -183,8 +187,17 @@ export default function ExamCreateCard({
           <button className={buttonGhost} onClick={addQuestion}>
             + Асуулт нэмэх
           </button>
-          <button className={buttonPrimary} onClick={saveExam} type="button">
-            Шалгалт хадгалах
+          <button
+            className={`${buttonPrimary} ${saving || !hasUser ? "opacity-70" : ""}`}
+            onClick={saveExam}
+            type="button"
+            disabled={saving || !hasUser}
+          >
+            {!hasUser
+              ? "Багш сонгоогдоогүй"
+              : saving
+                ? "Хадгалж байна..."
+                : "Шалгалт хадгалах"}
           </button>
           {missingCorrectCount > 0 && (
             <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
@@ -192,6 +205,23 @@ export default function ExamCreateCard({
             </span>
           )}
         </div>
+
+        {!hasUser && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+            Багшийн хэрэглэгч сонгоогдоогүй байна. Role сонголтоор багш
+            сонгоод дахин оролдоно уу.
+          </div>
+        )}
+
+        {saving && (
+          <div className="grid gap-3 rounded-2xl border border-[#e8edf9] bg-[#f8faff] p-4">
+            <div className="h-4 w-40 animate-pulse rounded-full bg-[#e6ecfb]" />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="h-20 animate-pulse rounded-2xl bg-white/80" />
+              <div className="h-20 animate-pulse rounded-2xl bg-white/80" />
+            </div>
+          </div>
+        )}
 
         <QuestionPreviewPanel
           questions={questions}

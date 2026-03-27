@@ -69,6 +69,8 @@ type ExamTabProps = {
   addQuestionOption: (id: string) => void;
   removeQuestionOption: (id: string, optionIndex: number) => void;
   saveExam: () => void;
+  saving: boolean;
+  hasUser: boolean;
   pdfUseOcr: boolean;
   setPdfUseOcr: (value: boolean) => void;
   answerKeyPage: number | "last";
@@ -163,6 +165,8 @@ export default function ExamTab(props: ExamTabProps) {
           addQuestionOption={props.addQuestionOption}
           removeQuestionOption={props.removeQuestionOption}
           saveExam={props.saveExam}
+          saving={props.saving}
+          hasUser={props.hasUser}
           pdfUseOcr={props.pdfUseOcr}
           setPdfUseOcr={props.setPdfUseOcr}
           answerKeyPage={props.answerKeyPage}
