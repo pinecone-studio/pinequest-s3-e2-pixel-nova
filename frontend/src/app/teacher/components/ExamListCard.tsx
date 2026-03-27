@@ -1,6 +1,7 @@
 import { sectionDescriptionClass, contentCanvasClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { Exam } from "../types";
+import { CopyIcon, DownloadIcon } from "lucide-react";
 
 type ExamListCardProps = {
   exams: Exam[];
@@ -100,41 +101,14 @@ export default function ExamListCard({
                     onClick={() => onCopyCode(exam.roomCode)}
                     title="Room code хуулах"
                   >
-                    <svg
-                      className="size-4 text-blue-500"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.7}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                      />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
+                    <CopyIcon className="w-4 h-4"/>
                   </button>
                   <button
                     type="button"
                     className="flex size-8 items-center justify-center rounded-full hover:bg-[#f0f4f9]"
                     title="Татаж авах"
                   >
-                    <svg
-                      className="size-4 text-slate-400"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.7}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"
-                      />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
+                    <DownloadIcon className="w-4 h-4"/>
                   </button>
                   <span className="w-24 text-right text-xs text-slate-400">
                     {formatDateTime(exam.createdAt)}

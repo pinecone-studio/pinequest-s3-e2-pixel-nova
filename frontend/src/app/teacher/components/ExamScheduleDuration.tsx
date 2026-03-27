@@ -24,6 +24,7 @@ export default function ExamScheduleDuration({
           className={`${figmaCompactSelectClass} min-w-[100px]`}
           value={String(durationMinutes)}
           onChange={(event) => setDurationMinutes(Number(event.target.value))}
+          onWheel={(event) => event.currentTarget.blur()}
         >
           {minuteOptions.map((item) => (
             <option key={item} value={item}>
@@ -35,6 +36,7 @@ export default function ExamScheduleDuration({
           className={`${figmaCompactSelectClass} min-w-[110px]`}
           value={seconds}
           onChange={(event) => setSeconds(event.target.value)}
+          onWheel={(event) => event.currentTarget.blur()}
         >
           {secondOptions.map((item) => (
             <option key={item} value={item}>

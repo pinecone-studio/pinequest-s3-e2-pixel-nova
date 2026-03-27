@@ -1,49 +1,29 @@
-import { inputClass, labelClass } from "../../styles";
+import { inputClass } from "../../styles";
 
 type ExamMetaFieldsProps = {
   examTitle: string;
   setExamTitle: (value: string) => void;
-  createDate: string;
-  setCreateDate: (value: string) => void;
-  durationMinutes: number;
-  setDurationMinutes: (value: number) => void;
-  expectedStudentsCount: number;
-  setExpectedStudentsCount: (value: number) => void;
 };
 
 export default function ExamMetaFields({
   examTitle,
   setExamTitle,
-
-  expectedStudentsCount,
-  setExpectedStudentsCount,
 }: ExamMetaFieldsProps) {
   return (
-    <div className=" gap-2 flex">
-      <label className="w-[85%]">
-        <span className={labelClass}>Гарчиг</span>
+    <div className="rounded-[24px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_16px_40px_-32px_rgba(15,23,42,0.18)]">
+      <label className="grid gap-3">
+        <span className="text-sm font-semibold text-slate-800">
+          Гарчиг оруулна уу
+        </span>
         <input
-          className={`${inputClass} h-12`}
-          placeholder="Гарчиг оруулна уу"
+          className={`${inputClass} h-14 rounded-[20px] border-[#e2e8f0] bg-[#fcfdff] text-base`}
+          placeholder="Шалгалтын нэр"
           value={examTitle ?? ""}
           onChange={(event) => setExamTitle(event.target.value)}
         />
-      </label>
-      <label className="w-[15%]">
-        <span className={labelClass}>Сурагчийн тоо</span>
-        <input
-          className={`${inputClass} h-12`}
-          type="number"
-          min={0}
-          step={1}
-          placeholder="Хүлээгдэж буй сурагч"
-          value={
-            Number.isFinite(expectedStudentsCount) ? expectedStudentsCount : 0
-          }
-          onChange={(event) =>
-            setExpectedStudentsCount(Number(event.target.value) || 0)
-          }
-        />
+        <span className="text-xs text-slate-400">
+          Тайлбар оруулна уу (заавал биш)
+        </span>
       </label>
     </div>
   );

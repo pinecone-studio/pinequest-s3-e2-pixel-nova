@@ -8,8 +8,6 @@ type QuestionEditPanelProps = {
   activeOptions: string[];
   imageBusy: boolean;
   attachInputRef: RefObject<HTMLInputElement | null>;
-  editCorrectOpen: boolean;
-  setEditCorrectOpen: (value: boolean) => void;
   onAttachFile: (file: File) => void;
   onOpenCrop: () => void;
   onRemoveImage: () => void;
@@ -28,8 +26,6 @@ export default function QuestionEditPanel({
   activeOptions,
   imageBusy,
   attachInputRef,
-  editCorrectOpen,
-  setEditCorrectOpen,
   onAttachFile,
   onOpenCrop,
   onRemoveImage,
@@ -54,41 +50,67 @@ export default function QuestionEditPanel({
       />
 
       <div className="flex flex-wrap gap-2 rounded-2xl border border-[#dce5ef] bg-[#f8fbff] p-3">
-        <button
-          className={buttonGhost}
-          disabled={!activeQuestion.imageUrl || imageBusy}
-          onClick={onOpenCrop}
-          type="button"
-        >
-          {imageBusy ? "Ачаалж байна..." : "Re-crop image"}
-        </button>
-        <button
-          className={buttonGhost}
-          onClick={() => attachInputRef.current?.click()}
-          type="button"
-        >
-          Attach page crop
-        </button>
-        <button
-          className="rounded-xl border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-          disabled={!activeQuestion.imageUrl}
-          onClick={onRemoveImage}
-          type="button"
-        >
-          Remove wrong image
-        </button>
+        {activeQuestion.imageUrl ? (
+          <>
+            <button
+              className={buttonGhost}
+              disabled={imageBusy}
+              onClick={onOpenCrop}
+              type="button"
+            >
+              {imageBusy ? "Ачаалж байна..." : "Re-crop image"}
+            </button>
+            <button
+              className="rounded-xl border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+              disabled={imageBusy}
+              onClick={onRemoveImage}
+              type="button"
+            >
+              Remove wrong image
+            </button>
+          </>
+        ) : (
+          <button
+            className={buttonGhost}
+            onClick={() => attachInputRef.current?.click()}
+            type="button"
+          >
+            Attach page crop
+          </button>
+        )}
       </div>
 
-      <div className="grid gap-2 md:grid-cols-[1fr_140px]">
-        <textarea
-          className={`${inputClass} min-h-24 resize-y`}
-          value={activeQuestion.text}
-          onChange={(event) =>
+      <textarea
+        className={`${inputClass} min-h-[116px] resize-y leading-6`}
+        value={activeQuestion.text}
+        onChange={(event) =>
+          updateQuestion(activeQuestion.id, {
+            text: event.target.value,
+          })
+        }
+      />
+
+      <div className="grid gap-2 md:grid-cols-[140px_minmax(0,1fr)]">
+        <select
+          className={selectClass}
+          value={activeQuestion.type}
+          onChange={(event) => {
+            const nextType = event.target.value as "text" | "open" | "mcq";
             updateQuestion(activeQuestion.id, {
-              text: event.target.value,
-            })
-          }
-        />
+              type: nextType,
+              options:
+                nextType === "mcq"
+                  ? activeQuestion.options?.length
+                    ? activeQuestion.options
+                    : ["", "", "", ""]
+                  : undefined,
+            });
+          }}
+        >
+          <option value="open">Нөхөх / задгай</option>
+          <option value="mcq">Сонголт</option>
+          <option value="text">Текст</option>
+        </select>
         <input
           type="number"
           min={1}
@@ -102,27 +124,6 @@ export default function QuestionEditPanel({
           placeholder="Оноо"
         />
       </div>
-
-      <select
-        className={selectClass}
-        value={activeQuestion.type}
-        onChange={(event) => {
-          const nextType = event.target.value as "text" | "open" | "mcq";
-          updateQuestion(activeQuestion.id, {
-            type: nextType,
-            options:
-              nextType === "mcq"
-                ? activeQuestion.options?.length
-                  ? activeQuestion.options
-                  : ["", "", "", ""]
-                : undefined,
-          });
-        }}
-      >
-        <option value="open">Нөхөх / задгай</option>
-        <option value="mcq">Сонголт</option>
-        <option value="text">Текст</option>
-      </select>
 
       {activeQuestion.type === "mcq" && (
         <div className="grid gap-2">
@@ -165,99 +166,13 @@ export default function QuestionEditPanel({
             ))}
           </div>
 
-          <div className="grid gap-2 md:grid-cols-[1fr_200px]">
-            <button
-              className={buttonGhost}
-              onClick={() => addQuestionOption(activeQuestion.id)}
-            >
-              + Хариулт нэмэх
-            </button>
-            <div>
-              <label className="text-[11px] font-semibold text-muted-foreground">
-                Зөв хариулт
-              </label>
-              <div
-                className="relative mt-1"
-                tabIndex={0}
-                onBlur={() => setEditCorrectOpen(false)}
-              >
-                <button
-                  className={`${selectClass} flex w-full items-center justify-between`}
-                  onClick={() => setEditCorrectOpen(!editCorrectOpen)}
-                  type="button"
-                >
-                  <span>
-                    {(() => {
-                      if (!activeQuestion.correctAnswer) {
-                        return "Зөв хариулт сонгох";
-                      }
-                      const idx = Math.max(
-                        0,
-                        activeOptions.findIndex(
-                          (opt) => opt === activeQuestion.correctAnswer,
-                        ),
-                      );
-                      const label = optionLabels[idx] ?? "A";
-                      return `${label}. ${activeQuestion.correctAnswer}`;
-                    })()}
-                  </span>
-                  <svg
-                    className={`h-4 w-4 transition-transform ${
-                      editCorrectOpen ? "rotate-180" : ""
-                    }`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-                <div
-                  className={`absolute z-20 mt-2 w-full rounded-xl border border-border bg-card p-2 text-sm shadow-xl transition ${
-                    editCorrectOpen
-                      ? "opacity-100 translate-y-0"
-                      : "pointer-events-none opacity-0 -translate-y-1"
-                  }`}
-                >
-                  {activeOptions.map((option, idx) => (
-                    <button
-                      key={`${option}-${idx}`}
-                      className={`w-full rounded-xl px-3 py-2 text-left transition ${
-                        activeQuestion.correctAnswer === option
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted"
-                      }`}
-                      onClick={() => {
-                        updateQuestion(activeQuestion.id, {
-                          correctAnswer: option,
-                        });
-                        setEditCorrectOpen(false);
-                      }}
-                      type="button"
-                    >
-                      {(optionLabels[idx] ?? idx + 1) + ". "}
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <button
+            className={buttonGhost}
+            onClick={() => addQuestionOption(activeQuestion.id)}
+          >
+            + Хариулт нэмэх
+          </button>
         </div>
-      )}
-
-      {activeQuestion.type !== "mcq" && (
-        <input
-          className={inputClass}
-          placeholder="Зөв хариулт"
-          value={activeQuestion.correctAnswer}
-          onChange={(event) =>
-            updateQuestion(activeQuestion.id, {
-              correctAnswer: event.target.value,
-            })
-          }
-        />
       )}
     </div>
   );

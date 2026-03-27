@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { figmaFieldClass } from "../styles";
 
@@ -16,20 +16,33 @@ export default function ExamScheduleDatePicker({
   const calendarRef = useRef<HTMLDivElement>(null);
   const minDate = useMemo(() => {
     const next = new Date();
-    next.setDate(next.getDate() + 7);
+    next.setHours(0, 0, 0, 0);
     return next;
   }, []);
   const maxDate = useMemo(() => {
     const next = new Date();
     next.setMonth(next.getMonth() + 1);
+    next.setHours(23, 59, 59, 999);
     return next;
   }, []);
 
   const selectedDate = scheduleDate ? new Date(scheduleDate) : undefined;
+  const isDateSelectable = (date: Date) => date >= minDate && date <= maxDate;
+
+  useEffect(() => {
+    if (!scheduleDate) return;
+
+    const nextSelectedDate = new Date(scheduleDate);
+    if (isNaN(nextSelectedDate.getTime())) return;
+
+    setSelectedTime(
+      `${String(nextSelectedDate.getHours()).padStart(2, "0")}:${String(nextSelectedDate.getMinutes()).padStart(2, "0")}`,
+    );
+  }, [scheduleDate]);
 
   const handleDaySelect = (day: Date | undefined) => {
     if (!day) return;
-    if (day < minDate || day > maxDate) return;
+    if (!isDateSelectable(day)) return;
     const [hours, mins] = selectedTime.split(":").map(Number);
     const next = new Date(day);
     next.setHours(hours, mins);
@@ -78,7 +91,7 @@ export default function ExamScheduleDatePicker({
         </svg>
       </button>
       <div className="text-xs text-slate-400">
-        Одоогоос 7 хоногоос хойш, 1 сар хүртэл хуваарьлана.
+        Өнөөдрөөс 1 сар хүртэл хуваарьлана.
       </div>
       {showCalendar && (
         <div
@@ -92,7 +105,7 @@ export default function ExamScheduleDatePicker({
             fromDate={minDate}
             toDate={maxDate}
             defaultMonth={minDate}
-            disabled={(date) => date < minDate || date > maxDate}
+            disabled={(date) => !isDateSelectable(date)}
             classNames={{
               today:
                 "rounded-md bg-[#eef2ff] text-slate-900 font-semibold ring-2 ring-[#2563eb]/30",
@@ -105,6 +118,7 @@ export default function ExamScheduleDatePicker({
               className={`${figmaFieldClass} flex-1`}
               value={selectedTime}
               onChange={(e) => handleTimeChange(e.target.value)}
+              onWheel={(event) => event.currentTarget.blur()}
             />
             <button
               type="button"

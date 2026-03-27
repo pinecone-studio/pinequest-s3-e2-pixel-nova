@@ -118,24 +118,9 @@ export default function CreateExamPage() {
       </header>
       <main className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1180px]">
-          <div className="mb-5">
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-slate-900">
-              Шалгалт үүсгэх
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Асуулт, сонголт, зураг, урьдчилсан харагдацыг нэг дэлгэц дээрээс
-              удирдана.
-            </p>
-          </div>
           <ExamCreateCard
             examTitle={management.examTitle}
             setExamTitle={management.setExamTitle}
-            createDate={management.createDate}
-            setCreateDate={management.setCreateDate}
-            expectedStudentsCount={management.expectedStudentsCount}
-            setExpectedStudentsCount={management.setExpectedStudentsCount}
-            durationMinutes={management.durationMinutes}
-            setDurationMinutes={management.setDurationMinutes}
             questionText={management.questionText}
             setQuestionText={management.setQuestionText}
             questionType={management.questionType}

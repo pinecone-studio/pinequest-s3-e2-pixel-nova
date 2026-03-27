@@ -1,10 +1,14 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import type { Exam } from "../types";
 import ExamScheduleCard from "./ExamScheduleCard";
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+const TIME_COLUMN_WIDTH = 80;
+const DAY_COLUMN_WIDTH = 150;
+const VISIBLE_DAY_COUNT = 5;
+
 function getRangeDays(start: Date, end: Date): Date[] {
   const days: Date[] = [];
   const cursor = new Date(start);
@@ -85,10 +89,12 @@ export default function ScheduleCalendarView({
 }: Props) {
   const [showForm, setShowForm] = useState(false);
   const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 7);
+  minDate.setHours(0, 0, 0, 0);
   const maxDate = new Date();
   maxDate.setMonth(maxDate.getMonth() + 1);
+  maxDate.setHours(23, 59, 59, 999);
   const calendarDays = getRangeDays(minDate, maxDate);
+  const visibleDays = Math.min(calendarDays.length, VISIBLE_DAY_COUNT);
   const selectedDate = scheduleDate ? new Date(scheduleDate) : null;
   const scheduledExams = exams.filter((e) => e.scheduledAt);
 
@@ -122,78 +128,117 @@ export default function ScheduleCalendarView({
       </div>
 
       {/* Calendar */}
-      <div className="overflow-x-auto rounded-2xl border border-[#dce5ef] bg-white">
-        <div
-          className="grid"
-          style={{
-            gridTemplateColumns: `80px repeat(${calendarDays.length}, minmax(150px, 1fr))`,
-          }}
-        >
-          {/* Corner + day headers */}
-          <div className="border-b border-[#dce5ef]" />
-          {calendarDays.map((d, i) => {
-            const isSelected =
-              selectedDate &&
-              d.toDateString() === selectedDate.toDateString();
-            return (
+      <div className="mx-auto w-fit max-w-full rounded-2xl border border-[#dce5ef] bg-white">
+        <div className="flex">
+          <div
+            className="shrink-0 border-r border-[#dce5ef] bg-white"
+            style={{ width: `${TIME_COLUMN_WIDTH}px` }}
+          >
             <div
-              key={i}
-              className={`border-b border-l border-[#dce5ef] py-3 text-center text-sm font-medium ${
-                isSelected
-                  ? "bg-[#eef2ff] text-slate-900"
-                  : "text-slate-600"
-              }`}
+              className="flex items-center justify-center border-b border-[#dce5ef] text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400"
+              style={{ height: "49px" }}
             >
-              {d.getMonth() + 1} сарын {d.getDate()}
+              Цаг
             </div>
-          )})}
-
-          {/* Time rows */}
-          {HOURS.map((hour) => (
-            <Fragment key={hour}>
-              <div className="border-b border-[#dce5ef] px-3 py-4 text-right text-[13px] text-slate-400">
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="flex items-center justify-center border-b border-[#dce5ef] bg-white text-[13px] text-slate-400 last:border-b-0"
+              >
                 {String(hour).padStart(2, "0")} цаг
               </div>
-              {calendarDays.map((_, dayIndex) => {
-                const exam = scheduledExams.find((e) => {
-                  const cell = getExamCell(e, calendarDays);
-                  return cell?.dayIndex === dayIndex && cell?.hour === hour;
-                });
-                const colors = exam ? getExamColors(exam) : null;
-                return (
+            ))}
+          </div>
+
+          <div
+            className="overflow-x-auto"
+            style={{ width: `${visibleDays * DAY_COLUMN_WIDTH}px` }}
+          >
+            <div
+              style={{
+                minWidth: `${calendarDays.length * DAY_COLUMN_WIDTH}px`,
+              }}
+            >
+              <div
+                className="grid"
+                style={{
+                  gridTemplateColumns: `repeat(${calendarDays.length}, minmax(${DAY_COLUMN_WIDTH}px, 1fr))`,
+                }}
+              >
+                {calendarDays.map((d, i) => {
+                  const isSelected =
+                    selectedDate &&
+                    d.toDateString() === selectedDate.toDateString();
+                  return (
+                    <div
+                      key={i}
+                      className={`border-b border-l border-[#dce5ef] py-3 text-center text-sm font-medium ${
+                        isSelected
+                          ? "bg-[#eef2ff] text-slate-900"
+                          : "text-slate-600"
+                      }`}
+                    >
+                      {d.getMonth() + 1} сарын {d.getDate()}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div
+                className="grid"
+                style={{
+                  gridTemplateColumns: `repeat(${calendarDays.length}, minmax(${DAY_COLUMN_WIDTH}px, 1fr))`,
+                }}
+              >
+                {calendarDays.map((_, dayIndex) => (
                   <div
                     key={dayIndex}
-                    className="border-b border-l border-[#dce5ef] p-2"
-                    style={{ minHeight: 68 }}
+                    className="border-l border-[#dce5ef]"
                   >
-                    {exam && colors && (
-                      <div
-                        className="flex items-center gap-2 rounded-xl border border-[#e8eef6] px-3 py-2.5 text-sm font-medium text-slate-800"
-                        style={{
-                          background: colors.bg,
-                          borderTopColor: colors.border,
-                          borderTopWidth: 2.5,
-                        }}
-                      >
-                        <span
-                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
-                          style={{ borderColor: colors.icon }}
+                    {HOURS.map((hour) => {
+                      const exam = scheduledExams.find((e) => {
+                        const cell = getExamCell(e, calendarDays);
+                        return cell?.dayIndex === dayIndex && cell?.hour === hour;
+                      });
+                      const colors = exam ? getExamColors(exam) : null;
+
+                      return (
+                        <div
+                          key={`${dayIndex}-${hour}`}
+                          className="border-b border-[#dce5ef] p-2"
+                          style={{ minHeight: 68 }}
                         >
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ background: colors.icon }}
-                          />
-                        </span>
-                        <span className="truncate text-[13px]">
-                          {exam.title}
-                        </span>
-                      </div>
-                    )}
+                          {exam && colors && (
+                            <div
+                              className="flex items-center gap-2 rounded-xl border border-[#e8eef6] px-3 py-2.5 text-sm font-medium text-slate-800"
+                              style={{
+                                background: colors.bg,
+                                borderTopColor: colors.border,
+                                borderTopWidth: 2.5,
+                              }}
+                            >
+                              <span
+                                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+                                style={{ borderColor: colors.icon }}
+                              >
+                                <span
+                                  className="h-2 w-2 rounded-full"
+                                  style={{ background: colors.icon }}
+                                />
+                              </span>
+                              <span className="truncate text-[13px]">
+                                {exam.title}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </Fragment>
-          ))}
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
