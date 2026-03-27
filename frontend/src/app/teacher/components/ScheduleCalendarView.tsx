@@ -191,14 +191,13 @@ export default function ScheduleCalendarView({
                 }}
               >
                 {calendarDays.map((_, dayIndex) => (
-                  <div
-                    key={dayIndex}
-                    className="border-l border-[#dce5ef]"
-                  >
+                  <div key={dayIndex} className="border-l border-[#dce5ef]">
                     {HOURS.map((hour) => {
                       const exam = scheduledExams.find((e) => {
                         const cell = getExamCell(e, calendarDays);
-                        return cell?.dayIndex === dayIndex && cell?.hour === hour;
+                        return (
+                          cell?.dayIndex === dayIndex && cell?.hour === hour
+                        );
                       });
                       const colors = exam ? getExamColors(exam) : null;
 
@@ -250,7 +249,10 @@ export default function ScheduleCalendarView({
             if (e.target === e.currentTarget) setShowForm(false);
           }}
         >
-          <div className="w-full max-w-md overflow-y-auto" style={{ maxHeight: "90vh" }}>
+          <div
+            className="w-full max-w-md overflow-y-auto"
+            style={{ maxHeight: "90vh" }}
+          >
             <ExamScheduleCard
               exams={exams}
               selectedScheduleExamId={selectedScheduleExamId}

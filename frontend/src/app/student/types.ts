@@ -23,8 +23,10 @@ export type Exam = {
   id: string;
   title: string;
   description?: string | null;
+  status?: string | null;
   scheduledAt: string | null;
   examStartedAt?: string | null;
+  finishedAt?: string | null;
   roomCode: string;
   questions: Question[];
   duration?: number;

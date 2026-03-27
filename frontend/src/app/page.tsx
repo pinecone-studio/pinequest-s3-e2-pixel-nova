@@ -10,21 +10,6 @@ const highlights = [
   "Бодит цагийн аналитик",
 ];
 export default function Home() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => {
-      const next = prev === "dark" ? "light" : "dark";
-      return next;
-    });
-  };
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden relative">
       {/* Animated gradient background */}
@@ -32,13 +17,15 @@ export default function Home() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
         <div
           className="absolute bottom-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "1s" }}></div>
+          style={{ animationDelay: "1s" }}
+        ></div>
       </div>
 
       <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[60%_40%] items-stretch relative">
         <div
           className="hidden lg:flex items-center justify-center px-6 py-10 animate-slide-in-left"
-          style={{ animationDelay: "0.3s" }}>
+          style={{ animationDelay: "0.3s" }}
+        >
           {/* Product Screenshot */}
           <div className="relative animate-float w-full h-full max-w-2xl flex items-center">
             <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-accent/20 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
@@ -57,7 +44,8 @@ export default function Home() {
           <div className="w-full max-w-sm space-y-4 animate-fade-in">
             <div
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground shadow-sm hover:shadow-md transition-shadow duration-300 animate-slide-in"
-              style={{ animationDelay: "0.1s" }}>
+              style={{ animationDelay: "0.1s" }}
+            >
               <span className="grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-primary">
                 <svg
                   className="h-4 w-4"
@@ -66,7 +54,8 @@ export default function Home() {
                   stroke="currentColor"
                   strokeWidth="1.8"
                   strokeLinecap="round"
-                  strokeLinejoin="round">
+                  strokeLinejoin="round"
+                >
                   <path d="M3 7l9-4 9 4-9 4-9-4Z" />
                   <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
                   <path d="M4 12v4" />
@@ -77,7 +66,8 @@ export default function Home() {
             <div className="space-y-2">
               <h1
                 className="flex items-center gap-3 text-4xl lg:text-5xl font-bold tracking-tight bg-linear-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-slide-in"
-                style={{ animationDelay: "0.2s" }}>
+                style={{ animationDelay: "0.2s" }}
+              >
                 <span className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-card text-primary shadow-sm">
                   <svg
                     className="h-5 w-5"
@@ -86,7 +76,8 @@ export default function Home() {
                     stroke="currentColor"
                     strokeWidth="1.8"
                     strokeLinecap="round"
-                    strokeLinejoin="round">
+                    strokeLinejoin="round"
+                  >
                     <path d="M3 7l9-4 9 4-9 4-9-4Z" />
                     <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
                     <path d="M4 12v4" />
@@ -96,19 +87,22 @@ export default function Home() {
               </h1>
               <p
                 className="text-sm lg:text-base text-muted-foreground animate-slide-in"
-                style={{ animationDelay: "0.3s" }}>
+                style={{ animationDelay: "0.3s" }}
+              >
                 Сургалтын орчин бүрэлдэхүүний шийдэл, бодит цагийн хяналт, AI
                 оноолгоо.
               </p>
             </div>
             <div
               className="grid gap-2 sm:grid-cols-3 animate-slide-in pt-2"
-              style={{ animationDelay: "0.4s" }}>
+              style={{ animationDelay: "0.4s" }}
+            >
               {highlights.map((item, idx) => (
                 <div
                   key={item}
                   className="group rounded-xl border border-border bg-card px-3 py-2 text-center text-xs font-medium shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-300 cursor-default"
-                  style={{ animationDelay: `${0.5 + idx * 0.1}s` }}>
+                  style={{ animationDelay: `${0.5 + idx * 0.1}s` }}
+                >
                   <div className="group-hover:scale-105 transition-transform duration-300">
                     {item}
                   </div>
@@ -119,7 +113,8 @@ export default function Home() {
 
           <div
             className="lg:hidden w-full max-w-sm animate-slide-in-up"
-            style={{ animationDelay: "0.5s" }}>
+            style={{ animationDelay: "0.5s" }}
+          >
             <div className="relative">
               <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-accent/20 rounded-3xl blur-3xl -z-10 animate-pulse"></div>
               <Image
@@ -135,7 +130,8 @@ export default function Home() {
 
           <div
             className="w-full max-w-sm space-y-4 animate-slide-in-up"
-            style={{ animationDelay: "0.6s" }}>
+            style={{ animationDelay: "0.6s" }}
+          >
             <div className="space-y-5 rounded-3xl border border-border bg-card/80 backdrop-blur-sm p-6 lg:p-7 shadow-[0_20px_50px_rgba(15,23,42,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(15,23,42,0.15)] dark:hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] transition-all duration-300 animate-fade-in">
               <div className="flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
@@ -147,7 +143,8 @@ export default function Home() {
                       stroke="currentColor"
                       strokeWidth="1.8"
                       strokeLinecap="round"
-                      strokeLinejoin="round">
+                      strokeLinejoin="round"
+                    >
                       <path d="M3 7l9-4 9 4-9 4-9-4Z" />
                       <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
                       <path d="M4 12v4" />
@@ -155,11 +152,6 @@ export default function Home() {
                   </span>
                   EduCore нэвтрэх
                 </h2>
-                <button
-                  className="rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:text-foreground hover:bg-muted"
-                  onClick={toggleTheme}>
-                  {theme === "dark" ? "☀️ Цагаан" : "🌙 Харанхуй"}
-                </button>
               </div>
 
               <p className="text-sm text-muted-foreground">
@@ -170,7 +162,8 @@ export default function Home() {
               <div className="grid gap-3">
                 <Link
                   href="/teacher"
-                  className="group w-full rounded-2xl border border-border bg-linear-to-r from-primary/90 to-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]">
+                  className="group w-full rounded-2xl border border-border bg-linear-to-r from-primary/90 to-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                >
                   <span className="flex items-center justify-between">
                     Багшийн самбар
                     <span className="text-xs opacity-80">→</span>
@@ -178,7 +171,8 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/student"
-                  className="group w-full rounded-2xl border border-border bg-linear-to-r from-accent/80 to-primary/60 px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]">
+                  className="group w-full rounded-2xl border border-border bg-linear-to-r from-accent/80 to-primary/60 px-4 py-3 text-sm font-semibold text-primary-foreground transition duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                >
                   <span className="flex items-center justify-between">
                     Сурагчийн самбар
                     <span className="text-xs opacity-80">→</span>

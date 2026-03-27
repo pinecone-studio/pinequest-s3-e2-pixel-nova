@@ -1,5 +1,11 @@
 import { useState, type ReactNode } from "react";
-import { Bell, GraduationCap } from "lucide-react";
+import {
+  Activity,
+  Bell,
+  BookCopy,
+  CalendarDays,
+  GraduationCap,
+} from "lucide-react";
 
 export type TeacherNavTab = string;
 
@@ -22,6 +28,11 @@ export default function TeacherHeader({
 }: TeacherHeaderProps) {
   const [open, setOpen] = useState(false);
   const unreadCount = notifications.filter((item) => !item.read).length;
+  const tabIcons: Record<string, ReactNode> = {
+    Хуваарь: <CalendarDays className="h-4 w-4" />,
+    "Шалгалтын сан": <BookCopy className="h-4 w-4" />,
+    Гүйцэтгэл: <Activity className="h-4 w-4" />,
+  };
 
   return (
     <header className="flex items-center justify-between gap-4 border-b border-[#dce5ef] bg-white/95 px-6 py-0 shadow-[0_2px_16px_-6px_rgba(15,23,42,0.12)] backdrop-blur">
@@ -35,18 +46,28 @@ export default function TeacherHeader({
       <nav className="flex items-center gap-1 overflow-x-auto">
         {tabs.map((tab) => {
           const isActive = activeTab === tab;
+          const icon = tabIcons[tab];
           return (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`relative whitespace-nowrap px-4 py-[18px] text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-2 whitespace-nowrap px-4 py-[18px] text-sm font-medium transition-colors ${
                 isActive
                   ? "text-[#2563eb]"
                   : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              {tab}
+              <span
+                className={`grid h-7 w-7 place-items-center rounded-xl border text-[11px] transition ${
+                  isActive
+                    ? "border-[#bfdbfe] bg-[#eff6ff] text-[#2563eb]"
+                    : "border-[#e2e8f0] bg-white text-slate-400"
+                }`}
+              >
+                {icon}
+              </span>
+              <span>{tab}</span>
               {isActive && (
                 <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-[#2563eb]" />
               )}

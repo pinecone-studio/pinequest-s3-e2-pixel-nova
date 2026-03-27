@@ -36,6 +36,10 @@ type SessionExam = {
   title: string;
   description?: string | null;
   durationMin: number;
+  status?: string | null;
+  scheduledAt?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
 };
 
 type SessionPayload = {
@@ -53,7 +57,10 @@ export const mapSessionToExam = (
     id: examData.id,
     title: examData.title,
     description: examData.description ?? null,
-    scheduledAt: null,
+    status: examData.status ?? null,
+    scheduledAt: examData.scheduledAt ?? null,
+    examStartedAt: examData.startedAt ?? null,
+    finishedAt: examData.finishedAt ?? null,
     roomCode: roomCodeInput.trim().toUpperCase(),
     questions: sessionData.questions.map((question) => ({
       id: question.id,

@@ -2,7 +2,14 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
-import { getDb, exams, questions, options, subjects, examSessions } from "../db";
+import {
+  getDb,
+  exams,
+  questions,
+  options,
+  subjects,
+  examSessions,
+} from "../db";
 import type { AppEnv } from "../types";
 import { success, error, notFound } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
@@ -92,27 +99,58 @@ examRoutes.post(
         return id;
       };
 
-      const subjectId = body.subjectId ?? (await ensureDefaultSubject());
+      const resolveSubjectId = async () => {
+        if (!body.subjectId) return ensureDefaultSubject();
+        const [existing] = await db
+          .select({ id: subjects.id })
+          .from(subjects)
+          .where(eq(subjects.id, body.subjectId))
+          .limit(1);
+        if (existing?.id) return existing.id;
+        return ensureDefaultSubject();
+      };
+
+      const subjectId = await resolveSubjectId();
 
       const id = newId();
       const now = new Date().toISOString();
 
-      await db.insert(exams).values({
-        id,
-        teacherId,
-        subjectId,
-        title: body.title,
-        description: body.description,
-        examType: body.examType,
-        className: body.className,
-        groupName: body.groupName,
-        durationMin: body.durationMin ?? 60,
-        expectedStudentsCount: body.expectedStudentsCount ?? 0,
-        passScore: body.passScore ?? 50,
-        shuffleQuestions: body.shuffleQuestions ?? false,
-        createdAt: now,
-        updatedAt: now,
-      });
+      const insertExam = async () => {
+        const roomCode = generateRoomCode();
+        await db.insert(exams).values({
+          id,
+          teacherId,
+          subjectId,
+          title: body.title,
+          description: body.description,
+          examType: body.examType,
+          className: body.className,
+          groupName: body.groupName,
+          durationMin: body.durationMin ?? 60,
+          expectedStudentsCount: body.expectedStudentsCount ?? 0,
+          roomCode,
+          passScore: body.passScore ?? 50,
+          shuffleQuestions: body.shuffleQuestions ?? false,
+          createdAt: now,
+          updatedAt: now,
+        });
+      };
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          await insertExam();
+          break;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          if (
+            message.includes("UNIQUE constraint failed: exams.room_code") &&
+            attempt < 2
+          ) {
+            continue;
+          }
+          throw err;
+        }
+      }
 
       const [created] = await db
         .select()
@@ -301,14 +339,22 @@ examRoutes.put(
         .set({
           updatedAt: new Date().toISOString(),
           ...(body.title !== undefined && { title: body.title }),
-          ...(body.description !== undefined && { description: body.description }),
+          ...(body.description !== undefined && {
+            description: body.description,
+          }),
           ...(body.examType !== undefined && { examType: body.examType }),
           ...(body.className !== undefined && { className: body.className }),
           ...(body.groupName !== undefined && { groupName: body.groupName }),
-          ...(body.durationMin !== undefined && { durationMin: body.durationMin }),
-          ...(body.expectedStudentsCount !== undefined && { expectedStudentsCount: body.expectedStudentsCount }),
+          ...(body.durationMin !== undefined && {
+            durationMin: body.durationMin,
+          }),
+          ...(body.expectedStudentsCount !== undefined && {
+            expectedStudentsCount: body.expectedStudentsCount,
+          }),
           ...(body.passScore !== undefined && { passScore: body.passScore }),
-          ...(body.shuffleQuestions !== undefined && { shuffleQuestions: body.shuffleQuestions }),
+          ...(body.shuffleQuestions !== undefined && {
+            shuffleQuestions: body.shuffleQuestions,
+          }),
           ...(body.subjectId !== undefined && { subjectId: body.subjectId }),
         })
         .where(eq(exams.id, examId));
@@ -321,7 +367,10 @@ examRoutes.put(
 
       return success(c, updated);
     } catch (err) {
-      console.error("[PUT exam] Error:", err instanceof Error ? err.message : err);
+      console.error(
+        "[PUT exam] Error:",
+        err instanceof Error ? err.message : err,
+      );
       return error(c, "INTERNAL_ERROR", "Failed to update exam", 500);
     }
   },
@@ -674,7 +723,7 @@ examRoutes.post(
         );
       }
 
-      const roomCode = generateRoomCode();
+      const roomCode = exam.roomCode ?? generateRoomCode();
 
       await db
         .update(exams)
