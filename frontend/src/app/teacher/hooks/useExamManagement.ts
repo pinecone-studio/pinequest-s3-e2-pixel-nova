@@ -14,6 +14,7 @@ export const useExamManagement = (params: {
   currentUser?: User | null;
 }) => {
   const { exams, setExams, showToast, currentUser } = params;
+  const hasCurrentUser = Boolean(currentUser?.id);
   const {
     scheduleTitle,
     setScheduleTitle,
@@ -93,7 +94,7 @@ export const useExamManagement = (params: {
 
   // Question handlers come from useExamQuestions.
 
-  const { saveExam } = useExamSaveActions({
+  const { saveExam, saving } = useExamSaveActions({
     exams,
     setExams,
     showToast,
@@ -173,6 +174,8 @@ export const useExamManagement = (params: {
     addQuestionOption,
     removeQuestionOption,
     saveExam,
+    saving,
+    hasCurrentUser,
     copyCode,
   };
 };
