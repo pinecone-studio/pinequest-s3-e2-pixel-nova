@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { syncExamToBackend } from "@/lib/backend-exams";
 import type { User } from "@/lib/examGuard";
 import type { Exam, Question } from "../types";
@@ -41,14 +41,20 @@ export const useExamSaveActions = ({
   setExpectedStudentsCount,
   setRoomCode,
 }: UseExamSaveActionsParams) => {
+  const [saving, setSaving] = useState(false);
+
   const saveExam = useCallback(async () => {
+    if (saving) return false;
+    setSaving(true);
     if (!examTitle || questions.length === 0) {
       showToast("Шалгалтын нэр болон асуултууд оруулна уу.");
+      setSaving(false);
       return false;
     }
 
     if (!currentUser) {
       showToast("Багшийн хэрэглэгч олдсонгүй.");
+      setSaving(false);
       return false;
     }
 
@@ -59,6 +65,7 @@ export const useExamSaveActions = ({
     ).length;
     if (missingCorrect > 0) {
       showToast("Зөв хариулт сонгоогүй асуулт байна.");
+      setSaving(false);
       return false;
     }
 
@@ -82,6 +89,7 @@ export const useExamSaveActions = ({
 
       if (!syncedExam) {
         showToast("Шалгалтыг backend дээр хадгалах боломжгүй байна.");
+        setSaving(false);
         return false;
       }
 
@@ -113,6 +121,7 @@ export const useExamSaveActions = ({
         }
       }
       showToast(message);
+      setSaving(false);
       return false;
     }
 
@@ -124,6 +133,7 @@ export const useExamSaveActions = ({
     setQuestionPoints(1);
     setExpectedStudentsCount(0);
     setRoomCode(newExam.roomCode);
+    setSaving(false);
     return true;
   }, [
     createDate,
@@ -133,6 +143,7 @@ export const useExamSaveActions = ({
     expectedStudentsCount,
     questions,
     durationMinutes,
+    saving,
     setCreateDate,
     setDurationMinutes,
     setExamTitle,
@@ -144,5 +155,5 @@ export const useExamSaveActions = ({
     showToast,
   ]);
 
-  return { saveExam };
+  return { saveExam, saving };
 };

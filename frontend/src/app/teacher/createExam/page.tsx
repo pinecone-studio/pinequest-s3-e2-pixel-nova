@@ -149,6 +149,8 @@ export default function CreateExamPage() {
             addQuestionOption={management.addQuestionOption}
             removeQuestionOption={management.removeQuestionOption}
             saveExam={handleSaveExam}
+            saving={management.saving}
+            hasUser={management.hasCurrentUser}
             pdfUseOcr={imports.pdfUseOcr}
             setPdfUseOcr={imports.setPdfUseOcr}
             answerKeyPage={imports.answerKeyPage}
