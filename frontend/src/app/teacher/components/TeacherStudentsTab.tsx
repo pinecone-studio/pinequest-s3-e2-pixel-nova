@@ -13,6 +13,7 @@ const VISIBLE_DAY_COUNT = 5;
 
 type TeacherStudentsTabProps = {
   exams: Exam[];
+  loading?: boolean;
   onAddSchedule: () => void;
 };
 
@@ -56,7 +57,11 @@ function buildScheduleData(exams: Exam[]) {
   endDate.setMonth(endDate.getMonth() + 1);
 
   const days: Date[] = [];
-  for (let cursor = new Date(baseDate); cursor <= endDate; cursor = addDays(cursor, 1)) {
+  for (
+    let cursor = new Date(baseDate);
+    cursor <= endDate;
+    cursor = addDays(cursor, 1)
+  ) {
     days.push(new Date(cursor));
   }
 
@@ -149,6 +154,7 @@ function ScheduleCard({
 
 export default function TeacherStudentsTab({
   exams,
+  loading = false,
   onAddSchedule,
 }: TeacherStudentsTabProps) {
   const { days, items } = buildScheduleData(exams);
@@ -227,9 +233,7 @@ export default function TeacherStudentsTab({
               <div
                 className="flex items-center justify-center border-b border-[#dce5ef] text-xs font-medium uppercase tracking-[0.12em] text-slate-400"
                 style={{ height: "61px" }}
-              >
-                
-              </div>
+              ></div>
               {HOURS.map((hour) => (
                 <div
                   key={hour}
@@ -241,10 +245,7 @@ export default function TeacherStudentsTab({
               ))}
             </div>
 
-            <div
-              ref={scrollHostRef}
-              className="min-w-0 flex-1 overflow-x-auto"
-            >
+            <div ref={scrollHostRef} className="min-w-0 flex-1 overflow-x-auto">
               <div style={{ minWidth: `${daysCount * dayColumnWidth}px` }}>
                 <div
                   className="grid border-b border-[#dce5ef] bg-white/70"
@@ -296,7 +297,11 @@ export default function TeacherStudentsTab({
                       </div>
                     )}
                     {items.map((item) => (
-                      <ScheduleCard key={item.id} item={item} daysCount={daysCount} />
+                      <ScheduleCard
+                        key={item.id}
+                        item={item}
+                        daysCount={daysCount}
+                      />
                     ))}
                   </div>
                 </div>

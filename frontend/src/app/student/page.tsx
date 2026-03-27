@@ -243,6 +243,9 @@ export default function StudentPage() {
           <StudentResultView
             lastSubmission={exam.lastSubmission}
             answerReport={exam.answerReport}
+            resultPending={exam.resultPending}
+            resultCountdown={exam.resultCountdown}
+            resultReleaseAt={exam.resultReleaseAt}
             onBack={() => {
               exam.setView("dashboard");
               router.push(`/${role}`);

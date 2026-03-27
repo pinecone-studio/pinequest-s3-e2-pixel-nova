@@ -183,6 +183,10 @@ export default function TeacherPage() {
           exams={data.exams}
           onCopyCode={management.copyCode}
           onCreateExam={() => router.push(`/teacher/createExam`)}
+          onOpenExam={(examId) => {
+            setActiveTab("Гүйцэтгэл");
+            examStatsState.setSelectedExamId(examId);
+          }}
         />
       );
     }
@@ -216,6 +220,7 @@ export default function TeacherPage() {
         <div className="space-y-6">
           <TeacherStudentsTab
             exams={data.exams}
+            loading={data.loading}
             onAddSchedule={() => setShowScheduleForm((prev) => !prev)}
           />
           {showScheduleForm && (

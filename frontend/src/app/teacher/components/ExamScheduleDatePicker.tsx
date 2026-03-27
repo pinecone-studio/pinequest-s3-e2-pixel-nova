@@ -87,7 +87,11 @@ export default function ExamScheduleDatePicker({
           stroke="currentColor"
           strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
       <div className="text-xs text-slate-400">
@@ -103,7 +107,6 @@ export default function ExamScheduleDatePicker({
             selected={selectedDate}
             onSelect={handleDaySelect}
             fromDate={minDate}
-            toDate={maxDate}
             defaultMonth={minDate}
             disabled={(date) => !isDateSelectable(date)}
             classNames={{

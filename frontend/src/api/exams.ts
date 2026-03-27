@@ -35,7 +35,6 @@ export const getTeacherExamDetail = (examId: string, user?: User | null) =>
 
 export const createExam = (
   payload: {
-    subjectId?: string;
     title: string;
     description?: string;
     durationMin?: number;
@@ -50,7 +49,13 @@ export const createExam = (
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      title: payload.title,
+      description: payload.description,
+      durationMin: payload.durationMin,
+      passScore: payload.passScore,
+      shuffleQuestions: payload.shuffleQuestions,
+    }),
   });
 
 export const updateExam = (

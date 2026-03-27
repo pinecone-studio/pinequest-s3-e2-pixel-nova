@@ -1,6 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch, unwrapApi } from "@/lib/api-client";
-import type { Exam, Question } from "../types";
+import type { Exam } from "../types";
 
 export const useStudentJoinExam = () => {
   const [roomCodeInput, setRoomCodeInput] = useState("");
@@ -8,6 +8,24 @@ export const useStudentJoinExam = () => {
   const [joinLoading, setJoinLoading] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedExam?.scheduledAt) return;
+    if (!joinError) return;
+    const scheduledTime = new Date(selectedExam.scheduledAt).getTime();
+    if (Number.isNaN(scheduledTime)) return;
+    if (Date.now() >= scheduledTime) {
+      setJoinError(null);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      if (Date.now() >= scheduledTime) {
+        setJoinError(null);
+        clearInterval(timer);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [joinError, selectedExam?.scheduledAt]);
 
   const handleLookup = useCallback(async () => {
     const code = roomCodeInput.trim().toUpperCase();
@@ -21,6 +39,9 @@ export const useStudentJoinExam = () => {
         | {
             data?: {
               sessionId: string;
+              status: string;
+              scheduledAt?: string | null;
+              startedAt?: string | null;
               exam: {
                 id: string;
                 title: string;
@@ -31,6 +52,9 @@ export const useStudentJoinExam = () => {
           }
         | {
             sessionId: string;
+            status: string;
+            scheduledAt?: string | null;
+            startedAt?: string | null;
             exam: {
               id: string;
               title: string;
@@ -44,83 +68,22 @@ export const useStudentJoinExam = () => {
       });
       const data = unwrapApi(payload);
       setSessionId(data.sessionId);
-      const detailPayload = await apiFetch<
-        | {
-            data?: {
-              session: {
-                id: string;
-                status: string;
-                startedAt: string | null;
-                submittedAt: string | null;
-              };
-              exam: {
-                id: string;
-                title: string;
-                description?: string | null;
-                durationMin: number;
-              };
-              questions: {
-                id: string;
-                type: string;
-                questionText: string;
-                imageUrl?: string | null;
-                points: number;
-                options?: {
-                  id: string;
-                  label: string;
-                  text: string;
-                }[];
-              }[];
-            };
-          }
-        | {
-            session: {
-              id: string;
-              status: string;
-              startedAt: string | null;
-              submittedAt: string | null;
-            };
-            exam: {
-              id: string;
-              title: string;
-              description?: string | null;
-              durationMin: number;
-            };
-            questions: {
-              id: string;
-              type: string;
-              questionText: string;
-              imageUrl?: string | null;
-              points: number;
-              options?: {
-                id: string;
-                label: string;
-                text: string;
-              }[];
-            }[];
-          }
-      >(`/api/sessions/${data.sessionId}`);
-      const detail = unwrapApi(detailPayload);
       setSelectedExam({
-        id: detail.exam.id,
-        title: detail.exam.title,
-        description: detail.exam.description ?? null,
-        scheduledAt: detail.session.startedAt ?? new Date().toISOString(),
-        examStartedAt: detail.session.startedAt ?? null,
+        id: data.exam.id,
+        title: data.exam.title,
+        description: null,
+        scheduledAt: data.scheduledAt ?? new Date().toISOString(),
+        examStartedAt: data.startedAt ?? null,
         roomCode: code,
-        questions: detail.questions.map((question) => ({
-          id: question.id,
-          text: question.questionText,
-          type: question.type as Question["type"],
-          options: question.options?.map((opt) => opt.text) ?? undefined,
-          correctAnswer: "",
-          points: Number(question.points ?? 1),
-          imageUrl: question.imageUrl ?? undefined,
-        })),
-        duration: detail.exam.durationMin,
+        questions: [],
+        duration: data.exam.durationMin,
         createdAt: new Date().toISOString(),
       });
-      setJoinError(null);
+      if (data.status === "scheduled") {
+        setJoinError("Шалгалт хараахан эхлээгүй байна. Хүлээнэ үү.");
+      } else {
+        setJoinError(null);
+      }
     } catch (err) {
       let message: unknown =
         "Өрөөний код олдсонгүй эсвэл шалгалт идэвхгүй байна.";

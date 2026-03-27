@@ -7,16 +7,38 @@ type ExamListCardProps = {
   exams: Exam[];
   onCopyCode: (code: string) => void;
   onCreateExam?: () => void;
+  onOpenExam?: (examId: string) => void;
 };
 
 export default function ExamListCard({
   exams,
   onCopyCode,
   onCreateExam,
+  onOpenExam,
 }: ExamListCardProps) {
   const sortedExams = [...exams].sort((left, right) =>
     right.createdAt.localeCompare(left.createdAt),
   );
+
+  const getExamStatus = (exam: Exam) => {
+    const now = Date.now();
+    if (exam.finishedAt || exam.status === "finished") {
+      return { label: "Дууссан", tone: "bg-emerald-100 text-emerald-700" };
+    }
+    if (exam.status === "in_progress" || exam.status === "active") {
+      return { label: "Явагдаж буй", tone: "bg-amber-100 text-amber-700" };
+    }
+    if (exam.status === "scheduled") {
+      return { label: "Товлосон", tone: "bg-blue-100 text-blue-700" };
+    }
+    if (exam.scheduledAt) {
+      const scheduled = new Date(exam.scheduledAt).getTime();
+      if (!Number.isNaN(scheduled) && scheduled > now) {
+        return { label: "Товлосон", tone: "bg-blue-100 text-blue-700" };
+      }
+    }
+    return { label: "Ноорог", tone: "bg-slate-100 text-slate-600" };
+  };
 
   return (
     <div className="space-y-5">
@@ -89,12 +111,26 @@ export default function ExamListCard({
                   <div className="truncate text-sm font-semibold text-slate-900">
                     {exam.title}
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-slate-400">
-                    {exam.roomCode}
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                    <span className="truncate">{exam.roomCode}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${getExamStatus(exam).tone}`}
+                    >
+                      {getExamStatus(exam).label}
+                    </span>
                   </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-3">
+                  {onOpenExam && getExamStatus(exam).label === "Явагдаж буй" && (
+                    <button
+                      type="button"
+                      className="rounded-full border border-[#dce5ef] px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-[#f0f4f9]"
+                      onClick={() => onOpenExam(exam.id)}
+                    >
+                      Дэлгэрэнгүй
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="flex size-8 items-center justify-center rounded-full hover:bg-[#f0f4f9]"

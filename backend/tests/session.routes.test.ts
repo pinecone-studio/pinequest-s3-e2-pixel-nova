@@ -27,16 +27,16 @@ describe("session routes", () => {
       workerEnv,
     );
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       success: true,
       data: {
-        sessionId: "test-id",
+        status: "active",
         exam: {
           id: "exam-1",
           title: "Algebra Final",
           durationMin: 45,
-          questionCount: 3,
+          questionCount: 0,
         },
       },
     });

@@ -6,9 +6,9 @@ const selectedExam: Exam = {
   id: "exam-1",
   title: "Англи хэлний авцын шалгалт",
   description: "Англи хэл",
-  scheduledAt: "2026-04-28T09:00:00.000Z",
+  scheduledAt: "2024-04-28T09:00:00.000Z",
   roomCode: "AX7K2P",
-  createdAt: "2026-04-28T09:00:00.000Z",
+  createdAt: "2024-04-28T09:00:00.000Z",
   duration: 40,
   questions: [
     {

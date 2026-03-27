@@ -29,6 +29,9 @@ export const useStudentExamSession = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [lastSubmission, setLastSubmission] = useState<Submission | null>(null);
+  const [resultPending, setResultPending] = useState(false);
+  const [resultReleaseAt, setResultReleaseAt] = useState<string | null>(null);
+  const [resultCountdown, setResultCountdown] = useState("00:00:00");
   const [answerReport, setAnswerReport] = useState<
     { question: Question; answer: string; correct: boolean }[]
   >([]);
@@ -158,9 +161,37 @@ export const useStudentExamSession = ({
       if (!sessionId) return;
       const report = buildAnswerReport(activeExam, answers);
       await apiFetch(`/api/sessions/${sessionId}/submit`, { method: "POST" });
-      const resultPayload = await apiFetch<
-        | {
-            data?: {
+      const getExamEndAt = () => {
+        const durationMs = (activeExam.duration ?? 45) * 60 * 1000;
+        const base =
+          activeExam.finishedAt ??
+          activeExam.examStartedAt ??
+          activeExam.scheduledAt ??
+          null;
+        if (!base) return null;
+        const baseTime = new Date(base).getTime();
+        if (Number.isNaN(baseTime)) return null;
+        if (activeExam.finishedAt) return new Date(baseTime).toISOString();
+        return new Date(baseTime + durationMs).toISOString();
+      };
+
+      try {
+        const resultPayload = await apiFetch<
+          | {
+              data?: {
+                answers: {
+                  questionText: string;
+                  selectedAnswer: string | null;
+                  correctAnswer: string | null;
+                  isCorrect: boolean;
+                  points: number;
+                  pointsEarned: number;
+                }[];
+                score: number;
+                totalPoints: number;
+              };
+            }
+          | {
               answers: {
                 questionText: string;
                 selectedAnswer: string | null;
@@ -171,52 +202,159 @@ export const useStudentExamSession = ({
               }[];
               score: number;
               totalPoints: number;
-            };
-          }
-        | {
-            answers: {
-              questionText: string;
-              selectedAnswer: string | null;
-              correctAnswer: string | null;
-              isCorrect: boolean;
-              points: number;
-              pointsEarned: number;
-            }[];
-            score: number;
-            totalPoints: number;
-          }
-      >(`/api/sessions/${sessionId}/result`);
-      const result = unwrapApi(resultPayload);
-      const backendReport = mapResultToReport(result);
+            }
+        >(`/api/sessions/${sessionId}/result`);
+        const result = unwrapApi(resultPayload);
+        const backendReport = mapResultToReport(result);
 
-      if (document.fullscreenElement) {
-        document.exitFullscreen?.().catch(() => null);
+        if (document.fullscreenElement) {
+          document.exitFullscreen?.().catch(() => null);
+        }
+        document.body.style.filter = "none";
+        const submission: Submission = {
+          id: sessionId,
+          examId: activeExam.id,
+          studentId: currentUser.id,
+          studentНэр: currentUser.username,
+          answers: report.map((item) => ({
+            questionId: item.question.id,
+            selectedAnswer: item.answer,
+            correct: item.correct,
+          })),
+          score: result.score ?? 0,
+          totalPoints: result.totalPoints ?? 0,
+          percentage: result.score ?? 0,
+          terminated,
+          terminationReason: reason,
+          violations,
+          submittedAt: new Date().toISOString(),
+        };
+        setLastSubmission(submission);
+        setAnswerReport(backendReport);
+        setResultPending(false);
+        setResultReleaseAt(null);
+        setView("result");
+        return;
+      } catch (err) {
+        let errorCode: string | null = null;
+        if (err instanceof Error && err.message) {
+          try {
+            const parsed = JSON.parse(err.message) as {
+              error?: { code?: string; message?: string };
+            };
+            errorCode = parsed.error?.code ?? null;
+          } catch {
+            errorCode = null;
+          }
+        }
+
+        if (errorCode === "RESULTS_PENDING" || errorCode === "NOT_GRADED") {
+          setResultPending(true);
+          setResultReleaseAt(getExamEndAt());
+          setAnswerReport([]);
+          const submission: Submission = {
+            id: sessionId,
+            examId: activeExam.id,
+            studentId: currentUser.id,
+            studentНэр: currentUser.username,
+            answers: report.map((item) => ({
+              questionId: item.question.id,
+              selectedAnswer: item.answer,
+              correct: item.correct,
+            })),
+            score: 0,
+            totalPoints: 0,
+            percentage: 0,
+            terminated,
+            terminationReason: reason,
+            violations,
+            submittedAt: new Date().toISOString(),
+          };
+          setLastSubmission(submission);
+          setView("result");
+          return;
+        }
       }
-      document.body.style.filter = "none";
-      const submission: Submission = {
-        id: sessionId,
-        examId: activeExam.id,
-        studentId: currentUser.id,
-        studentНэр: currentUser.username,
-        answers: report.map((item) => ({
-          questionId: item.question.id,
-          selectedAnswer: item.answer,
-          correct: item.correct,
-        })),
-        score: result.score ?? 0,
-        totalPoints: result.totalPoints ?? 0,
-        percentage: result.score ?? 0,
-        terminated,
-        terminationReason: reason,
-        violations,
-        submittedAt: new Date().toISOString(),
-      };
-      setLastSubmission(submission);
-      setAnswerReport(backendReport);
-      setView("result");
     },
     [activeExam, answers, currentUser, violations, sessionId],
   );
+
+  useEffect(() => {
+    if (!resultPending) return;
+    if (!resultReleaseAt) {
+      setResultCountdown("00:00:00");
+      return;
+    }
+    const releaseTime = new Date(resultReleaseAt).getTime();
+    if (Number.isNaN(releaseTime)) return;
+    const timer = window.setInterval(() => {
+      const diff = releaseTime - Date.now();
+      const safeDiff = Math.max(diff, 0);
+      const hours = Math.floor(safeDiff / (1000 * 60 * 60));
+      const minutes = Math.floor((safeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((safeDiff % (1000 * 60)) / 1000);
+      setResultCountdown(
+        `${hours.toString().padStart(2, "0")}:${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`,
+      );
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resultPending, resultReleaseAt]);
+
+  useEffect(() => {
+    if (!resultPending || !sessionId || !activeExam) return;
+    const interval = window.setInterval(async () => {
+      try {
+        const resultPayload = await apiFetch<
+          | {
+              data?: {
+                answers: {
+                  questionText: string;
+                  selectedAnswer: string | null;
+                  correctAnswer: string | null;
+                  isCorrect: boolean;
+                  points: number;
+                  pointsEarned: number;
+                }[];
+                score: number;
+                totalPoints: number;
+              };
+            }
+          | {
+              answers: {
+                questionText: string;
+                selectedAnswer: string | null;
+                correctAnswer: string | null;
+                isCorrect: boolean;
+                points: number;
+                pointsEarned: number;
+              }[];
+              score: number;
+              totalPoints: number;
+            }
+        >(`/api/sessions/${sessionId}/result`);
+        const result = unwrapApi(resultPayload);
+        const backendReport = mapResultToReport(result);
+        setAnswerReport(backendReport);
+        setLastSubmission((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            score: result.score ?? 0,
+            totalPoints: result.totalPoints ?? 0,
+            percentage: result.score ?? 0,
+          };
+        });
+        setResultPending(false);
+        setResultReleaseAt(null);
+      } catch {
+        return;
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [resultPending, sessionId, activeExam]);
 
   const terminateExam = useCallback(
     (reason: string) => {
@@ -279,6 +417,9 @@ export const useStudentExamSession = ({
     startExam,
     submitExam,
     terminateExam,
+    resultPending,
+    resultCountdown,
+    resultReleaseAt,
     updateAnswer,
     selectMcqAnswer,
     goNext,

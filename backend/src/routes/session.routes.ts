@@ -47,24 +47,20 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
   const scheduledAt = exam.scheduledAt ? new Date(exam.scheduledAt) : null;
 
   if (exam.status === "scheduled") {
-    if (scheduledAt && now < scheduledAt) {
-      return error(
-        c,
-        "NOT_STARTED",
-        "Шалгалт хараахан эхлээгүй байна. Хүлээнэ үү.",
-        409,
-      );
+    if (!scheduledAt || now >= scheduledAt) {
+      // Auto-start if scheduled time has passed
+      const startedAt = exam.startedAt ?? now.toISOString();
+      await db
+        .update(exams)
+        .set({
+          status: "active",
+          startedAt,
+          updatedAt: now.toISOString(),
+        })
+        .where(eq(exams.id, exam.id));
+      exam.status = "active";
+      exam.startedAt = startedAt;
     }
-    // Auto-start if scheduled time has passed
-    const startedAt = exam.startedAt ?? now.toISOString();
-    await db
-      .update(exams)
-      .set({
-        status: "active",
-        startedAt,
-        updatedAt: now.toISOString(),
-      })
-      .where(eq(exams.id, exam.id));
   }
 
   const startTime = exam.startedAt ? new Date(exam.startedAt) : scheduledAt;
@@ -77,6 +73,13 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     );
   }
 
+  // Get question count
+  const [questionCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(questions)
+    .where(eq(questions.examId, exam.id));
+  const totalQuestions = Number(questionCount?.count ?? 0);
+
   // Check if student already joined
   const [existing] = await db
     .select()
@@ -85,14 +88,19 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     .limit(1);
 
   if (existing) {
-    return error(c, "ALREADY_JOINED", "You have already joined this exam", 409);
+    return success(c, {
+      sessionId: existing.id,
+      status: exam.status,
+      scheduledAt: exam.scheduledAt,
+      startedAt: exam.startedAt,
+      exam: {
+        id: exam.id,
+        title: exam.title,
+        durationMin: exam.durationMin,
+        questionCount: totalQuestions,
+      },
+    });
   }
-
-  // Get question count
-  const [questionCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(questions)
-    .where(eq(questions.examId, exam.id));
 
   // Create session
   const sessionId = newId();
@@ -105,11 +113,14 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
 
   return success(c, {
     sessionId,
+    status: exam.status,
+    scheduledAt: exam.scheduledAt,
+    startedAt: exam.startedAt,
     exam: {
       id: exam.id,
       title: exam.title,
       durationMin: exam.durationMin,
-      questionCount: questionCount.count,
+      questionCount: totalQuestions,
     },
   }, 201);
 });
@@ -205,6 +216,10 @@ sessionRoutes.get("/:sessionId", requireRole("student"), async (c) => {
       title: exam.title,
       description: exam.description,
       durationMin: exam.durationMin,
+      status: exam.status,
+      scheduledAt: exam.scheduledAt,
+      startedAt: exam.startedAt,
+      finishedAt: exam.finishedAt,
     },
     questions: questionsWithOptions,
   });
@@ -230,6 +245,28 @@ sessionRoutes.post("/:sessionId/start", requireRole("student"), async (c) => {
 
   if (session.status !== "joined") {
     return error(c, "INVALID_STATUS", "Session must be in 'joined' status to start", 400);
+  }
+
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(eq(exams.id, session.examId))
+    .limit(1);
+
+  if (!exam) {
+    return notFound(c, "Exam");
+  }
+
+  if (exam.status === "scheduled" && exam.scheduledAt) {
+    const scheduledAt = new Date(exam.scheduledAt);
+    if (Date.now() < scheduledAt.getTime()) {
+      return error(
+        c,
+        "NOT_STARTED",
+        "Шалгалт хараахан эхлээгүй байна. Хүлээнэ үү.",
+        409,
+      );
+    }
   }
 
   const now = new Date().toISOString();
@@ -505,6 +542,25 @@ sessionRoutes.get("/:sessionId/result", requireRole("student"), async (c) => {
 
   if (session.status !== "graded") {
     return error(c, "NOT_GRADED", "Results are only available after grading", 400);
+  }
+
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(eq(exams.id, session.examId))
+    .limit(1);
+
+  if (!exam) {
+    return notFound(c, "Exam");
+  }
+
+  if (exam.status !== "finished") {
+    return error(
+      c,
+      "RESULTS_PENDING",
+      "Шалгалт дуусаагүй тул дүн хараахан гараагүй байна.",
+      409,
+    );
   }
 
   // Fetch all answers for this session with question and option details

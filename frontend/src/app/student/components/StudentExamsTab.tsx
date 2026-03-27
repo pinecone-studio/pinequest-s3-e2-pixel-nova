@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Play } from "lucide-react";
 import type { Exam } from "../types";
 import { formatDate, gradeFromPercentage } from "../utils";
@@ -45,6 +45,7 @@ export default function StudentExamsTab({
   studentHistory,
 }: StudentExamsTabProps) {
   const [rulesOpen, setRulesOpen] = useState(true);
+  const [countdown, setCountdown] = useState<string>("00:00:00");
 
   const examMeta = useMemo(() => {
     if (!selectedExam) return null;
@@ -54,21 +55,50 @@ export default function StudentExamsTab({
     const end = new Date(
       safeStart.getTime() + (selectedExam.duration ?? 45) * 60 * 1000,
     );
+    const isUpcoming = safeStart.getTime() > Date.now();
 
     return {
       subject: subjectFromExam(selectedExam),
-      status: selectedExam.examStartedAt ? "Идэвхтэй" : "Бэлэн",
+      status: selectedExam.examStartedAt
+        ? "Идэвхтэй"
+        : isUpcoming
+          ? "Хүлээгдэж байна"
+          : "Бэлэн",
       teacher: teacherName?.trim() || "EduCore баг",
       room: selectedExam.roomCode || "Нээлттэй",
       dateLabel: formatDate(safeStart.toISOString()),
       startLabel: formatClock(safeStart),
       endLabel: formatClock(end),
       durationLabel: `${selectedExam.duration ?? 45} минут`,
-      examStatusMessage: joinError || "Та энэ шалгалтыг эхлүүлэхэд бэлэн байна.",
+      examStatusMessage:
+        joinError || "Та энэ шалгалтыг эхлүүлэхэд бэлэн байна.",
+      isUpcoming,
+      scheduledAt: safeStart,
     };
   }, [joinError, selectedExam, teacherName]);
 
-  const canStart = !joinError && !selectedExam?.examStartedAt;
+  const canStart =
+    !joinError && !selectedExam?.examStartedAt && !examMeta?.isUpcoming;
+
+  useEffect(() => {
+    if (!examMeta?.isUpcoming || !examMeta.scheduledAt) {
+      setCountdown("00:00:00");
+      return;
+    }
+    const timer = window.setInterval(() => {
+      const diff = examMeta.scheduledAt.getTime() - Date.now();
+      const safeDiff = Math.max(diff, 0);
+      const hours = Math.floor(safeDiff / (1000 * 60 * 60));
+      const minutes = Math.floor((safeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((safeDiff % (1000 * 60)) / 1000);
+      setCountdown(
+        `${hours.toString().padStart(2, "0")}:${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`,
+      );
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [examMeta?.isUpcoming, examMeta?.scheduledAt]);
 
   if (!selectedExam || !examMeta) {
     return (
@@ -112,6 +142,13 @@ export default function StudentExamsTab({
       />
 
       <StudentExamCautionPanel message={examMeta.examStatusMessage} />
+
+      {examMeta.isUpcoming && (
+        <div className="rounded-[22px] border border-[#dbe6ff] bg-[#f4f8ff] px-5 py-4 text-center text-sm font-semibold text-[#3659c8] shadow-[0_18px_40px_rgba(54,89,200,0.12)]">
+          Шалгалт эхлэх хүртэл{" "}
+          <span className="text-base font-bold">{countdown}</span>
+        </div>
+      )}
 
       <button
         className="inline-flex w-full items-center justify-center gap-2 rounded-[14px] bg-gradient-to-r from-[#5c4fe6] to-[#5148df] px-5 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(92,79,230,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"

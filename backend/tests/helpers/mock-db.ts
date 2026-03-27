@@ -29,6 +29,7 @@ const createChain = (fallback: unknown) => {
     "set",
     "values",
     "returning",
+    "onConflictDoNothing",
   ]) {
     chain[method] = () => chain;
   }
