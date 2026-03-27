@@ -65,8 +65,14 @@ export const formatCompactXp = (value: number) => {
 const sortEntries = (entries: LeaderboardEntry[]) =>
   [...entries].sort((left, right) => left.rank - right.rank);
 
+const MIN_PERCENT = 55;
+const MAX_PERCENT = 99;
+
 const getScorePercent = (value: number, maxXp: number) =>
-  Math.max(55, Math.min(99, Math.round((value / Math.max(maxXp, 1)) * 100)));
+  Math.max(
+    MIN_PERCENT,
+    Math.min(MAX_PERCENT, Math.round((value / Math.max(maxXp, 1)) * 100)),
+  );
 
 const withMetricPercent = (entries: Omit<DisplayEntry, "metricPercent">[]) => {
   const maxMetric = Math.max(...entries.map((entry) => entry.metricValue), 1);
