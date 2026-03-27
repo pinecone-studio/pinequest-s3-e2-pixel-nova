@@ -1,9 +1,15 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import type { Exam } from "../types";
 import { sectionTitleClass } from "../styles";
 
 const HOURS = [8, 9, 10, 11, 12, 13, 14];
 const ROW_HEIGHT = 76;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const TIME_COLUMN_WIDTH = 88;
+const DAY_COLUMN_WIDTH = 170;
+const VISIBLE_DAY_COUNT = 5;
 
 type TeacherStudentsTabProps = {
   exams: Exam[];
@@ -46,7 +52,6 @@ function buildScheduleData(exams: Exam[]) {
     );
 
   const baseDate = startOfDay(new Date());
-  baseDate.setDate(baseDate.getDate() + 7);
   const endDate = startOfDay(new Date(baseDate));
   endDate.setMonth(endDate.getMonth() + 1);
 
@@ -149,6 +154,30 @@ export default function TeacherStudentsTab({
   const { days, items } = buildScheduleData(exams);
   const hasScheduledItems = items.length > 0;
   const daysCount = days.length;
+  const scrollHostRef = useRef<HTMLDivElement>(null);
+  const [dayColumnWidth, setDayColumnWidth] = useState(DAY_COLUMN_WIDTH);
+
+  useEffect(() => {
+    const node = scrollHostRef.current;
+    if (!node) return;
+
+    const updateWidth = () => {
+      const nextWidth = node.getBoundingClientRect().width;
+      if (!nextWidth) return;
+      setDayColumnWidth(nextWidth / VISIBLE_DAY_COUNT);
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(() => {
+      updateWidth();
+    });
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section className="space-y-6">
@@ -169,7 +198,7 @@ export default function TeacherStudentsTab({
         </div>
 
         <button
-          className="inline-flex items-center gap-2 justify-center rounded-2xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-500"
+          className="inline-flex items-center gap-2 justify-center rounded-2xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition"
           onClick={onAddSchedule}
           type="button"
         >
@@ -188,78 +217,88 @@ export default function TeacherStudentsTab({
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <div
-          className="rounded-[34px] border border-[#dce5ef] bg-white p-4 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.2)]"
-          style={{ minWidth: `${Math.max(980, daysCount * 170 + 88)}px` }}
-        >
-          <div className="overflow-hidden rounded-[28px] bg-[#f8fbff]">
-            <div className="grid grid-cols-[88px_1fr]">
-              <div className="border-r border-[#dce5ef] bg-white/70" />
+      <div className="w-full rounded-[34px] border border-[#dce5ef] bg-white p-4 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.2)]">
+        <div className="overflow-hidden rounded-[28px] bg-[#f8fbff]">
+          <div className="flex">
+            <div
+              className="shrink-0 border-r border-[#dce5ef] bg-white/70"
+              style={{ width: `${TIME_COLUMN_WIDTH}px` }}
+            >
               <div
-                className="grid border-b border-[#dce5ef] bg-white/70"
-                style={{
-                  gridTemplateColumns: `repeat(${daysCount}, minmax(0, 1fr))`,
-                }}
+                className="flex items-center justify-center border-b border-[#dce5ef] text-xs font-medium uppercase tracking-[0.12em] text-slate-400"
+                style={{ height: "61px" }}
               >
-                {days.map((day, index) => (
-                  <div
-                    key={`${day.toISOString()}-${index}`}
-                    className="border-r border-[#dce5ef] px-4 py-4 text-center text-lg font-semibold text-foreground last:border-r-0"
-                  >
-                    {formatDayLabel(day)}
-                  </div>
-                ))}
+                
               </div>
-
-              <div className="border-r border-[#dce5ef] bg-white/70">
-                {HOURS.map((hour) => (
-                  <div
-                    key={hour}
-                    className="px-5 pt-1 text-sm text-slate-500"
-                    style={{ height: `${ROW_HEIGHT}px` }}
-                  >
-                    {hour.toString().padStart(2, "0")} цаг
-                  </div>
-                ))}
-              </div>
-
-              <div className="relative">
+              {HOURS.map((hour) => (
                 <div
-                  className="grid"
+                  key={hour}
+                  className="flex items-center justify-center border-b border-[#dce5ef] text-sm text-slate-500 last:border-b-0"
+                  style={{ height: `${ROW_HEIGHT}px` }}
+                >
+                  {hour.toString().padStart(2, "0")} цаг
+                </div>
+              ))}
+            </div>
+
+            <div
+              ref={scrollHostRef}
+              className="min-w-0 flex-1 overflow-x-auto"
+            >
+              <div style={{ minWidth: `${daysCount * dayColumnWidth}px` }}>
+                <div
+                  className="grid border-b border-[#dce5ef] bg-white/70"
                   style={{
-                    gridTemplateColumns: `repeat(${daysCount}, minmax(0, 1fr))`,
+                    gridTemplateColumns: `repeat(${daysCount}, minmax(${dayColumnWidth}px, 1fr))`,
                   }}
                 >
-                  {Array.from({ length: daysCount }, (_, dayIndex) => (
+                  {days.map((day, index) => (
                     <div
-                      key={`column-${dayIndex}`}
-                      className="border-r border-[#dce5ef] last:border-r-0"
+                      key={`${day.toISOString()}-${index}`}
+                      className="border-r border-[#dce5ef] px-4 py-4 text-center text-lg font-semibold text-foreground last:border-r-0"
                     >
-                      {HOURS.map((hour, rowIndex) => (
-                        <div
-                          key={`${dayIndex}-${hour}`}
-                          style={{
-                            height: `${ROW_HEIGHT}px`,
-                            opacity: rowIndex === HOURS.length - 1 ? 0.7 : 1,
-                          }}
-                        />
-                      ))}
+                      {formatDayLabel(day)}
                     </div>
                   ))}
                 </div>
 
-                <div className="pointer-events-none absolute inset-0">
-                  {!hasScheduledItems && (
-                    <div className="flex h-full items-center justify-center">
-                      <div className="rounded-2xl border border-dashed border-[#dce5ef] bg-white/80 px-5 py-3 text-sm text-slate-500 shadow-sm">
-                        Шалгалт алга
+                <div className="relative">
+                  <div
+                    className="grid"
+                    style={{
+                      gridTemplateColumns: `repeat(${daysCount}, minmax(${dayColumnWidth}px, 1fr))`,
+                    }}
+                  >
+                    {Array.from({ length: daysCount }, (_, dayIndex) => (
+                      <div
+                        key={`column-${dayIndex}`}
+                        className="border-r border-[#dce5ef] last:border-r-0"
+                      >
+                        {HOURS.map((hour, rowIndex) => (
+                          <div
+                            key={`${dayIndex}-${hour}`}
+                            style={{
+                              height: `${ROW_HEIGHT}px`,
+                              opacity: rowIndex === HOURS.length - 1 ? 0.7 : 1,
+                            }}
+                          />
+                        ))}
                       </div>
-                    </div>
-                  )}
-                  {items.map((item) => (
-                    <ScheduleCard key={item.id} item={item} daysCount={daysCount} />
-                  ))}
+                    ))}
+                  </div>
+
+                  <div className="pointer-events-none absolute inset-0">
+                    {!hasScheduledItems && (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="rounded-2xl border border-dashed border-[#dce5ef] bg-white/80 px-5 py-3 text-sm text-slate-500 shadow-sm">
+                          Шалгалт алга
+                        </div>
+                      </div>
+                    )}
+                    {items.map((item) => (
+                      <ScheduleCard key={item.id} item={item} daysCount={daysCount} />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

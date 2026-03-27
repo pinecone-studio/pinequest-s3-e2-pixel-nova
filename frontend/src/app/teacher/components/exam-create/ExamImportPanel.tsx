@@ -1,3 +1,5 @@
+import { FileImage, FileText, FileType2 } from "lucide-react";
+
 type ExamImportPanelProps = {
   pdfUseOcr: boolean;
   setPdfUseOcr: (value: boolean) => void;
@@ -14,7 +16,6 @@ type ExamImportPanelProps = {
 };
 
 export default function ExamImportPanel({
-  pdfLoading,
   pdfError,
   importError,
   importLoading,
@@ -23,16 +24,19 @@ export default function ExamImportPanel({
   onImageUpload,
   onDocxUpload,
 }: ExamImportPanelProps) {
+  const disabledClass = importLoading ? "pointer-events-none opacity-60" : "";
+
   return (
-    <div className="rounded-[22px] border border-dashed border-[#dbe5f0] bg-[#fbfdff] px-4 py-4 text-sm text-slate-500">
+    <div className="w-full rounded-[28px] border border-dashed border-[#dfe7f1] bg-white px-4 py-3 shadow-[0_18px_38px_-30px_rgba(15,23,42,0.12)] lg:max-w-[470px]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-          Файл импорт
+        <span className="px-2 text-[13px] font-semibold text-slate-700">
+          Файл оруулах
         </span>
         <div className="flex flex-wrap items-center gap-2">
           <label
-            className={`flex cursor-pointer items-center gap-2 rounded-2xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "pointer-events-none opacity-60" : ""}`}
+            className={`flex h-11 cursor-pointer items-center gap-1.5 rounded-[18px] border border-[#dce5ef] bg-white px-4 text-xs font-semibold text-slate-600 transition hover:border-[#bfd3ff] hover:text-[#2563eb] ${disabledClass}`}
           >
+            <FileText className="h-3.5 w-3.5" />
             PDF
             <input
               type="file"
@@ -46,8 +50,9 @@ export default function ExamImportPanel({
             />
           </label>
           <label
-            className={`flex cursor-pointer items-center gap-2 rounded-2xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "pointer-events-none opacity-60" : ""}`}
+            className={`flex h-11 cursor-pointer items-center gap-1.5 rounded-[18px] border border-[#dce5ef] bg-white px-4 text-xs font-semibold text-slate-600 transition hover:border-[#bfd3ff] hover:text-[#2563eb] ${disabledClass}`}
           >
+            <FileImage className="h-3.5 w-3.5" />
             Image
             <input
               type="file"
@@ -61,8 +66,9 @@ export default function ExamImportPanel({
             />
           </label>
           <label
-            className={`flex cursor-pointer items-center gap-2 rounded-2xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "pointer-events-none opacity-60" : ""}`}
+            className={`flex h-11 cursor-pointer items-center gap-1.5 rounded-[18px] border border-[#dce5ef] bg-white px-4 text-xs font-semibold text-slate-600 transition hover:border-[#bfd3ff] hover:text-[#2563eb] ${disabledClass}`}
           >
+            <FileType2 className="h-3.5 w-3.5" />
             DOCX
             <input
               type="file"
@@ -79,14 +85,13 @@ export default function ExamImportPanel({
       </div>
 
       {importLoading && (
-        <div className="mt-3 text-xs">
+        <div className="mt-3 px-3 text-xs text-slate-500">
           {importLoadingLabel ?? "Файл боловсруулж байна..."}
         </div>
       )}
-
-      {pdfError && <div className="mt-2 text-xs text-red-500">{pdfError}</div>}
+      {pdfError && <div className="mt-2 px-3 text-xs text-red-500">{pdfError}</div>}
       {importError && (
-        <div className="mt-2 text-xs text-red-500">{importError}</div>
+        <div className="mt-2 px-3 text-xs text-red-500">{importError}</div>
       )}
     </div>
   );

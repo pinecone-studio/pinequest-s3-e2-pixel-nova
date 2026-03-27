@@ -42,21 +42,53 @@ examRoutes.post(
       const db = getDb(c.env.educore);
 
       const ensureDefaultSubject = async () => {
-        const [existing] = await db
-          .select()
-          .from(subjects)
-          .where(eq(subjects.code, "GENERAL"))
-          .limit(1);
+        let existing:
+          | {
+              id: string;
+            }
+          | undefined;
+        try {
+          [existing] = await db
+            .select({
+              id: subjects.id,
+            })
+            .from(subjects)
+            .where(eq(subjects.code, "GENERAL"))
+            .limit(1);
+        } catch {
+          existing = undefined;
+        }
         if (existing) return existing.id;
         const id = newId();
-        await db.insert(subjects).values({
-          id,
-          name: "Ерөнхий",
-          code: "GENERAL",
-          description: "Анхдагч ерөнхий хичээл",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+        const now = new Date().toISOString();
+        try {
+          await db.insert(subjects).values({
+            id,
+            name: "Ерөнхий",
+            code: "GENERAL",
+            description: "Анхдагч ерөнхий хичээл",
+            createdAt: now,
+            updatedAt: now,
+          });
+        } catch {
+          try {
+            await db.insert(subjects).values({
+              id,
+              name: "Ерөнхий",
+              code: "GENERAL",
+            });
+          } catch {
+            const [fallbackExisting] = await db
+              .select({
+                id: subjects.id,
+              })
+              .from(subjects)
+              .where(eq(subjects.code, "GENERAL"))
+              .limit(1);
+            if (fallbackExisting) return fallbackExisting.id;
+            throw new Error("Default subject creation failed");
+          }
+        }
         return id;
       };
 
@@ -90,7 +122,11 @@ examRoutes.post(
 
       return success(c, created, 201);
     } catch (err) {
-      return error(c, "INTERNAL_ERROR", "Failed to create exam", 500);
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Failed to create exam";
+      return error(c, "INTERNAL_ERROR", message, 500);
     }
   },
 );

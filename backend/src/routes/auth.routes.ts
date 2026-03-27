@@ -19,11 +19,42 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
   const db = getDb(c.env.educore);
 
   // Check teachers table first
-  const [teacher] = await db
-    .select()
-    .from(teachers)
-    .where(eq(teachers.code, code))
-    .limit(1);
+  let teacher:
+    | {
+        id: string;
+        fullName: string;
+        email: string | null;
+        avatarUrl: string | null;
+      }
+    | undefined;
+  try {
+    [teacher] = await db
+      .select({
+        id: teachers.id,
+        fullName: teachers.fullName,
+        email: teachers.email,
+        avatarUrl: teachers.avatarUrl,
+      })
+      .from(teachers)
+      .where(eq(teachers.code, code))
+      .limit(1);
+  } catch {
+    const [fallbackTeacher] = await db
+      .select({
+        id: teachers.id,
+        fullName: teachers.fullName,
+      })
+      .from(teachers)
+      .where(eq(teachers.code, code))
+      .limit(1);
+    teacher = fallbackTeacher
+      ? {
+          ...fallbackTeacher,
+          email: null,
+          avatarUrl: null,
+        }
+      : undefined;
+  }
 
   if (teacher) {
     return success(c, {
@@ -36,11 +67,48 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
   }
 
   // Check students table
-  const [student] = await db
-    .select()
-    .from(students)
-    .where(eq(students.code, code))
-    .limit(1);
+  let student:
+    | {
+        id: string;
+        fullName: string;
+        email: string | null;
+        avatarUrl: string | null;
+        xp: number;
+        level: number;
+      }
+    | undefined;
+  try {
+    [student] = await db
+      .select({
+        id: students.id,
+        fullName: students.fullName,
+        email: students.email,
+        avatarUrl: students.avatarUrl,
+        xp: students.xp,
+        level: students.level,
+      })
+      .from(students)
+      .where(eq(students.code, code))
+      .limit(1);
+  } catch {
+    const [fallbackStudent] = await db
+      .select({
+        id: students.id,
+        fullName: students.fullName,
+        xp: students.xp,
+        level: students.level,
+      })
+      .from(students)
+      .where(eq(students.code, code))
+      .limit(1);
+    student = fallbackStudent
+      ? {
+          ...fallbackStudent,
+          email: null,
+          avatarUrl: null,
+        }
+      : undefined;
+  }
 
   if (student) {
     return success(c, {
@@ -61,8 +129,75 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
 auth.get("/users", async (c) => {
   const db = getDb(c.env.educore);
 
-  const teacherRows = await db.select().from(teachers);
-  const studentRows = await db.select().from(students);
+  let teacherRows: Array<{
+    id: string;
+    code: string;
+    fullName: string;
+    email: string | null;
+    avatarUrl: string | null;
+  }> = [];
+  try {
+    teacherRows = await db
+      .select({
+        id: teachers.id,
+        code: teachers.code,
+        fullName: teachers.fullName,
+        email: teachers.email,
+        avatarUrl: teachers.avatarUrl,
+      })
+      .from(teachers);
+  } catch {
+    const fallbackRows = await db
+      .select({
+        id: teachers.id,
+        code: teachers.code,
+        fullName: teachers.fullName,
+      })
+      .from(teachers);
+    teacherRows = fallbackRows.map((teacher) => ({
+      ...teacher,
+      email: null,
+      avatarUrl: null,
+    }));
+  }
+
+  let studentRows: Array<{
+    id: string;
+    code: string;
+    fullName: string;
+    email: string | null;
+    avatarUrl: string | null;
+    xp: number;
+    level: number;
+  }> = [];
+  try {
+    studentRows = await db
+      .select({
+        id: students.id,
+        code: students.code,
+        fullName: students.fullName,
+        email: students.email,
+        avatarUrl: students.avatarUrl,
+        xp: students.xp,
+        level: students.level,
+      })
+      .from(students);
+  } catch {
+    const fallbackRows = await db
+      .select({
+        id: students.id,
+        code: students.code,
+        fullName: students.fullName,
+        xp: students.xp,
+        level: students.level,
+      })
+      .from(students);
+    studentRows = fallbackRows.map((student) => ({
+      ...student,
+      email: null,
+      avatarUrl: null,
+    }));
+  }
 
   const users = [
     ...teacherRows.map((teacher) => ({
@@ -93,11 +228,45 @@ auth.get("/me", authMiddleware, async (c) => {
   const db = getDb(c.env.educore);
 
   if (user.role === "teacher") {
-    const [teacher] = await db
-      .select()
-      .from(teachers)
-      .where(eq(teachers.id, user.id))
-      .limit(1);
+    let teacher:
+      | {
+          id: string;
+          code: string;
+          fullName: string;
+          email: string | null;
+          avatarUrl: string | null;
+        }
+      | undefined;
+    try {
+      [teacher] = await db
+        .select({
+          id: teachers.id,
+          code: teachers.code,
+          fullName: teachers.fullName,
+          email: teachers.email,
+          avatarUrl: teachers.avatarUrl,
+        })
+        .from(teachers)
+        .where(eq(teachers.id, user.id))
+        .limit(1);
+    } catch {
+      const [fallbackTeacher] = await db
+        .select({
+          id: teachers.id,
+          code: teachers.code,
+          fullName: teachers.fullName,
+        })
+        .from(teachers)
+        .where(eq(teachers.id, user.id))
+        .limit(1);
+      teacher = fallbackTeacher
+        ? {
+            ...fallbackTeacher,
+            email: null,
+            avatarUrl: null,
+          }
+        : undefined;
+    }
 
     if (!teacher) {
       return notFound(c, "Teacher");
@@ -109,11 +278,51 @@ auth.get("/me", authMiddleware, async (c) => {
     });
   }
 
-  const [student] = await db
-    .select()
-    .from(students)
-    .where(eq(students.id, user.id))
-    .limit(1);
+  let student:
+    | {
+        id: string;
+        code: string;
+        fullName: string;
+        email: string | null;
+        avatarUrl: string | null;
+        xp: number;
+        level: number;
+      }
+    | undefined;
+  try {
+    [student] = await db
+      .select({
+        id: students.id,
+        code: students.code,
+        fullName: students.fullName,
+        email: students.email,
+        avatarUrl: students.avatarUrl,
+        xp: students.xp,
+        level: students.level,
+      })
+      .from(students)
+      .where(eq(students.id, user.id))
+      .limit(1);
+  } catch {
+    const [fallbackStudent] = await db
+      .select({
+        id: students.id,
+        code: students.code,
+        fullName: students.fullName,
+        xp: students.xp,
+        level: students.level,
+      })
+      .from(students)
+      .where(eq(students.id, user.id))
+      .limit(1);
+    student = fallbackStudent
+      ? {
+          ...fallbackStudent,
+          email: null,
+          avatarUrl: null,
+        }
+      : undefined;
+  }
 
   if (!student) {
     return notFound(c, "Student");

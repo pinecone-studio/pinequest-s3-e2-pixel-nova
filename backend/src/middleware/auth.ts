@@ -34,21 +34,55 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   const db = getDb(c.env.educore);
 
   if (userRole === "teacher") {
-    const [teacher] = await db
-      .select()
-      .from(teachers)
-      .where(eq(teachers.id, userId))
-      .limit(1);
+    let teacher:
+      | {
+          id: string;
+          fullName: string;
+        }
+      | undefined;
+
+    try {
+      [teacher] = await db
+        .select({
+          id: teachers.id,
+          fullName: teachers.fullName,
+        })
+        .from(teachers)
+        .where(eq(teachers.id, userId))
+        .limit(1);
+    } catch {
+      teacher = undefined;
+    }
 
     if (!teacher) {
       const now = new Date().toISOString();
-      await db.insert(teachers).values({
-        id: userId,
-        code: userId,
-        fullName: userName ?? userId,
-        createdAt: now,
-        updatedAt: now,
-      });
+      try {
+        await db.insert(teachers).values({
+          id: userId,
+          code: userId,
+          fullName: userName ?? userId,
+          createdAt: now,
+          updatedAt: now,
+        });
+        teacher = {
+          id: userId,
+          fullName: userName ?? userId,
+        };
+      } catch {
+        try {
+          await db.insert(teachers).values({
+            id: userId,
+            code: userId,
+            fullName: userName ?? userId,
+          });
+        } catch {
+          // Ignore legacy-schema insert failures and continue with header identity.
+        }
+        teacher = {
+          id: userId,
+          fullName: userName ?? userId,
+        };
+      }
     }
 
     c.set("user", {
@@ -61,23 +95,59 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   }
 
   if (userRole === "student") {
-    const [student] = await db
-      .select()
-      .from(students)
-      .where(eq(students.id, userId))
-      .limit(1);
+    let student:
+      | {
+          id: string;
+          fullName: string;
+        }
+      | undefined;
+
+    try {
+      [student] = await db
+        .select({
+          id: students.id,
+          fullName: students.fullName,
+        })
+        .from(students)
+        .where(eq(students.id, userId))
+        .limit(1);
+    } catch {
+      student = undefined;
+    }
 
     if (!student) {
       const now = new Date().toISOString();
-      await db.insert(students).values({
-        id: userId,
-        code: userId,
-        fullName: userName ?? userId,
-        xp: 0,
-        level: 1,
-        createdAt: now,
-        updatedAt: now,
-      });
+      try {
+        await db.insert(students).values({
+          id: userId,
+          code: userId,
+          fullName: userName ?? userId,
+          xp: 0,
+          level: 1,
+          createdAt: now,
+          updatedAt: now,
+        });
+        student = {
+          id: userId,
+          fullName: userName ?? userId,
+        };
+      } catch {
+        try {
+          await db.insert(students).values({
+            id: userId,
+            code: userId,
+            fullName: userName ?? userId,
+            xp: 0,
+            level: 1,
+          });
+        } catch {
+          // Ignore legacy-schema insert failures and continue with header identity.
+        }
+        student = {
+          id: userId,
+          fullName: userName ?? userId,
+        };
+      }
     }
 
     c.set("user", {

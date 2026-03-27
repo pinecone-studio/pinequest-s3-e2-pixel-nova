@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { buttonGhost, buttonPrimary, cardClass } from "../styles";
+import { cardClass } from "../styles";
 import type { Question } from "../types";
-import { Plus } from "lucide-react";
 import ExamImportPanel from "./exam-create/ExamImportPanel";
 import ExamMetaFields from "./exam-create/ExamMetaFields";
 import QuestionFormSection from "./exam-create/QuestionFormSection";
@@ -11,12 +10,6 @@ import QuestionListPanel from "./exam-create/QuestionListPanel";
 type ExamCreateCardProps = {
   examTitle: string;
   setExamTitle: (value: string) => void;
-  createDate: string;
-  setCreateDate: (value: string) => void;
-  expectedStudentsCount: number;
-  setExpectedStudentsCount: (value: number) => void;
-  durationMinutes: number;
-  setDurationMinutes: (value: number) => void;
   questionText: string;
   setQuestionText: (value: string) => void;
   questionType: "text" | "open" | "mcq";
@@ -62,12 +55,6 @@ type ExamCreateCardProps = {
 export default function ExamCreateCard({
   examTitle,
   setExamTitle,
-  createDate,
-  setCreateDate,
-  expectedStudentsCount,
-  setExpectedStudentsCount,
-  durationMinutes,
-  setDurationMinutes,
   questionText,
   setQuestionText,
   questionType,
@@ -130,10 +117,18 @@ export default function ExamCreateCard({
   );
 
   return (
-    <div className={cardClass}>
-      <div className="flex flex-wrap items-start justify-between gap-3"></div>
+    <div className={`${cardClass} rounded-[34px] border-[#e3eaf2] bg-white/92 p-6 backdrop-blur`}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="max-w-3xl">
+          <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-900">
+            Шалгалт үүсгэх
+          </h2>
+          <p className="mt-2 text-[15px] leading-7 text-slate-500">
+            Та бэлдсэн материалаа зураг, PDF, DOCX хэлбэрээр оруулж хялбараар
+            шалгалт үүсгээрэй.
+          </p>
+        </div>
 
-      <div className="mt-6 grid gap-4">
         <ExamImportPanel
           pdfUseOcr={pdfUseOcr}
           setPdfUseOcr={setPdfUseOcr}
@@ -148,94 +143,86 @@ export default function ExamCreateCard({
           onImageUpload={onImageUpload}
           onDocxUpload={onDocxUpload}
         />
+      </div>
 
-        <ExamMetaFields
-          examTitle={examTitle}
-          setExamTitle={setExamTitle}
-          createDate={createDate}
-          setCreateDate={setCreateDate}
-          durationMinutes={durationMinutes}
-          setDurationMinutes={setDurationMinutes}
-          expectedStudentsCount={expectedStudentsCount}
-          setExpectedStudentsCount={setExpectedStudentsCount}
-        />
+      <div className="mt-6 rounded-[36px] border border-[#e7edf5] bg-white p-5 shadow-[0_20px_48px_-38px_rgba(15,23,42,0.16)]">
+        <div className="grid gap-6">
+          <ExamMetaFields
+            examTitle={examTitle}
+            setExamTitle={setExamTitle}
+          />
 
-        <QuestionFormSection
-          questionText={questionText}
-          setQuestionText={setQuestionText}
-          questionType={questionType}
-          setQuestionType={setQuestionType}
-          mcqOptions={mcqOptions}
-          setMcqOptions={setMcqOptions}
-          questionAnswer={questionAnswer}
-          setQuestionAnswer={setQuestionAnswer}
-          questionImageUrl={questionImageUrl}
-          setQuestionImageUrl={setQuestionImageUrl}
-          questionPoints={questionPoints}
-          setQuestionPoints={setQuestionPoints}
-          questionCorrectIndex={questionCorrectIndex}
-          setQuestionCorrectIndex={setQuestionCorrectIndex}
-        />
-
-        <div className="flex flex-wrap gap-3">
-          <button className={buttonGhost} onClick={addQuestion}>
-            + Асуулт нэмэх
-          </button>
-          <button
-            className={`${buttonPrimary} ${saving || !hasUser ? "opacity-70" : ""}`}
-            onClick={saveExam}
-            type="button"
-            disabled={saving || !hasUser}
-          >
-            {!hasUser
-              ? "Багш сонгоогдоогүй"
-              : saving
-                ? "Хадгалж байна..."
-                : "Шалгалт хадгалах"}
-          </button>
-          {missingCorrectCount > 0 && (
-            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
-              ⚠️ Зөв хариулт сонгоогүй: {missingCorrectCount}
-            </span>
-          )}
+          <QuestionFormSection
+            questionText={questionText}
+            setQuestionText={setQuestionText}
+            questionType={questionType}
+            setQuestionType={setQuestionType}
+            mcqOptions={mcqOptions}
+            setMcqOptions={setMcqOptions}
+            questionAnswer={questionAnswer}
+            setQuestionAnswer={setQuestionAnswer}
+            questionImageUrl={questionImageUrl}
+            setQuestionImageUrl={setQuestionImageUrl}
+            questionPoints={questionPoints}
+            setQuestionPoints={setQuestionPoints}
+            questionCorrectIndex={questionCorrectIndex}
+            setQuestionCorrectIndex={setQuestionCorrectIndex}
+            addQuestion={addQuestion}
+            saveExam={saveExam}
+            saving={saving}
+            hasUser={hasUser}
+          />
         </div>
+      </div>
 
-        {!hasUser && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
-            Багшийн хэрэглэгч сонгоогдоогүй байна. Role сонголтоор багш сонгоод
-            дахин оролдоно уу.
-          </div>
+      <div className="mt-4">
+        {missingCorrectCount > 0 && (
+          <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+            Зөв хариулт сонгоогүй: {missingCorrectCount}
+          </span>
         )}
+      </div>
 
-        {saving && (
-          <div className="grid gap-3 rounded-2xl border border-[#e8edf9] bg-[#f8faff] p-4">
-            <div className="h-4 w-40 animate-pulse rounded-full bg-[#e6ecfb]" />
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="h-20 animate-pulse rounded-2xl bg-white/80" />
-              <div className="h-20 animate-pulse rounded-2xl bg-white/80" />
-            </div>
+      {!hasUser && (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+          Багшийн хэрэглэгч сонгоогдоогүй байна. Role сонголтоор багш сонгоод
+          дахин оролдоно уу.
+        </div>
+      )}
+
+      {saving && (
+        <div className="mt-4 grid gap-3 rounded-2xl border border-[#e8edf9] bg-[#f8faff] p-4">
+          <div className="h-4 w-40 animate-pulse rounded-full bg-[#e6ecfb]" />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="h-20 animate-pulse rounded-2xl bg-white/80" />
+            <div className="h-20 animate-pulse rounded-2xl bg-white/80" />
           </div>
-        )}
+        </div>
+      )}
 
-        <QuestionPreviewPanel
-          questions={questions}
-          previewIndex={previewIndex}
-          setPreviewIndex={setPreviewIndex}
-          editMode={editMode}
-          setEditMode={setEditMode}
-          updateQuestion={updateQuestion}
-          updateQuestionOption={updateQuestionOption}
-          addQuestionOption={addQuestionOption}
-          removeQuestionOption={removeQuestionOption}
-          removeQuestion={removeQuestion}
-        />
-
+      <div className="mt-6">
         <QuestionListPanel
           questions={questions}
-          onSelect={setPreviewIndex}
+          onEdit={(index) => {
+            setPreviewIndex(index);
+            setEditMode(true);
+          }}
           onRemove={removeQuestion}
         />
       </div>
+
+      <QuestionPreviewPanel
+        questions={questions}
+        previewIndex={previewIndex}
+        setPreviewIndex={setPreviewIndex}
+        editMode={editMode}
+        setEditMode={setEditMode}
+        updateQuestion={updateQuestion}
+        updateQuestionOption={updateQuestionOption}
+        addQuestionOption={addQuestionOption}
+        removeQuestionOption={removeQuestionOption}
+        removeQuestion={removeQuestion}
+      />
     </div>
   );
 }
