@@ -78,6 +78,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     .select({ count: sql<number>`count(*)` })
     .from(questions)
     .where(eq(questions.examId, exam.id));
+  const totalQuestions = Number(questionCount?.count ?? 0);
 
   // Check if student already joined
   const [existing] = await db
@@ -96,7 +97,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
         id: exam.id,
         title: exam.title,
         durationMin: exam.durationMin,
-        questionCount: questionCount.count,
+        questionCount: totalQuestions,
       },
     });
   }
@@ -119,7 +120,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
       id: exam.id,
       title: exam.title,
       durationMin: exam.durationMin,
-      questionCount: questionCount.count,
+      questionCount: totalQuestions,
     },
   }, 201);
 });

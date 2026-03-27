@@ -37,6 +37,7 @@ describe("exam routes", () => {
   it("creates an exam for an authenticated teacher", async () => {
     queueDbResults(
       [{ id: "teacher-1", fullName: "Ada Teacher" }],
+      [{ id: "math-1" }],
       undefined,
       [{
         id: "exam-1",

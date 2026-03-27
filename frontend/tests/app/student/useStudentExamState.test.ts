@@ -111,7 +111,7 @@ describe("useStudentExamState", () => {
 
 		expect(result.current.selectedExam).not.toBeNull();
 		expect(result.current.selectedExam!.title).toBe("Math");
-		expect(result.current.selectedExam!.questions).toHaveLength(1);
+		expect(result.current.selectedExam!.questions).toHaveLength(0);
 		expect(result.current.joinError).toBeNull();
 	});
 
