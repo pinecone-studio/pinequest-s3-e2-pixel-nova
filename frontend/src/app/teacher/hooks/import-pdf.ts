@@ -72,7 +72,42 @@ export const parsePdfQuestions = async (params: {
 
   const combinedText = pageTexts.join("");
 
+  const scoreAnswerKeyText = (text: string) => {
+    const normalized = text.replace(/\s+/g, " ").trim();
+    const matches = [...normalized.matchAll(/(\d{1,3})\s*[:.)-]?\s*([A-EАБВГД])/gi)];
+    const matchCount = matches.length;
+    const wordCount = Math.max(1, normalized.split(/\s+/).length);
+    const densityScore = matchCount / wordCount;
+    const keywordBonus = /answer\s*key|answer\s*sheet|хариу|хариулт|зөв\s*хариу/i.test(
+      normalized,
+    )
+      ? 10
+      : 0;
+    return { matchCount, score: matchCount + keywordBonus + densityScore * 10 };
+  };
+
+  const pickBestAnswerKey = (texts: string[]) => {
+    let best = new Map<number, string>();
+    let bestScore = -1;
+    let bestMatches = 0;
+    for (const text of texts) {
+      const key = parseAnswerKeyFromPage(text);
+      const { matchCount, score } = scoreAnswerKeyText(text);
+      if (matchCount < 3) continue;
+      if (score > bestScore || (score === bestScore && key.size > best.size)) {
+        best = key;
+        bestScore = score;
+        bestMatches = matchCount;
+      }
+    }
+    if (best.size === 0 || bestMatches < 3) return new Map<number, string>();
+    return best;
+  };
+
   let answerKey = parseAnswerKeyFromPage(pageTexts[pageToRead - 1] ?? "");
+  if (answerKey.size === 0) {
+    answerKey = pickBestAnswerKey(pageTexts);
+  }
   if (pdfUseOcr || answerKey.size === 0) {
     const keyPage = pageQuestionPayloads[pageToRead - 1]?.page;
     const canvas = keyPage ? await renderPageToCanvas(keyPage, 2) : null;
@@ -80,7 +115,7 @@ export const parsePdfQuestions = async (params: {
       const tesseract = await getTesseract();
       const result = await tesseract.recognize(canvas, "eng");
       const ocrAnswerKey = parseAnswerKeyFromPage(result.data.text);
-      if (ocrAnswerKey.size >= answerKey.size) {
+      if (ocrAnswerKey.size >= Math.max(3, answerKey.size)) {
         answerKey = ocrAnswerKey;
       } else {
         for (const [questionNumber, label] of ocrAnswerKey.entries()) {

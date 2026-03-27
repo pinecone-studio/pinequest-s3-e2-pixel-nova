@@ -55,7 +55,11 @@ export const parseAnswerKey = (text: string) => {
     .filter(Boolean);
 
   for (const line of lines) {
-    const matches = [...line.matchAll(/(\d+)\s*[:.)-]?\s*([A-EАБВГД])/gi)];
+    const matches = [
+      ...line.matchAll(
+        /(?:^|[\s№#])(\d{1,3})\s*[:.)=\-]?\s*([A-EАБВГД])/gi,
+      ),
+    ];
     for (const match of matches) {
       const questionNumber = Number(match[1]);
       const label = normalizeOptionLabel(match[2]);
@@ -146,14 +150,18 @@ export const parseQuestionsFromText = (
 
     const options = extractOptions(content);
     if (options.length >= 2) {
-      const correctLetter = answerKey.get(number) ?? "A";
-      const correctIndex = OPTION_LABELS.indexOf(correctLetter as (typeof OPTION_LABELS)[number]);
+      const correctLetter = answerKey.get(number);
+      const correctIndex =
+        correctLetter && OPTION_LABELS.includes(correctLetter as (typeof OPTION_LABELS)[number])
+          ? OPTION_LABELS.indexOf(correctLetter as (typeof OPTION_LABELS)[number])
+          : -1;
       parsed.push({
         id: generateId(),
         text: stem,
         type: "mcq",
         options,
-        correctAnswer: options[Math.max(correctIndex, 0)] ?? options[0] ?? "",
+        correctAnswer:
+          correctIndex >= 0 ? options[correctIndex] ?? options[0] ?? "" : "",
         points: 1,
       });
       continue;
