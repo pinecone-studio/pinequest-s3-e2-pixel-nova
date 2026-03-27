@@ -16,6 +16,7 @@ import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
 import { generateRoomCode } from "../utils/room-code";
+import { normalizeExamDate, parseExamDate } from "../utils/exam-time";
 
 const examRoutes = new Hono<AppEnv>();
 
@@ -725,11 +726,16 @@ examRoutes.post(
 
       const roomCode = exam.roomCode ?? generateRoomCode();
 
+      const normalizedScheduledAt = normalizeExamDate(body.scheduledAt);
+      if (!normalizedScheduledAt) {
+        return error(c, "BAD_REQUEST", "Invalid scheduled date", 400);
+      }
+
       await db
         .update(exams)
         .set({
           status: "scheduled",
-          scheduledAt: body.scheduledAt,
+          scheduledAt: normalizedScheduledAt,
           roomCode,
           updatedAt: new Date().toISOString(),
         })
@@ -776,7 +782,19 @@ examRoutes.post("/:examId/start", async (c) => {
       );
     }
 
-    const now = new Date().toISOString();
+    const nowDate = new Date();
+    const scheduledAt = parseExamDate(exam.scheduledAt);
+
+    if (scheduledAt && nowDate.getTime() < scheduledAt.getTime()) {
+      return error(
+        c,
+        "BAD_REQUEST",
+        "Cannot manually start exam before scheduled time",
+        400,
+      );
+    }
+
+    const now = nowDate.toISOString();
 
     await db
       .update(exams)
