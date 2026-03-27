@@ -106,7 +106,7 @@ export default function CreateExamPage() {
           {data.toast}
         </div>
       )}
-      <header className="flex items-center gap-3 border-b border-[#dce5ef] bg-white/95 px-6 py-3 backdrop-blur">
+      <header className="flex items-center gap-3 bg-white/80 px-6 py-4 backdrop-blur">
         <button
           type="button"
           onClick={() => router.push("/teacher")}
@@ -117,7 +117,16 @@ export default function CreateExamPage() {
         </button>
       </header>
       <main className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-[1480px]">
+        <div className="mx-auto w-full max-w-[1180px]">
+          <div className="mb-5">
+            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-slate-900">
+              Шалгалт үүсгэх
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Асуулт, сонголт, зураг, урьдчилсан харагдацыг нэг дэлгэц дээрээс
+              удирдана.
+            </p>
+          </div>
           <ExamCreateCard
             examTitle={management.examTitle}
             setExamTitle={management.setExamTitle}

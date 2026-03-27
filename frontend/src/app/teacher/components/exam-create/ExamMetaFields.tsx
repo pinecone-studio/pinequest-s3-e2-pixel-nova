@@ -1,4 +1,4 @@
-import { inputClass } from "../../styles";
+import { inputClass, labelClass } from "../../styles";
 
 type ExamMetaFieldsProps = {
   examTitle: string;
@@ -14,51 +14,37 @@ type ExamMetaFieldsProps = {
 export default function ExamMetaFields({
   examTitle,
   setExamTitle,
-  createDate,
-  setCreateDate,
-  durationMinutes,
-  setDurationMinutes,
+
   expectedStudentsCount,
   setExpectedStudentsCount,
 }: ExamMetaFieldsProps) {
   return (
-    <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_160px_180px]">
-      <input
-        className={inputClass}
-        placeholder="Шалгалтын нэр оруулна уу"
-        value={examTitle ?? ""}
-        onChange={(event) => setExamTitle(event.target.value)}
-      />
-      <input
-        className={inputClass}
-        type="datetime-local"
-        value={createDate ?? ""}
-        onChange={(event) => setCreateDate(event.target.value)}
-      />
-      <input
-        className={inputClass}
-        type="number"
-        min={0}
-        step={1}
-        placeholder="Минут"
-        value={Number.isFinite(durationMinutes) ? durationMinutes : 0}
-        onChange={(event) =>
-          setDurationMinutes(Number(event.target.value) || 0)
-        }
-      />
-      <input
-        className={inputClass}
-        type="number"
-        min={0}
-        step={1}
-        placeholder="Хүлээгдэж буй сурагч"
-        value={
-          Number.isFinite(expectedStudentsCount) ? expectedStudentsCount : 0
-        }
-        onChange={(event) =>
-          setExpectedStudentsCount(Number(event.target.value) || 0)
-        }
-      />
+    <div className=" gap-2 flex">
+      <label className="w-[85%]">
+        <span className={labelClass}>Гарчиг</span>
+        <input
+          className={`${inputClass} h-12`}
+          placeholder="Гарчиг оруулна уу"
+          value={examTitle ?? ""}
+          onChange={(event) => setExamTitle(event.target.value)}
+        />
+      </label>
+      <label className="w-[15%]">
+        <span className={labelClass}>Сурагчийн тоо</span>
+        <input
+          className={`${inputClass} h-12`}
+          type="number"
+          min={0}
+          step={1}
+          placeholder="Хүлээгдэж буй сурагч"
+          value={
+            Number.isFinite(expectedStudentsCount) ? expectedStudentsCount : 0
+          }
+          onChange={(event) =>
+            setExpectedStudentsCount(Number(event.target.value) || 0)
+          }
+        />
+      </label>
     </div>
   );
 }

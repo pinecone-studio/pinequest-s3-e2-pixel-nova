@@ -24,12 +24,14 @@ export default function ExamImportPanel({
   onDocxUpload,
 }: ExamImportPanelProps) {
   return (
-    <div className="rounded-[24px] border border-dashed border-[#d5dfeb] bg-[#f8fbff] px-4 py-4 text-sm text-slate-500">
+    <div className="rounded-[22px] border border-dashed border-[#dbe5f0] bg-[#fbfdff] px-4 py-4 text-sm text-slate-500">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-slate-700">Файл оруулах</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          Файл импорт
+        </span>
         <div className="flex flex-wrap items-center gap-2">
           <label
-            className={`flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "opacity-60 pointer-events-none" : ""}`}
+            className={`flex cursor-pointer items-center gap-2 rounded-2xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "pointer-events-none opacity-60" : ""}`}
           >
             PDF
             <input
@@ -44,7 +46,7 @@ export default function ExamImportPanel({
             />
           </label>
           <label
-            className={`flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "opacity-60 pointer-events-none" : ""}`}
+            className={`flex cursor-pointer items-center gap-2 rounded-2xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "pointer-events-none opacity-60" : ""}`}
           >
             Image
             <input
@@ -59,7 +61,7 @@ export default function ExamImportPanel({
             />
           </label>
           <label
-            className={`flex cursor-pointer items-center gap-2 rounded-xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "opacity-60 pointer-events-none" : ""}`}
+            className={`flex cursor-pointer items-center gap-2 rounded-2xl border border-[#d5dfeb] bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#eff6ff] ${importLoading ? "pointer-events-none opacity-60" : ""}`}
           >
             DOCX
             <input
@@ -77,7 +79,7 @@ export default function ExamImportPanel({
       </div>
 
       {importLoading && (
-        <div className="mt-2 text-xs">
+        <div className="mt-3 text-xs">
           {importLoadingLabel ?? "Файл боловсруулж байна..."}
         </div>
       )}

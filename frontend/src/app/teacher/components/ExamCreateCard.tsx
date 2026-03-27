@@ -131,13 +131,7 @@ export default function ExamCreateCard({
 
   return (
     <div className={cardClass}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-900">
-            Шалгалт үүсгэх
-          </h2>
-        </div>
-      </div>
+      <div className="flex flex-wrap items-start justify-between gap-3"></div>
 
       <div className="mt-6 grid gap-4">
         <ExamImportPanel
@@ -208,8 +202,8 @@ export default function ExamCreateCard({
 
         {!hasUser && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
-            Багшийн хэрэглэгч сонгоогдоогүй байна. Role сонголтоор багш
-            сонгоод дахин оролдоно уу.
+            Багшийн хэрэглэгч сонгоогдоогүй байна. Role сонголтоор багш сонгоод
+            дахин оролдоно уу.
           </div>
         )}
 
