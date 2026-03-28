@@ -81,7 +81,7 @@ export default function StudentPage() {
   useEffect(() => {
     if (exam.view !== "result") return;
     const timer = setTimeout(() => {
-      exam.setView("dashboard");
+      exam.leaveExamFlow();
       router.push(`/${role}`);
     }, 4000);
     return () => clearTimeout(timer);
@@ -233,7 +233,7 @@ export default function StudentPage() {
             onPrev={exam.goPrev}
             onNext={exam.goNext}
             onSubmit={() => exam.submitExam(false)}
-            onExit={() => exam.setView("dashboard")}
+            onExit={exam.leaveExamFlow}
           />
         </div>
       )}
@@ -247,7 +247,7 @@ export default function StudentPage() {
             resultCountdown={exam.resultCountdown}
             resultReleaseAt={exam.resultReleaseAt}
             onBack={() => {
-              exam.setView("dashboard");
+              exam.leaveExamFlow();
               router.push(`/${role}`);
             }}
           />

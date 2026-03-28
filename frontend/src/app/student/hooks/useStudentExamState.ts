@@ -17,6 +17,7 @@ export const useStudentExamState = (params: {
     selectedExam,
     setSelectedExam,
     sessionId,
+    setSessionId,
     handleLookup,
   } = useStudentJoinExam();
 
@@ -48,6 +49,7 @@ export const useStudentExamState = (params: {
     selectMcqAnswer,
     goNext,
     goPrev,
+    resetExamSession,
     sidebarTimerRef,
   } = useStudentExamSession({
     currentUser,
@@ -62,6 +64,14 @@ export const useStudentExamState = (params: {
   ) => {
     await submitExam(auto, terminated, reason);
     setActiveTab("Progress");
+  };
+
+  const leaveExamFlow = () => {
+    resetExamSession();
+    setSelectedExam(null);
+    setSessionId(null);
+    setRoomCodeInput("");
+    setJoinError(null);
   };
 
   return {
@@ -102,6 +112,7 @@ export const useStudentExamState = (params: {
     selectMcqAnswer,
     goNext,
     goPrev,
+    leaveExamFlow,
     sidebarTimerRef,
   };
 };
