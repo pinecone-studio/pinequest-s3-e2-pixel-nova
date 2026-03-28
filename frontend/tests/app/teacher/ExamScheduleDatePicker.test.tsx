@@ -61,7 +61,7 @@ describe("ExamScheduleDatePicker", () => {
     fireEvent.click(screen.getByRole("button", { name: "today" }));
 
     expect(setScheduleDate).toHaveBeenCalledWith(
-      new Date("2026-03-27T09:00:00+08:00").toISOString(),
+      new Date(2026, 2, 27, 9, 0, 0, 0).toISOString(),
     );
   });
 });
