@@ -419,6 +419,25 @@ export const useStudentExamSession = ({
     setCurrentQuestionIndex(prev);
   };
 
+  const resetExamSession = useCallback(() => {
+    setView("dashboard");
+    setActiveExam(null);
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    setTimeLeft(0);
+    setLastSubmission(null);
+    setResultPending(false);
+    setResultReleaseAt(null);
+    setResultCountdown("00:00:00");
+    setAnswerReport([]);
+    setViolations({ ...EMPTY_VIOLATIONS });
+    setWarning(null);
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => null);
+    }
+    document.body.style.filter = "none";
+  }, []);
+
   return {
     view,
     setView,
@@ -448,6 +467,7 @@ export const useStudentExamSession = ({
     selectMcqAnswer,
     goNext,
     goPrev,
+    resetExamSession,
     sidebarTimerRef,
   };
 };

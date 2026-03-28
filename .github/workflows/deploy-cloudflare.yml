@@ -24,6 +24,7 @@ concurrency:
 
 env:
   NODE_VERSION: "20"
+  TZ: "UTC"
 
 jobs:
   validate-frontend:

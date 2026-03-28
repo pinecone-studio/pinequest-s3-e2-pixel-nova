@@ -238,4 +238,46 @@ describe("useStudentExamState", () => {
 
 		expect(result.current.sidebarTimerRef.current).toBeNull();
 	});
+
+	it("leaveExamFlow clears joined exam state and returns to dashboard", async () => {
+		const joinData = {
+			sessionId: "sess-1",
+			exam: { id: "e1", title: "Math", durationMin: 45, questionCount: 5 },
+		};
+		const detailData = {
+			session: { id: "sess-1", status: "active", startedAt: null, submittedAt: null },
+			exam: { id: "e1", title: "Math", durationMin: 45 },
+			questions: [
+				{ id: "q1", type: "mcq", questionText: "What?", points: 10, options: [{ id: "o1", label: "A", text: "Yes" }] },
+			],
+		};
+
+		mockApiFetch
+			.mockResolvedValueOnce(joinData)
+			.mockResolvedValueOnce(detailData);
+		mockUnwrapApi
+			.mockReturnValueOnce(joinData)
+			.mockReturnValueOnce(detailData);
+
+		const { result } = renderHook(() =>
+			useStudentExamState({ currentUser: mockUser }),
+		);
+
+		act(() => result.current.setRoomCodeInput("ABC123"));
+
+		await act(async () => {
+			await result.current.handleLookup();
+		});
+
+		act(() => {
+			result.current.setView("result");
+			result.current.leaveExamFlow();
+		});
+
+		expect(result.current.view).toBe("dashboard");
+		expect(result.current.selectedExam).toBeNull();
+		expect(result.current.roomCodeInput).toBe("");
+		expect(result.current.joinError).toBeNull();
+		expect(result.current.lastSubmission).toBeNull();
+	});
 });

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import ExamScheduleDatePicker from "@/app/teacher/components/ExamScheduleDatePicker";
 
+let lastFromDate: Date | undefined;
 jest.mock("@/components/ui/calendar", () => ({
   Calendar: ({
     onSelect,
@@ -10,21 +11,24 @@ jest.mock("@/components/ui/calendar", () => ({
     onSelect: (date: Date) => void;
     fromDate?: Date;
     toDate?: Date;
-  }) => (
-    <div>
-      <button type="button" onClick={() => onSelect(new Date("2026-03-27T00:00:00"))}>
+  }) => {
+    lastFromDate = fromDate;
+
+    return (
+      <div>
+        <button type="button" onClick={() => onSelect(new Date(2026, 2, 27))}>
         today
-      </button>
-      <span data-testid="from-date">{fromDate?.toISOString()}</span>
-      <span data-testid="to-date">{toDate?.toISOString()}</span>
-    </div>
-  ),
+        </button>
+      </div>
+    );
+  },
 }));
 
 describe("ExamScheduleDatePicker", () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-03-27T09:15:00"));
+    jest.setSystemTime(new Date(2026, 2, 27, 9, 15, 0));
+    lastFromDate = undefined;
   });
 
   afterEach(() => {
@@ -49,12 +53,10 @@ describe("ExamScheduleDatePicker", () => {
       screen.getByText("Өнөөдрөөс 1 сар хүртэл хуваарьлана."),
     ).toBeInTheDocument();
 
-    const fromDate = new Date(
-      screen.getByTestId("from-date").textContent ?? "",
-    );
-    expect(fromDate.getFullYear()).toBe(2026);
-    expect(fromDate.getMonth()).toBe(2);
-    expect(fromDate.getDate()).toBe(27);
+    expect(lastFromDate).toBeDefined();
+    expect(lastFromDate?.getFullYear()).toBe(2026);
+    expect(lastFromDate?.getMonth()).toBe(2);
+    expect(lastFromDate?.getDate()).toBe(27);
 
     fireEvent.click(screen.getByRole("button", { name: "today" }));
 

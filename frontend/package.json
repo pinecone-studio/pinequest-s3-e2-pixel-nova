@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "test": "jest --runInBand",
+    "test": "node scripts/run-jest.cjs --runInBand",
     "deploy": "next build --webpack && wrangler pages deploy out --project-name=educore",
     "preview": "next build --webpack && wrangler pages dev out",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
