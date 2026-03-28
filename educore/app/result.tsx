@@ -4,16 +4,17 @@ import { StyleSheet, Text, View } from 'react-native';
 import {
   AppScreen,
   Card,
+  Pill,
   PrimaryButton,
   SectionTitle,
   uiStyles,
 } from '@/components/student-app/ui';
 import { useStudentApp } from '@/lib/student-app/context';
-import { getResultMessage } from '@/lib/student-app/utils';
+import { formatDateTime, getResultMessage } from '@/lib/student-app/utils';
 
 export default function ResultScreen() {
   const router = useRouter();
-  const { clearResult, submittedResult, student } = useStudentApp();
+  const { clearResult, profile, submittedResult, student } = useStudentApp();
 
   if (!student) {
     return <Redirect href="/" />;
@@ -31,54 +32,61 @@ export default function ResultScreen() {
       );
     }
 
-    return answer.textAnswer ?? 'Хоосон';
+    return answer.textAnswer ?? 'No answer';
   };
 
   return (
     <AppScreen scroll>
       <Card>
         <SectionTitle
-          title="Шалгалт амжилттай илгээгдлээ"
+          title="Exam submitted"
           subtitle={getResultMessage(submittedResult.score)}
         />
+        <View style={styles.pillRow}>
+          <Pill label={`Submitted ${formatDateTime(submittedResult.submittedAt)}`} />
+          {submittedResult.xpEarned ? (
+            <Pill label={`+${submittedResult.xpEarned} XP`} tone="success" />
+          ) : null}
+        </View>
         <View style={uiStyles.statRow}>
           <View style={uiStyles.statCard}>
-            <Text style={uiStyles.statLabel}>Оноо</Text>
+            <Text style={uiStyles.statLabel}>Score</Text>
             <Text style={uiStyles.statValue}>{submittedResult.score}%</Text>
           </View>
           <View style={uiStyles.statCard}>
-            <Text style={uiStyles.statLabel}>Авсан оноо</Text>
+            <Text style={uiStyles.statLabel}>Points</Text>
             <Text style={uiStyles.statValue}>
               {submittedResult.earnedPoints}/{submittedResult.totalPoints}
             </Text>
           </View>
         </View>
+        <Text style={styles.metaText}>
+          Current XP: {profile?.xp ?? student?.xp ?? 0} · Level {profile?.level ?? student?.level ?? 1}
+        </Text>
       </Card>
 
       <Card>
-        <Text style={styles.answerTitle}>Асуултын тойм</Text>
+        <Text style={styles.answerTitle}>Answer review</Text>
         {submittedResult.answers.map((answer, index) => (
           <View key={`${answer.questionId}-${index}`} style={styles.answerRow}>
             <Text style={styles.answerQuestion}>
               {index + 1}. {answer.questionText}
             </Text>
+            <Text style={styles.answerMeta}>Your answer: {resolveAnswerText(answer)}</Text>
             <Text style={styles.answerMeta}>
-              Таны хариулт: {resolveAnswerText(answer)}
-            </Text>
-            <Text style={styles.answerMeta}>
-              Зөв хариулт: {answer.correctAnswerText ?? 'Тайлбаргүй'}
+              Correct answer: {answer.correctAnswerText ?? 'Not provided'}
             </Text>
             <Text
               style={[
                 styles.answerState,
                 answer.isCorrect ? styles.answerCorrect : styles.answerWrong,
               ]}>
-              {answer.isCorrect ? 'Зөв' : 'Буруу'}
+              {answer.isCorrect ? 'Correct' : 'Incorrect'}
             </Text>
           </View>
         ))}
         <PrimaryButton
-          label="Нүүр хуудас руу буцах"
+          label="Back to home"
           onPress={() => {
             clearResult();
             router.replace('/home');
@@ -90,6 +98,15 @@ export default function ResultScreen() {
 }
 
 const styles = StyleSheet.create({
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  metaText: {
+    fontSize: 14,
+    color: '#5F665E',
+  },
   answerTitle: {
     fontSize: 19,
     fontWeight: '800',

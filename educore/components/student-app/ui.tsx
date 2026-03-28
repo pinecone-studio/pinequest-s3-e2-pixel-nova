@@ -87,12 +87,21 @@ export function PrimaryButton({
 export function SecondaryButton({
   label,
   onPress,
+  disabled,
 }: {
   label: string;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.buttonSecondary, pressed && styles.buttonPressed]}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.buttonSecondary,
+        disabled && styles.buttonDisabled,
+        pressed && !disabled && styles.buttonPressed,
+      ]}>
       <Text style={styles.buttonSecondaryText}>{label}</Text>
     </Pressable>
   );
@@ -136,6 +145,25 @@ export function SectionTitle({
 export function ErrorText({ message }: { message?: string | null }) {
   if (!message) return null;
   return <Text style={styles.errorText}>{message}</Text>;
+}
+
+export function Pill({
+  label,
+  tone = 'neutral',
+}: {
+  label: string;
+  tone?: 'neutral' | 'success' | 'warning';
+}) {
+  return (
+    <View
+      style={[
+        styles.pill,
+        tone === 'success' && styles.pillSuccess,
+        tone === 'warning' && styles.pillWarning,
+      ]}>
+      <Text style={styles.pillText}>{label}</Text>
+    </View>
+  );
 }
 
 export const uiStyles = StyleSheet.create({
@@ -263,5 +291,25 @@ const styles = StyleSheet.create({
     color: '#A13131',
     fontSize: 14,
     lineHeight: 20,
+  },
+  pill: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    backgroundColor: '#EFE7D5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  pillSuccess: {
+    backgroundColor: '#E7F2EA',
+  },
+  pillWarning: {
+    backgroundColor: '#F9E9D2',
+  },
+  pillText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#4F5F4C',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
 });

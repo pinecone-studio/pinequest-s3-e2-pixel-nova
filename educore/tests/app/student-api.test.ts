@@ -1,6 +1,21 @@
-import { apiRequest, loginWithCode, getMe, joinSession, submitSession, getSessionResult, reportCheatEvent, getStudentProfile, updateStudentProfile, getSessionDetail, startSession, submitSessionAnswer } from '@/lib/student-app/api';
+import {
+  apiRequest,
+  getAuthUsers,
+  getMe,
+  getSessionDetail,
+  getSessionResult,
+  getStudentExamHistory,
+  getStudentProfile,
+  joinSession,
+  loginWithCode,
+  reportCheatEvent,
+  startSession,
+  submitSession,
+  submitSessionAnswer,
+  updateStudentProfile,
+} from '@/lib/student-app/api';
 
-const mockStudent = { id: 's1', fullName: 'Бат', role: 'student' as const, code: 'S-1001' };
+const mockStudent = { id: 's1', fullName: 'Bat', role: 'student' as const, code: 'S-1001' };
 
 const makeFetchResponse = (body: unknown, status = 200, ok = true) => ({
   ok,
@@ -72,21 +87,18 @@ describe('apiRequest', () => {
     const headers = init.headers as Headers;
     expect(headers.get('x-user-id')).toBe('s1');
     expect(headers.get('x-user-role')).toBe('student');
+    expect(headers.get('x-user-name-encoded')).toBe('Bat');
   });
 });
 
-describe('loginWithCode', () => {
+describe('auth api', () => {
   beforeEach(() => {
     global.fetch = jest.fn().mockResolvedValue(
       makeFetchResponse({ data: mockStudent }),
     );
   });
 
-  afterEach(() => {
-    global.fetch = (global as Record<string, unknown>).__originalFetch as typeof fetch;
-  });
-
-  it('sends POST with code in body', async () => {
+  it('loginWithCode sends POST with code in body', async () => {
     await loginWithCode('S-1001');
 
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
@@ -94,22 +106,21 @@ describe('loginWithCode', () => {
     expect(init.method).toBe('POST');
     expect(JSON.parse(init.body)).toEqual({ code: 'S-1001' });
   });
-});
 
-describe('getMe', () => {
-  beforeEach(() => {
-    global.fetch = jest.fn().mockResolvedValue(
-      makeFetchResponse({ data: mockStudent }),
-    );
-  });
-
-  it('sends student headers', async () => {
+  it('getMe sends student headers', async () => {
     await getMe(mockStudent);
 
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
     expect(url).toContain('/api/auth/me');
     const headers = init.headers as Headers;
     expect(headers.get('x-user-id')).toBe('s1');
+  });
+
+  it('getAuthUsers loads the user list', async () => {
+    await getAuthUsers();
+
+    const [url] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toContain('/api/auth/users');
   });
 });
 
@@ -171,14 +182,12 @@ describe('session flow', () => {
   });
 });
 
-describe('profile', () => {
-  beforeEach(() => {
-    global.fetch = jest.fn().mockResolvedValue(
-      makeFetchResponse({ data: { fullName: 'Бат' } }),
-    );
-  });
-
+describe('profile and progress api', () => {
   it('getStudentProfile fetches profile', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      makeFetchResponse({ data: { fullName: 'Bat' } }),
+    );
+
     await getStudentProfile(mockStudent);
 
     const [url] = (global.fetch as jest.Mock).mock.calls[0];
@@ -186,10 +195,59 @@ describe('profile', () => {
   });
 
   it('updateStudentProfile sends PUT', async () => {
-    await updateStudentProfile(mockStudent, { fullName: 'Бат Дорж' } as never);
+    global.fetch = jest.fn().mockResolvedValue(
+      makeFetchResponse({ data: { fullName: 'Bat Dorj' } }),
+    );
+
+    await updateStudentProfile(mockStudent, { fullName: 'Bat Dorj' } as never);
 
     const [, init] = (global.fetch as jest.Mock).mock.calls[0];
     expect(init.method).toBe('PUT');
+  });
+
+  it('getStudentExamHistory combines sessions and results', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(
+        makeFetchResponse({
+          data: [
+            {
+              examId: 'e1',
+              title: 'Mock exam',
+              sessionStatus: 'graded',
+              score: 80,
+              startedAt: '2026-03-01T10:00:00.000Z',
+              submittedAt: '2026-03-01T10:30:00.000Z',
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeFetchResponse({
+          data: [
+            {
+              sessionId: 'sess-1',
+              examId: 'e1',
+              title: 'Mock exam',
+              score: 80,
+              totalPoints: 10,
+              earnedPoints: 8,
+              startedAt: '2026-03-01T10:00:00.000Z',
+              submittedAt: '2026-03-01T10:30:00.000Z',
+            },
+          ],
+        }),
+      );
+
+    const history = await getStudentExamHistory(mockStudent);
+
+    expect(history).toHaveLength(1);
+    expect(history[0]).toMatchObject({
+      sessionId: 'sess-1',
+      examId: 'e1',
+      score: 80,
+      earnedPoints: 8,
+    });
   });
 });
 
@@ -201,8 +259,22 @@ describe('reportCheatEvent', () => {
   });
 
   it('sends cheat event with session and event type', async () => {
-    const session = { sessionId: 'sess-1', examId: 'e1', questions: [], durationMin: 45 };
-    await reportCheatEvent(mockStudent, session as never, 'tab_switch', 'test');
+    const session = {
+      sessionId: 'sess-1',
+      roomCode: 'ABC123',
+      status: 'in_progress' as const,
+      exam: { id: 'e1', title: 'Mock', durationMin: 45 },
+      questions: [],
+      answers: {},
+      currentQuestionIndex: 0,
+      timerEndsAt: null,
+      startedAt: null,
+      lastAnswerAt: null,
+      syncStatus: 'ready' as const,
+      syncMessage: null,
+      entryStatus: 'on_time' as const,
+    };
+    await reportCheatEvent(mockStudent, session, 'tab_switch', 'test');
 
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
     expect(url).toContain('/api/cheat/event');

@@ -4,15 +4,19 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 import {
+  getAuthUsers,
   getMe,
   getSessionDetail,
   getSessionResult,
+  getStudentExamHistory,
   getStudentProfile,
   joinSession,
+  loginWithCode,
   reportCheatEvent,
   startSession,
   submitSession,
@@ -27,36 +31,66 @@ import {
 import type {
   ActiveExamSession,
   AnswerValue,
+  AuthMode,
   AuthUser,
   CheatEventType,
+  IntegrityState,
   SessionResultResponse,
+  SessionSyncStatus,
+  StudentExamHistoryItem,
   StudentProfile,
+  StudentProgressSummary,
 } from './types';
 import { availableStudentUsers, defaultStudentUser } from './users';
-import { normalizeApiError } from './utils';
+import {
+  buildProgressSummary,
+  deriveTimerEndsAt,
+  getIntegrityCapabilities,
+  mergeSessionResult,
+  normalizeApiError,
+} from './utils';
 
 type StudentAppContextValue = {
   hydrated: boolean;
+  authMode: AuthMode;
   student: AuthUser | null;
   availableUsers: AuthUser[];
   profile: StudentProfile | null;
   activeSession: ActiveExamSession | null;
   submittedResult: SessionResultResponse | null;
+  history: StudentExamHistoryItem[];
+  progressSummary: StudentProgressSummary;
+  integrity: IntegrityState;
   signingIn: boolean;
+  dashboardLoading: boolean;
+  dashboardError: string | null;
+  refreshDashboard: () => Promise<void>;
+  signInWithCode: (code: string) => Promise<void>;
   switchUser: (userId: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   saveProfile: (payload: StudentProfile) => Promise<void>;
   joinExam: (roomCode: string) => Promise<ActiveExamSession>;
+  recoverActiveSession: () => Promise<void>;
   startExam: () => Promise<void>;
   answerQuestion: (questionId: string, answer: AnswerValue) => Promise<void>;
   setCurrentQuestionIndex: (index: number) => void;
   logIntegrityEvent: (eventType: CheatEventType, metadata?: string) => Promise<void>;
+  setIntegrityWarning: (warningMessage: string | null) => void;
   submitCurrentExam: () => Promise<SessionResultResponse>;
   clearResult: () => void;
 };
 
 const StudentAppContext = createContext<StudentAppContextValue | null>(null);
+
+const emptyProgressSummary: StudentProgressSummary = {
+  totalSessions: 0,
+  gradedSessions: 0,
+  averageScore: null,
+  bestScore: null,
+  latestScore: null,
+  latestCompletedAt: null,
+};
 
 const buildFallbackProfile = (student: AuthUser): StudentProfile => ({
   fullName: student.fullName,
@@ -66,19 +100,45 @@ const buildFallbackProfile = (student: AuthUser): StudentProfile => ({
   phone: null,
   school: null,
   grade: null,
+  groupName: null,
   bio: null,
   xp: student.xp ?? 0,
   level: student.level ?? 1,
 });
 
+const buildEmptyIntegrityState = (): IntegrityState => ({
+  lastEventType: null,
+  lastEventAt: null,
+  warningMessage: null,
+  eventCount: 0,
+  capabilities: getIntegrityCapabilities(),
+});
+
+const normalizeSessionStatus = (status: string): ActiveExamSession['status'] => {
+  if (status === 'late') return 'late';
+  if (status === 'in_progress') return 'in_progress';
+  if (status === 'submitting') return 'submitting';
+  if (status === 'submitted') return 'submitted';
+  return 'joined';
+};
+
+const buildSyncMessage = (status: SessionSyncStatus, error?: string | null) => {
+  if (status === 'syncing') return 'Syncing exam state with the server...';
+  if (status === 'error') return error ?? 'Could not refresh the active exam.';
+  if (status === 'ready') return 'Active exam recovered.';
+  return null;
+};
+
 const toActiveSession = (
   sessionId: string,
   roomCode: string,
-  detail: Awaited<ReturnType<typeof getSessionDetail>>
+  detail: Awaited<ReturnType<typeof getSessionDetail>>,
+  sessionStatus?: string | null,
+  entryStatus?: string | null,
 ): ActiveExamSession => ({
   sessionId,
   roomCode,
-  status: detail.session.status === 'in_progress' ? 'in_progress' : 'joined',
+  status: normalizeSessionStatus(sessionStatus ?? detail.session.status),
   exam: {
     ...detail.exam,
     questionCount: detail.questions.length,
@@ -86,12 +146,12 @@ const toActiveSession = (
   questions: detail.questions,
   answers: {},
   currentQuestionIndex: 0,
-  timerEndsAt: detail.session.startedAt
-    ? new Date(detail.session.startedAt).getTime() +
-      detail.exam.durationMin * 60 * 1000
-    : null,
+  timerEndsAt: deriveTimerEndsAt(detail),
   startedAt: detail.session.startedAt,
   lastAnswerAt: null,
+  syncStatus: 'ready',
+  syncMessage: buildSyncMessage('ready'),
+  entryStatus: entryStatus === 'late' ? 'late' : 'on_time',
 });
 
 export function StudentAppProvider({
@@ -100,16 +160,22 @@ export function StudentAppProvider({
   children: React.ReactNode;
 }) {
   const [hydrated, setHydrated] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>('dev_switcher');
   const [student, setStudent] = useState<AuthUser | null>(defaultStudentUser);
   const [profile, setProfile] = useState<StudentProfile | null>(
-    buildFallbackProfile(defaultStudentUser)
+    buildFallbackProfile(defaultStudentUser),
   );
-  const [activeSession, setActiveSession] = useState<ActiveExamSession | null>(
-    null
-  );
+  const [activeSession, setActiveSession] = useState<ActiveExamSession | null>(null);
   const [submittedResult, setSubmittedResult] =
     useState<SessionResultResponse | null>(null);
+  const [history, setHistory] = useState<StudentExamHistoryItem[]>([]);
+  const [progressSummary, setProgressSummary] =
+    useState<StudentProgressSummary>(emptyProgressSummary);
+  const [integrity, setIntegrity] = useState<IntegrityState>(buildEmptyIntegrityState);
   const [signingIn, setSigningIn] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const submitLockRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,6 +185,7 @@ export function StudentAppProvider({
       if (cancelled) return;
 
       const nextStudent = state.student ?? defaultStudentUser;
+      setAuthMode(state.authMode ?? 'dev_switcher');
       setStudent(nextStudent);
       setProfile(state.profile ?? buildFallbackProfile(nextStudent));
       setActiveSession(state.activeSession);
@@ -135,13 +202,100 @@ export function StudentAppProvider({
 
   useEffect(() => {
     if (!hydrated) return;
+
     void persistState({
+      authMode,
       student,
       profile,
       activeSession,
       submittedResult,
     });
-  }, [activeSession, hydrated, profile, student, submittedResult]);
+  }, [activeSession, authMode, hydrated, profile, student, submittedResult]);
+
+  const refreshDashboard = useCallback(async () => {
+    if (!student) return;
+
+    setDashboardLoading(true);
+    setDashboardError(null);
+
+    try {
+      const [remoteProfile, nextHistory] = await Promise.all([
+        getStudentProfile(student),
+        getStudentExamHistory(student),
+      ]);
+
+      setProfile(remoteProfile);
+      setHistory(nextHistory);
+      setProgressSummary(buildProgressSummary(nextHistory));
+    } catch (error) {
+      setDashboardError(
+        normalizeApiError(error, 'Could not load the latest student dashboard.'),
+      );
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, [student]);
+
+  const recoverActiveSession = useCallback(async () => {
+    if (!student || !activeSession?.sessionId) return;
+
+    const sessionId = activeSession.sessionId;
+    const roomCode = activeSession.roomCode;
+    const entryStatus = activeSession.entryStatus;
+
+    setActiveSession((prev) =>
+      prev
+        ? {
+            ...prev,
+            syncStatus: 'syncing',
+            syncMessage: buildSyncMessage('syncing'),
+          }
+        : prev,
+    );
+
+    try {
+      const detail = await getSessionDetail(student, sessionId);
+      setActiveSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...toActiveSession(
+                sessionId,
+                roomCode,
+                detail,
+                detail.session.status,
+                entryStatus,
+              ),
+              answers: prev.answers,
+              currentQuestionIndex: Math.min(
+                prev.currentQuestionIndex,
+                Math.max(detail.questions.length - 1, 0),
+              ),
+              syncStatus: 'ready',
+              syncMessage: buildSyncMessage('ready'),
+            }
+          : prev,
+      );
+    } catch (error) {
+      setActiveSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              syncStatus: 'error',
+              syncMessage: buildSyncMessage(
+                'error',
+                normalizeApiError(error, 'Could not recover the active exam.'),
+              ),
+            }
+          : prev,
+      );
+    }
+  }, [
+    activeSession?.entryStatus,
+    activeSession?.roomCode,
+    activeSession?.sessionId,
+    student,
+  ]);
 
   useEffect(() => {
     if (!hydrated || !student) return;
@@ -154,14 +308,12 @@ export function StudentAppProvider({
         if (cancelled || me.role !== 'student') return;
 
         setStudent(me);
-
-        const remoteProfile = await getStudentProfile(me);
-        if (!cancelled) {
-          setProfile(remoteProfile);
-        }
       } catch {
         if (cancelled) return;
-        setProfile((prev) => prev ?? buildFallbackProfile(student));
+      }
+
+      if (!cancelled) {
+        await refreshDashboard();
       }
     };
 
@@ -170,24 +322,64 @@ export function StudentAppProvider({
     return () => {
       cancelled = true;
     };
-  }, [hydrated, student]);
+  }, [hydrated, refreshDashboard, student]);
+
+  useEffect(() => {
+    if (!hydrated || !student || !activeSession?.sessionId) return;
+    void recoverActiveSession();
+  }, [activeSession?.sessionId, hydrated, recoverActiveSession, student]);
+
+  const signInWithCode = useCallback(async (code: string) => {
+    setSigningIn(true);
+
+    try {
+      const nextStudent = await loginWithCode(code.trim());
+      if (nextStudent.role !== 'student') {
+        throw new Error('{"error":{"message":"Only student accounts can use this app."}}');
+      }
+
+      setAuthMode('student_code');
+      setStudent(nextStudent);
+      setSubmittedResult(null);
+      setActiveSession(null);
+      setIntegrity(buildEmptyIntegrityState());
+    } finally {
+      setSigningIn(false);
+    }
+  }, []);
 
   const switchUser = useCallback(async (userId: string) => {
     setSigningIn(true);
     try {
-      const nextUser =
-        availableStudentUsers.find((candidate) => candidate.id === userId) ??
-        defaultStudentUser;
+      let nextUser =
+        availableStudentUsers.find((candidate) => candidate.id === userId) ?? null;
 
+      if (!nextUser) {
+        const remoteUsers = await getAuthUsers();
+        nextUser =
+          remoteUsers.find(
+            (candidate) => candidate.role === 'student' && candidate.id === userId,
+          ) ?? defaultStudentUser;
+      }
+
+      setAuthMode('dev_switcher');
       setStudent(nextUser);
       setActiveSession(null);
       setSubmittedResult(null);
+      setIntegrity(buildEmptyIntegrityState());
 
       try {
-        const remoteProfile = await getStudentProfile(nextUser);
+        const [remoteProfile, nextHistory] = await Promise.all([
+          getStudentProfile(nextUser),
+          getStudentExamHistory(nextUser),
+        ]);
         setProfile(remoteProfile);
+        setHistory(nextHistory);
+        setProgressSummary(buildProgressSummary(nextHistory));
       } catch {
         setProfile(buildFallbackProfile(nextUser));
+        setHistory([]);
+        setProgressSummary(emptyProgressSummary);
       }
     } finally {
       setSigningIn(false);
@@ -195,10 +387,14 @@ export function StudentAppProvider({
   }, []);
 
   const logout = useCallback(async () => {
+    setAuthMode('dev_switcher');
     setStudent(defaultStudentUser);
     setProfile(buildFallbackProfile(defaultStudentUser));
     setActiveSession(null);
     setSubmittedResult(null);
+    setHistory([]);
+    setProgressSummary(emptyProgressSummary);
+    setIntegrity(buildEmptyIntegrityState());
     await clearPersistedState();
   }, []);
 
@@ -226,7 +422,7 @@ export function StudentAppProvider({
         setProfile(payload);
       }
     },
-    [student]
+    [student],
   );
 
   const joinExamAction = useCallback(
@@ -238,13 +434,19 @@ export function StudentAppProvider({
       const normalizedCode = roomCode.trim().toUpperCase();
       const joined = await joinSession(student, normalizedCode);
       const detail = await getSessionDetail(student, joined.sessionId);
-      const nextSession = toActiveSession(joined.sessionId, normalizedCode, detail);
+      const nextSession = toActiveSession(
+        joined.sessionId,
+        normalizedCode,
+        detail,
+        joined.sessionStatus,
+        joined.entryStatus,
+      );
 
       setActiveSession(nextSession);
       setSubmittedResult(null);
       return nextSession;
     },
-    [student]
+    [student],
   );
 
   const startExamAction = useCallback(async () => {
@@ -252,19 +454,21 @@ export function StudentAppProvider({
       throw new Error('No active exam session found.');
     }
 
-    await startSession(student, activeSession.sessionId);
-    const now = Date.now();
+    const started = await startSession(student, activeSession.sessionId);
 
     setActiveSession((prev) =>
       prev
         ? {
             ...prev,
             status: 'in_progress',
-            startedAt: new Date(now).toISOString(),
+            startedAt: started.startedAt,
             timerEndsAt:
-              prev.timerEndsAt ?? now + prev.exam.durationMin * 60 * 1000,
+              new Date(started.startedAt).getTime() +
+              prev.exam.durationMin * 60 * 1000,
+            syncStatus: 'ready',
+            syncMessage: null,
           }
-        : prev
+        : prev,
     );
   }, [activeSession, student]);
 
@@ -275,15 +479,34 @@ export function StudentAppProvider({
             ...prev,
             currentQuestionIndex: Math.max(
               0,
-              Math.min(index, prev.questions.length - 1)
+              Math.min(index, prev.questions.length - 1),
             ),
           }
-        : prev
+        : prev,
     );
+  }, []);
+
+  const setIntegrityWarning = useCallback((warningMessage: string | null) => {
+    setIntegrity((prev) => ({
+      ...prev,
+      warningMessage,
+    }));
   }, []);
 
   const logIntegrityEvent = useCallback(
     async (eventType: CheatEventType, metadata?: string) => {
+      const timestamp = new Date().toISOString();
+
+      setIntegrity((prev) => ({
+        ...prev,
+        lastEventType: eventType,
+        lastEventAt: timestamp,
+        warningMessage:
+          prev.warningMessage ??
+          'Integrity monitoring detected an exam-related event. Stay inside the app until you submit.',
+        eventCount: prev.eventCount + 1,
+      }));
+
       if (!student || !activeSession) return;
 
       try {
@@ -292,7 +515,7 @@ export function StudentAppProvider({
         return;
       }
     },
-    [activeSession, student]
+    [activeSession, student],
   );
 
   const answerQuestion = useCallback(
@@ -316,17 +539,45 @@ export function StudentAppProvider({
                 },
               },
               lastAnswerAt: now,
+              syncStatus: 'syncing',
+              syncMessage: 'Saving your answer...',
             }
-          : prev
+          : prev,
       );
 
-      await submitSessionAnswer(student, activeSession.sessionId, questionId, answer);
+      try {
+        await submitSessionAnswer(student, activeSession.sessionId, questionId, answer);
+
+        setActiveSession((prev) =>
+          prev
+            ? {
+                ...prev,
+                syncStatus: 'ready',
+                syncMessage: null,
+              }
+            : prev,
+        );
+      } catch (error) {
+        setActiveSession((prev) =>
+          prev
+            ? {
+                ...prev,
+                syncStatus: 'error',
+                syncMessage: normalizeApiError(
+                  error,
+                  'Could not save the answer. Try again before submitting.',
+                ),
+              }
+            : prev,
+        );
+        throw error;
+      }
 
       if (previousAnswerAt && now - previousAnswerAt < 1500) {
         void logIntegrityEvent('rapid_answers', 'rapid-local-answer-interval');
       }
     },
-    [activeSession, logIntegrityEvent, student]
+    [activeSession, logIntegrityEvent, student],
   );
 
   const submitCurrentExam = useCallback(async () => {
@@ -334,35 +585,59 @@ export function StudentAppProvider({
       throw new Error('No active exam session found.');
     }
 
-    setActiveSession((prev) => (prev ? { ...prev, status: 'submitting' } : prev));
+    if (submitLockRef.current || activeSession.status === 'submitting') {
+      throw new Error('{"error":{"message":"The exam is already being submitted."}}');
+    }
+
+    submitLockRef.current = true;
+    setActiveSession((prev) =>
+      prev
+        ? {
+            ...prev,
+            status: 'submitting',
+            syncStatus: 'syncing',
+            syncMessage: 'Submitting your exam...',
+          }
+        : prev,
+    );
 
     try {
-      await submitSession(student, activeSession.sessionId);
+      const submission = await submitSession(student, activeSession.sessionId);
       const result = await getSessionResult(student, activeSession.sessionId);
-      setSubmittedResult(result);
+      const mergedResult = mergeSessionResult(result, submission.xpEarned);
+
+      setSubmittedResult(mergedResult);
       setActiveSession((prev) =>
         prev
           ? {
               ...prev,
               status: 'submitted',
+              syncStatus: 'ready',
+              syncMessage: null,
             }
-          : prev
+          : prev,
       );
-      return result;
+      await refreshDashboard();
+      return mergedResult;
     } catch (error) {
       setActiveSession((prev) =>
         prev
           ? {
               ...prev,
               status: 'in_progress',
+              syncStatus: 'error',
+              syncMessage: normalizeApiError(
+                error,
+                'Failed to submit the exam.',
+              ),
             }
-          : prev
+          : prev,
       );
-      throw new Error(
-        normalizeApiError(error, 'Failed to submit the exam.')
-      );
+      throw new Error(normalizeApiError(error, 'Failed to submit the exam.'));
+    } finally {
+      submitLockRef.current = false;
     }
-  }, [activeSession, student]);
+  }, [activeSession, refreshDashboard, student]);
 
   const clearResult = useCallback(() => {
     setSubmittedResult(null);
@@ -372,43 +647,63 @@ export function StudentAppProvider({
   const value = useMemo<StudentAppContextValue>(
     () => ({
       hydrated,
+      authMode,
       student,
       availableUsers: availableStudentUsers,
       profile,
       activeSession,
       submittedResult,
+      history,
+      progressSummary,
+      integrity,
       signingIn,
+      dashboardLoading,
+      dashboardError,
+      refreshDashboard,
+      signInWithCode,
       switchUser,
       logout,
       refreshProfile,
       saveProfile,
       joinExam: joinExamAction,
+      recoverActiveSession,
       startExam: startExamAction,
       answerQuestion,
       setCurrentQuestionIndex,
       logIntegrityEvent,
+      setIntegrityWarning,
       submitCurrentExam,
       clearResult,
     }),
     [
       activeSession,
       answerQuestion,
+      authMode,
       clearResult,
+      dashboardError,
+      dashboardLoading,
+      history,
       hydrated,
+      integrity,
       joinExamAction,
       logIntegrityEvent,
       logout,
       profile,
+      progressSummary,
+      recoverActiveSession,
+      refreshDashboard,
       refreshProfile,
       saveProfile,
       setCurrentQuestionIndex,
+      setIntegrityWarning,
+      signInWithCode,
       signingIn,
       startExamAction,
       student,
       submittedResult,
       submitCurrentExam,
       switchUser,
-    ]
+    ],
   );
 
   return (

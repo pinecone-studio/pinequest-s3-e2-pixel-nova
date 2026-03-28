@@ -1,5 +1,7 @@
 export type AuthRole = 'teacher' | 'student';
 
+export type AuthMode = 'dev_switcher' | 'student_code';
+
 export type AuthUser = {
   id: string;
   code?: string;
@@ -23,6 +25,7 @@ export type StudentProfile = {
   bio?: string | null;
   xp?: number;
   level?: number;
+  groupName?: string | null;
 };
 
 export type SessionQuestionOption = {
@@ -51,10 +54,19 @@ export type SessionExam = {
   description?: string | null;
   durationMin: number;
   questionCount?: number;
+  status?: string | null;
+  scheduledAt?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
 };
 
 export type JoinSessionResponse = {
   sessionId: string;
+  status?: string;
+  sessionStatus?: string;
+  entryStatus?: 'late' | 'on_time' | string;
+  scheduledAt?: string | null;
+  startedAt?: string | null;
   exam: SessionExam;
 };
 
@@ -69,6 +81,8 @@ export type SessionDetailResponse = {
   questions: SessionQuestion[];
 };
 
+export type SessionSyncStatus = 'idle' | 'syncing' | 'ready' | 'error';
+
 export type AnswerValue = {
   selectedOptionId?: string | null;
   textAnswer?: string | null;
@@ -78,7 +92,7 @@ export type AnswerValue = {
 export type ActiveExamSession = {
   sessionId: string;
   roomCode: string;
-  status: 'joined' | 'in_progress' | 'submitting' | 'submitted';
+  status: 'joined' | 'late' | 'in_progress' | 'submitting' | 'submitted';
   exam: SessionExam;
   questions: SessionQuestion[];
   answers: Record<string, AnswerValue>;
@@ -86,6 +100,9 @@ export type ActiveExamSession = {
   timerEndsAt: number | null;
   startedAt: string | null;
   lastAnswerAt: number | null;
+  syncStatus: SessionSyncStatus;
+  syncMessage: string | null;
+  entryStatus: 'late' | 'on_time';
 };
 
 export type SessionResultAnswer = {
@@ -109,6 +126,7 @@ export type SessionResultResponse = {
   totalPoints: number;
   submittedAt: string | null;
   answers: SessionResultAnswer[];
+  xpEarned?: number | null;
 };
 
 export type CheatEventType =
@@ -125,7 +143,45 @@ export type CheatEventType =
   | 'idle_too_long'
   | 'disqualification';
 
+export type IntegrityCapability = {
+  screenshotProtectionSupported: boolean;
+  screenshotDetectionSupported: boolean;
+  copyPasteRestricted: boolean;
+  backgroundDetectionSupported: boolean;
+  notes: string[];
+};
+
+export type IntegrityState = {
+  lastEventType: CheatEventType | null;
+  lastEventAt: string | null;
+  warningMessage: string | null;
+  eventCount: number;
+  capabilities: IntegrityCapability;
+};
+
+export type StudentExamHistoryItem = {
+  sessionId: string;
+  examId: string;
+  title: string;
+  status: string;
+  score: number | null;
+  earnedPoints: number | null;
+  totalPoints: number | null;
+  startedAt: string | null;
+  submittedAt: string | null;
+};
+
+export type StudentProgressSummary = {
+  totalSessions: number;
+  gradedSessions: number;
+  averageScore: number | null;
+  bestScore: number | null;
+  latestScore: number | null;
+  latestCompletedAt: string | null;
+};
+
 export type PersistedStudentAppState = {
+  authMode: AuthMode;
   student: AuthUser | null;
   profile: StudentProfile | null;
   activeSession: ActiveExamSession | null;

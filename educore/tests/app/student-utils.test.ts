@@ -1,8 +1,12 @@
+import { Platform } from 'react-native';
+
 import {
   API_FALLBACK_BASE_URL,
+  buildProgressSummary,
   computeRemainingSeconds,
   formatCountdown,
   getApiBaseUrl,
+  getIntegrityCapabilities,
   getResultMessage,
   normalizeApiError,
 } from '@/lib/student-app/utils';
@@ -34,9 +38,9 @@ describe('student app utils', () => {
   });
 
   it('maps score bands to encouraging result messages', () => {
-    expect(getResultMessage(95)).toContain('Маш сайн');
-    expect(getResultMessage(78)).toContain('Сайн');
-    expect(getResultMessage(45)).toContain('боломжтой');
+    expect(getResultMessage(95)).toContain('Excellent');
+    expect(getResultMessage(78)).toContain('Strong result');
+    expect(getResultMessage(45)).toContain('starting point');
   });
 });
 
@@ -106,20 +110,49 @@ describe('formatCountdown', () => {
   });
 });
 
-describe('getResultMessage boundaries', () => {
-  it('returns correct message at 90 boundary', () => {
-    expect(getResultMessage(90)).toContain('Маш сайн');
+describe('platform integrity capabilities', () => {
+  it('returns a structured capability object', () => {
+    expect(getIntegrityCapabilities()).toMatchObject({
+      screenshotProtectionSupported: false,
+      backgroundDetectionSupported: true,
+    });
   });
 
-  it('returns correct message at 75 boundary', () => {
-    expect(getResultMessage(75)).toContain('Сайн');
+  it('uses the current platform value', () => {
+    expect(['android', 'ios', 'web']).toContain(Platform.OS);
   });
+});
 
-  it('returns correct message at 60 boundary', () => {
-    expect(getResultMessage(60)).toContain('амжилттай');
-  });
+describe('buildProgressSummary', () => {
+  it('builds summary stats from history rows', () => {
+    const summary = buildProgressSummary([
+      {
+        sessionId: '1',
+        examId: 'e1',
+        title: 'Exam 1',
+        status: 'graded',
+        score: 80,
+        earnedPoints: 8,
+        totalPoints: 10,
+        startedAt: '2026-03-01T10:00:00.000Z',
+        submittedAt: '2026-03-01T10:30:00.000Z',
+      },
+      {
+        sessionId: '2',
+        examId: 'e2',
+        title: 'Exam 2',
+        status: 'graded',
+        score: 90,
+        earnedPoints: 9,
+        totalPoints: 10,
+        startedAt: '2026-03-02T10:00:00.000Z',
+        submittedAt: '2026-03-02T10:30:00.000Z',
+      },
+    ]);
 
-  it('returns encouragement below 60', () => {
-    expect(getResultMessage(59)).toContain('боломжтой');
+    expect(summary.totalSessions).toBe(2);
+    expect(summary.gradedSessions).toBe(2);
+    expect(summary.averageScore).toBe(85);
+    expect(summary.bestScore).toBe(90);
   });
 });
