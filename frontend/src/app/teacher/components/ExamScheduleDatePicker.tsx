@@ -46,9 +46,7 @@ export default function ExamScheduleDatePicker({
     const [hours, mins] = selectedTime.split(":").map(Number);
     const next = new Date(day);
     next.setHours(hours, mins);
-    setScheduleDate(
-      `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}T${selectedTime}`,
-    );
+    setScheduleDate(next.toISOString());
   };
 
   const handleTimeChange = (value: string) => {
@@ -57,9 +55,7 @@ export default function ExamScheduleDatePicker({
       const [hours, mins] = value.split(":").map(Number);
       const next = new Date(selectedDate);
       next.setHours(hours, mins);
-      setScheduleDate(
-        `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}T${value}`,
-      );
+      setScheduleDate(next.toISOString());
     }
   };
 

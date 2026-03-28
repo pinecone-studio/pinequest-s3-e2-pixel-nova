@@ -14,12 +14,14 @@ type UseStudentExamSessionParams = {
   currentUser: User | null;
   roomCodeInput: string;
   sessionId: string | null;
+  setJoinError?: (value: string | null) => void;
 };
 
 export const useStudentExamSession = ({
   currentUser,
   roomCodeInput,
   sessionId,
+  setJoinError,
 }: UseStudentExamSessionParams) => {
   const [view, setView] = useState<"dashboard" | "exam" | "result">(
     "dashboard",
@@ -90,7 +92,10 @@ export const useStudentExamSession = ({
   };
 
   const startExam = () => {
-    if (!sessionId || !currentUser) return;
+    if (!sessionId || !currentUser) {
+      setJoinError?.("Шалгалт эхлүүлэхэд шаардлагатай мэдээлэл алга байна.");
+      return;
+    }
     const run = async () => {
       try {
         const sessionPayload = await apiFetch<
@@ -141,9 +146,28 @@ export const useStudentExamSession = ({
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().catch(() => null);
         }
+        setJoinError?.(null);
         setView("exam");
-      } catch {
-        showWarning("Шалгалт эхлүүлэхэд алдаа гарлаа.");
+      } catch (err) {
+        let message = "Шалгалт эхлүүлэхэд алдаа гарлаа.";
+        if (err instanceof Error && err.message) {
+          try {
+            const parsed = JSON.parse(err.message) as {
+              message?: string;
+              error?: string | { message?: string };
+            };
+            message =
+              parsed.message ||
+              (typeof parsed.error === "string"
+                ? parsed.error
+                : parsed.error?.message) ||
+              message;
+          } catch {
+            message = err.message;
+          }
+        }
+        setJoinError?.(message);
+        showWarning(message);
       }
     };
     void run();

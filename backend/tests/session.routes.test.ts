@@ -32,6 +32,7 @@ describe("session routes", () => {
       success: true,
       data: {
         status: "active",
+        entryStatus: "on_time",
         exam: {
           id: "exam-1",
           title: "Algebra Final",

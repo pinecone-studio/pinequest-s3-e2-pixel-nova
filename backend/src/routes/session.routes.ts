@@ -10,6 +10,7 @@ import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
 import { getLevel } from "../utils/level-calc";
 import { awardXpForGrading } from "../utils/xp-award";
+import { parseExamDate } from "../utils/exam-time";
 
 const sessionRoutes = new Hono<AppEnv>();
 
@@ -44,7 +45,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
   }
 
   const now = new Date();
-  const scheduledAt = exam.scheduledAt ? new Date(exam.scheduledAt) : null;
+  const scheduledAt = parseExamDate(exam.scheduledAt);
 
   if (exam.status === "scheduled") {
     if (!scheduledAt || now >= scheduledAt) {
@@ -63,15 +64,10 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     }
   }
 
-  const startTime = exam.startedAt ? new Date(exam.startedAt) : scheduledAt;
-  if (startTime && now.getTime() - startTime.getTime() > 5 * 60 * 1000) {
-    return error(
-      c,
-      "ENTRY_CLOSED",
-      "Шалгалтад нэвтрэх хугацаа дууссан байна.",
-      403,
-    );
-  }
+  const startTime = parseExamDate(exam.startedAt) ?? scheduledAt;
+  const isLateEntry = startTime
+    ? now.getTime() - startTime.getTime() > 5 * 60 * 1000
+    : false;
 
   // Get question count
   const [questionCount] = await db
@@ -88,9 +84,19 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     .limit(1);
 
   if (existing) {
+    if (isLateEntry && existing.status === "joined") {
+      await db
+        .update(examSessions)
+        .set({ status: "late" })
+        .where(eq(examSessions.id, existing.id));
+      existing.status = "late";
+    }
+
     return success(c, {
       sessionId: existing.id,
       status: exam.status,
+      sessionStatus: existing.status,
+      entryStatus: existing.status === "late" ? "late" : "on_time",
       scheduledAt: exam.scheduledAt,
       startedAt: exam.startedAt,
       exam: {
@@ -108,12 +114,14 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     id: sessionId,
     examId: exam.id,
     studentId: user.id,
-    status: "joined",
+    status: isLateEntry ? "late" : "joined",
   });
 
   return success(c, {
     sessionId,
     status: exam.status,
+    sessionStatus: isLateEntry ? "late" : "joined",
+    entryStatus: isLateEntry ? "late" : "on_time",
     scheduledAt: exam.scheduledAt,
     startedAt: exam.startedAt,
     exam: {
@@ -243,8 +251,13 @@ sessionRoutes.post("/:sessionId/start", requireRole("student"), async (c) => {
     return notFound(c, "Session");
   }
 
-  if (session.status !== "joined") {
-    return error(c, "INVALID_STATUS", "Session must be in 'joined' status to start", 400);
+  if (session.status !== "joined" && session.status !== "late") {
+    return error(
+      c,
+      "INVALID_STATUS",
+      "Session must be in 'joined' or 'late' status to start",
+      400,
+    );
   }
 
   const [exam] = await db
@@ -257,9 +270,11 @@ sessionRoutes.post("/:sessionId/start", requireRole("student"), async (c) => {
     return notFound(c, "Exam");
   }
 
-  if (exam.status === "scheduled" && exam.scheduledAt) {
-    const scheduledAt = new Date(exam.scheduledAt);
-    if (Date.now() < scheduledAt.getTime()) {
+  const nowDate = new Date();
+  const scheduledAt = parseExamDate(exam.scheduledAt);
+
+  if (exam.status === "scheduled" && scheduledAt) {
+    if (nowDate.getTime() < scheduledAt.getTime()) {
       return error(
         c,
         "NOT_STARTED",
@@ -267,9 +282,22 @@ sessionRoutes.post("/:sessionId/start", requireRole("student"), async (c) => {
         409,
       );
     }
+
+    const startedAt = exam.startedAt ?? nowDate.toISOString();
+    await db
+      .update(exams)
+      .set({
+        status: "active",
+        startedAt,
+        updatedAt: nowDate.toISOString(),
+      })
+      .where(eq(exams.id, exam.id));
+
+    exam.status = "active";
+    exam.startedAt = startedAt;
   }
 
-  const now = new Date().toISOString();
+  const now = nowDate.toISOString();
   await db
     .update(examSessions)
     .set({ status: "in_progress", startedAt: now })

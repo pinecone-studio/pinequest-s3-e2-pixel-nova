@@ -53,6 +53,7 @@ export const useStudentExamState = (params: {
     currentUser,
     roomCodeInput,
     sessionId,
+    setJoinError,
   });
 
   const handleSubmitExam = async (
