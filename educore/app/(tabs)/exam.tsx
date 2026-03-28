@@ -1,6 +1,6 @@
-import { useFocusEffect } from "@react-navigation/native";
-import { Redirect, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFocusEffect } from '@react-navigation/native';
+import { Redirect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   AppState,
@@ -10,22 +10,24 @@ import {
   Text,
   TextInput,
   View,
-} from "react-native";
+} from 'react-native';
 
 import {
   AppScreen,
   Card,
   ErrorText,
+  Pill,
   PrimaryButton,
   SecondaryButton,
   SectionTitle,
-} from "@/components/student-app/ui";
-import { useStudentApp } from "@/lib/student-app/context";
+} from '@/components/student-app/ui';
+import { useStudentApp } from '@/lib/student-app/context';
 import {
   computeRemainingSeconds,
   formatCountdown,
+  getEntryStatusLabel,
   normalizeApiError,
-} from "@/lib/student-app/utils";
+} from '@/lib/student-app/utils';
 
 export default function ExamScreen() {
   const router = useRouter();
@@ -33,8 +35,11 @@ export default function ExamScreen() {
     activeSession,
     answerQuestion,
     hydrated,
+    integrity,
     logIntegrityEvent,
+    recoverActiveSession,
     setCurrentQuestionIndex,
+    setIntegrityWarning,
     startExam,
     student,
     submitCurrentExam,
@@ -44,18 +49,54 @@ export default function ExamScreen() {
   );
   const [submitting, setSubmitting] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [textDraft, setTextDraft] = useState('');
   const submitRequestedRef = useRef(false);
+
+  const currentQuestion =
+    activeSession?.questions[activeSession.currentQuestionIndex] ?? null;
+  const currentAnswer = currentQuestion
+    ? activeSession?.answers[currentQuestion.id] ?? {}
+    : {};
+  const isJoined =
+    activeSession?.status === 'joined' || activeSession?.status === 'late';
+  const isSyncBlocked = activeSession?.syncStatus === 'syncing' || submitting;
+
+  const persistTextAnswer = useCallback(async () => {
+    if (!currentQuestion || !activeSession) return;
+    if (
+      currentQuestion.type !== 'short_answer' &&
+      currentQuestion.type !== 'essay' &&
+      currentQuestion.type !== 'text'
+    ) {
+      return;
+    }
+
+    const currentValue = currentAnswer.textAnswer ?? '';
+    if (textDraft === currentValue) return;
+
+    setSyncError(null);
+    try {
+      await answerQuestion(currentQuestion.id, {
+        selectedOptionId: null,
+        textAnswer: textDraft,
+      });
+    } catch (error) {
+      setSyncError(
+        normalizeApiError(error, 'Could not save your typed answer.'),
+      );
+    }
+  }, [activeSession, answerQuestion, currentAnswer.textAnswer, currentQuestion, textDraft]);
 
   const handleSubmit = useCallback(
     async (forced = false) => {
       if (!forced) {
         const confirmed = await new Promise<boolean>((resolve) => {
           Alert.alert(
-            "Шалгалт илгээх",
-            "Илгээсний дараа дахин өөрчлөх боломжгүй. Үргэлжлүүлэх үү?",
+            'Submit exam',
+            'After submission, answers can no longer be edited on this device.',
             [
-              { text: "Болих", style: "cancel", onPress: () => resolve(false) },
-              { text: "Илгээх", style: "default", onPress: () => resolve(true) },
+              { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Submit', style: 'default', onPress: () => resolve(true) },
             ],
           );
         });
@@ -63,23 +104,31 @@ export default function ExamScreen() {
         if (!confirmed) return;
       }
 
+      await persistTextAnswer();
+
       setSubmitting(true);
       setSyncError(null);
 
       try {
         await submitCurrentExam();
-        router.replace("/result");
+        router.replace('/result');
       } catch (error) {
         submitRequestedRef.current = false;
         setSyncError(
-          normalizeApiError(error, "Шалгалтыг илгээж чадсангүй."),
+          normalizeApiError(error, 'Could not submit the exam.'),
         );
       } finally {
         setSubmitting(false);
       }
     },
-    [router, submitCurrentExam],
+    [persistTextAnswer, router, submitCurrentExam],
   );
+
+  const moveQuestion = async (direction: -1 | 1) => {
+    await persistTextAnswer();
+    if (!activeSession) return;
+    setCurrentQuestionIndex(activeSession.currentQuestionIndex + direction);
+  };
 
   useEffect(() => {
     setRemainingSeconds(
@@ -88,7 +137,11 @@ export default function ExamScreen() {
   }, [activeSession?.timerEndsAt]);
 
   useEffect(() => {
-    if (!activeSession || activeSession.status !== "in_progress") return;
+    setTextDraft(currentAnswer.textAnswer ?? '');
+  }, [currentAnswer.textAnswer, currentQuestion?.id]);
+
+  useEffect(() => {
+    if (!activeSession || activeSession.status !== 'in_progress') return;
 
     const interval = setInterval(() => {
       setRemainingSeconds(computeRemainingSeconds(activeSession.timerEndsAt));
@@ -98,7 +151,7 @@ export default function ExamScreen() {
   }, [activeSession]);
 
   useEffect(() => {
-    if (!activeSession || activeSession.status !== "in_progress") return;
+    if (!activeSession || activeSession.status !== 'in_progress') return;
     if (remainingSeconds > 0 || submitRequestedRef.current) return;
 
     submitRequestedRef.current = true;
@@ -106,38 +159,40 @@ export default function ExamScreen() {
   }, [activeSession, handleSubmit, remainingSeconds]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState !== "active" && activeSession?.status === "in_progress") {
-        void logIntegrityEvent("tab_hidden", `app-state:${nextState}`);
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active' && activeSession?.status === 'in_progress') {
+        setIntegrityWarning(
+          'The app moved out of the foreground during an active exam.',
+        );
+        void logIntegrityEvent('tab_hidden', `app-state:${nextState}`);
       }
     });
 
     return () => {
       subscription.remove();
     };
-  }, [activeSession?.status, logIntegrityEvent]);
+  }, [activeSession?.status, logIntegrityEvent, setIntegrityWarning]);
 
   useFocusEffect(
     useCallback(() => {
       return () => {
         if (
           activeSession &&
-          activeSession.status === "in_progress" &&
+          activeSession.status === 'in_progress' &&
           !submitRequestedRef.current
         ) {
-          void logIntegrityEvent("window_blur", "screen-blur");
+          setIntegrityWarning(
+            'You left the exam screen. Stay inside the exam until you submit.',
+          );
+          void logIntegrityEvent('window_blur', 'screen-blur');
         }
       };
-    }, [activeSession, logIntegrityEvent]),
+    }, [activeSession, logIntegrityEvent, setIntegrityWarning]),
   );
 
   const progressLabel = useMemo(() => {
-    if (!activeSession) {
-      return "0/0";
-    }
-
-    if (activeSession.questions.length === 0) {
-      return "0/0";
+    if (!activeSession || activeSession.questions.length === 0) {
+      return '0/0';
     }
 
     return `${activeSession.currentQuestionIndex + 1}/${activeSession.questions.length}`;
@@ -152,8 +207,8 @@ export default function ExamScreen() {
       <AppScreen scroll>
         <Card>
           <SectionTitle
-            title="Шалгалтыг ачаалж байна"
-            subtitle="Таны идэвхтэй шалгалтын мэдээллийг сэргээж байна."
+            title="Loading active exam"
+            subtitle="Restoring the latest exam state for this device."
           />
         </Card>
       </AppScreen>
@@ -165,19 +220,19 @@ export default function ExamScreen() {
       <AppScreen scroll>
         <Card>
           <SectionTitle
-            title="Идэвхтэй шалгалт алга"
-            subtitle="Join дэлгэцээс код оруулаад шалгалтад нэгдсэний дараа эндээс үргэлжлүүлнэ."
+            title="No active exam"
+            subtitle="Join an exam from the Join screen to start or recover a session."
           />
           <PrimaryButton
-            label="Шалгалтад нэгдэх"
+            label="Join exam"
             onPress={() => {
-              router.push("/join");
+              router.push('/join');
             }}
           />
           <SecondaryButton
-            label="Нүүр хуудас"
+            label="Back to home"
             onPress={() => {
-              router.push("/home");
+              router.push('/home');
             }}
           />
         </Card>
@@ -185,24 +240,22 @@ export default function ExamScreen() {
     );
   }
 
-  const currentQuestion =
-    activeSession.questions[activeSession.currentQuestionIndex];
-  const currentAnswer = activeSession.answers[currentQuestion?.id] ?? {};
-  const isJoined = activeSession.status === "joined";
-
   const handleStart = async () => {
     try {
       await startExam();
       setRemainingSeconds(computeRemainingSeconds(activeSession.timerEndsAt));
     } catch (error) {
       setSyncError(
-        normalizeApiError(error, "Шалгалтыг эхлүүлэхэд алдаа гарлаа."),
+        normalizeApiError(error, 'Could not start the exam.'),
       );
     }
   };
 
   const saveMcqAnswer = async (optionId: string) => {
+    if (!currentQuestion) return;
+
     setSyncError(null);
+
     try {
       await answerQuestion(currentQuestion.id, {
         selectedOptionId: optionId,
@@ -210,21 +263,7 @@ export default function ExamScreen() {
       });
     } catch (error) {
       setSyncError(
-        normalizeApiError(error, "Хариултыг хадгалах үед алдаа гарлаа."),
-      );
-    }
-  };
-
-  const saveTextAnswer = async (value: string) => {
-    setSyncError(null);
-    try {
-      await answerQuestion(currentQuestion.id, {
-        selectedOptionId: null,
-        textAnswer: value,
-      });
-    } catch (error) {
-      setSyncError(
-        normalizeApiError(error, "Хариултыг хадгалах үед алдаа гарлаа."),
+        normalizeApiError(error, 'Could not save your answer.'),
       );
     }
   };
@@ -236,36 +275,60 @@ export default function ExamScreen() {
           title={activeSession.exam.title}
           subtitle={
             isJoined
-              ? "Шалгалт эхлэхэд бэлэн байна."
-              : "Анхаарлаа төвлөрүүлж, асуултуудад дарааллаар нь хариулна уу."
+              ? 'Review the exam details and start when you are ready.'
+              : 'Stay inside the app, keep your connection stable, and submit before the timer ends.'
           }
         />
+        <View style={styles.pillRow}>
+          <Pill
+            label={getEntryStatusLabel(activeSession.entryStatus)}
+            tone={activeSession.entryStatus === 'late' ? 'warning' : 'success'}
+          />
+          <Pill label={activeSession.syncStatus} />
+        </View>
         <View style={styles.topMeta}>
           <View style={styles.metaChip}>
-            <Text style={styles.metaChipLabel}>Хугацаа</Text>
+            <Text style={styles.metaChipLabel}>Time left</Text>
             <Text style={styles.metaChipValue}>
               {formatCountdown(remainingSeconds)}
             </Text>
           </View>
           <View style={styles.metaChip}>
-            <Text style={styles.metaChipLabel}>Явц</Text>
+            <Text style={styles.metaChipLabel}>Progress</Text>
             <Text style={styles.metaChipValue}>{progressLabel}</Text>
           </View>
         </View>
+        {activeSession.syncMessage ? (
+          <Text style={styles.helperText}>{activeSession.syncMessage}</Text>
+        ) : null}
+        {integrity.warningMessage ? (
+          <Text style={styles.warningText}>{integrity.warningMessage}</Text>
+        ) : null}
+        <Text style={styles.helperText}>
+          Screenshot blocking is not fully available in this build. Backgrounding and suspicious activity are still logged during active exams.
+        </Text>
         <ErrorText message={syncError} />
 
         {isJoined ? (
-          <PrimaryButton
-            label="Шалгалтыг эхлүүлэх"
-            onPress={() => void handleStart()}
-          />
+          <>
+            <PrimaryButton
+              label="Start exam"
+              onPress={() => void handleStart()}
+            />
+            <SecondaryButton
+              label="Refresh session"
+              onPress={() => {
+                void recoverActiveSession();
+              }}
+            />
+          </>
         ) : null}
       </Card>
 
       {!isJoined && currentQuestion ? (
         <Card>
           <Text style={styles.questionCounter}>
-            Асуулт {activeSession.currentQuestionIndex + 1}
+            Question {activeSession.currentQuestionIndex + 1}
           </Text>
           <Text style={styles.questionText}>{currentQuestion.questionText}</Text>
           {currentQuestion.imageUrl ? (
@@ -275,8 +338,8 @@ export default function ExamScreen() {
             />
           ) : null}
 
-          {(currentQuestion.type === "multiple_choice" ||
-            currentQuestion.type === "true_false") &&
+          {(currentQuestion.type === 'multiple_choice' ||
+            currentQuestion.type === 'true_false') &&
           currentQuestion.options.length > 0 ? (
             <View style={styles.optionList}>
               {currentQuestion.options.map((option) => {
@@ -290,14 +353,12 @@ export default function ExamScreen() {
                     style={[
                       styles.optionButton,
                       selected && styles.optionButtonSelected,
-                    ]}
-                  >
+                    ]}>
                     <Text
                       style={[
                         styles.optionLabel,
                         selected && styles.optionLabelSelected,
-                      ]}
-                    >
+                      ]}>
                       {option.label}. {option.text}
                     </Text>
                   </Pressable>
@@ -308,12 +369,14 @@ export default function ExamScreen() {
             <TextInput
               key={currentQuestion.id}
               multiline
-              placeholder="Хариултаа энд бичнэ үү"
+              contextMenuHidden={integrity.capabilities.copyPasteRestricted}
+              placeholder="Type your answer here"
               placeholderTextColor="#7A7A72"
               style={styles.answerInput}
-              value={currentAnswer.textAnswer ?? ""}
-              onChangeText={(value) => {
-                void saveTextAnswer(value);
+              value={textDraft}
+              onChangeText={setTextDraft}
+              onBlur={() => {
+                void persistTextAnswer();
               }}
             />
           )}
@@ -323,20 +386,26 @@ export default function ExamScreen() {
       {!isJoined ? (
         <View style={styles.footerActions}>
           <SecondaryButton
-            label="Өмнөх"
-            onPress={() =>
-              setCurrentQuestionIndex(activeSession.currentQuestionIndex - 1)
-            }
+            label="Previous"
+            disabled={activeSession.currentQuestionIndex === 0 || isSyncBlocked}
+            onPress={() => {
+              void moveQuestion(-1);
+            }}
           />
           <SecondaryButton
-            label="Дараах"
-            onPress={() =>
-              setCurrentQuestionIndex(activeSession.currentQuestionIndex + 1)
+            label="Next"
+            disabled={
+              activeSession.currentQuestionIndex >= activeSession.questions.length - 1 ||
+              isSyncBlocked
             }
+            onPress={() => {
+              void moveQuestion(1);
+            }}
           />
           <PrimaryButton
-            label="Илгээх"
+            label="Submit exam"
             loading={submitting}
+            disabled={isSyncBlocked}
             onPress={() => {
               void handleSubmit(false);
             }}
@@ -348,81 +417,96 @@ export default function ExamScreen() {
 }
 
 const styles = StyleSheet.create({
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   topMeta: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 12,
   },
   metaChip: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#E7DDCB",
+    borderColor: '#E7DDCB',
     borderRadius: 18,
     padding: 14,
-    backgroundColor: "#FFF7E7",
+    backgroundColor: '#FFF7E7',
   },
   metaChipLabel: {
     fontSize: 12,
-    color: "#6A6A63",
+    color: '#6A6A63',
     marginBottom: 6,
   },
   metaChipValue: {
     fontSize: 20,
-    fontWeight: "800",
-    color: "#23412F",
+    fontWeight: '800',
+    color: '#23412F',
   },
   questionCounter: {
     fontSize: 13,
-    fontWeight: "700",
-    color: "#5D6B57",
+    fontWeight: '700',
+    color: '#5D6B57',
   },
   questionText: {
     fontSize: 20,
     lineHeight: 30,
-    color: "#19271E",
-    fontWeight: "700",
+    color: '#19271E',
+    fontWeight: '700',
   },
   questionImage: {
-    width: "100%",
+    width: '100%',
     height: 180,
     borderRadius: 20,
-    backgroundColor: "#F0E9DC",
+    backgroundColor: '#F0E9DC',
   },
   optionList: {
     gap: 10,
   },
   optionButton: {
     borderWidth: 1,
-    borderColor: "#D9CCB4",
+    borderColor: '#D9CCB4',
     borderRadius: 18,
     padding: 16,
-    backgroundColor: "#FFF8ED",
+    backgroundColor: '#FFF8ED',
   },
   optionButtonSelected: {
-    borderColor: "#2D6A4F",
-    backgroundColor: "#E7F2EA",
+    borderColor: '#2D6A4F',
+    backgroundColor: '#E7F2EA',
   },
   optionLabel: {
     fontSize: 16,
     lineHeight: 24,
-    color: "#314135",
+    color: '#314135',
   },
   optionLabelSelected: {
-    color: "#1D4F38",
-    fontWeight: "700",
+    color: '#1D4F38',
+    fontWeight: '700',
   },
   answerInput: {
     minHeight: 160,
     borderWidth: 1,
-    borderColor: "#DCCFB6",
+    borderColor: '#DCCFB6',
     borderRadius: 20,
-    backgroundColor: "#FFF9ED",
+    backgroundColor: '#FFF9ED',
     padding: 16,
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
     fontSize: 16,
-    color: "#1F2A1F",
+    color: '#1F2A1F',
   },
   footerActions: {
     gap: 12,
     paddingBottom: 24,
+  },
+  helperText: {
+    color: '#5D6B57',
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  warningText: {
+    color: '#8B5A22',
+    fontSize: 13,
+    lineHeight: 20,
   },
 });

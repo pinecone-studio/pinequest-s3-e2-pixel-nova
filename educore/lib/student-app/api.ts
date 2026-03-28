@@ -6,6 +6,7 @@ import type {
   JoinSessionResponse,
   SessionDetailResponse,
   SessionResultResponse,
+  StudentExamHistoryItem,
   StudentProfile,
 } from './types';
 import { getApiBaseUrl } from './utils';
@@ -18,12 +19,23 @@ type ApiEnvelope<T> = {
   };
 };
 
+type SubmitSessionResponse = {
+  sessionId: string;
+  status: string;
+  submittedAt: string | null;
+  score: number;
+  totalPoints: number;
+  earnedPoints: number;
+  xpEarned?: number;
+};
+
 const API_BASE_URL = getApiBaseUrl();
 
 const unwrapApi = <T,>(payload: ApiEnvelope<T> | T): T => {
   if (payload && typeof payload === 'object' && 'data' in payload) {
     return (payload as ApiEnvelope<T>).data as T;
   }
+
   return payload as T;
 };
 
@@ -33,6 +45,7 @@ const buildHeaders = (student?: AuthUser | null, headers?: HeadersInit) => {
   if (student) {
     next.set('x-user-id', student.id);
     next.set('x-user-role', student.role);
+    next.set('x-user-name-encoded', encodeURIComponent(student.fullName));
   }
 
   return next;
@@ -40,7 +53,7 @@ const buildHeaders = (student?: AuthUser | null, headers?: HeadersInit) => {
 
 export const apiRequest = async <T,>(
   path: string,
-  options: RequestInit & { student?: AuthUser | null } = {}
+  options: RequestInit & { student?: AuthUser | null } = {},
 ) => {
   const { student, headers, ...rest } = options;
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -68,6 +81,8 @@ export const loginWithCode = async (code: string) =>
     body: JSON.stringify({ code }),
   });
 
+export const getAuthUsers = async () => apiRequest<AuthUser[]>('/api/auth/users');
+
 export const getMe = async (student: AuthUser) =>
   apiRequest<AuthUser>('/api/auth/me', { student });
 
@@ -76,7 +91,7 @@ export const getStudentProfile = async (student: AuthUser) =>
 
 export const updateStudentProfile = async (
   student: AuthUser,
-  payload: StudentProfile
+  payload: StudentProfile,
 ) =>
   apiRequest<StudentProfile>('/api/student/profile', {
     method: 'PUT',
@@ -84,6 +99,56 @@ export const updateStudentProfile = async (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+
+export const getStudentExamHistory = async (student: AuthUser) => {
+  const [sessions, results] = await Promise.all([
+    apiRequest<
+      Array<{
+        examId: string;
+        title: string;
+        sessionStatus: string;
+        score: number | null;
+        startedAt: string | null;
+        submittedAt: string | null;
+      }>
+    >('/api/student/exams', { student }),
+    apiRequest<
+      Array<{
+        sessionId: string;
+        examId: string;
+        title: string;
+        score: number | null;
+        totalPoints: number | null;
+        earnedPoints: number | null;
+        startedAt: string | null;
+        submittedAt: string | null;
+      }>
+    >('/api/student/results', { student }),
+  ]);
+
+  const resultByExamId = new Map(results.map((item) => [item.examId, item]));
+
+  return sessions
+    .map<StudentExamHistoryItem>((session) => {
+      const result = resultByExamId.get(session.examId);
+      return {
+        sessionId: result?.sessionId ?? `${session.examId}:${session.startedAt ?? 'pending'}`,
+        examId: session.examId,
+        title: session.title,
+        status: result ? 'graded' : session.sessionStatus,
+        score: result?.score ?? session.score ?? null,
+        earnedPoints: result?.earnedPoints ?? null,
+        totalPoints: result?.totalPoints ?? null,
+        startedAt: result?.startedAt ?? session.startedAt ?? null,
+        submittedAt: result?.submittedAt ?? session.submittedAt ?? null,
+      };
+    })
+    .sort((left, right) => {
+      const leftTime = new Date(left.submittedAt ?? left.startedAt ?? 0).getTime();
+      const rightTime = new Date(right.submittedAt ?? right.startedAt ?? 0).getTime();
+      return rightTime - leftTime;
+    });
+};
 
 export const joinSession = async (student: AuthUser, roomCode: string) =>
   apiRequest<JoinSessionResponse>('/api/sessions/join', {
@@ -97,30 +162,36 @@ export const getSessionDetail = async (student: AuthUser, sessionId: string) =>
   apiRequest<SessionDetailResponse>(`/api/sessions/${sessionId}`, { student });
 
 export const startSession = async (student: AuthUser, sessionId: string) =>
-  apiRequest(`/api/sessions/${sessionId}/start`, {
-    method: 'POST',
-    student,
-  });
+  apiRequest<{ sessionId: string; status: string; startedAt: string }>(
+    `/api/sessions/${sessionId}/start`,
+    {
+      method: 'POST',
+      student,
+    },
+  );
 
 export const submitSessionAnswer = async (
   student: AuthUser,
   sessionId: string,
   questionId: string,
-  answer: AnswerValue
+  answer: AnswerValue,
 ) =>
-  apiRequest(`/api/sessions/${sessionId}/answer`, {
-    method: 'POST',
-    student,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      questionId,
-      selectedOptionId: answer.selectedOptionId ?? undefined,
-      textAnswer: answer.textAnswer ?? undefined,
-    }),
-  });
+  apiRequest<{ answerId: string; updated: boolean }>(
+    `/api/sessions/${sessionId}/answer`,
+    {
+      method: 'POST',
+      student,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        questionId,
+        selectedOptionId: answer.selectedOptionId ?? undefined,
+        textAnswer: answer.textAnswer ?? undefined,
+      }),
+    },
+  );
 
 export const submitSession = async (student: AuthUser, sessionId: string) =>
-  apiRequest(`/api/sessions/${sessionId}/submit`, {
+  apiRequest<SubmitSessionResponse>(`/api/sessions/${sessionId}/submit`, {
     method: 'POST',
     student,
   });
@@ -134,7 +205,7 @@ export const reportCheatEvent = async (
   student: AuthUser,
   session: ActiveExamSession,
   eventType: CheatEventType,
-  metadata?: string
+  metadata?: string,
 ) =>
   apiRequest('/api/cheat/event', {
     method: 'POST',

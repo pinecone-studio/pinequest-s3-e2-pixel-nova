@@ -1,34 +1,36 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AppScreen, Card, SectionTitle } from '@/components/student-app/ui';
+import { AppScreen, Card, Pill, SectionTitle } from '@/components/student-app/ui';
 import { useStudentApp } from '@/lib/student-app/context';
 
 export default function LeaderboardScreen() {
-  const { availableUsers, student } = useStudentApp();
+  const { availableUsers, authMode, student } = useStudentApp();
   const rankedUsers = [...availableUsers].sort((left, right) => {
-    return (right.xp ?? 0) - (left.xp ?? 0);
+    const xpDiff = (right.xp ?? 0) - (left.xp ?? 0);
+    if (xpDiff !== 0) return xpDiff;
+    return left.fullName.localeCompare(right.fullName);
   });
 
   return (
-    <AppScreen>
+    <AppScreen scroll>
       <Card>
         <SectionTitle
           title="Leaderboard"
-          subtitle="Local ranking based on the selectable student list."
+          subtitle="Pilot ranking based on the currently available student roster."
         />
+        <Pill label={authMode === 'dev_switcher' ? 'Pilot data' : 'Student view'} />
         {rankedUsers.map((entry, index) => {
           const active = entry.id === student?.id;
           return (
-            <View
-              key={entry.id}
-              style={[styles.row, active && styles.activeRow]}>
+            <View key={entry.id} style={[styles.row, active && styles.activeRow]}>
               <Text style={styles.rank}>{index + 1}</Text>
               <View style={styles.body}>
                 <Text style={styles.name}>{entry.fullName}</Text>
                 <Text style={styles.meta}>
-                  {entry.xp ?? 0} XP • Level {entry.level ?? 1}
+                  {entry.xp ?? 0} XP · Level {entry.level ?? 1}
                 </Text>
               </View>
+              {active ? <Pill label="You" tone="success" /> : null}
             </View>
           );
         })}

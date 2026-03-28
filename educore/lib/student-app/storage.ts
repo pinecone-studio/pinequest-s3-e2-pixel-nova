@@ -5,6 +5,7 @@ import type { PersistedStudentAppState } from './types';
 const STORAGE_URI = `${FileSystem.documentDirectory ?? ''}student-app-state.json`;
 
 const emptyState: PersistedStudentAppState = {
+  authMode: 'dev_switcher',
   student: null,
   profile: null,
   activeSession: null,
@@ -20,6 +21,7 @@ export const loadPersistedState = async (): Promise<PersistedStudentAppState> =>
     const raw = await FileSystem.readAsStringAsync(STORAGE_URI);
     const parsed = JSON.parse(raw) as PersistedStudentAppState;
     return {
+      authMode: parsed.authMode ?? 'dev_switcher',
       student: parsed.student ?? null,
       profile: parsed.profile ?? null,
       activeSession: parsed.activeSession ?? null,
