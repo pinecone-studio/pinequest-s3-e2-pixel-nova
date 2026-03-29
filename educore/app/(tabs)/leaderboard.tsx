@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { AppScreen, Card, Pill, SectionTitle } from '@/components/student-app/ui';
 import { useStudentApp } from '@/lib/student-app/context';
+import { leaderboardStyles as styles } from '@/styles/screens/leaderboard';
 
 export default function LeaderboardScreen() {
   const { availableUsers, authMode, student } = useStudentApp();
@@ -16,9 +17,9 @@ export default function LeaderboardScreen() {
       <Card>
         <SectionTitle
           title="Leaderboard"
-          subtitle="Pilot ranking based on the currently available student roster."
+          subtitle="Ranking based on the currently available student roster from the backend."
         />
-        <Pill label={authMode === 'dev_switcher' ? 'Pilot data' : 'Student view'} />
+        <Pill label={authMode === 'user_switcher' ? 'Roster view' : 'Student view'} />
         {rankedUsers.map((entry, index) => {
           const active = entry.id === student?.id;
           return (
@@ -39,38 +40,3 @@ export default function LeaderboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#EFE5D4',
-  },
-  activeRow: {
-    backgroundColor: '#F7FBF5',
-    borderRadius: 18,
-    paddingHorizontal: 12,
-  },
-  rank: {
-    width: 28,
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#24583F',
-    textAlign: 'center',
-  },
-  body: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#24392F',
-  },
-  meta: {
-    marginTop: 2,
-    fontSize: 13,
-    color: '#6E6A62',
-  },
-});

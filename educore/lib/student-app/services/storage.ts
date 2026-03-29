@@ -1,11 +1,11 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
-import type { PersistedStudentAppState } from './types';
+import type { PersistedStudentAppState } from '@/types/student-app';
 
 const STORAGE_URI = `${FileSystem.documentDirectory ?? ''}student-app-state.json`;
 
 const emptyState: PersistedStudentAppState = {
-  authMode: 'dev_switcher',
+  authMode: 'user_switcher',
   student: null,
   profile: null,
   activeSession: null,
@@ -19,9 +19,11 @@ export const loadPersistedState = async (): Promise<PersistedStudentAppState> =>
 
   try {
     const raw = await FileSystem.readAsStringAsync(STORAGE_URI);
-    const parsed = JSON.parse(raw) as PersistedStudentAppState;
+    const parsed = JSON.parse(raw) as PersistedStudentAppState & {
+      authMode?: string;
+    };
     return {
-      authMode: parsed.authMode ?? 'dev_switcher',
+      authMode: parsed.authMode === 'student_code' ? 'student_code' : 'user_switcher',
       student: parsed.student ?? null,
       profile: parsed.profile ?? null,
       activeSession: parsed.activeSession ?? null,

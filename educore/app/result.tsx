@@ -1,5 +1,5 @@
 import { Redirect, useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import {
   AppScreen,
@@ -11,6 +11,7 @@ import {
 } from '@/components/student-app/ui';
 import { useStudentApp } from '@/lib/student-app/context';
 import { formatDateTime, getResultMessage } from '@/lib/student-app/utils';
+import { resultStyles as styles } from '@/styles/screens/result';
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -97,51 +98,3 @@ export default function ResultScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  pillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  metaText: {
-    fontSize: 14,
-    color: '#5F665E',
-  },
-  answerTitle: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#203229',
-  },
-  answerRow: {
-    borderTopWidth: 1,
-    borderTopColor: '#EFE5D4',
-    paddingTop: 14,
-    gap: 6,
-  },
-  answerQuestion: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#293B31',
-  },
-  answerMeta: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#5F665E',
-  },
-  answerState: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  answerCorrect: {
-    backgroundColor: '#E7F2EA',
-    color: '#24583F',
-  },
-  answerWrong: {
-    backgroundColor: '#F7E8E8',
-    color: '#A53838',
-  },
-});
