@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import {
   AppScreen,
@@ -16,6 +16,7 @@ import {
   getEntryStatusLabel,
   getSessionStateLabel,
 } from '@/lib/student-app/utils';
+import { homeStyles as styles } from '@/styles/screens/home';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function HomeScreen() {
           subtitle="Stay ready for your next exam, keep an eye on your XP, and resume active sessions quickly."
         />
         <View style={styles.pillRow}>
-          <Pill label={authMode === 'dev_switcher' ? 'Pilot mode' : 'Student login'} />
+          <Pill label={authMode === 'user_switcher' ? 'Student account' : 'Student code'} />
           {activeSession ? (
             <Pill
               label={getSessionStateLabel(activeSession.status)}
@@ -142,35 +143,3 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  pillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  sectionLabel: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#24392F',
-  },
-  bodyText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#4F584F',
-  },
-  metaText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: '#6E6A62',
-  },
-  resultValue: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#203229',
-  },
-  warningText: {
-    color: '#8B5A22',
-    fontSize: 13,
-    lineHeight: 20,
-  },
-});

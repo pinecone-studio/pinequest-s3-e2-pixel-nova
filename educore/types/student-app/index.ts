@@ -1,6 +1,6 @@
 export type AuthRole = 'teacher' | 'student';
 
-export type AuthMode = 'dev_switcher' | 'student_code';
+export type AuthMode = 'user_switcher' | 'student_code';
 
 export type AuthUser = {
   id: string;

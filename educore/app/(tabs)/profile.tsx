@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import {
   Image,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -20,8 +19,9 @@ import {
   uiStyles,
 } from '@/components/student-app/ui';
 import { useStudentApp } from '@/lib/student-app/context';
-import type { StudentProfile } from '@/lib/student-app/types';
+import type { StudentProfile } from '@/types/student-app';
 import { normalizeApiError } from '@/lib/student-app/utils';
+import { profileStyles as styles } from '@/styles/screens/profile';
 
 const emptyProfile: StudentProfile = {
   fullName: '',
@@ -46,14 +46,17 @@ export default function ProfileScreen() {
   const {
     authMode,
     availableUsers,
+    logout,
     profile,
     refreshProfile,
     saveProfile,
+    signInWithCode,
     signingIn,
     student,
     switchUser,
   } = useStudentApp();
   const [form, setForm] = useState<StudentProfile>(profile ?? emptyProfile);
+  const [codeInput, setCodeInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -86,6 +89,27 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleCodeLogin = async () => {
+    setMessage(null);
+    try {
+      await signInWithCode(codeInput);
+      setCodeInput('');
+      setSelectorOpen(false);
+    } catch (error) {
+      setMessage(normalizeApiError(error, 'Failed to sign in with student code.'));
+    }
+  };
+
+  const handleResetPilotMode = async () => {
+    setMessage(null);
+    try {
+      await logout();
+      setSelectorOpen(false);
+    } catch (error) {
+      setMessage(normalizeApiError(error, 'Failed to sign out.'));
+    }
+  };
+
   const displayName = form.fullName || student?.fullName || 'Student';
   const xp = profile?.xp ?? student?.xp ?? 0;
   const level = profile?.level ?? student?.level ?? 1;
@@ -114,7 +138,7 @@ export default function ProfileScreen() {
             <View style={styles.pillRow}>
               <Pill label={`Level ${level}`} tone="success" />
               <Pill label={`${xp} XP`} />
-              <Pill label={authMode === 'dev_switcher' ? 'Pilot mode' : 'Student login'} />
+              <Pill label={authMode === 'user_switcher' ? 'Student account' : 'Student code'} />
             </View>
           </View>
         </View>
@@ -132,6 +156,18 @@ export default function ProfileScreen() {
             <Text style={uiStyles.statValue}>{form.groupName || '--'}</Text>
           </View>
         </View>
+        <View style={uiStyles.statRow}>
+          <View style={uiStyles.statCard}>
+            <Text style={uiStyles.statLabel}>Auth mode</Text>
+            <Text style={uiStyles.statValue}>
+              {authMode === 'user_switcher' ? 'Student account' : 'Student code'}
+            </Text>
+          </View>
+          <View style={uiStyles.statCard}>
+            <Text style={uiStyles.statLabel}>Available users</Text>
+            <Text style={uiStyles.statValue}>{availableUsers.length}</Text>
+          </View>
+        </View>
         <SecondaryButton
           label="Refresh profile"
           onPress={() => {
@@ -142,7 +178,7 @@ export default function ProfileScreen() {
 
       <Card>
         <View style={styles.switchHeader}>
-          <Text style={styles.sectionTitle}>Student switcher</Text>
+          <Text style={styles.sectionTitle}>Student accounts</Text>
           <Pressable
             onPress={() => setSelectorOpen((open) => !open)}
             style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}>
@@ -150,10 +186,13 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
         <Text style={styles.helperText}>
-          This stays available for internal testing and pilot usage. Production student code login can replace it later without changing the screen flow.
+          This list comes from the backend. If no student accounts are available yet, sign in with a student code first.
         </Text>
         {selectorOpen ? (
           <View style={styles.selectorCard}>
+            {availableUsers.length === 0 ? (
+              <Text style={styles.helperText}>No backend student accounts found.</Text>
+            ) : null}
             {availableUsers.map((userOption) => {
               const selected = userOption.id === student?.id;
               return (
@@ -181,6 +220,35 @@ export default function ProfileScreen() {
             })}
           </View>
         ) : null}
+      </Card>
+
+      <Card>
+        <Text style={styles.sectionTitle}>Student code login</Text>
+        <Text style={styles.helperText}>
+          Use a backend student code to sign in directly. This is now the only built-in fallback path when no student is already selected on the device.
+        </Text>
+        <InputField
+          label="Student code"
+          autoCapitalize="characters"
+          value={codeInput}
+          onChangeText={setCodeInput}
+          placeholder="S-2001"
+        />
+        <PrimaryButton
+          label="Sign in with code"
+          loading={signingIn}
+          disabled={!codeInput.trim()}
+          onPress={() => {
+            void handleCodeLogin();
+          }}
+        />
+        <SecondaryButton
+          label="Sign out"
+          disabled={signingIn || !student}
+          onPress={() => {
+            void handleResetPilotMode();
+          }}
+        />
       </Card>
 
       <ErrorText message={message} />
@@ -244,103 +312,3 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screenContent: {
-    paddingBottom: 28,
-  },
-  hero: {
-    flexDirection: 'row',
-    gap: 16,
-    alignItems: 'center',
-  },
-  avatarWrap: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: '#DCEBE4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatarText: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#2D6A4F',
-  },
-  heroBody: {
-    flex: 1,
-    gap: 6,
-  },
-  profileName: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#203229',
-  },
-  profileMeta: {
-    fontSize: 14,
-    color: '#5F665E',
-  },
-  pillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#203229',
-  },
-  switchHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  helperText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: '#5F665E',
-  },
-  editButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EAF5FB',
-  },
-  selectorCard: {
-    gap: 10,
-  },
-  selectorOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#E7DDCB',
-    backgroundColor: '#FFF8EA',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  selectorOptionSelected: {
-    borderColor: '#9BD0E3',
-    backgroundColor: '#F2FBFF',
-  },
-  selectorOptionText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#203229',
-  },
-  selectorMeta: {
-    fontSize: 12,
-    color: '#6E6A62',
-  },
-  pressed: {
-    opacity: 0.86,
-  },
-});

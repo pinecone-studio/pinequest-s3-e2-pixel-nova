@@ -26,7 +26,7 @@ const mockUseStudentApp = useStudentApp as jest.MockedFunction<
 >;
 
 const baseContext = {
-  authMode: 'dev_switcher' as const,
+  authMode: 'user_switcher' as const,
   activeSession: null,
   answerQuestion: jest.fn(),
   availableUsers: [],
