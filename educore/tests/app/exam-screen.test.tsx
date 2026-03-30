@@ -165,24 +165,9 @@ describe("ExamScreen", () => {
     const startExam = jest.fn();
 
     mockUseStudentApp.mockReturnValue({
+      ...baseContext,
       activeSession: buildActiveSession("joined"),
-      answerQuestion: jest.fn(),
-      availableUsers: [],
-      clearResult: jest.fn(),
-      hydrated: true,
-      joinExam: jest.fn(),
-      logIntegrityEvent: jest.fn(),
-      logout: jest.fn(),
-      profile: null,
-      refreshProfile: jest.fn(),
-      saveProfile: jest.fn(),
-      setCurrentQuestionIndex: jest.fn(),
-      signingIn: false,
       startExam,
-      student: { id: "s1", fullName: "Student", role: "student" },
-      submittedResult: null,
-      submitCurrentExam: jest.fn(),
-      switchUser: jest.fn(),
     });
 
     const screen = render(<ExamScreen />);
@@ -199,24 +184,8 @@ describe("ExamScreen", () => {
 
   it("renders the camera proctor when the exam is in progress", () => {
     mockUseStudentApp.mockReturnValue({
+      ...baseContext,
       activeSession: buildActiveSession("in_progress"),
-      answerQuestion: jest.fn(),
-      availableUsers: [],
-      clearResult: jest.fn(),
-      hydrated: true,
-      joinExam: jest.fn(),
-      logIntegrityEvent: jest.fn(),
-      logout: jest.fn(),
-      profile: null,
-      refreshProfile: jest.fn(),
-      saveProfile: jest.fn(),
-      setCurrentQuestionIndex: jest.fn(),
-      signingIn: false,
-      startExam: jest.fn(),
-      student: { id: "s1", fullName: "Student", role: "student" },
-      submittedResult: null,
-      submitCurrentExam: jest.fn(),
-      switchUser: jest.fn(),
     });
 
     const screen = render(<ExamScreen />);
