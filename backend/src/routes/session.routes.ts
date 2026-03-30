@@ -11,6 +11,13 @@ import { newId } from "../utils/id";
 import { getLevel } from "../utils/level-calc";
 import { awardXpForGrading } from "../utils/xp-award";
 import { parseExamDate } from "../utils/exam-time";
+import {
+  enrichTeacherNotificationTargets,
+  notifyStudentLateEntry,
+  notifyStudentSubmissionSaved,
+  notifyTeacherStudentJoined,
+  notifyTeacherStudentSubmitted,
+} from "../services/notifications";
 
 const getEffectiveExamStart = (exam: { startedAt?: string | null; scheduledAt?: string | null }) =>
   parseExamDate(exam.startedAt) ?? parseExamDate(exam.scheduledAt);
@@ -93,6 +100,22 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
         .set({ status: "late" })
         .where(eq(examSessions.id, existing.id));
       existing.status = "late";
+
+      await notifyStudentLateEntry(
+        db,
+        user.id,
+        exam.id,
+        existing.id,
+        startTime
+          ? Math.max(
+              0,
+              Math.ceil(
+                (startTime.getTime() + exam.durationMin * 60 * 1000 - now.getTime()) /
+                  60000,
+              ),
+            )
+          : exam.durationMin,
+      );
     }
 
     return success(c, {
@@ -119,6 +142,37 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     studentId: user.id,
     status: isLateEntry ? "late" : "joined",
   });
+
+  const targets = await enrichTeacherNotificationTargets(db, exam.id, user.id);
+  if (targets.teacherId) {
+    await notifyTeacherStudentJoined(
+      db,
+      targets.teacherId,
+      exam.id,
+      sessionId,
+      user.id,
+      targets.studentName,
+      isLateEntry,
+    );
+  }
+
+  if (isLateEntry) {
+    await notifyStudentLateEntry(
+      db,
+      user.id,
+      exam.id,
+      sessionId,
+      startTime
+        ? Math.max(
+            0,
+            Math.ceil(
+              (startTime.getTime() + exam.durationMin * 60 * 1000 - now.getTime()) /
+                60000,
+            ),
+          )
+        : exam.durationMin,
+    );
+  }
 
   return success(c, {
     sessionId,
@@ -393,6 +447,8 @@ sessionRoutes.post("/:sessionId/answer", requireRole("student"), zValidator("jso
       })
       .where(eq(studentAnswers.id, existing.id));
 
+    await notifyStudentSubmissionSaved(db, user.id, exam.id, sessionId);
+
     return success(c, { answerId: existing.id, updated: true });
   }
 
@@ -406,6 +462,8 @@ sessionRoutes.post("/:sessionId/answer", requireRole("student"), zValidator("jso
     textAnswer: textAnswer ?? null,
     answeredAt: now,
   });
+
+  await notifyStudentSubmissionSaved(db, user.id, exam.id, sessionId);
 
   return success(c, { answerId, updated: false }, 201);
 });
@@ -569,6 +627,18 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
       reason: "exam_completed",
       referenceId: sessionId,
     });
+  }
+
+  const targets = await enrichTeacherNotificationTargets(db, exam.id, user.id);
+  if (targets.teacherId) {
+    await notifyTeacherStudentSubmitted(
+      db,
+      targets.teacherId,
+      exam.id,
+      sessionId,
+      user.id,
+      targets.studentName,
+    );
   }
 
   return success(c, {

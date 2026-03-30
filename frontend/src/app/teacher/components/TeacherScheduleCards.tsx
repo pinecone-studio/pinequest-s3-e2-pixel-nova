@@ -17,6 +17,27 @@ export function LegendDot({ category }: { category: ScheduleCategory }) {
   );
 }
 
+function getLifecycleBadge(lifecycle: ScheduleItem["lifecycle"]) {
+  if (lifecycle === "finished") {
+    return {
+      label: "Дууссан",
+      className: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    };
+  }
+
+  if (lifecycle === "active") {
+    return {
+      label: "Явагдаж буй",
+      className: "bg-amber-50 text-amber-700 border border-amber-200",
+    };
+  }
+
+  return {
+    label: "Товлосон",
+    className: "bg-blue-50 text-blue-700 border border-blue-200",
+  };
+}
+
 export function ScheduleCard({
   item,
   daysCount,
@@ -30,6 +51,7 @@ export function ScheduleCard({
     item.category === "required"
       ? { border: "border-t-2 border-t-blue-500", dot: "required" as const }
       : { border: "border-t-2 border-t-amber-400", dot: "elective" as const };
+  const lifecycleBadge = getLifecycleBadge(item.lifecycle);
 
   return (
     <button
@@ -46,7 +68,14 @@ export function ScheduleCard({
       <div className="flex h-full gap-2 text-foreground/85">
         <LegendDot category={tone.dot} />
         <div className="min-w-0">
-          <div className="line-clamp-2 text-sm font-semibold">{item.title}</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="line-clamp-2 text-sm font-semibold">{item.title}</div>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${lifecycleBadge.className}`}
+            >
+              {lifecycleBadge.label}
+            </span>
+          </div>
           {item.subtitle && (
             <div className="mt-1 line-clamp-1 text-[11px] text-slate-500">
               {item.subtitle}
@@ -75,6 +104,7 @@ export function ScheduleListCard({
     item.category === "required"
       ? "bg-[#f1efff] text-[#4b63f6]"
       : "bg-[#fff0e7] text-[#ff9a45]";
+  const lifecycleBadge = getLifecycleBadge(item.lifecycle);
 
   return (
     <div className="relative rounded-[28px] border border-[#efd7d7] bg-white px-7 py-8 text-left shadow-[0_18px_36px_-32px_rgba(15,23,42,0.22)] transition hover:-translate-y-1 hover:shadow-[0_24px_38px_-28px_rgba(15,23,42,0.24)]">
@@ -87,12 +117,21 @@ export function ScheduleListCard({
 
       <div className="relative">
         <div className="flex items-start justify-between gap-4">
-          <h3 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
-            {item.title}
-          </h3>
-          <span className={`rounded-full px-4 py-2 text-[12px] font-semibold ${tagTone}`}>
-            {item.category === "required" ? "Заавал судлах" : "Сонгон судлах"}
-          </span>
+          <div className="space-y-3">
+            <h3 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
+              {item.title}
+            </h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`rounded-full px-4 py-2 text-[12px] font-semibold ${tagTone}`}>
+                {item.category === "required" ? "Заавал судлах" : "Сонгон судлах"}
+              </span>
+              <span
+                className={`rounded-full px-4 py-2 text-[12px] font-semibold ${lifecycleBadge.className}`}
+              >
+                {lifecycleBadge.label}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 grid grid-cols-[auto_1fr] gap-x-8 gap-y-4 text-[16px]">

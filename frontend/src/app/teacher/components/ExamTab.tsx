@@ -91,7 +91,7 @@ type ExamTabProps = {
   onDocxUpload: (file: File) => void;
   exams: Exam[];
   notifications: NotificationItem[];
-  onMarkNotificationRead: (index: number) => void;
+  onMarkNotificationRead: (id: string) => void;
   cheatStudents: CheatStudent[];
   xpLeaderboard: XpLeaderboardEntry[];
 };

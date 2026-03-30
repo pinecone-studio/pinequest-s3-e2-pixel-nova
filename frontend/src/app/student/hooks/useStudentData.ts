@@ -1,20 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getSessionUser, type User } from "@/lib/examGuard";
 import { getStudentResults } from "@/lib/backend-auth";
-import type { Exam, NotificationItem } from "../types";
-
-const buildNotifications = (
-  results: Awaited<ReturnType<typeof getStudentResults>>,
-): NotificationItem[] =>
-  results.slice(0, 4).map((item, index) => ({
-    examId: item.examId,
-    message:
-      index === 0
-        ? `${item.title} шалгалтын дүн шинэчлэгдлээ.`
-        : `${item.title} шалгалтын тайланг дахин хараарай.`,
-    read: index > 1,
-    createdAt: item.submittedAt ?? new Date().toISOString(),
-  }));
+import type { Exam } from "../types";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export const useStudentData = (overrideUser?: User | null) => {
   const overrideUserId = overrideUser?.id ?? null;
@@ -27,7 +15,7 @@ export const useStudentData = (overrideUser?: User | null) => {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(true);
   const [exams, setExams] = useState<Exam[]>([]);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     const user =
@@ -48,7 +36,6 @@ export const useStudentData = (overrideUser?: User | null) => {
     const loadRemote = async () => {
       if (!user) {
         setExams([]);
-        setNotifications([]);
         setLoading(false);
         return;
       }
@@ -68,11 +55,9 @@ export const useStudentData = (overrideUser?: User | null) => {
         }));
 
         setExams(mappedExams);
-        setNotifications(buildNotifications(results));
       } catch {
         if (cancelled) return;
         setExams([]);
-        setNotifications([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -96,7 +81,6 @@ export const useStudentData = (overrideUser?: User | null) => {
       const user = getSessionUser();
       if (!user) {
         setExams([]);
-        setNotifications([]);
         return;
       }
 
@@ -112,10 +96,8 @@ export const useStudentData = (overrideUser?: User | null) => {
           createdAt: item.submittedAt ?? new Date().toISOString(),
         }));
         setExams(mappedExams);
-        setNotifications(buildNotifications(results));
       } catch {
         setExams([]);
-        setNotifications([]);
       }
     };
 
@@ -131,14 +113,28 @@ export const useStudentData = (overrideUser?: User | null) => {
     else root.classList.remove("dark");
   }, [theme]);
 
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const notificationsState = useNotifications({
+    role: "student",
+    userId: overrideUserId,
+    onToast: showToast,
+  });
+
   return {
     currentUser,
     theme,
     setTheme,
     loading,
+    toast,
     exams,
     setExams,
-    notifications,
-    setNotifications,
+    notifications: notificationsState.notifications,
+    unreadNotificationCount: notificationsState.unreadCount,
+    markNotificationRead: notificationsState.markNotificationRead,
+    markAllNotificationsRead: notificationsState.markAllNotificationsRead,
   };
 };

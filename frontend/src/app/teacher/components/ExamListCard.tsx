@@ -41,7 +41,7 @@ const getStatus = (exam: Exam) => {
     return { label: "Товлосон", tone: "bg-blue-100 text-blue-700" };
   }
   if (exam.finishedAt || exam.status === "finished") {
-    return { label: "Ашигласан", tone: "bg-emerald-100 text-emerald-700" };
+    return { label: "Дууссан", tone: "bg-emerald-100 text-emerald-700" };
   }
   if (exam.scheduledAt) {
     const scheduled = new Date(exam.scheduledAt).getTime();

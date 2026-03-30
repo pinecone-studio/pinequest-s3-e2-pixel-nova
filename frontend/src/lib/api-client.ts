@@ -14,17 +14,22 @@ const getApiBaseUrl = () => {
 export const API_BASE_URL = getApiBaseUrl();
 
 const readErrorMessage = async (res: Response) => {
+  const text = await res.text();
+  if (!text) {
+    return `Request failed: ${res.status}`;
+  }
+
   try {
-    const payload = (await res.json()) as
+    const payload = JSON.parse(text) as
       | { error?: { message?: string }; message?: string }
       | undefined;
     return (
       payload?.error?.message ||
       payload?.message ||
+      text ||
       `Request failed: ${res.status}`
     );
   } catch {
-    const text = await res.text();
     return text || `Request failed: ${res.status}`;
   }
 };

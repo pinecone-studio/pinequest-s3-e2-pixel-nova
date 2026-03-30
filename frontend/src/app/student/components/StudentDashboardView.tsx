@@ -10,7 +10,7 @@ import StudentLeaderboardTab from "./StudentLeaderboardTab";
 import StudentPreferencesTab from "./StudentPreferencesTab";
 import StudentProgressTab from "./StudentProgressTab";
 import StudentSettingsTab from "./StudentSettingsTab";
-import type { Exam, Grade, StudentTab } from "../types";
+import type { Exam, Grade, NotificationItem, StudentTab } from "../types";
 
 type StudentHistoryItem = {
   examId: string;
@@ -46,7 +46,10 @@ type StudentExamState = {
 
 type StudentDataState = {
   loading: boolean;
-  notifications: { examId: string; message: string; createdAt: string; read?: boolean }[];
+  notifications: NotificationItem[];
+  unreadNotificationCount: number;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
   setTheme: Dispatch<SetStateAction<"light" | "dark">>;
   currentUser: { id: string; username: string } | null;
   exams: Exam[];
@@ -119,10 +122,10 @@ export default function StudentDashboardView({
           activeTab={exam.activeTab}
           currentUserName={currentUserName}
           currentUserInitials={getInitials(currentUserName)}
-          notifications={data.notifications.map((item) => ({
-            ...item,
-            read: item.read ?? false,
-          }))}
+          notifications={data.notifications}
+          unreadCount={data.unreadNotificationCount}
+          onMarkNotificationRead={data.markNotificationRead}
+          onMarkAllNotificationsRead={data.markAllNotificationsRead}
           xp={currentXp}
           onTabChange={exam.setActiveTab}
           onOpenProfile={() => exam.setActiveTab("Profile")}

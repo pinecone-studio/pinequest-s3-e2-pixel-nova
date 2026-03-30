@@ -8,6 +8,8 @@ export type Question = {
   imageUrl?: string;
 };
 
+import type { NotificationItem as AppNotificationItem } from "@/lib/notifications";
+
 export type Grade = "A" | "B" | "C" | "D" | "F";
 
 export type StudentTab =
@@ -82,12 +84,7 @@ export type StudentProgress = {
   };
 };
 
-export type NotificationItem = {
-  examId: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-};
+export type NotificationItem = AppNotificationItem;
 
 export type ExamSession = {
   examId: string;
