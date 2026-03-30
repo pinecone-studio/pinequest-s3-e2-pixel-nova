@@ -67,29 +67,32 @@ export default function QuestionFormSection({
     reader.readAsDataURL(file);
   };
   return (
-    <div className="rounded-[28px] border border-[#e7edf5] bg-white px-6 py-5 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.14)]">
-      <div className="mb-2 flex justify-center text-slate-300">
+    <div className="rounded-[30px] border border-[#e7edf5] bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] px-6 py-5 shadow-[0_20px_44px_-34px_rgba(15,23,42,0.16)]">
+      <div className="mb-3 flex justify-center text-slate-300">
         <Grip className="h-4 w-4" />
       </div>
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-center gap-3">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-[#edf4ff] text-xs font-semibold text-[#2563eb]">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#edf4ff] text-sm font-semibold text-[#2563eb] shadow-[inset_0_0_0_1px_rgba(37,99,235,0.08)]">
             1
           </span>
           <div>
-            <div className="text-sm font-semibold text-slate-800">
+            <div className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
               Асуултаа оруулна уу.
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="mt-1 text-sm text-slate-500">
               PDF-ээс уншсан асуултыг эндээс нэмж засварлаж болно.
             </div>
           </div>
         </div>
 
-        <div className="w-full max-w-[220px]">
+        <div className="w-full max-w-[260px]">
+          <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+            Асуултын төрөл
+          </span>
           <select
-            className={`${selectClass} h-[46px] rounded-[18px] border-[#d8e0ea] bg-[#eef2f6] text-sm shadow-none`}
+            className={`${selectClass} h-[52px] rounded-[18px] border-[#d8e0ea] bg-white text-sm font-semibold shadow-[0_10px_24px_-22px_rgba(15,23,42,0.28)]`}
             value={questionType}
             onChange={(event) =>
               setQuestionType(event.target.value as "text" | "open" | "mcq")
@@ -104,8 +107,11 @@ export default function QuestionFormSection({
 
       <div className="mt-4 grid gap-4">
         <label className="grid gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+            Асуултын агуулга
+          </span>
           <textarea
-            className="min-h-[86px] w-full resize-y border-b border-[#e8edf5] bg-transparent px-0 py-2 text-[15px] text-slate-800 outline-none placeholder:text-slate-300"
+            className="min-h-[140px] w-full resize-y rounded-[24px] border border-[#dde6f0] bg-white px-5 py-4 text-[17px] leading-7 text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-[#2563eb] focus:shadow-[0_0_0_4px_rgba(37,99,235,0.08)]"
             placeholder="Асуултаа оруулна уу"
             value={questionText ?? ""}
             onChange={(event) => setQuestionText(event.target.value)}
@@ -118,9 +124,9 @@ export default function QuestionFormSection({
               {optionLabels.map((label, index) => (
                 <div
                   key={label}
-                  className="flex items-center gap-2 rounded-[18px] border border-[#e9eef5] bg-[#fbfcff] px-3 py-3"
+                  className="flex items-center gap-3 rounded-[20px] border border-[#e9eef5] bg-[#fbfcff] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
                 >
-                  <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-semibold text-slate-500 shadow-[inset_0_0_0_1px_rgba(148,163,184,0.16)]">
+                  <span className="grid h-9 w-9 place-items-center rounded-2xl bg-white text-xs font-semibold text-slate-500 shadow-[inset_0_0_0_1px_rgba(148,163,184,0.16)]">
                     {label}
                   </span>
                   <input
@@ -138,10 +144,12 @@ export default function QuestionFormSection({
             </div>
           ) : (
             <label className="grid gap-2">
-              <span className="text-xs font-medium text-slate-300">Хариулт</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Зөв хариулт
+              </span>
               <input
-                className="h-12 w-full border-b border-[#e6edf5] bg-transparent px-0 text-sm text-slate-700 outline-none placeholder:text-slate-300"
-                placeholder="Хариулт"
+                className="h-14 w-full rounded-[20px] border border-[#dfe8f2] bg-white px-4 text-[15px] text-slate-700 outline-none transition placeholder:text-slate-300 focus:border-[#2563eb] focus:shadow-[0_0_0_4px_rgba(37,99,235,0.08)]"
+                placeholder="Зөв хариултаа бичнэ үү"
                 value={questionAnswer ?? ""}
                 onChange={(event) => setQuestionAnswer(event.target.value)}
               />
@@ -170,7 +178,9 @@ export default function QuestionFormSection({
                   className="relative"
                   tabIndex={0}
                   onBlur={(event) => {
-                    if (event.currentTarget.contains(event.relatedTarget as Node)) {
+                    if (
+                      event.currentTarget.contains(event.relatedTarget as Node)
+                    ) {
                       return;
                     }
                     setCorrectOpen(false);
@@ -230,7 +240,7 @@ export default function QuestionFormSection({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eef2f7] pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[#edf2f8] bg-[#f8fbff] px-4 py-4">
           <div className="flex flex-wrap items-center gap-3">
             <input
               ref={imageInputRef}
@@ -259,7 +269,7 @@ export default function QuestionFormSection({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-3 text-sm text-slate-500">
+            <div className="flex items-center gap-3 rounded-full border border-[#dce5ef] bg-white px-3 py-2 text-sm text-slate-500 shadow-sm">
               <span>Заавал хариулах</span>
               <button
                 type="button"
@@ -278,7 +288,11 @@ export default function QuestionFormSection({
               type="button"
               disabled={saving || !hasUser}
             >
-              {!hasUser ? "Багш сонгоогдоогүй" : saving ? "Хадгалж байна..." : "Хадгалах"}
+              {!hasUser
+                ? "Багш сонгоогдоогүй"
+                : saving
+                  ? "Хадгалж байна..."
+                  : "Хадгалах"}
             </button>
           </div>
         </div>

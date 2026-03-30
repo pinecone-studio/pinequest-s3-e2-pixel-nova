@@ -42,6 +42,15 @@ type ExamCreateCardProps = {
   setPdfUseOcr: (value: boolean) => void;
   answerKeyPage: number | "last";
   setAnswerKeyPage: (value: number | "last") => void;
+  importMcqCount: number;
+  setImportMcqCount: (value: number) => void;
+  importTextCount: number;
+  setImportTextCount: (value: number) => void;
+  importOpenCount: number;
+  setImportOpenCount: (value: number) => void;
+  shuffleImportedQuestions: boolean;
+  setShuffleImportedQuestions: (value: boolean) => void;
+  plannedQuestionCount: number;
   pdfLoading: boolean;
   pdfError: string | null;
   importError: string | null;
@@ -83,6 +92,15 @@ export default function ExamCreateCard({
   setPdfUseOcr,
   answerKeyPage,
   setAnswerKeyPage,
+  importMcqCount,
+  setImportMcqCount,
+  importTextCount,
+  setImportTextCount,
+  importOpenCount,
+  setImportOpenCount,
+  shuffleImportedQuestions,
+  setShuffleImportedQuestions,
+  plannedQuestionCount,
   pdfLoading,
   pdfError,
   importError,
@@ -118,14 +136,18 @@ export default function ExamCreateCard({
 
   return (
     <div className={`${cardClass} rounded-[34px] border-[#e3eaf2] bg-white/92 p-6 backdrop-blur`}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-3xl">
-          <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-900">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(430px,520px)] lg:items-start">
+        <div className="rounded-[30px] border border-[#e8eef7] bg-[linear-gradient(135deg,#ffffff_0%,#f7fbff_100%)] p-6 shadow-[0_20px_40px_-36px_rgba(15,23,42,0.18)]">
+          <span className="inline-flex rounded-full border border-[#dbe7fb] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#2563eb]">
+            Exam Builder
+          </span>
+          <h2 className="mt-4 text-[36px] font-semibold tracking-[-0.04em] text-slate-900">
             Шалгалт үүсгэх
           </h2>
-          <p className="mt-2 text-[15px] leading-7 text-slate-500">
+          <p className="mt-3 max-w-2xl text-[15px] leading-7 text-slate-500">
             Та бэлдсэн материалаа зураг, PDF, DOCX хэлбэрээр оруулж хялбараар
-            шалгалт үүсгээрэй.
+            шалгалт үүсгээрэй. Импортын тохиргоогоор яг хэдэн төрлийн асуулт
+            авахыг урьдчилж нарийн зааж болно.
           </p>
         </div>
 
@@ -134,6 +156,15 @@ export default function ExamCreateCard({
           setPdfUseOcr={setPdfUseOcr}
           answerKeyPage={answerKeyPage}
           setAnswerKeyPage={setAnswerKeyPage}
+          importMcqCount={importMcqCount}
+          setImportMcqCount={setImportMcqCount}
+          importTextCount={importTextCount}
+          setImportTextCount={setImportTextCount}
+          importOpenCount={importOpenCount}
+          setImportOpenCount={setImportOpenCount}
+          shuffleImportedQuestions={shuffleImportedQuestions}
+          setShuffleImportedQuestions={setShuffleImportedQuestions}
+          plannedQuestionCount={plannedQuestionCount}
           pdfLoading={pdfLoading}
           pdfError={pdfError}
           importError={importError}

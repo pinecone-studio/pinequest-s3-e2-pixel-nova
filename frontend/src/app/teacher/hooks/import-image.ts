@@ -4,6 +4,7 @@ import { downscaleImage, readFileAsDataUrl } from "./import-utils";
 
 type ImageImportResult = {
   dataUrl: string;
+  rawText: string;
   questions: Question[];
   usedFallback: boolean;
 };
@@ -36,8 +37,8 @@ export const parseImageQuestions = async (
   const limited = forcedMcq.slice(0, questionLimit);
 
   if (limited.length === 0) {
-    return { dataUrl, questions: [], usedFallback: false };
+    return { dataUrl, rawText, questions: [], usedFallback: false };
   }
 
-  return { dataUrl, questions: limited, usedFallback: false };
+  return { dataUrl, rawText, questions: limited, usedFallback: false };
 };

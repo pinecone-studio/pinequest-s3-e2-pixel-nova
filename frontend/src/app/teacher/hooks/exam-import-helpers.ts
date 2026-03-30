@@ -4,7 +4,7 @@ import type { Question } from "../types";
 import { isQuestionTextSuspicious } from "../utils";
 
 export type BackendPdfQuestion = {
-  type: "multiple_choice" | "true_false" | "short_answer";
+  type: "multiple_choice" | "true_false" | "short_answer" | "open_ended";
   questionText: string;
   options?: Array<{
     label: string;
@@ -13,6 +13,8 @@ export type BackendPdfQuestion = {
   }>;
   correctAnswerText?: string | null;
   needsReview?: boolean;
+  evidence?: string;
+  explanation?: string;
 };
 
 export type UploadedPdfPayload = {
@@ -174,8 +176,10 @@ export const mapBackendPdfQuestions = (
         id: fallback?.id ?? crypto.randomUUID(),
         text: resolvedText || `Асуулт ${index + 1}`,
         type:
-          question.type === "short_answer"
+          question.type === "open_ended"
             ? "open"
+            : question.type === "short_answer"
+              ? "text"
             : finalOptions && finalOptions.length >= 2
               ? "mcq"
               : "open",

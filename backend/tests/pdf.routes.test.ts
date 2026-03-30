@@ -40,21 +40,25 @@ const mockR2 = {
 const mockAi = {
   run: jest.fn(() =>
     Promise.resolve({
-      response: JSON.stringify([
-        {
-          type: "multiple_choice",
-          questionText: "What is 2+2?",
-          options: [
-            { label: "A", text: "3", isCorrect: false },
-            { label: "B", text: "4", isCorrect: true },
-            { label: "C", text: "5", isCorrect: false },
-            { label: "D", text: "6", isCorrect: false },
-          ],
-          difficulty: "easy",
-          correctAnswerText: null,
-          needsReview: false,
-        },
-      ]),
+      response: JSON.stringify({
+        questions: [
+          {
+            type: "multiple_choice",
+            questionText: "What is 2+2?",
+            options: [
+              { label: "A", text: "3", isCorrect: false },
+              { label: "B", text: "4", isCorrect: true },
+              { label: "C", text: "5", isCorrect: false },
+              { label: "D", text: "6", isCorrect: false },
+            ],
+            difficulty: "easy",
+            correctAnswerText: null,
+            evidence: "Correct: B",
+            explanation: "The material marks B as correct.",
+            needsReview: false,
+          },
+        ],
+      }),
     }),
   ),
 };
@@ -105,6 +109,26 @@ describe("pdf routes", () => {
     expect(json.data.questions).toHaveLength(1);
     expect(json.data.questions[0].type).toBe("multiple_choice");
     expect(json.data.metadata.questionsFound).toBe(1);
+  });
+
+  it("POST /api/pdf/generate returns verified generated questions", async () => {
+    const res = await app.request(
+      "http://localhost/api/pdf/generate",
+      jsonRequest(
+        {
+          material: "Plants make food through photosynthesis.",
+          counts: { mcq: 1, text: 0, open: 0 },
+        },
+        teacherHeaders(),
+      ),
+      pdfEnv,
+    );
+
+    expect(res.status).toBe(200);
+    const json: any = await res.json();
+    expect(json.data.questions).toHaveLength(1);
+    expect(json.data.metadata.generatedCount).toBe(1);
+    expect(json.data.questions[0].evidence).toBe("Correct: B");
   });
 
   it("POST /api/pdf/extract returns 404 for missing file", async () => {

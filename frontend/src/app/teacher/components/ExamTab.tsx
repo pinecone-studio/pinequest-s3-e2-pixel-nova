@@ -71,6 +71,15 @@ type ExamTabProps = {
   setPdfUseOcr: (value: boolean) => void;
   answerKeyPage: number | "last";
   setAnswerKeyPage: (value: number | "last") => void;
+  importMcqCount: number;
+  setImportMcqCount: (value: number) => void;
+  importTextCount: number;
+  setImportTextCount: (value: number) => void;
+  importOpenCount: number;
+  setImportOpenCount: (value: number) => void;
+  shuffleImportedQuestions: boolean;
+  setShuffleImportedQuestions: (value: boolean) => void;
+  plannedQuestionCount: number;
   pdfLoading: boolean;
   pdfError: string | null;
   importError: string | null;
@@ -161,6 +170,15 @@ export default function ExamTab(props: ExamTabProps) {
           setPdfUseOcr={props.setPdfUseOcr}
           answerKeyPage={props.answerKeyPage}
           setAnswerKeyPage={props.setAnswerKeyPage}
+          importMcqCount={props.importMcqCount}
+          setImportMcqCount={props.setImportMcqCount}
+          importTextCount={props.importTextCount}
+          setImportTextCount={props.setImportTextCount}
+          importOpenCount={props.importOpenCount}
+          setImportOpenCount={props.setImportOpenCount}
+          shuffleImportedQuestions={props.shuffleImportedQuestions}
+          setShuffleImportedQuestions={props.setShuffleImportedQuestions}
+          plannedQuestionCount={props.plannedQuestionCount}
           pdfLoading={props.pdfLoading}
           pdfError={props.pdfError}
           importError={props.importError}
