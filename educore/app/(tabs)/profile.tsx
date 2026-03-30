@@ -1,37 +1,29 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
 import {
   Image,
   Pressable,
+  ScrollView,
   Text,
+  TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
-import {
-  AppScreen,
-  Card,
-  ErrorText,
-  InputField,
-  Pill,
-  PrimaryButton,
-  SecondaryButton,
-  SectionTitle,
-  uiStyles,
-} from '@/components/student-app/ui';
-import { useStudentApp } from '@/lib/student-app/context';
-import type { StudentProfile } from '@/types/student-app';
-import { normalizeApiError } from '@/lib/student-app/utils';
-import { profileStyles as styles } from '@/styles/screens/profile';
+import { InputField } from "@/components/student-app/ui";
+import { useStudentApp } from "@/lib/student-app/context";
+import type { StudentProfile } from "@/types/student-app";
+import { normalizeApiError } from "@/lib/student-app/utils";
+import { profileStyles as styles, achStyles } from "@/styles/screens/profile";
 
 const emptyProfile: StudentProfile = {
-  fullName: '',
-  email: '',
-  avatarUrl: '',
-  phone: '',
-  school: '',
-  grade: '',
-  groupName: '',
-  bio: '',
+  fullName: "",
+  email: "",
+  avatarUrl: "",
+  phone: "",
+  school: "",
+  grade: "",
+  groupName: "",
+  bio: "",
 };
 
 const getInitials = (value: string) =>
@@ -39,13 +31,37 @@ const getInitials = (value: string) =>
     .trim()
     .split(/\s+/)
     .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('') || 'ST';
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("") || "ST";
+
+function AchievementCard({
+  icon,
+  label,
+  desc,
+  bg,
+}: {
+  icon: string;
+  label: string;
+  desc: string;
+  color: string;
+  bg: string;
+}) {
+  return (
+    <View style={[achStyles.card, { flex: 1 }]}>
+      <View style={[achStyles.iconWrap, { backgroundColor: bg }]}>
+        <Text style={achStyles.iconText}>{icon}</Text>
+      </View>
+      <Text style={achStyles.label}>{label}</Text>
+      <Text style={achStyles.desc}>{desc}</Text>
+    </View>
+  );
+}
 
 export default function ProfileScreen() {
   const {
     authMode,
     availableUsers,
+    history,
     logout,
     profile,
     refreshProfile,
@@ -55,11 +71,14 @@ export default function ProfileScreen() {
     student,
     switchUser,
   } = useStudentApp();
+
   const [form, setForm] = useState<StudentProfile>(profile ?? emptyProfile);
-  const [codeInput, setCodeInput] = useState('');
+  const [codeInput, setCodeInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [codeLoginOpen, setCodeLoginOpen] = useState(false);
 
   useEffect(() => {
     setForm(profile ?? emptyProfile);
@@ -68,12 +87,12 @@ export default function ProfileScreen() {
   const handleSave = async () => {
     setSaving(true);
     setMessage(null);
-
     try {
       await saveProfile(form);
-      setMessage('Profile updated.');
+      setMessage("Профайл хадгалагдлаа.");
+      setEditorOpen(false);
     } catch (error) {
-      setMessage(normalizeApiError(error, 'Failed to save profile.'));
+      setMessage(normalizeApiError(error, "Failed to save profile."));
     } finally {
       setSaving(false);
     }
@@ -85,7 +104,7 @@ export default function ProfileScreen() {
       await switchUser(userId);
       setSelectorOpen(false);
     } catch (error) {
-      setMessage(normalizeApiError(error, 'Failed to switch user.'));
+      setMessage(normalizeApiError(error, "Failed to switch user."));
     }
   };
 
@@ -93,10 +112,12 @@ export default function ProfileScreen() {
     setMessage(null);
     try {
       await signInWithCode(codeInput);
-      setCodeInput('');
-      setSelectorOpen(false);
+      setCodeInput("");
+      setCodeLoginOpen(false);
     } catch (error) {
-      setMessage(normalizeApiError(error, 'Failed to sign in with student code.'));
+      setMessage(
+        normalizeApiError(error, "Failed to sign in with student code."),
+      );
     }
   };
 
@@ -106,209 +127,310 @@ export default function ProfileScreen() {
       await logout();
       setSelectorOpen(false);
     } catch (error) {
-      setMessage(normalizeApiError(error, 'Failed to sign out.'));
+      setMessage(normalizeApiError(error, "Failed to sign out."));
     }
   };
 
-  const displayName = form.fullName || student?.fullName || 'Student';
+  const displayName = form.fullName || student?.fullName || "Оюутан";
   const xp = profile?.xp ?? student?.xp ?? 0;
   const level = profile?.level ?? student?.level ?? 1;
   const initials = getInitials(displayName);
+  const totalExams = history?.length ?? 0;
+
+  const shortName = (() => {
+    const parts = displayName.trim().split(/\s+/);
+    if (parts.length >= 2) return `${parts[0][0]}. ${parts.slice(1).join(" ")}`;
+    return displayName;
+  })();
 
   return (
-    <AppScreen scroll contentContainerStyle={styles.screenContent}>
-      <Card>
-        <SectionTitle
-          title="Profile"
-          subtitle="Manage your student details and keep your classroom information up to date."
-        />
-        <View style={styles.hero}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.pageTitle}>Профайл</Text>
+        <TouchableOpacity
+          style={styles.settingsBtn}
+          onPress={() => setEditorOpen(!editorOpen)}
+        >
+          <Ionicons name="settings-outline" size={22} color="#555" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Profile card */}
+      <View style={styles.card}>
+        <View style={styles.profileRow}>
           <View style={styles.avatarWrap}>
             {form.avatarUrl ? (
-              <Image source={{ uri: form.avatarUrl }} style={styles.avatarImage} />
+              <Image
+                source={{ uri: form.avatarUrl }}
+                style={styles.avatarImage}
+              />
             ) : (
-              <Text style={styles.avatarText}>{initials}</Text>
+              <Text style={styles.avatarInitials}>{initials}</Text>
             )}
-          </View>
-          <View style={styles.heroBody}>
-            <Text style={styles.profileName}>{displayName}</Text>
-            <Text style={styles.profileMeta}>
-              {form.grade || 'Student'} · {form.school || 'School not set'}
-            </Text>
-            <View style={styles.pillRow}>
-              <Pill label={`Level ${level}`} tone="success" />
-              <Pill label={`${xp} XP`} />
-              <Pill label={authMode === 'user_switcher' ? 'Student account' : 'Student code'} />
+            <View style={styles.avatarBadge}>
+              <Text style={styles.avatarBadgeText}>⭐</Text>
             </View>
           </View>
-        </View>
-      </Card>
-
-      <Card>
-        <Text style={styles.sectionTitle}>Account status</Text>
-        <View style={uiStyles.statRow}>
-          <View style={uiStyles.statCard}>
-            <Text style={uiStyles.statLabel}>Student code</Text>
-            <Text style={uiStyles.statValue}>{profile?.code ?? student?.code ?? '--'}</Text>
-          </View>
-          <View style={uiStyles.statCard}>
-            <Text style={uiStyles.statLabel}>Group</Text>
-            <Text style={uiStyles.statValue}>{form.groupName || '--'}</Text>
-          </View>
-        </View>
-        <View style={uiStyles.statRow}>
-          <View style={uiStyles.statCard}>
-            <Text style={uiStyles.statLabel}>Auth mode</Text>
-            <Text style={uiStyles.statValue}>
-              {authMode === 'user_switcher' ? 'Student account' : 'Student code'}
+          <View style={{ flex: 1 }}>
+            <View style={styles.nameRow}>
+              <Text style={styles.profileName}>{shortName}</Text>
+              <View style={styles.levelBadge}>
+                <Ionicons name="shield-outline" size={12} color="#6C5CE7" />
+                <Text style={styles.levelText}>Lv{level}</Text>
+              </View>
+            </View>
+            <Text style={styles.profileEmail}>
+              {form.email || student?.email || "zoloo@school.edu.mn"}
             </Text>
           </View>
-          <View style={uiStyles.statCard}>
-            <Text style={uiStyles.statLabel}>Available users</Text>
-            <Text style={uiStyles.statValue}>{availableUsers.length}</Text>
-          </View>
         </View>
-        <SecondaryButton
-          label="Refresh profile"
-          onPress={() => {
-            void refreshProfile();
-          }}
-        />
-      </Card>
+      </View>
 
-      <Card>
-        <View style={styles.switchHeader}>
-          <Text style={styles.sectionTitle}>Student accounts</Text>
-          <Pressable
-            onPress={() => setSelectorOpen((open) => !open)}
-            style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}>
-            <Ionicons name="swap-horizontal-outline" size={18} color="#0D87B8" />
-          </Pressable>
-        </View>
-        <Text style={styles.helperText}>
-          This list comes from the backend. If no student accounts are available yet, sign in with a student code first.
-        </Text>
-        {selectorOpen ? (
-          <View style={styles.selectorCard}>
-            {availableUsers.length === 0 ? (
-              <Text style={styles.helperText}>No backend student accounts found.</Text>
-            ) : null}
-            {availableUsers.map((userOption) => {
-              const selected = userOption.id === student?.id;
-              return (
-                <Pressable
-                  key={userOption.id}
-                  onPress={() => {
-                    void handleUserSwitch(userOption.id);
-                  }}
-                  style={({ pressed }) => [
-                    styles.selectorOption,
-                    selected && styles.selectorOptionSelected,
-                    pressed && styles.pressed,
-                  ]}>
-                  <View>
-                    <Text style={styles.selectorOptionText}>{userOption.fullName}</Text>
-                    <Text style={styles.selectorMeta}>
-                      {userOption.code ?? userOption.id}
-                    </Text>
-                  </View>
-                  {selected ? (
-                    <Ionicons name="checkmark-circle" size={20} color="#10A2D8" />
-                  ) : null}
-                </Pressable>
-              );
-            })}
+      {/* XP + Exams stats */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <View style={styles.statIconWrap}>
+            <Text style={styles.statIcon}>⚡</Text>
           </View>
-        ) : null}
-      </Card>
+          <Text style={styles.statBigValue}>{xp.toLocaleString()}</Text>
+          <Text style={styles.statLabel}>Нийт XP</Text>
+        </View>
+        <View style={styles.statCard}>
+          <View style={[styles.statIconWrap, { backgroundColor: "#EEF2FF" }]}>
+            <Text style={styles.statIcon}>📖</Text>
+          </View>
+          <Text style={styles.statBigValue}>{totalExams}</Text>
+          <Text style={styles.statLabel}>Өгсөн шалгалт</Text>
+        </View>
+      </View>
 
-      <Card>
-        <Text style={styles.sectionTitle}>Student code login</Text>
-        <Text style={styles.helperText}>
-          Use a backend student code to sign in directly. This is now the only built-in fallback path when no student is already selected on the device.
-        </Text>
-        <InputField
-          label="Student code"
-          autoCapitalize="characters"
-          value={codeInput}
-          onChangeText={setCodeInput}
-          placeholder="S-2001"
+      {/* Амжилтууд */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Амжилтууд</Text>
+        <Text style={styles.sectionMeta}>2 нээгдсэн</Text>
+      </View>
+      <View style={styles.achRow}>
+        <AchievementCard
+          icon="🏆"
+          label="Том тархи"
+          desc="100% оноо шалгалтан дээр авах"
+          color="#F5A623"
+          bg="#FEF3C7"
         />
-        <PrimaryButton
-          label="Sign in with code"
-          loading={signingIn}
-          disabled={!codeInput.trim()}
-          onPress={() => {
-            void handleCodeLogin();
-          }}
+        <AchievementCard
+          icon="⚡"
+          label="Түргэн бодогч"
+          desc="20мин дотор шалгалтаа дуусгах"
+          color="#fff"
+          bg="#06B6D4"
         />
-        <SecondaryButton
-          label="Sign out"
-          disabled={signingIn || !student}
-          onPress={() => {
-            void handleResetPilotMode();
-          }}
-        />
-      </Card>
+      </View>
 
-      <ErrorText message={message} />
+      {/* Menu */}
+      <View style={styles.menuCard}>
+        {/* Статистик */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => void refreshProfile()}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: "#EEF2FF" }]}>
+            <Ionicons name="bar-chart-outline" size={20} color="#5B67F8" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuLabel}>Миний статистик</Text>
+            <Text style={styles.menuSub}>Шалгалтуудын дэлгэрэнгүйг харах</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#CCC" />
+        </TouchableOpacity>
 
-      <Card>
-        <Text style={styles.sectionTitle}>Profile editor</Text>
-        <InputField
-          label="Full name"
-          value={form.fullName}
-          onChangeText={(value) => setForm((prev) => ({ ...prev, fullName: value }))}
-        />
-        <InputField
-          label="Avatar URL"
-          autoCapitalize="none"
-          value={form.avatarUrl ?? ''}
-          onChangeText={(value) => setForm((prev) => ({ ...prev, avatarUrl: value }))}
-        />
-        <InputField
-          label="Email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={form.email ?? ''}
-          onChangeText={(value) => setForm((prev) => ({ ...prev, email: value }))}
-        />
-        <InputField
-          label="Phone"
-          keyboardType="phone-pad"
-          value={form.phone ?? ''}
-          onChangeText={(value) => setForm((prev) => ({ ...prev, phone: value }))}
-        />
-        <InputField
-          label="School"
-          value={form.school ?? ''}
-          onChangeText={(value) => setForm((prev) => ({ ...prev, school: value }))}
-        />
-        <InputField
-          label="Grade"
-          value={form.grade ?? ''}
-          onChangeText={(value) => setForm((prev) => ({ ...prev, grade: value }))}
-        />
-        <InputField
-          label="Group"
-          value={form.groupName ?? ''}
-          onChangeText={(value) => setForm((prev) => ({ ...prev, groupName: value }))}
-        />
-        <InputField
-          label="Bio"
-          multiline
-          value={form.bio ?? ''}
-          onChangeText={(value) => setForm((prev) => ({ ...prev, bio: value }))}
-        />
-        <PrimaryButton
-          label="Save profile"
-          loading={saving || signingIn}
-          onPress={() => {
-            void handleSave();
-          }}
-        />
-      </Card>
-    </AppScreen>
+        <View style={styles.menuDivider} />
+
+        {/* Student accounts — Doc 14-ийн switcher */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => setSelectorOpen(!selectorOpen)}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: "#FEF3C7" }]}>
+            <Ionicons
+              name="swap-horizontal-outline"
+              size={20}
+              color="#F59E0B"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuLabel}>Student accounts</Text>
+            <Text style={styles.menuSub}>
+              {authMode === "user_switcher"
+                ? "Student account"
+                : "Student code"}{" "}
+              · {availableUsers.length} хэрэглэгч
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#CCC" />
+        </TouchableOpacity>
+
+        <View style={styles.menuDivider} />
+
+        {/* Student code login */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => setCodeLoginOpen(!codeLoginOpen)}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: "#DCFCE7" }]}>
+            <Ionicons name="key-outline" size={20} color="#16A34A" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuLabel}>Student code login</Text>
+            <Text style={styles.menuSub}>Кодоор нэвтрэх</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#CCC" />
+        </TouchableOpacity>
+
+        <View style={styles.menuDivider} />
+
+        {/* Гарах */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => void handleResetPilotMode()}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: "#FEE2E2" }]}>
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.menuLabel, { color: "#EF4444" }]}>Гарах</Text>
+            <Text style={styles.menuSub}>Дараа дахин уулзья</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Student accounts dropdown */}
+      {selectorOpen && (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Хэрэглэгч сонгох</Text>
+          {availableUsers.length === 0 ? (
+            <Text style={styles.menuSub}>Бэлэн хэрэглэгч байхгүй байна.</Text>
+          ) : null}
+          {availableUsers.map((u) => {
+            const selected = u.id === student?.id;
+            return (
+              <Pressable
+                key={u.id}
+                onPress={() => void handleUserSwitch(u.id)}
+                style={[
+                  styles.selectorOption,
+                  selected && styles.selectorOptionSelected,
+                ]}
+              >
+                <View>
+                  <Text style={styles.selectorName}>{u.fullName}</Text>
+                  <Text style={styles.selectorCode}>{u.code ?? u.id}</Text>
+                </View>
+                {selected && (
+                  <Ionicons name="checkmark-circle" size={20} color="#5B67F8" />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Student code login dropdown */}
+      {codeLoginOpen && (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Student code login</Text>
+          <Text style={styles.menuSub}>
+            Багшаас авсан student code-ээр нэвтрэнэ үү. Жишээ: S-2001
+          </Text>
+          <InputField
+            label="Student code"
+            autoCapitalize="characters"
+            value={codeInput}
+            onChangeText={setCodeInput}
+            placeholder="S-2001"
+          />
+          {message && (
+            <Text
+              style={[
+                styles.menuSub,
+                {
+                  color: message.includes("хадгал") ? "#22C55E" : "#EF4444",
+                  textAlign: "center",
+                },
+              ]}
+            >
+              {message}
+            </Text>
+          )}
+          <TouchableOpacity
+            style={[
+              styles.saveBtn,
+              (!codeInput.trim() || signingIn) && { opacity: 0.4 },
+            ]}
+            disabled={!codeInput.trim() || signingIn}
+            onPress={() => void handleCodeLogin()}
+          >
+            <Text style={styles.saveBtnText}>
+              {signingIn ? "Нэвтэрж байна..." : "Нэвтрэх"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Profile editor */}
+      {editorOpen && (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Профайл засах</Text>
+          {[
+            { label: "Бүтэн нэр", key: "fullName" },
+            { label: "Имэйл", key: "email" },
+            { label: "Утас", key: "phone" },
+            { label: "Сургууль", key: "school" },
+            { label: "Анги", key: "grade" },
+            { label: "Бүлэг", key: "groupName" },
+            { label: "Avatar URL", key: "avatarUrl" },
+          ].map(({ label, key }) => (
+            <InputField
+              key={key}
+              label={label}
+              value={(form as any)[key] ?? ""}
+              onChangeText={(v) => setForm((p) => ({ ...p, [key]: v }))}
+            />
+          ))}
+          <InputField
+            label="Bio"
+            multiline
+            value={form.bio ?? ""}
+            onChangeText={(v) => setForm((p) => ({ ...p, bio: v }))}
+          />
+          {message && (
+            <Text
+              style={[
+                styles.menuSub,
+                {
+                  color: message.includes("хадгал") ? "#22C55E" : "#EF4444",
+                  textAlign: "center",
+                },
+              ]}
+            >
+              {message}
+            </Text>
+          )}
+          <TouchableOpacity
+            style={[styles.saveBtn, (saving || signingIn) && { opacity: 0.5 }]}
+            disabled={saving || signingIn}
+            onPress={() => void handleSave()}
+          >
+            <Text style={styles.saveBtnText}>
+              {saving ? "Хадгалж байна..." : "Хадгалах"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </ScrollView>
   );
 }
-
