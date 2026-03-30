@@ -116,3 +116,31 @@ export type XpLeaderboardEntry = {
   nextLevelXp: number;
   lastActivity: string | null;
 };
+
+export type ExamRosterParticipant = {
+  sessionId: string;
+  studentId: string;
+  studentName: string;
+  studentCode: string;
+  status: string;
+  answeredCount: number;
+  totalQuestions: number;
+  progressPercent: number;
+  submittedAt: string | null;
+  startedAt: string | null;
+  flagCount: number;
+  isFlagged: boolean;
+  score: number | null;
+};
+
+export type ExamRosterDetail = {
+  examId: string;
+  title: string;
+  roomCode: string;
+  durationMin: number;
+  expectedStudentsCount: number;
+  scheduledAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  participants: ExamRosterParticipant[];
+};

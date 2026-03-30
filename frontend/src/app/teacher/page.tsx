@@ -21,19 +21,14 @@ import {
   type RoleKey,
 } from "@/lib/role-session";
 import TeacherHeader from "./components/TeacherHeader";
-import ExamScheduleCard from "./components/ExamScheduleCard";
-import ExamListCard from "./components/ExamListCard";
-import TeacherXpOverviewCard from "./components/TeacherXpOverviewCard";
-import ResultsTab from "./components/ResultsTab";
-import TeacherStudentsTab from "./components/TeacherStudentsTab";
+import TeacherPageContent, { type TeacherTab } from "./components/TeacherPageContent";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamStats } from "./hooks/useExamStats";
 import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
-import { contentCanvasClass, pageShellClass } from "./styles";
-const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
+import { pageShellClass } from "./styles";
 
-type TeacherTab = (typeof teacherTabs)[number];
+const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
 
 const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
   ensureDemoAccounts();
@@ -57,21 +52,20 @@ export default function TeacherPage() {
   const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын сан");
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const sessionUser = useMemo(
     () => (selectedUser ? buildSessionUser(selectedUser) : null),
     [selectedUser],
   );
-
   const data = useTeacherData(sessionUser);
-
   const management = useExamManagement({
     exams: data.exams,
     setExams: data.setExams,
     showToast: data.showToast,
     currentUser: data.currentUser,
   });
-
   const examStatsState = useExamStats({
     exams: data.exams,
     submissions: data.submissions,
@@ -89,17 +83,9 @@ export default function TeacherPage() {
 
   useEffect(() => {
     setContentVisible(false);
-    const timer = window.setTimeout(() => {
-      setContentVisible(true);
-    }, 24);
-
+    const timer = window.setTimeout(() => setContentVisible(true), 24);
     return () => window.clearTimeout(timer);
   }, [activeTab]);
-
-  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
-    null,
-  );
-  const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
     setStoredRole(role);
@@ -110,52 +96,32 @@ export default function TeacherPage() {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const authUsers = await getAuthUsers().catch(() =>
-          getLocalAuthUsers(role),
-        );
+        const authUsers = await getAuthUsers().catch(() => getLocalAuthUsers(role));
         if (cancelled) return;
         const nextUsers = authUsers.filter((user) => user.role === role);
         const storedUserId = getStoredSelectedUserId(role);
-        const nextUser =
-          nextUsers.find((user) => user.id === storedUserId) ??
-          nextUsers[0] ??
-          null;
+        const nextUser = nextUsers.find((user) => user.id === storedUserId) ?? nextUsers[0] ?? null;
         setUsers(nextUsers);
         setSelectedUser(nextUser);
-        setJSON(
-          STORAGE_KEYS.users,
-          nextUsers.map((user) => buildSessionUser(user)),
-        );
+        setJSON(STORAGE_KEYS.users, nextUsers.map((user) => buildSessionUser(user)));
         if (nextUser) {
           setStoredSelectedUserId(role, nextUser.id);
           setSessionUser(buildSessionUser(nextUser));
         }
       } catch {
-        if (cancelled) return;
-        setUsers([]);
-        setSelectedUser(null);
+        if (!cancelled) {
+          setUsers([]);
+          setSelectedUser(null);
+        }
       } finally {
         if (!cancelled) setUsersLoading(false);
       }
     };
-    loadUsers();
+    void loadUsers();
     return () => {
       cancelled = true;
     };
   }, [role]);
-
-  const handleRoleChange = (nextRole: RoleKey) => {
-    setStoredRole(nextRole);
-    router.push(`/${nextRole}`);
-  };
-
-  const handleUserChange = (userId: string) => {
-    const nextUser = users.find((user) => user.id === userId) ?? null;
-    if (!nextUser) return;
-    setSelectedUser(nextUser);
-    setStoredSelectedUserId(role, nextUser.id);
-    setSessionUser(buildSessionUser(nextUser));
-  };
 
   useEffect(() => {
     const studentId = examStatsState.selectedSubmission?.studentId;
@@ -168,11 +134,9 @@ export default function TeacherPage() {
     const loadProfile = async () => {
       try {
         const profile = await getStudentProfileForTeacher(studentId);
-        if (!active) return;
-        setStudentProfile(profile);
+        if (active) setStudentProfile(profile);
       } catch {
-        if (!active) return;
-        setStudentProfile(null);
+        if (active) setStudentProfile(null);
       } finally {
         if (active) setProfileLoading(false);
       }
@@ -184,96 +148,6 @@ export default function TeacherPage() {
   }, [examStatsState.selectedSubmission?.studentId]);
 
   if (!data.currentUser) return null;
-  const currentUser = data.currentUser;
-
-  const renderActiveTab = () => {
-    if (activeTab === "Шалгалтын сан") {
-      return (
-        <ExamListCard
-          exams={data.exams}
-          onCopyCode={management.copyCode}
-          onCreateExam={() => router.push(`/teacher/createExam`)}
-          onOpenExam={(examId) => {
-            setActiveTab("Гүйцэтгэл");
-            examStatsState.setSelectedExamId(examId);
-          }}
-        />
-      );
-    }
-
-    if (activeTab === "Гүйцэтгэл") {
-      return (
-        <div className="space-y-6">
-          <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
-          <ResultsTab
-            loading={data.loading}
-            examOptions={examStatsState.examOptions}
-            activeExamId={examStatsState.activeExamId}
-            onSelectExam={examStatsState.setSelectedExamId}
-            examStats={examStatsState.examStats}
-            submissions={examStatsState.activeSubmissions}
-            onSelectSubmission={examStatsState.setSelectedSubmissionId}
-            selectedSubmissionId={examStatsState.selectedSubmissionId}
-            selectedSubmission={examStatsState.selectedSubmission}
-            selectedExam={examStatsState.selectedExam}
-            attendanceStats={attendance.stats}
-            attendanceLoading={attendance.loading}
-            studentProfile={studentProfile}
-            profileLoading={profileLoading}
-          />
-        </div>
-      );
-    }
-
-    if (activeTab === "Хуваарь") {
-      return (
-        <div className="space-y-6">
-          <TeacherStudentsTab
-            exams={data.exams}
-            loading={data.loading}
-            onAddSchedule={() => setShowScheduleForm((prev) => !prev)}
-          />
-          {showScheduleForm && (
-            <div
-              className="fixed inset-0 z-50 flex justify-center bg-black/10 backdrop-blur-[2px] transition-all duration-300"
-              onClick={() => setShowScheduleForm(false)}
-            >
-              <div
-                className="mt-10 h-[820px] w-full max-w-sm transition-all duration-500 ease-out motion-safe:translate-y-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExamScheduleCard
-                  exams={data.exams}
-                  selectedScheduleExamId={management.selectedScheduleExamId}
-                  setSelectedScheduleExamId={
-                    management.setSelectedScheduleExamId
-                  }
-                  scheduleDate={management.scheduleDate}
-                  setScheduleDate={management.setScheduleDate}
-                  scheduleExamType={management.scheduleExamType}
-                  setScheduleExamType={management.setScheduleExamType}
-                  scheduleClassName={management.scheduleClassName}
-                  setScheduleClassName={management.setScheduleClassName}
-                  scheduleGroupName={management.scheduleGroupName}
-                  setScheduleGroupName={management.setScheduleGroupName}
-                  scheduleSubjectName={management.scheduleSubjectName}
-                  setScheduleSubjectName={management.setScheduleSubjectName}
-                  scheduleDescription={management.scheduleDescription}
-                  setScheduleDescription={management.setScheduleDescription}
-                  durationMinutes={management.durationMinutes}
-                  setDurationMinutes={management.setDurationMinutes}
-                  onSchedule={management.handleSchedule}
-                  onClose={() => setShowScheduleForm(false)}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return null;
-  };
 
   return (
     <div className={pageShellClass}>
@@ -294,27 +168,35 @@ export default function TeacherPage() {
             activeUserId={selectedUser?.id ?? null}
             users={users}
             loading={usersLoading}
-            onChangeRole={handleRoleChange}
-            onChangeUser={handleUserChange}
+            onChangeRole={(nextRole) => {
+              setStoredRole(nextRole);
+              router.push(`/${nextRole}`);
+            }}
+            onChangeUser={(userId) => {
+              const nextUser = users.find((user) => user.id === userId) ?? null;
+              if (!nextUser) return;
+              setSelectedUser(nextUser);
+              setStoredSelectedUserId(role, nextUser.id);
+              setSessionUser(buildSessionUser(nextUser));
+            }}
           />
         }
       />
       <main className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1480px] space-y-6">
-          <div
-            className={`transform-gpu transition-all duration-500 ease-out ${
-              contentVisible
-                ? "translate-y-0 scale-100 opacity-100"
-                : "translate-y-3 scale-[0.985] opacity-0"
-            }`}
-          >
-            {activeTab === "Шалгалтын сан" || activeTab === "Хуваарь" ? (
-              <div>{renderActiveTab()}</div>
-            ) : (
-              <section className={contentCanvasClass}>
-                {renderActiveTab()}
-              </section>
-            )}
+          <div className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-3 scale-[0.985] opacity-0"}`}>
+            <TeacherPageContent
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              showScheduleForm={showScheduleForm}
+              setShowScheduleForm={setShowScheduleForm}
+              data={data}
+              management={management}
+              examStatsState={examStatsState}
+              attendance={attendance}
+              studentProfile={studentProfile}
+              profileLoading={profileLoading}
+            />
           </div>
         </div>
       </main>

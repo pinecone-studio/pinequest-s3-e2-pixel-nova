@@ -1,5 +1,11 @@
 import { apiFetch, unwrapApi } from "@/lib/api-client";
-import type { Exam, Question, Submission, XpLeaderboardEntry } from "../types";
+import type {
+  Exam,
+  ExamRosterDetail,
+  Question,
+  Submission,
+  XpLeaderboardEntry,
+} from "../types";
 
 type TeacherExamSummary = {
   id: string;
@@ -104,6 +110,20 @@ export const fetchTeacherSubmissions = async (
     percentage: item.score ?? 0,
     totalPoints: item.totalPoints ?? 0,
   }));
+};
+
+export const fetchTeacherExamRoster = async (
+  examId: string,
+  teacherId?: string,
+): Promise<ExamRosterDetail> => {
+  const data = await apiFetch<{ data?: ExamRosterDetail } | ExamRosterDetail>(
+    `/api/teacher/exams/${examId}/roster`,
+    {},
+    "teacher",
+    teacherId,
+  );
+
+  return unwrapApi(data);
 };
 
 type LeaderboardItem = {
