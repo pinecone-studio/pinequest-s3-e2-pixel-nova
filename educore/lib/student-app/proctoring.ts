@@ -1,4 +1,4 @@
-import type { CheatEventType } from './types';
+import type { CheatEventType } from '@/types/student-app';
 
 export type MobileCameraPlatform = 'android' | 'ios';
 

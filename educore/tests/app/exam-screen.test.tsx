@@ -3,6 +3,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import ExamScreen from '@/app/(tabs)/exam';
 import { useStudentApp } from '@/lib/student-app/context';
+import type { ActiveExamSession } from '@/types/student-app';
 
 jest.mock('@react-navigation/native', () => ({
   useFocusEffect: jest.fn(),
@@ -46,7 +47,9 @@ const mockVisionCamera = jest.requireMock("react-native-vision-camera") as {
   };
 };
 
-const buildActiveSession = (status: "joined" | "in_progress" | "submitting" | "submitted" = "joined") => ({
+const buildActiveSession = (
+  status: ActiveExamSession['status'] = 'joined'
+): ActiveExamSession => ({
   sessionId: "session-1",
   roomCode: "ROOM01",
   status,
@@ -75,6 +78,9 @@ const buildActiveSession = (status: "joined" | "in_progress" | "submitting" | "s
   timerEndsAt: Date.now() + 60_000,
   startedAt: new Date().toISOString(),
   lastAnswerAt: null,
+  syncStatus: 'ready',
+  syncMessage: null,
+  entryStatus: 'on_time',
 });
 
 const baseContext = {
