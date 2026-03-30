@@ -8,6 +8,7 @@ import type { Exam, ExamRosterDetail } from "../types";
 import { sectionTitleClass } from "../styles";
 import { LegendDot, ScheduleCard, ScheduleListCard } from "./TeacherScheduleCards";
 import TeacherScheduleDetailPanel from "./TeacherScheduleDetailPanel";
+import type { CopyCodeHandler } from "./RoomCodeCopyButton";
 import {
   HOURS,
   TIME_COLUMN_WIDTH,
@@ -25,6 +26,7 @@ type TeacherStudentsTabProps = {
   loading?: boolean;
   onAddSchedule: () => void;
   currentUserId?: string | null;
+  onCopyCode?: CopyCodeHandler;
 };
 
 type ViewMode = "calendar" | "cards";
@@ -34,6 +36,7 @@ export default function TeacherStudentsTab({
   loading = false,
   onAddSchedule,
   currentUserId,
+  onCopyCode,
 }: TeacherStudentsTabProps) {
   const { days, items } = buildScheduleData(exams);
   const scrollHostRef = useRef<HTMLDivElement>(null);
@@ -86,10 +89,8 @@ export default function TeacherStudentsTab({
     };
 
     void loadRoster();
-    const timer = window.setInterval(loadRoster, 3000);
     return () => {
       active = false;
-      window.clearInterval(timer);
     };
   }, [currentUserId, selectedExamId]);
 
@@ -113,6 +114,7 @@ export default function TeacherStudentsTab({
         attendanceJoined={attendance.stats?.joined ?? 0}
         attendanceSubmitted={attendance.stats?.submitted ?? 0}
         onBack={() => setSelectedExamId(null)}
+        onCopyCode={onCopyCode}
       />
     );
   }
@@ -171,6 +173,7 @@ export default function TeacherStudentsTab({
                       key={item.id}
                       item={item}
                       onOpen={setSelectedExamId}
+                      onCopyCode={onCopyCode}
                       formatDateValue={formatDateValue}
                       formatTimeValue={formatTimeValue}
                     />

@@ -9,10 +9,11 @@ import {
 import { sectionDescriptionClass, contentCanvasClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { Exam } from "../types";
+import type { CopyCodeHandler } from "./RoomCodeCopyButton";
 
 type ExamListCardProps = {
   exams: Exam[];
-  onCopyCode: (code: string) => void;
+  onCopyCode: CopyCodeHandler;
   onCreateExam?: () => void;
   onOpenExam?: (examId: string) => void;
 };

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { User } from "@/lib/examGuard";
-import type { Exam, Question } from "../types";
+import type { Exam } from "../types";
 import { useExamQuestions } from "./useExamQuestions";
 import { useExamScheduleState } from "./useExamScheduleState";
 import { useExamScheduleActions } from "./useExamScheduleActions";
@@ -117,8 +117,10 @@ export const useExamManagement = (params: {
     try {
       await navigator.clipboard.writeText(code);
       showToast("Өрөөний код хууллаа.");
+      return true;
     } catch {
       showToast("Өрөөний код хуулж чадсангүй.");
+      return false;
     }
   };
 

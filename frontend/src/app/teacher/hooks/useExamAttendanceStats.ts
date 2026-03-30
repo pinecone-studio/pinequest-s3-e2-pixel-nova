@@ -23,7 +23,6 @@ export const useExamAttendanceStats = (examId: string | null) => {
     }
 
     let active = true;
-    let timer: number | null = null;
 
     const fetchStats = async () => {
       setLoading(true);
@@ -54,11 +53,9 @@ export const useExamAttendanceStats = (examId: string | null) => {
     };
 
     void fetchStats();
-    timer = window.setInterval(fetchStats, 3000);
 
     return () => {
       active = false;
-      if (timer) window.clearInterval(timer);
     };
   }, [examId]);
 

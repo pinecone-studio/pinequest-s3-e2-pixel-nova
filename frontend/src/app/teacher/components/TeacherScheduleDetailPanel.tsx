@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -7,6 +7,8 @@ import {
   Clipboard,
   Clock3,
 } from "lucide-react";
+import RoomCodeCopyButton from "./RoomCodeCopyButton";
+import type { CopyCodeHandler } from "./RoomCodeCopyButton";
 import type { Exam, ExamRosterDetail, ExamRosterParticipant } from "../types";
 import { sectionTitleClass } from "../styles";
 import { formatDateTime } from "../utils";
@@ -38,11 +40,13 @@ function SummaryStatCard({
   label,
   value,
   tone,
+  action,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   tone: "neutral" | "success" | "primary" | "danger";
+  action?: ReactNode;
 }) {
   const styles = {
     neutral: "text-slate-900",
@@ -53,12 +57,68 @@ function SummaryStatCard({
 
   return (
     <div className="rounded-[28px] border border-[#eadcdc] bg-white px-5 py-5 shadow-[0_18px_35px_-30px_rgba(15,23,42,0.22)]">
-      <div className={`flex items-center gap-2 text-[15px] font-medium ${styles}`}>
-        <span className="grid size-6 place-items-center">{icon}</span>
-        {label}
+      <div className="flex items-center justify-between gap-3">
+        <div className={`flex items-center gap-2 text-[15px] font-medium ${styles}`}>
+          <span className="grid size-6 place-items-center">{icon}</span>
+          {label}
+        </div>
+        {action}
       </div>
       <div className="mt-4 text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
         {value}
+      </div>
+    </div>
+  );
+}
+
+function AttendanceDonut({
+  progress,
+}: {
+  progress: number;
+}) {
+  const gradientId = useId();
+  const safeProgress = Math.min(100, Math.max(0, progress));
+  const radius = 33;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (safeProgress / 100) * circumference;
+
+  return (
+    <div
+      className="relative flex h-[96px] w-[96px] items-center justify-center"
+      aria-label={`Ирц ${safeProgress} хувь`}
+    >
+      <svg width="96" height="96" className="rotate-[-48deg]">
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffb257" />
+            <stop offset="100%" stopColor="#ff9e2f" />
+          </linearGradient>
+        </defs>
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          stroke="#ffdcb4"
+          strokeWidth="14"
+          fill="none"
+        />
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          stroke={`url(#${gradientId})`}
+          strokeWidth="14"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 700ms ease" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+          {safeProgress}%
+        </span>
       </div>
     </div>
   );
@@ -107,6 +167,7 @@ export default function TeacherScheduleDetailPanel({
   attendanceJoined,
   attendanceSubmitted,
   onBack,
+  onCopyCode,
 }: {
   exam: Exam;
   roster: ExamRosterDetail | null;
@@ -114,11 +175,19 @@ export default function TeacherScheduleDetailPanel({
   attendanceJoined: number;
   attendanceSubmitted: number;
   onBack: () => void;
+  onCopyCode?: CopyCodeHandler;
 }) {
   const countdown = useExamCountdown(exam, roster);
   const participants = roster?.participants ?? [];
+  const expectedCount = Math.max(
+    roster?.expectedStudentsCount ?? exam.expectedStudentsCount ?? 0,
+    participants.length,
+  );
   const flaggedCount = participants.filter((participant) => participant.isFlagged || participant.flagCount > 0).length;
   const normalCount = Math.max(participants.length - attendanceSubmitted - flaggedCount, 0);
+  const attendanceRate = expectedCount > 0
+    ? Math.round((attendanceJoined / expectedCount) * 100)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -140,13 +209,25 @@ export default function TeacherScheduleDetailPanel({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-4">
-        <SummaryStatCard icon={<Clipboard className="size-5" />} label="Өрөөний код" value={exam.roomCode || "—"} tone="neutral" />
+        <SummaryStatCard
+          icon={<Clipboard className="size-5" />}
+          label="Өрөөний код"
+          value={exam.roomCode || "—"}
+          tone="neutral"
+          action={exam.roomCode ? (
+            <RoomCodeCopyButton
+              code={exam.roomCode}
+              onCopyCode={onCopyCode}
+              className="size-9"
+            />
+          ) : null}
+        />
         <SummaryStatCard icon={<CheckCircle2 className="size-5" />} label="Илгээсэн" value={String(attendanceSubmitted)} tone="success" />
         <SummaryStatCard icon={<CalendarDays className="size-5" />} label="Хэвийн" value={String(normalCount)} tone="primary" />
         <SummaryStatCard icon={<AlertCircle className="size-5" />} label="Зөрчил" value={String(flaggedCount)} tone="danger" />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="rounded-[32px] border border-[#eadcdc] bg-white shadow-[0_22px_40px_-34px_rgba(15,23,42,0.22)]">
           <div className="grid grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_0.9fr] gap-4 border-b border-[#efdfdf] px-6 py-4 text-[13px] font-medium text-[#a58d8d]">
             <div>Сурагчийн нэрс</div><div>Сурагчийн код</div><div>Оноо</div><div>Гүйцэтгэлийн явц</div><div>Илгээсэн цаг</div><div>Төлөв</div>
@@ -176,18 +257,25 @@ export default function TeacherScheduleDetailPanel({
             })}
           </div>
           <div className="border-t border-[#efdfdf] px-6 py-4 text-sm text-slate-500">
-            Нийт {Math.max(roster?.expectedStudentsCount ?? exam.expectedStudentsCount ?? 0, participants.length)} сурагч
+            Нийт {expectedCount} сурагч
           </div>
         </div>
 
         <div className="space-y-4">
           <SummaryStatCard icon={<Clock3 className="size-5" />} label="Шалгалт дуусахад" value={countdown} tone="neutral" />
-          <div className="rounded-[28px] border border-[#eadcdc] bg-white px-5 py-5 shadow-[0_18px_35px_-30px_rgba(15,23,42,0.22)]">
-            <div className="text-[15px] font-medium text-slate-700">Ирцийн тойм</div>
-            <div className="mt-4 space-y-3 text-sm text-slate-500">
-              <div className="flex items-center justify-between"><span>Орж ирсэн</span><span className="font-semibold text-slate-900">{attendanceJoined}</span></div>
-              <div className="flex items-center justify-between"><span>Илгээсэн</span><span className="font-semibold text-slate-900">{attendanceSubmitted}</span></div>
-              <div className="flex items-center justify-between"><span>Үлдсэн</span><span className="font-semibold text-slate-900">{Math.max((roster?.expectedStudentsCount ?? exam.expectedStudentsCount ?? 0) - attendanceJoined, 0)}</span></div>
+          <div className="rounded-[32px] border border-[#ddd7cf] bg-white px-7 py-6 shadow-[0_20px_40px_-34px_rgba(15,23,42,0.22)]">
+            <div className="flex items-center justify-between gap-5">
+              <div className="min-w-0 space-y-3">
+                <div className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+                  Шалгалтын ирц
+                </div>
+                <div className="text-[14px] text-[#a3a3a3]">
+                  Мэдээлэл оруулаагүй байна.
+                </div>
+              </div>
+              <div className="shrink-0">
+                <AttendanceDonut progress={attendanceRate} />
+              </div>
             </div>
           </div>
         </div>
