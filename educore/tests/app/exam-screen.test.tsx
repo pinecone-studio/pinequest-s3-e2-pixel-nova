@@ -1,5 +1,10 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  waitFor,
+} from '@testing-library/react-native';
 
 import ExamScreen from '@/app/(tabs)/exam';
 import { useStudentApp } from '@/lib/student-app/context';
@@ -18,37 +23,40 @@ jest.mock("expo-router", () => ({
   }),
 }));
 
+jest.mock("expo-camera", () => ({
+  useCameraPermissions: jest.fn(() => [{ granted: true }, jest.fn()]),
+}));
+
 jest.mock("@/lib/student-app/context", () => ({
   useStudentApp: jest.fn(),
 }));
 
-jest.mock("react-native-vision-camera", () => ({
-  Camera: {
-    getCameraPermissionStatus: jest.fn(async () => "granted"),
-    requestCameraPermission: jest.fn(async () => "granted"),
-  },
-}));
-
 jest.mock("@/components/student-app/MobileProctorCamera", () => ({
   __esModule: true,
-  default: ({ isEnabled }: { isEnabled: boolean }) =>
+  default: ({
+    isEnabled,
+    permissionGranted,
+  }: {
+    isEnabled: boolean;
+    permissionGranted: boolean;
+  }) =>
     isEnabled
-      ? require("react").createElement("Text", null, "camera-proctor-active")
+      ? require("react").createElement(
+          "Text",
+          null,
+          permissionGranted ? "camera-preview-active" : "camera-preview-blocked",
+        )
       : null,
 }));
 
 const mockUseStudentApp = useStudentApp as jest.MockedFunction<
   typeof useStudentApp
 >;
-const mockVisionCamera = jest.requireMock("react-native-vision-camera") as {
-  Camera: {
-    getCameraPermissionStatus: jest.Mock;
-    requestCameraPermission: jest.Mock;
-  };
-};
+const mockUseCameraPermissions = jest.requireMock("expo-camera")
+  .useCameraPermissions as jest.Mock;
 
 const buildActiveSession = (
-  status: ActiveExamSession['status'] = 'joined'
+  status: ActiveExamSession["status"] = "joined",
 ): ActiveExamSession => ({
   sessionId: "session-1",
   roomCode: "ROOM01",
@@ -66,7 +74,10 @@ const buildActiveSession = (
       type: "multiple_choice" as const,
       questionText: "2 + 2 = ?",
       imageUrl: null,
+      audioUrl: null,
       points: 1,
+      difficulty: "easy",
+      topic: null,
       options: [
         { id: "opt-1", label: "A", text: "4" },
         { id: "opt-2", label: "B", text: "5" },
@@ -78,9 +89,9 @@ const buildActiveSession = (
   timerEndsAt: Date.now() + 60_000,
   startedAt: new Date().toISOString(),
   lastAnswerAt: null,
-  syncStatus: 'ready',
+  syncStatus: "ready",
   syncMessage: null,
-  entryStatus: 'on_time',
+  entryStatus: "on_time",
 });
 
 const baseContext = {
@@ -135,6 +146,7 @@ const baseContext = {
 
 describe("ExamScreen", () => {
   afterEach(() => {
+    cleanup();
     jest.clearAllMocks();
   });
 
@@ -147,6 +159,7 @@ describe("ExamScreen", () => {
     const screen = render(<ExamScreen />);
 
     expect(screen.getByText("Уншиж байна...")).toBeTruthy();
+    screen.unmount();
   });
 
   it("shows an empty state when there is no active exam", () => {
@@ -158,12 +171,17 @@ describe("ExamScreen", () => {
       screen.getByText("Өнөөдөр товлогдсон шалгалт байхгүй байна"),
     ).toBeTruthy();
     expect(screen.getByText("Шалгалтанд нэгдэх")).toBeTruthy();
+    screen.unmount();
   });
 
   it("blocks exam start when camera permission is denied", async () => {
-    mockVisionCamera.Camera.getCameraPermissionStatus.mockResolvedValue("denied");
     const startExam = jest.fn();
+    const requestPermission = jest.fn(async () => ({ granted: false }));
 
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: false },
+      requestPermission,
+    ]);
     mockUseStudentApp.mockReturnValue({
       ...baseContext,
       activeSession: buildActiveSession("joined"),
@@ -176,13 +194,15 @@ describe("ExamScreen", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Камерын зөвшөөрөл шаардлагатай/)
+        screen.getByText(/Камерын зөвшөөрөл шаардлагатай/),
       ).toBeTruthy();
     });
     expect(startExam).not.toHaveBeenCalled();
+    screen.unmount();
   });
 
-  it("renders the camera proctor when the exam is in progress", () => {
+  it("renders the camera preview card when the exam is in progress", () => {
+    mockUseCameraPermissions.mockReturnValue([{ granted: true }, jest.fn()]);
     mockUseStudentApp.mockReturnValue({
       ...baseContext,
       activeSession: buildActiveSession("in_progress"),
@@ -190,6 +210,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("camera-proctor-active")).toBeTruthy();
+    expect(screen.getByText("camera-preview-active")).toBeTruthy();
+    screen.unmount();
   });
 });
