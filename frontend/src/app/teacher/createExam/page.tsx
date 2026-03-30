@@ -172,6 +172,15 @@ export default function CreateExamPage() {
             setPdfUseOcr={imports.setPdfUseOcr}
             answerKeyPage={imports.answerKeyPage}
             setAnswerKeyPage={imports.setAnswerKeyPage}
+            importMcqCount={imports.importMcqCount}
+            setImportMcqCount={imports.setImportMcqCount}
+            importTextCount={imports.importTextCount}
+            setImportTextCount={imports.setImportTextCount}
+            importOpenCount={imports.importOpenCount}
+            setImportOpenCount={imports.setImportOpenCount}
+            shuffleImportedQuestions={imports.shuffleImportedQuestions}
+            setShuffleImportedQuestions={imports.setShuffleImportedQuestions}
+            plannedQuestionCount={imports.plannedQuestionCount}
             pdfLoading={imports.pdfLoading}
             pdfError={imports.pdfError}
             importError={imports.importError}

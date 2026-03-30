@@ -1,7 +1,9 @@
 import { parseAnswerKey, parseQuestionsFromText } from "../utils";
 import type { Question } from "../types";
 
-export const parseDocxQuestions = async (file: File): Promise<Question[]> => {
+export const parseDocxQuestions = async (
+  file: File,
+): Promise<{ rawText: string; questions: Question[] }> => {
   type Mammoth = {
     extractRawText: (args: { arrayBuffer: ArrayBuffer }) => Promise<{
       value: string;
@@ -12,5 +14,8 @@ export const parseDocxQuestions = async (file: File): Promise<Question[]> => {
   const result = await mammoth.extractRawText({ arrayBuffer });
   const rawText = result.value || "";
   const answerKey = parseAnswerKey(rawText);
-  return parseQuestionsFromText(rawText, answerKey);
+  return {
+    rawText,
+    questions: parseQuestionsFromText(rawText, answerKey),
+  };
 };

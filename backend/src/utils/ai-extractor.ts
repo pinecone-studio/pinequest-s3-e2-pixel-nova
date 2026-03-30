@@ -121,7 +121,12 @@ function parseAiResponse(response: unknown): ExtractedQuestion[] {
   }
 
   try {
-    const arr = JSON.parse(text.slice(start, end + 1));
+    const parsed = JSON.parse(text.slice(start, end + 1));
+    const arr = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(parsed?.questions)
+        ? parsed.questions
+        : [];
     if (!Array.isArray(arr)) return [];
 
     return arr

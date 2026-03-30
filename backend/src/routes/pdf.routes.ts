@@ -10,6 +10,7 @@ import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
 import { parsePdf, PdfParseError } from "../utils/pdf-parser";
 import { extractQuestions } from "../utils/ai-extractor";
+import { generateQuestionsFromMaterial } from "../utils/ai-question-generator";
 
 const pdfRoutes = new Hono<AppEnv>();
 
@@ -162,6 +163,22 @@ const extractSchema = z.object({
   fileKey: z.string().min(1),
 });
 
+const generationCountsSchema = z.object({
+  mcq: z.number().int().min(0).max(30),
+  text: z.number().int().min(0).max(30),
+  open: z.number().int().min(0).max(30),
+});
+
+const generateSchema = z
+  .object({
+    fileKey: z.string().min(1).optional(),
+    material: z.string().min(1).optional(),
+    counts: generationCountsSchema,
+  })
+  .refine((payload) => Boolean(payload.fileKey || payload.material), {
+    message: "fileKey эсвэл material заавал хэрэгтэй.",
+  });
+
 pdfRoutes.post("/extract", zValidator("json", extractSchema), async (c) => {
   try {
     const teacherId = c.get("user").id;
@@ -194,6 +211,46 @@ pdfRoutes.post("/extract", zValidator("json", extractSchema), async (c) => {
     return success(c, result);
   } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to extract questions from PDF", 500);
+  }
+});
+
+pdfRoutes.post("/generate", zValidator("json", generateSchema), async (c) => {
+  try {
+    const teacherId = c.get("user").id;
+    const { fileKey, material, counts } = c.req.valid("json");
+
+    const totalRequested = counts.mcq + counts.text + counts.open;
+    if (totalRequested <= 0) {
+      return error(c, "BAD_REQUEST", "At least one question must be requested", 400);
+    }
+
+    let sourceText: string | string[] = material ?? "";
+
+    if (fileKey) {
+      const r2Key = `pdfs/${teacherId}/${fileKey}.pdf`;
+      const r2Object = await c.env.EXAM_FILES.get(r2Key);
+
+      if (!r2Object) {
+        return notFound(c, "PDF file");
+      }
+
+      const buffer = new Uint8Array(await r2Object.arrayBuffer());
+      let parsed;
+      try {
+        parsed = await parsePdf(buffer);
+      } catch (err) {
+        if (err instanceof PdfParseError) {
+          return error(c, err.code, err.message, 400);
+        }
+        throw err;
+      }
+      sourceText = parsed.pages;
+    }
+
+    const result = await generateQuestionsFromMaterial(c.env.AI, sourceText, counts);
+    return success(c, result);
+  } catch {
+    return error(c, "INTERNAL_ERROR", "Failed to generate questions from material", 500);
   }
 });
 
