@@ -159,7 +159,9 @@ export default function TeacherPage() {
       )}
       <TeacherHeader
         notifications={data.notifications}
+        unreadCount={data.unreadNotificationCount}
         onMarkRead={data.markNotificationRead}
+        onMarkAllRead={data.markAllNotificationsRead}
         activeTab={activeTab}
         setActiveTab={(tab) => setActiveTab(tab as TeacherTab)}
         tabs={teacherTabs}

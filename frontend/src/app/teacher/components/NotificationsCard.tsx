@@ -4,7 +4,7 @@ import type { NotificationItem } from "../types";
 
 type NotificationsCardProps = {
   notifications: NotificationItem[];
-  onMarkRead: (index: number) => void;
+  onMarkRead: (id: string) => void;
 };
 
 export default function NotificationsCard({
@@ -34,17 +34,18 @@ export default function NotificationsCard({
             Одоогоор мэдэгдэл алга.
           </div>
         )}
-        {notifications.map((item, index) => (
+        {notifications.map((item) => (
           <button
-            key={`${item.examId}-${item.createdAt}`}
+            key={item.id}
             className={`w-full rounded-2xl border px-4 py-3 text-left text-xs transition ${
-              item.read
+              item.status === "read"
                 ? "border-[#dce5ef] bg-[#f8fafc] text-slate-500"
                 : "border-[#bfdbfe] bg-[#eff6ff]"
             }`}
-            onClick={() => onMarkRead(index)}
+            onClick={() => onMarkRead(item.id)}
             type="button"
           >
+            <div className="text-[11px] font-semibold">{item.title}</div>
             <div className="text-xs">{item.message}</div>
             <div className="mt-1 text-[11px] text-slate-500">
               {formatDateTime(item.createdAt)}

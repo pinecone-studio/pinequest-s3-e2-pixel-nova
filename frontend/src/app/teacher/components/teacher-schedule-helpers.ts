@@ -8,6 +8,7 @@ export const DAY_COLUMN_WIDTH = 170;
 export const VISIBLE_DAY_COUNT = 5;
 
 export type ScheduleCategory = "required" | "elective";
+export type ScheduleLifecycle = "scheduled" | "active" | "finished";
 
 export type ScheduleItem = {
   id: string;
@@ -17,6 +18,7 @@ export type ScheduleItem = {
   startMinutes: number;
   duration: number;
   category: ScheduleCategory;
+  lifecycle: ScheduleLifecycle;
   scheduledDate: Date;
   roomCode: string;
 };
@@ -47,6 +49,30 @@ export function formatDateValue(date: Date) {
 
 export function formatTimeValue(date: Date) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function resolveScheduleLifecycle(exam: Exam, scheduledAt: Date): ScheduleLifecycle {
+  if (exam.finishedAt || exam.status === "finished") {
+    return "finished";
+  }
+
+  if (exam.status === "active" || exam.status === "in_progress") {
+    return "active";
+  }
+
+  const now = Date.now();
+  const startTime = scheduledAt.getTime();
+  const endTime = startTime + (exam.duration ?? 45) * 60 * 1000;
+
+  if (startTime <= now && now < endTime) {
+    return "active";
+  }
+
+  if (endTime <= now) {
+    return "finished";
+  }
+
+  return "scheduled";
 }
 
 export function buildScheduleData(exams: Exam[]) {
@@ -93,6 +119,7 @@ export function buildScheduleData(exams: Exam[]) {
           exam.groupName?.toLowerCase().includes("сонгон") || index % 2 === 1
             ? "elective"
             : "required",
+        lifecycle: resolveScheduleLifecycle(exam, scheduledAt),
         scheduledDate: scheduledAt,
         roomCode: exam.roomCode,
       };

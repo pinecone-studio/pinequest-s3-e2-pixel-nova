@@ -275,3 +275,25 @@ export const aiExamGeneratorRuns = sqliteTable("ai_exam_generator_runs", {
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
   updatedAt: text("updated_at").notNull().default(sql`(current_timestamp)`),
 });
+
+// Real-time / persisted notifications
+export const notifications = sqliteTable("notifications", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  role: text("role").notNull(), // teacher | student
+  type: text("type").notNull(),
+  severity: text("severity").notNull(), // critical | warning | info | success
+  status: text("status").notNull().default("unread"), // unread | read | archived
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  examId: text("exam_id"),
+  sessionId: text("session_id"),
+  studentId: text("student_id"),
+  metadata: text("metadata"),
+  dedupeKey: text("dedupe_key"),
+  createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+  readAt: text("read_at"),
+  archivedAt: text("archived_at"),
+}, (table) => [
+  uniqueIndex("notifications_user_dedupe_unique").on(table.userId, table.dedupeKey),
+]);

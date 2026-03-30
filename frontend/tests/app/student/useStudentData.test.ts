@@ -1,5 +1,6 @@
 const mockGetSessionUser = jest.fn();
 const mockGetStudentResults = jest.fn();
+const mockUseNotifications = jest.fn();
 
 jest.mock("@/lib/examGuard", () => ({
 	getSessionUser: (...args: unknown[]) => mockGetSessionUser(...args),
@@ -7,6 +8,10 @@ jest.mock("@/lib/examGuard", () => ({
 
 jest.mock("@/lib/backend-auth", () => ({
 	getStudentResults: (...args: unknown[]) => mockGetStudentResults(...args),
+}));
+
+jest.mock("@/hooks/useNotifications", () => ({
+	useNotifications: (...args: unknown[]) => mockUseNotifications(...args),
 }));
 
 import { renderHook, act, waitFor } from "@testing-library/react";
@@ -43,6 +48,40 @@ describe("useStudentData", () => {
 		jest.useFakeTimers();
 		mockGetSessionUser.mockReturnValue(mockUser);
 		mockGetStudentResults.mockResolvedValue(mockResults);
+		mockUseNotifications.mockImplementation(({ userId }: { userId?: string | null }) => {
+			if (!userId) {
+				return {
+					notifications: [],
+					unreadCount: 0,
+					markNotificationRead: jest.fn(),
+					markAllNotificationsRead: jest.fn(),
+				};
+			}
+
+			return {
+				notifications: [
+					{
+						id: "n1",
+						title: "Дүн шинэчлэгдлээ",
+						message: "Math шалгалтын дүн гарлаа.",
+						status: "unread",
+						severity: "success",
+						createdAt: "2024-06-01T10:00:00.000Z",
+					},
+					{
+						id: "n2",
+						title: "Дүн шинэчлэгдлээ",
+						message: "Science шалгалтын дүн гарлаа.",
+						status: "unread",
+						severity: "success",
+						createdAt: "2024-06-02T10:00:00.000Z",
+					},
+				],
+				unreadCount: 2,
+				markNotificationRead: jest.fn(),
+				markAllNotificationsRead: jest.fn(),
+			};
+		});
 	});
 
 	afterEach(() => {
@@ -60,14 +99,14 @@ describe("useStudentData", () => {
 		expect(result.current.exams[0].title).toBe("Math");
 	});
 
-	it("builds notifications from results", async () => {
+	it("uses notifications from the notification hook", async () => {
 		const { result } = renderHook(() => useStudentData(mockUser));
 
 		await waitFor(() => expect(result.current.loading).toBe(false));
 
 		expect(result.current.notifications).toHaveLength(2);
 		expect(result.current.notifications[0].message).toContain("Math");
-		expect(result.current.notifications[0].read).toBe(false);
+		expect(result.current.notifications[0].status).toBe("unread");
 	});
 
 	it("falls back to getSessionUser when no override", async () => {
@@ -98,7 +137,7 @@ describe("useStudentData", () => {
 		await waitFor(() => expect(result.current.loading).toBe(false));
 
 		expect(result.current.exams).toEqual([]);
-		expect(result.current.notifications).toEqual([]);
+		expect(result.current.notifications).toHaveLength(2);
 	});
 
 	it("defaults theme to light", () => {

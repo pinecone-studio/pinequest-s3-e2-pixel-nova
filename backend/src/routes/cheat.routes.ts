@@ -8,6 +8,7 @@ import { success, error, notFound, forbidden } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
+import { notifyTeacherStudentFlagged } from "../services/notifications";
 
 const cheatRoutes = new Hono<AppEnv>();
 
@@ -358,6 +359,31 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     .update(examSessions)
     .set({ isFlagged, flagCount })
     .where(eq(examSessions.id, sessionId));
+
+  const [student] = await db
+    .select({ fullName: students.fullName })
+    .from(students)
+    .where(eq(students.id, user.id))
+    .limit(1);
+
+  const [exam] = await db
+    .select({ teacherId: exams.teacherId })
+    .from(exams)
+    .where(eq(exams.id, session.examId))
+    .limit(1);
+
+  if (exam?.teacherId) {
+    await notifyTeacherStudentFlagged(
+      db,
+      exam.teacherId,
+      session.examId,
+      sessionId,
+      user.id,
+      student?.fullName ?? user.id,
+      eventType,
+      isFlagged ? "critical" : severity === "critical" ? "critical" : "warning",
+    );
+  }
 
   return success(c, { eventId, flagged: isFlagged }, 201);
 });

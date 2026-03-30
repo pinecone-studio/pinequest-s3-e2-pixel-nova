@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { getSessionUser, type StudentProgress, type User } from "@/lib/examGuard";
-import type { NotificationItem, Exam, Submission } from "../types";
+import type { Exam, Submission } from "../types";
 import { normalizeSubmission } from "../analytics";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   fetchTeacherExams,
   fetchTeacherSubmissions,
@@ -23,7 +24,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [studentProgress, setStudentProgress] = useState<StudentProgress>({});
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
     const user =
@@ -83,14 +83,12 @@ export const useTeacherData = (overrideUser?: User | null) => {
 
         setUsers(mappedUsers);
         setStudentProgress(progress);
-        setNotifications([]);
       } catch {
         if (!cancelled) {
           setExams([]);
           setSubmissions([]);
           setUsers([]);
           setStudentProgress({});
-          setNotifications([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -125,20 +123,11 @@ export const useTeacherData = (overrideUser?: User | null) => {
   const persistExams = useCallback((next: Exam[]) => {
     setExams(next);
   }, []);
-
-  const persistNotifications = useCallback((next: NotificationItem[]) => {
-    setNotifications(next);
-  }, []);
-
-  const markNotificationRead = useCallback(
-    (index: number) => {
-      const next = notifications.map((item, idx) =>
-        idx === index ? { ...item, read: true } : item,
-      );
-      persistNotifications(next);
-    },
-    [notifications, persistNotifications],
-  );
+  const notificationsState = useNotifications({
+    role: "teacher",
+    userId: overrideUserId,
+    onToast: showToast,
+  });
 
   return {
     currentUser,
@@ -154,9 +143,10 @@ export const useTeacherData = (overrideUser?: User | null) => {
     submissions,
     setSubmissions,
     studentProgress,
-    notifications,
-    setNotifications: persistNotifications,
-    persistNotifications,
-    markNotificationRead,
+    notifications: notificationsState.notifications,
+    unreadNotificationCount: notificationsState.unreadCount,
+    markNotificationRead: notificationsState.markNotificationRead,
+    markAllNotificationsRead: notificationsState.markAllNotificationsRead,
+    refreshNotifications: notificationsState.refreshNotifications,
   };
 };

@@ -24,6 +24,9 @@ type StudentHeaderProps = {
   currentUserName: string;
   currentUserInitials: string;
   notifications: NotificationItem[];
+  unreadCount: number;
+  onMarkNotificationRead: (id: string) => void;
+  onMarkAllNotificationsRead: () => void;
   xp: number;
   onTabChange: (value: HeaderTab) => void;
   onOpenProfile: () => void;
@@ -50,6 +53,9 @@ export default function StudentHeader({
   currentUserName,
   currentUserInitials,
   notifications,
+  unreadCount,
+  onMarkNotificationRead,
+  onMarkAllNotificationsRead,
   xp,
   onTabChange,
   onOpenProfile,
@@ -60,9 +66,6 @@ export default function StudentHeader({
 }: StudentHeaderProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const unreadCount =
-    notifications.filter((item) => !item.read).length || notifications.length;
 
   return (
     <header className="rounded-[28px] border border-[#eceaf7] bg-white/95 px-4 py-3 shadow-[0_20px_60px_rgba(55,70,110,0.08)] backdrop-blur sm:px-6">
@@ -145,9 +148,19 @@ export default function StudentHeader({
                   </div>
                 </div>
                 <span className="rounded-full bg-[#fff1e8] px-2.5 py-1 text-[11px] font-semibold text-[#ff8a3d]">
-                  {notifications.length} мэдээлэл
+                  {unreadCount} уншаагүй
                 </span>
               </div>
+
+              {notifications.length > 0 && unreadCount > 0 && (
+                <button
+                  type="button"
+                  className="mt-3 rounded-xl border border-[#eceaf7] bg-[#fafbff] px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
+                  onClick={onMarkAllNotificationsRead}
+                >
+                  Бүгдийг уншсан болгох
+                </button>
+              )}
 
               <div className="mt-4 space-y-2">
                 {notifications.length === 0 && (
@@ -156,15 +169,34 @@ export default function StudentHeader({
                   </div>
                 )}
 
-                {notifications.slice(0, 4).map((item, index) => (
-                  <div
-                    key={`${item.createdAt}-${item.examId}-${index}`}
-                    className="rounded-2xl border border-[#efeef8] bg-[#fafbff] px-4 py-3"
+                {notifications.slice(0, 6).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onMarkNotificationRead(item.id)}
+                    className={`w-full rounded-2xl border px-4 py-3 text-left ${
+                      item.status === "read"
+                        ? "border-[#efeef8] bg-[#fafbff]"
+                        : "border-[#d7d2ff] bg-white"
+                    }`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-[#5c6cff]" />
+                      <span
+                        className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                          item.severity === "critical"
+                            ? "bg-red-500"
+                            : item.severity === "warning"
+                              ? "bg-amber-500"
+                              : item.severity === "success"
+                                ? "bg-emerald-500"
+                                : "bg-[#5c6cff]"
+                        }`}
+                      />
                       <div>
-                        <div className="text-sm font-medium text-slate-800">
+                        <div className="text-sm font-semibold text-slate-800">
+                          {item.title}
+                        </div>
+                        <div className="mt-1 text-sm font-medium text-slate-700">
                           {item.message}
                         </div>
                         <div className="mt-1 text-xs text-slate-400">
@@ -177,7 +209,7 @@ export default function StudentHeader({
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

@@ -1,3 +1,5 @@
+import type { NotificationItem as AppNotificationItem } from "@/lib/notifications";
+
 export type Question = {
   id: string;
   text: string;
@@ -88,12 +90,7 @@ export type ExamStatsSummary = {
   performanceBands: ScoreBand[];
 };
 
-export type NotificationItem = {
-  examId: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-};
+export type NotificationItem = AppNotificationItem;
 
 export type CheatStudent = {
   studentId?: string;
