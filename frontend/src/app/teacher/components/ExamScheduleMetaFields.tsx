@@ -1,8 +1,9 @@
-import { figmaFieldClass, figmaTextareaClass } from "../styles";
+import { figmaTextareaClass } from "../styles";
 import {
   classOptions,
   subjectOptions,
 } from "./exam-schedule-constants";
+import TeacherSelect from "./TeacherSelect";
 
 type ExamScheduleMetaFieldsProps = {
   scheduleClassName: string;
@@ -66,36 +67,26 @@ export default function ExamScheduleMetaFields({
               ))}
             </div>
           )}
-          <select
-            className={figmaFieldClass}
+          <TeacherSelect
+            options={[
+              { value: "", label: "Анги сонгоно уу." },
+              ...availableClasses.map((item) => ({ value: item, label: item })),
+            ]}
             value=""
             onChange={(event) => addClass(event.target.value)}
-          >
-            <option value="">Анги сонгоно уу.</option>
-            {availableClasses.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       </label>
 
-      <label className="grid gap-3">
-        <span className="text-[16px] font-semibold text-black">Хичээл</span>
-        <select
-          className={figmaFieldClass}
+      <TeacherSelect
+        label="Хичээл"
+        options={[
+          { value: "", label: "Хичээл сонгоно уу." },
+          ...subjectOptions.map((item) => ({ value: item, label: item })),
+        ]}
           value={scheduleSubjectName}
           onChange={(event) => setScheduleSubjectName(event.target.value)}
-        >
-          <option value="">Хичээл сонгоно уу.</option>
-          {subjectOptions.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-      </label>
+      />
 
       <label className="grid gap-3">
         <span className="text-[16px] font-semibold text-black">Тайлбар</span>

@@ -6,12 +6,14 @@ import {
   ChevronLeft,
   Clipboard,
   Clock3,
+  UsersRound,
 } from "lucide-react";
 import RoomCodeCopyButton from "./RoomCodeCopyButton";
 import type { CopyCodeHandler } from "./RoomCodeCopyButton";
 import type { Exam, ExamRosterDetail, ExamRosterParticipant } from "../types";
 import { sectionTitleClass } from "../styles";
 import { formatDateTime } from "../utils";
+import TeacherEmptyState from "./TeacherEmptyState";
 
 function getParticipantMeta(participant: ExamRosterParticipant) {
   if (participant.isFlagged || participant.flagCount > 0) {
@@ -238,7 +240,13 @@ export default function TeacherScheduleDetailPanel({
                 {Array.from({ length: 6 }).map((__, cellIndex) => <div key={cellIndex} className="h-6 animate-pulse rounded-full bg-[#f3f4f7]" />)}
               </div>
             )) : participants.length === 0 ? (
-              <div className="px-6 py-14 text-center text-sm text-slate-400">Одоогоор шалгалтад орсон сурагч алга.</div>
+              <div className="px-6 py-8">
+                <TeacherEmptyState
+                  icon={<UsersRound className="h-5 w-5" />}
+                  title="Одоогоор сурагч орж ирээгүй байна"
+                  description="Өрөөний кодоо тараасны дараа шалгалтад нэвтэрсэн сурагчид энд бодит цаг дээр гарч ирнэ."
+                />
+              </div>
             ) : participants.map((participant) => {
               const meta = getParticipantMeta(participant);
               return (

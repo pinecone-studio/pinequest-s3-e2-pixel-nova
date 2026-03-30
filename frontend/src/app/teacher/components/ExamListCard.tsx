@@ -4,12 +4,14 @@ import {
   DownloadIcon,
   EyeIcon,
   FolderIcon,
+  FolderSearch,
   SearchIcon,
 } from "lucide-react";
 import { sectionDescriptionClass, contentCanvasClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { Exam } from "../types";
 import type { CopyCodeHandler } from "./RoomCodeCopyButton";
+import TeacherEmptyState from "./TeacherEmptyState";
 
 type ExamListCardProps = {
   exams: Exam[];
@@ -176,9 +178,13 @@ export default function ExamListCard({
 
         <div className="space-y-3">
           {visibleExams.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-[#dce5ef] px-5 py-12 text-center text-sm text-slate-400">
-              Сонгосон ангилалд шалгалт олдсонгүй.
-            </div>
+            <TeacherEmptyState
+              icon={<FolderSearch className="size-5" />}
+              title="Шалгалт олдсонгүй"
+              description="Сонгосон ангилал эсвэл хайлтад тохирох шалгалт алга байна. Хайлтаа өөрчилж эсвэл шинэ шалгалт үүсгээд үзээрэй."
+              actionLabel={onCreateExam ? "Шалгалт үүсгэх" : undefined}
+              onAction={onCreateExam}
+            />
           ) : (
             visibleExams.map((exam) => {
               const status = getStatus(exam);
