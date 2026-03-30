@@ -79,6 +79,6 @@ describe("StudentExamView", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "A. 2" }));
-    expect(onSelectMcq).toHaveBeenCalledWith("2");
+    expect(onSelectMcq).toHaveBeenCalledWith("q-1", "2");
   });
 });
