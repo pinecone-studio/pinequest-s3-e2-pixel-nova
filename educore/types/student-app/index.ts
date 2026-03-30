@@ -141,6 +141,10 @@ export type CheatEventType =
   | 'suspicious_resize'
   | 'rapid_answers'
   | 'idle_too_long'
+  | 'face_missing'
+  | 'multiple_faces'
+  | 'looking_away'
+  | 'looking_down'
   | 'disqualification';
 
 export type IntegrityCapability = {

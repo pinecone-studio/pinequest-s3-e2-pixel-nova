@@ -11,9 +11,11 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
+import { Camera as VisionCamera } from 'react-native-vision-camera';
 
-import { useStudentApp } from "@/lib/student-app/context";
+import MobileProctorCamera from "@/components/student-app/MobileProctorCamera";
+import { useStudentApp } from '@/lib/student-app/context';
 import {
   computeRemainingSeconds,
   formatCountdown,
@@ -41,6 +43,10 @@ export default function ExamScreen() {
 
   const [remainingSeconds, setRemainingSeconds] = useState(
     computeRemainingSeconds(activeSession?.timerEndsAt ?? null),
+  );
+  const [appIsActive, setAppIsActive] = useState(
+    AppState.currentState !== "background" &&
+      AppState.currentState !== "inactive",
   );
   const [submitting, setSubmitting] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -152,8 +158,9 @@ export default function ExamScreen() {
   }, [activeSession, handleSubmit, remainingSeconds]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState !== "active" && activeSession?.status === "in_progress") {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      setAppIsActive(nextState === 'active');
+      if (nextState !== 'active' && activeSession?.status === 'in_progress') {
         setIntegrityWarning(
           "The app moved out of the foreground during an active exam.",
         );
@@ -235,6 +242,21 @@ export default function ExamScreen() {
 
   const handleStart = async () => {
     try {
+      const permissionStatus = await VisionCamera.getCameraPermissionStatus();
+      const resolvedStatus =
+        permissionStatus === "granted"
+          ? permissionStatus
+          : permissionStatus === "not-determined"
+            ? await VisionCamera.requestCameraPermission()
+            : permissionStatus;
+
+      if (resolvedStatus !== "granted") {
+        setSyncError(
+          "Камерын зөвшөөрөл шаардлагатай. Settings-ээс front camera access зөвшөөрөөд дахин оролдоно уу.",
+        );
+        return;
+      }
+
       await startExam();
       setRemainingSeconds(computeRemainingSeconds(activeSession.timerEndsAt));
     } catch (error) {
@@ -352,7 +374,13 @@ export default function ExamScreen() {
         </View>
       </View>
 
-      {/* Question card */}
+      {!isJoined && currentQuestion ? (
+        <MobileProctorCamera
+          isEnabled={activeSession.status === "in_progress" && appIsActive}
+          onViolation={logIntegrityEvent}
+        />
+      ) : null}
+
       {!isJoined && currentQuestion ? (
         <View style={styles.questionCard}>
           <Text style={styles.questionCounter}>
