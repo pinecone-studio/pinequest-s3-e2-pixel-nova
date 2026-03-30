@@ -18,6 +18,26 @@ export const homeStyles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 8,
   },
+  brandWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexShrink: 1,
+  },
+  brandIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+  },
+  brandTextWrap: {
+    flexShrink: 1,
+  },
+  brandName: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#1D4ED8",
+    marginBottom: 2,
+  },
   greeting: {
     fontSize: 13,
     color: "#888",

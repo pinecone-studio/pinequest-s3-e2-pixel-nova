@@ -63,6 +63,63 @@ studentRoutes.get("/results", async (c) => {
   return success(c, results);
 });
 
+// GET /term-rank — current student's rank among students with graded sessions
+studentRoutes.get("/term-rank", async (c) => {
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  const gradedSessions = await db
+    .select({
+      studentId: examSessions.studentId,
+      score: examSessions.score,
+    })
+    .from(examSessions)
+    .where(eq(examSessions.status, "graded"));
+
+  const statsByStudent = new Map<
+    string,
+    { totalScore: number; examCount: number }
+  >();
+
+  for (const session of gradedSessions) {
+    if (typeof session.score !== "number") continue;
+    const current = statsByStudent.get(session.studentId) ?? {
+      totalScore: 0,
+      examCount: 0,
+    };
+    current.totalScore += session.score;
+    current.examCount += 1;
+    statsByStudent.set(session.studentId, current);
+  }
+
+  const rankedStudents = [...statsByStudent.entries()]
+    .map(([studentId, stats]) => ({
+      studentId,
+      examCount: stats.examCount,
+      averageScore: stats.examCount > 0 ? stats.totalScore / stats.examCount : 0,
+    }))
+    .sort((left, right) => {
+      if (right.averageScore !== left.averageScore) {
+        return right.averageScore - left.averageScore;
+      }
+      if (right.examCount !== left.examCount) {
+        return right.examCount - left.examCount;
+      }
+      return left.studentId.localeCompare(right.studentId);
+    });
+
+  const currentIndex = rankedStudents.findIndex(
+    (entry) => entry.studentId === user.id,
+  );
+
+  return success(c, {
+    rank: currentIndex >= 0 ? currentIndex + 1 : null,
+    totalStudents: rankedStudents.length,
+    termExamCount:
+      currentIndex >= 0 ? rankedStudents[currentIndex]?.examCount ?? 0 : 0,
+  });
+});
+
 // GET /results/:sessionId — Detailed result
 studentRoutes.get("/results/:sessionId", async (c) => {
   const user = c.get("user");

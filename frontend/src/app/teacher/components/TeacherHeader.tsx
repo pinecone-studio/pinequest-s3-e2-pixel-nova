@@ -1,12 +1,7 @@
+import Image from "next/image";
 import { useMemo, useState, type ReactNode } from "react";
 import type { NotificationItem } from "@/lib/notifications";
-import {
-  Activity,
-  Bell,
-  BookCopy,
-  CalendarDays,
-  GraduationCap,
-} from "lucide-react";
+import { Activity, Bell, BookCopy, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export type TeacherNavTab = string;
@@ -47,10 +42,17 @@ export default function TeacherHeader({
   return (
     <header className="relative z-40 flex items-center justify-between gap-4 border-b border-[#dce5ef] bg-white/95 px-6 py-0 backdrop-blur">
       <div className="flex shrink-0 items-center gap-2 py-3">
-        <div className="grid h-8 w-8 place-items-center rounded-xl bg-[#2563eb]">
-          <GraduationCap className="h-4 w-4" />
+        <div className="overflow-hidden rounded-xl">
+          <Image
+            src="/group-web.svg"
+            alt="PineQuest"
+            width={32}
+            height={32}
+            className="h-8 w-8"
+            priority
+          />
         </div>
-        <span className="text-sm font-bold text-slate-900">PineQuest</span>
+        <span className="text-sm font-bold text-slate-900">Educore</span>
       </div>
 
       <nav className="flex items-center gap-2 overflow-x-auto rounded-2xl bg-[#fbfcff] px-2 py-2">
@@ -62,7 +64,7 @@ export default function TeacherHeader({
               type="button"
               onClick={() => setActiveTab(tab)}
               variant={`ghost`}
-              className={`relative flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium hover:-translate-y-0.5 transition-all duration-500 ease-out ${
+              className={`relative flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-500 ease-out hover:-translate-y-0.5 ${
                 isActive && "text-primary"
               }`}>
               {tab}

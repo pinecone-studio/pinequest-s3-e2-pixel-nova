@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {
   Bell,
   ChevronDown,
@@ -71,23 +72,19 @@ export default function StudentHeader({
     <header className="rounded-[28px] border border-[#eceaf7] bg-white/95 px-4 py-3 shadow-[0_20px_60px_rgba(55,70,110,0.08)] backdrop-blur sm:px-6">
       <div className="flex flex-wrap items-center gap-4 xl:flex-nowrap xl:justify-between">
         <div className="flex min-w-[220px] items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#5c6cff] to-[#7b61ff] text-white shadow-[0_14px_30px_rgba(92,108,255,0.3)]">
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 4 4.5 8 12 12l7.5-4L12 4Z" />
-              <path d="M7 10.7V14c0 1.8 2.2 3.3 5 3.3s5-1.5 5-3.3v-3.3" />
-            </svg>
+          <div className="overflow-hidden rounded-2xl shadow-[0_14px_30px_rgba(37,99,235,0.22)]">
+            <Image
+              src="/group-web.svg"
+              alt="PineQuest"
+              width={44}
+              height={44}
+              className="h-11 w-11"
+              priority
+            />
           </div>
           <div>
             <div className="text-lg font-semibold tracking-[-0.02em] text-slate-900">
-              EduCore LMS
+              PineQuest
             </div>
             <div className="text-xs text-slate-400">Сурагчийн орчин</div>
           </div>
@@ -240,7 +237,7 @@ export default function StudentHeader({
               className="flex items-center gap-2 rounded-full border border-[#ebe8f8] bg-white px-2 py-1.5 text-left shadow-sm transition hover:border-[#d7d2ff]"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#6d6bff] to-[#8f6aff] text-sm font-semibold text-white">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#6d6bff] to-[#8f6aff] text-sm font-semibold text-white">
                 {currentUserInitials}
               </span>
               <ChevronDown

@@ -3,6 +3,26 @@ import { z } from "zod";
 import { examSessions, exams, options, questions, studentAnswers } from "../db";
 import { awardXpForGrading } from "../utils/xp-award";
 
+type ExamSessionRow = typeof examSessions.$inferSelect;
+type ExamRow = typeof exams.$inferSelect;
+type QuestionRow = typeof questions.$inferSelect;
+type OptionRow = typeof options.$inferSelect;
+type StudentAnswerRow = typeof studentAnswers.$inferSelect;
+
+type ResultAnswerRow = {
+  answerId: string;
+  questionId: string;
+  selectedOptionId: string | null;
+  textAnswer: string | null;
+  isCorrect: boolean | null;
+  pointsEarned: number | null;
+  answeredAt: string;
+  questionText: string;
+  questionType: string;
+  points: number;
+  correctAnswerText: string | null;
+};
+
 export const manualGradeSchema = z.object({
   grades: z.array(
     z.object({
@@ -33,17 +53,17 @@ export async function findTeacherOwnedSession(db: any, sessionId: string, teache
   return { session, exam: exam ?? null };
 }
 
-export async function autoGradeSession(db: any, session: any, exam: any) {
-  const examQuestions = await db
+export async function autoGradeSession(db: any, session: ExamSessionRow, exam: ExamRow) {
+  const examQuestions: QuestionRow[] = await db
     .select()
     .from(questions)
     .where(eq(questions.examId, session.examId));
 
   const mcQuestionIds = examQuestions
-    .filter((question: any) => question.type === "multiple_choice" || question.type === "true_false")
-    .map((question: any) => question.id);
+    .filter((question) => question.type === "multiple_choice" || question.type === "true_false")
+    .map((question) => question.id);
 
-  const correctOptions = mcQuestionIds.length > 0
+  const correctOptions: OptionRow[] = mcQuestionIds.length > 0
     ? await db
         .select()
         .from(options)
@@ -60,8 +80,10 @@ export async function autoGradeSession(db: any, session: any, exam: any) {
     correctOptionByQuestion.set(option.questionId, option.id);
   }
 
-  const questionMap = new Map(examQuestions.map((question: any) => [question.id, question]));
-  const answers = await db
+  const questionMap = new Map<string, QuestionRow>(
+    examQuestions.map((question) => [question.id, question]),
+  );
+  const answers: StudentAnswerRow[] = await db
     .select()
     .from(studentAnswers)
     .where(eq(studentAnswers.sessionId, session.id));
@@ -127,7 +149,7 @@ export async function autoGradeSession(db: any, session: any, exam: any) {
 }
 
 export async function fetchStudentGradedResult(db: any, sessionId: string, studentId: string) {
-  const [session] = await db
+  const [session]: ExamSessionRow[] = await db
     .select()
     .from(examSessions)
     .where(and(eq(examSessions.id, sessionId), eq(examSessions.studentId, studentId)))
@@ -137,7 +159,7 @@ export async function fetchStudentGradedResult(db: any, sessionId: string, stude
     return { session: null, exam: null, answers: [] };
   }
 
-  const [exam] = await db
+  const [exam]: ExamRow[] = await db
     .select()
     .from(exams)
     .where(eq(exams.id, session.examId))
@@ -147,7 +169,7 @@ export async function fetchStudentGradedResult(db: any, sessionId: string, stude
     return { session, exam: null, answers: [] };
   }
 
-  const answers = await db
+  const answers: ResultAnswerRow[] = await db
     .select({
       answerId: studentAnswers.id,
       questionId: studentAnswers.questionId,
@@ -169,9 +191,9 @@ export async function fetchStudentGradedResult(db: any, sessionId: string, stude
   return { session, exam, answers };
 }
 
-export async function attachResultOptions(db: any, answers: any[]) {
+export async function attachResultOptions(db: any, answers: ResultAnswerRow[]) {
   const questionIds = answers.map((answer) => answer.questionId);
-  const allOptions = questionIds.length > 0
+  const allOptions: OptionRow[] = questionIds.length > 0
     ? await db
         .select()
         .from(options)
@@ -196,7 +218,7 @@ export async function attachResultOptions(db: any, answers: any[]) {
     textAnswer: answer.textAnswer,
     isCorrect: answer.isCorrect,
     pointsEarned: answer.pointsEarned,
-    options: (optionsByQuestion.get(answer.questionId) ?? []).map((option) => ({
+    options: (optionsByQuestion.get(answer.questionId) ?? []).map((option: OptionRow) => ({
       id: option.id,
       label: option.label,
       text: option.text,
