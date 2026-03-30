@@ -1,6 +1,8 @@
+import { BellOff } from "lucide-react";
 import { cardClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { NotificationItem } from "../types";
+import TeacherEmptyState from "./TeacherEmptyState";
 
 type NotificationsCardProps = {
   notifications: NotificationItem[];
@@ -30,9 +32,11 @@ export default function NotificationsCard({
       </h2>
       <div className="mt-4 space-y-3 text-sm">
         {notifications.length === 0 && (
-          <div className="rounded-2xl border border-[#dce5ef] bg-[#f8fafc] px-3 py-3 text-xs text-slate-500">
-            Одоогоор мэдэгдэл алга.
-          </div>
+          <TeacherEmptyState
+            icon={<BellOff className="h-5 w-5" />}
+            title="Мэдэгдэл алга"
+            description="Шинэ шалгалтын явц, зөрчил, илгээлтийн мэдэгдлүүд энд бодитоор харагдана."
+          />
         )}
         {notifications.map((item) => (
           <button

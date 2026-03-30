@@ -131,44 +131,46 @@ export default function TeacherHeader({
                 Одоогоор мэдэгдэл алга.
               </div>
             )}
-            {visibleNotifications.map((item) => (
-              <button
-                key={item.id}
-                className={`mt-2 w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                  item.status === "read"
-                    ? "border-[#dce5ef] bg-[#f8fafc] text-slate-500"
-                    : "border-[#bfdbfe] bg-[#eff6ff] text-slate-800"
-                }`}
-                onClick={() => onMarkRead?.(item.id)}
-                type="button"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="font-semibold">{item.title}</div>
-                  <span
-                    className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                      item.severity === "critical"
-                        ? "bg-red-50 text-red-600"
-                        : item.severity === "warning"
-                          ? "bg-amber-50 text-amber-700"
-                          : item.severity === "success"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-[#eef4ff] text-[#2563eb]"
-                    }`}
-                  >
-                    {item.severity}
-                  </span>
-                </div>
-                <div className="mt-1">{item.message}</div>
-                <div className="mt-2 text-xs text-slate-400">
-                  {new Date(item.createdAt).toLocaleString("mn-MN", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-              </button>
-            ))}
+            <div className={`${showAllNotifications ? "max-h-[420px] overflow-y-auto pr-1" : ""}`}>
+              {visibleNotifications.map((item) => (
+                <button
+                  key={item.id}
+                  className={`mt-2 w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                    item.status === "read"
+                      ? "border-[#dce5ef] bg-[#f8fafc] text-slate-500"
+                      : "border-[#bfdbfe] bg-[#eff6ff] text-slate-800"
+                  }`}
+                  onClick={() => onMarkRead?.(item.id)}
+                  type="button"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="font-semibold">{item.title}</div>
+                    <span
+                      className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                        item.severity === "critical"
+                          ? "bg-red-50 text-red-600"
+                          : item.severity === "warning"
+                            ? "bg-amber-50 text-amber-700"
+                            : item.severity === "success"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-[#eef4ff] text-[#2563eb]"
+                      }`}
+                    >
+                      {item.severity}
+                    </span>
+                  </div>
+                  <div className="mt-1">{item.message}</div>
+                  <div className="mt-2 text-xs text-slate-400">
+                    {new Date(item.createdAt).toLocaleString("mn-MN", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                </button>
+              ))}
+            </div>
             {notifications.length > 3 && (
               <button
                 type="button"

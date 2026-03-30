@@ -1,5 +1,7 @@
 import type { Exam } from "../types";
-import { figmaFieldClass } from "../styles";
+import TeacherEmptyState from "./TeacherEmptyState";
+import TeacherSelect from "./TeacherSelect";
+import { FileSearch } from "lucide-react";
 
 type ExamScheduleFilePickerProps = {
   selectableExams: Exam[];
@@ -19,23 +21,24 @@ export default function ExamScheduleFilePicker({
     <div className="grid gap-3">
       <span className="text-[16px] font-semibold text-black">Шалгалтын файл</span>
       {selectableExams.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#dce5ef] px-4 py-5 text-sm text-slate-400">
-          Хуваарьлах боломжтой (draft/товлосон) шалгалт алга байна.
-        </div>
+        <TeacherEmptyState
+          icon={<FileSearch className="h-5 w-5" />}
+          title="Хуваарьлах шалгалт алга"
+          description="Эхлээд асуулттай шалгалт үүсгээд эсвэл draft төлөвтэй шалгалтаа сонгоно уу."
+        />
       ) : (
         <div className="grid gap-3">
-          <select
-            className={figmaFieldClass}
+          <TeacherSelect
+            options={[
+              { value: "", label: "Шалгалтын файл сонгоно уу." },
+              ...selectableExams.map((exam) => ({
+                value: exam.id,
+                label: exam.title,
+              })),
+            ]}
             value={selectedScheduleExamId}
             onChange={(event) => setSelectedScheduleExamId(event.target.value)}
-          >
-            <option value="">Шалгалтын файл сонгоно уу.</option>
-            {selectableExams.map((exam) => (
-              <option key={exam.id} value={exam.id}>
-                {exam.title}
-              </option>
-            ))}
-          </select>
+          />
 
           {selectedExam && (
             <div className="flex items-center gap-3 rounded-2xl border border-[#e5ecf3] bg-[#fafcff] px-4 py-3">

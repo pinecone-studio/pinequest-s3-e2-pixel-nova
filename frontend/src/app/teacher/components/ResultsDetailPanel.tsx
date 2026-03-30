@@ -1,9 +1,12 @@
+import { FileSearch, UserRoundSearch } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { cardClass, sectionDescriptionClass } from "../styles";
 import type { Exam, Submission, ExamStatsSummary } from "../types";
 import type { StudentProfile } from "@/lib/backend-auth";
 import AttendanceStatsCard from "./AttendanceStatsCard";
 import type { ExamAttendanceStats } from "../hooks/useExamAttendanceStats";
+import TeacherEmptyState from "./TeacherEmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ResultsDetailPanelProps = {
   selectedSubmission: Submission | null;
@@ -85,10 +88,26 @@ export default function ResultsDetailPanel({
         Сонгосон сурагчийн профайл, зөрчил, асуулт тус бүрийн хариултыг нэг дороос харна.
       </p>
       {!selectedSubmission && (
-        <div className="mt-6 text-sm text-slate-500">
-          {selectedExam
-            ? `"${selectedExam.title}" шалгалтын дүнгээс нэг сурагч сонговол энд дэлгэрэнгүй гарна.`
-            : "Дэлгэрэнгүй харахын тулд жагсаалтаас сонгоно уу."}
+        <div className="mt-6">
+          <TeacherEmptyState
+            icon={
+              selectedExam ? (
+                <UserRoundSearch className="h-5 w-5" />
+              ) : (
+                <FileSearch className="h-5 w-5" />
+              )
+            }
+            title={
+              selectedExam
+                ? "Сурагч сонгоогүй байна"
+                : "Шалгалт сонгоогүй байна"
+            }
+            description={
+              selectedExam
+                ? `"${selectedExam.title}" шалгалтын жагсаалтаас нэг сурагч сонговол энд дэлгэрэнгүй тайлан харагдана.`
+                : "Гүйцэтгэлийн жагсаалтаас шалгалт сонгоод дүн, тайлан, хариултын мэдээллээ нээнэ үү."
+            }
+          />
         </div>
       )}
       {selectedSubmission && (
@@ -106,7 +125,11 @@ export default function ResultsDetailPanel({
           <div className="rounded-2xl border border-[#dce5ef] bg-[#f8fafc] px-4 py-4 text-xs">
             <div className="font-semibold text-foreground">Сурагчийн профайл</div>
             {profileLoading && (
-              <div className="mt-2 text-muted-foreground">Ачаалж байна...</div>
+              <div className="mt-3 grid gap-2">
+                <Skeleton className="h-4 w-28 rounded-full bg-slate-200" />
+                <Skeleton className="h-4 w-40 rounded-full bg-slate-200" />
+                <Skeleton className="h-4 w-32 rounded-full bg-slate-200" />
+              </div>
             )}
             {!profileLoading && !studentProfile && (
               <div className="mt-2 text-muted-foreground">

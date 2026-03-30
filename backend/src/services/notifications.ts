@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, or } from "drizzle-orm";
 import { examSessions, exams, notifications, students, type getDb } from "../db";
 import { parseExamDate } from "../utils/exam-time";
 
@@ -36,6 +36,17 @@ const serializeMetadata = (metadata?: Record<string, unknown> | null) =>
   metadata ? JSON.stringify(metadata) : null;
 
 const nowIso = () => new Date().toISOString();
+const INFO_RETENTION_MS = 24 * 60 * 60 * 1000;
+const WARNING_RETENTION_MS = 3 * 24 * 60 * 60 * 1000;
+const MAX_ACTIVE_NOTIFICATIONS = 60;
+
+const retentionByType: Partial<Record<NotificationType, number>> = {
+  submission_saved: 10 * 60 * 1000,
+  time_remaining_warning: 6 * 60 * 60 * 1000,
+  exam_unlocked: INFO_RETENTION_MS,
+  late_entry_notice: WARNING_RETENTION_MS,
+  exam_ending_soon: 6 * 60 * 60 * 1000,
+};
 
 export const publishNotification = async (
   db: AppDb,
@@ -87,7 +98,9 @@ export const listNotificationsForUser = async (
   db
     .select()
     .from(notifications)
-    .where(eq(notifications.userId, userId))
+    .where(
+      and(eq(notifications.userId, userId), isNull(notifications.archivedAt)),
+    )
     .orderBy(desc(notifications.createdAt))
     .limit(limit);
 
@@ -120,6 +133,71 @@ export const markAllNotificationsRead = async (db: AppDb, userId: string) => {
     .where(
       and(eq(notifications.userId, userId), eq(notifications.status, "unread")),
     );
+};
+
+export const cleanupNotificationsForUser = async (db: AppDb, userId: string) => {
+  const now = Date.now();
+  const infoCutoff = new Date(now - INFO_RETENTION_MS).toISOString();
+  const warningCutoff = new Date(now - WARNING_RETENTION_MS).toISOString();
+
+  await db
+    .update(notifications)
+    .set({ archivedAt: nowIso() })
+    .where(
+      and(
+        eq(notifications.userId, userId),
+        isNull(notifications.archivedAt),
+        or(
+          and(
+            eq(notifications.status, "read"),
+            eq(notifications.severity, "info"),
+            lt(notifications.createdAt, infoCutoff),
+          ),
+          and(
+            eq(notifications.status, "read"),
+            eq(notifications.severity, "success"),
+            lt(notifications.createdAt, infoCutoff),
+          ),
+          and(
+            eq(notifications.severity, "warning"),
+            lt(notifications.createdAt, warningCutoff),
+          ),
+        ),
+      ),
+    );
+
+  for (const [type, retentionMs] of Object.entries(retentionByType) as Array<
+    [NotificationType, number]
+  >) {
+    const cutoff = new Date(now - retentionMs).toISOString();
+    await db
+      .update(notifications)
+      .set({ archivedAt: nowIso() })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.type, type),
+          isNull(notifications.archivedAt),
+          lt(notifications.createdAt, cutoff),
+        ),
+      );
+  }
+
+  const activeItems = await db
+    .select({ id: notifications.id })
+    .from(notifications)
+    .where(
+      and(eq(notifications.userId, userId), isNull(notifications.archivedAt)),
+    )
+    .orderBy(desc(notifications.createdAt));
+
+  const overflow = activeItems.slice(MAX_ACTIVE_NOTIFICATIONS);
+  for (const item of overflow) {
+    await db
+      .update(notifications)
+      .set({ archivedAt: nowIso() })
+      .where(eq(notifications.id, item.id));
+  }
 };
 
 const minutesLeft = (endsAt: Date) =>
@@ -244,7 +322,7 @@ export const notifyTeacherStudentFlagged = async (
     examId,
     sessionId,
     studentId,
-    dedupeKey: `student_flagged:${sessionId}:${reason}:${Date.now()}`,
+    dedupeKey: `student_flagged:${sessionId}:${reason}:${Math.floor(Date.now() / 120000)}`,
     metadata: { studentName, reason },
   });
 
@@ -438,6 +516,7 @@ export const syncNotificationsForUser = async (
   userId: string,
   role: NotificationRole,
 ) => {
+  await cleanupNotificationsForUser(db, userId);
   if (role === "teacher") {
     await syncTeacherExamWindowNotifications(db, userId);
   } else {
@@ -474,7 +553,11 @@ export const getUnreadCount = async (db: AppDb, userId: string) => {
     .select({ id: notifications.id })
     .from(notifications)
     .where(
-      and(eq(notifications.userId, userId), eq(notifications.status, "unread")),
+      and(
+        eq(notifications.userId, userId),
+        eq(notifications.status, "unread"),
+        isNull(notifications.archivedAt),
+      ),
     );
 
   return unread.length;
