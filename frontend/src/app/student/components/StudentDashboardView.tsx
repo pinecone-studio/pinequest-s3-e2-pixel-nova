@@ -11,6 +11,7 @@ import StudentPreferencesTab from "./StudentPreferencesTab";
 import StudentProgressTab from "./StudentProgressTab";
 import StudentSettingsTab from "./StudentSettingsTab";
 import type { Exam, Grade, NotificationItem, StudentTab } from "../types";
+import type { StudentTermRankOverview } from "@/lib/backend-auth";
 
 type StudentHistoryItem = {
   examId: string;
@@ -20,14 +21,6 @@ type StudentHistoryItem = {
   totalPoints?: number;
   grade?: Grade;
   date: string;
-};
-
-type LeaderboardEntry = {
-  id: string;
-  fullName: string;
-  xp: number;
-  level: number;
-  rank: number;
 };
 
 type StudentExamState = {
@@ -69,6 +62,7 @@ type StudentProgressState = {
   };
   nextLevel: { level: number; name: string; minXP: number } | null;
   progressSegments: number;
+  termRankOverview: StudentTermRankOverview;
 };
 
 type StudentDashboardViewProps = {
@@ -78,9 +72,8 @@ type StudentDashboardViewProps = {
   selectedUser: AuthUser | null;
   teacherUsers: AuthUser[];
   currentUserName: string;
-  currentUserId: string;
   currentRank: number | null;
-  leaderboardEntries: LeaderboardEntry[];
+  totalStudents: number;
   studentHistory: StudentHistoryItem[];
   currentXp: number;
   data: StudentDataState;
@@ -98,9 +91,8 @@ export default function StudentDashboardView({
   selectedUser,
   teacherUsers,
   currentUserName,
-  currentUserId,
   currentRank,
-  leaderboardEntries,
+  totalStudents,
   studentHistory,
   currentXp,
   data,
@@ -155,7 +147,7 @@ export default function StudentDashboardView({
               studentProgress={progress.studentProgress}
               nextLevel={resolvedNextLevel}
               currentRank={currentRank}
-              studentCount={leaderboardEntries.length}
+              studentCount={totalStudents}
               studentHistory={studentHistory}
               onOpenExams={() => exam.setActiveTab("Exams")}
               onOpenProgress={() => exam.setActiveTab("Progress")}
@@ -197,8 +189,9 @@ export default function StudentDashboardView({
 
         {exam.activeTab === "Leaderboard" && (
           <StudentLeaderboardTab
-            currentUserId={currentUserId}
-            entries={leaderboardEntries}
+            currentUserName={currentUserName}
+            currentLevel={progress.levelInfo.level}
+            termRankOverview={progress.termRankOverview}
           />
         )}
 

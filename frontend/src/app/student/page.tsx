@@ -157,33 +157,12 @@ export default function StudentPage() {
     [data.exams, progress.studentHistory],
   );
 
-  const leaderboardEntries = useMemo(
-    () =>
-      [...users]
-        .sort((left, right) => {
-          const xpDiff = (right.xp ?? 0) - (left.xp ?? 0);
-          if (xpDiff !== 0) return xpDiff;
-          return left.fullName.localeCompare(right.fullName);
-        })
-        .map((user, index) => ({
-          id: user.id,
-          fullName: user.fullName,
-          xp: user.xp ?? 0,
-          level: user.level ?? 1,
-          rank: index + 1,
-        })),
-    [users],
-  );
-
   const currentUserNameRaw =
     selectedUser?.fullName ?? data.currentUser?.username ?? "";
   const currentUserName =
     typeof currentUserNameRaw === "string" ? currentUserNameRaw : "";
-  const currentUserId = selectedUser?.id ?? data.currentUser?.id ?? "";
-  const currentRank =
-    leaderboardEntries.find((entry) => entry.id === currentUserId)?.rank ??
-    null;
-  const currentXp = progress.studentProgress.xp || selectedUser?.xp || 0;
+  const currentRank = progress.rankOverview.rank;
+  const currentXp = progress.studentProgress.xp;
 
   if (!data.currentUser) {
     return (
@@ -209,9 +188,8 @@ export default function StudentPage() {
           selectedUser={selectedUser}
           teacherUsers={teacherUsers}
           currentUserName={currentUserName}
-          currentUserId={currentUserId}
           currentRank={currentRank}
-          leaderboardEntries={leaderboardEntries}
+          totalStudents={progress.rankOverview.totalStudents}
           studentHistory={studentHistory}
           currentXp={currentXp}
           data={data}

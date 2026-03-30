@@ -1,5 +1,6 @@
 import {
 	buildClassEntries,
+	buildDemoLeaderboardEntries,
 	buildSubjectEntries,
 	formatCompactXp,
 	getPodiumEntries,
@@ -62,5 +63,18 @@ describe("student leaderboard helpers", () => {
 		];
 		const podium = getPodiumEntries(entries);
 		expect(podium.map((entry) => entry.rank)).toEqual([2, 1, 3]);
+	});
+
+	it("builds 10 demo leaderboard rows and keeps only the current user named", () => {
+		const entries = buildDemoLeaderboardEntries({
+			currentUserName: "Anu Bold",
+			currentRank: 4,
+			currentLevel: 3,
+		});
+
+		expect(entries).toHaveLength(10);
+		expect(entries.filter((entry) => entry.fullName === "Anu Bold")).toHaveLength(1);
+		expect(entries.filter((entry) => entry.fullName === "Сурагч")).toHaveLength(9);
+		expect(entries.find((entry) => entry.fullName === "Anu Bold")?.rank).toBe(4);
 	});
 });

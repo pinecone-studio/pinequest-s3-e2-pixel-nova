@@ -46,8 +46,8 @@ export default function StudentLeaderboardListItem({
               {getFirstName(entry.fullName)}
             </span>
             {isCurrentUser && (
-              <span className="rounded-full bg-[#5c6cff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
-                YOU
+              <span className="rounded-full bg-[#5c6cff] px-2 py-0.5 text-[10px] font-semibold text-white">
+                you
               </span>
             )}
           </div>

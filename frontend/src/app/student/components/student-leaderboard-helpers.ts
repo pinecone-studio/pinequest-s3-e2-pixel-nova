@@ -12,6 +12,12 @@ export type DisplayEntry = LeaderboardEntry & {
   focusLabel: string;
 };
 
+type DemoLeaderboardOptions = {
+  currentUserName: string;
+  currentRank: number | null;
+  currentLevel: number;
+};
+
 export const avatarPool = ["🧑‍🎓", "👨‍🎓", "👩‍🎓", "👦", "👧", "🧠"];
 export const subjectPool = ["Математик", "Англи хэл", "Физик", "Хими", "Түүх", "Биологи"];
 
@@ -114,6 +120,44 @@ export const buildSubjectEntries = (entries: LeaderboardEntry[]) =>
         rank: index + 1,
       })),
   );
+
+const DEMO_ROW_COUNT = 10;
+
+const getDemoMetricValue = (rank: number) =>
+  Math.max(1600, 8400 - (rank - 1) * 650);
+
+const getDemoLevel = (rank: number) =>
+  Math.max(1, 12 - Math.floor((rank - 1) / 2));
+
+export const buildDemoLeaderboardEntries = ({
+  currentUserName,
+  currentRank,
+  currentLevel,
+}: DemoLeaderboardOptions) => {
+  const resolvedRank =
+    typeof currentRank === "number" && currentRank > 0 ? currentRank : 4;
+  const visibleRanks =
+    resolvedRank <= DEMO_ROW_COUNT
+      ? Array.from({ length: DEMO_ROW_COUNT }, (_, index) => index + 1)
+      : [
+          ...Array.from({ length: DEMO_ROW_COUNT - 1 }, (_, index) => index + 1),
+          resolvedRank,
+        ];
+
+  return buildClassEntries(
+    visibleRanks.map((rank) => {
+      const isCurrentUser = rank === resolvedRank;
+
+      return {
+        id: isCurrentUser ? "current-student" : `demo-student-${rank}`,
+        fullName: isCurrentUser ? currentUserName : "Сурагч",
+        xp: getDemoMetricValue(rank),
+        level: isCurrentUser ? currentLevel : getDemoLevel(rank),
+        rank,
+      };
+    }),
+  );
+};
 
 export const getPodiumEntries = (entries: DisplayEntry[]) => {
   const second = entries.find((entry) => entry.rank === 2);

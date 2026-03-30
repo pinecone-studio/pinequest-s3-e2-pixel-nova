@@ -3,13 +3,31 @@ import { getLevel, LEVELS } from "@/lib/examGuard";
 import type { StudentProgress } from "../types";
 import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
-import { apiFetch, unwrapApi } from "@/lib/api-client";
-import { getStudentResults } from "@/lib/backend-auth";
+import {
+  getStudentResults,
+  getStudentTermRank,
+  type StudentTermRankOverview,
+} from "@/lib/backend-auth";
+import {
+  getXpHistory,
+  getXpProfile,
+  type XpActivity,
+} from "@/api/xp";
 
 export const useStudentProgress = (currentUser: User | null) => {
   const [studentHistory, setStudentHistory] = useState<
     StudentProgress[string]["history"]
   >([]);
+  const [xpActivities, setXpActivities] = useState<XpActivity[]>([]);
+  const [rankOverview, setRankOverview] = useState({
+    rank: null as number | null,
+    totalStudents: 0,
+  });
+  const [termRankOverview, setTermRankOverview] = useState<StudentTermRankOverview>({
+    rank: null,
+    totalStudents: 0,
+    termExamCount: 0,
+  });
   const [studentProgress, setStudentProgress] = useState({
     xp: 0,
     level: 1,
@@ -20,28 +38,29 @@ export const useStudentProgress = (currentUser: User | null) => {
     if (!currentUser) return;
     const load = async () => {
       try {
-        const xpPayload = await apiFetch<
-          { data?: { xp: number; level: number | { level: number } } } | {
-            xp: number;
-            level: number | { level: number };
-          }
-        >("/api/xp/profile");
-        const xpData = unwrapApi(xpPayload);
-        const levelValue =
-          typeof xpData.level === "object"
-            ? xpData.level.level
-            : xpData.level;
+        const xpData = await getXpProfile(currentUser);
         setStudentProgress({
           xp: xpData.xp,
-          level: levelValue ?? 1,
+          level: xpData.level ?? 1,
           history: [],
+        });
+        setRankOverview({
+          rank: xpData.rank ?? null,
+          totalStudents: xpData.totalStudents ?? 0,
         });
       } catch {
         setStudentProgress({ xp: 0, level: 1, history: [] });
+        setRankOverview({ rank: null, totalStudents: 0 });
       }
 
       try {
-        const results = await getStudentResults();
+        setXpActivities(await getXpHistory(currentUser));
+      } catch {
+        setXpActivities([]);
+      }
+
+      try {
+        const results = await getStudentResults(currentUser);
         const history = results.map((item) => {
           const percentage = item.score ?? 0;
           return {
@@ -59,6 +78,16 @@ export const useStudentProgress = (currentUser: User | null) => {
         );
       } catch {
         setStudentHistory([]);
+      }
+
+      try {
+        setTermRankOverview(await getStudentTermRank(currentUser));
+      } catch {
+        setTermRankOverview({
+          rank: null,
+          totalStudents: 0,
+          termExamCount: 0,
+        });
       }
     };
     void load();
@@ -80,6 +109,9 @@ export const useStudentProgress = (currentUser: User | null) => {
 
   return {
     studentHistory,
+    xpActivities,
+    rankOverview,
+    termRankOverview,
     studentProgress,
     levelInfo,
     nextLevel,
