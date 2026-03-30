@@ -172,7 +172,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    fireEvent.press(screen.getByText("Шалгалтыг эхлүүлэх"));
+    fireEvent.press(screen.getByText("Шалгалт эхлүүлэх"));
 
     await waitFor(() => {
       expect(
