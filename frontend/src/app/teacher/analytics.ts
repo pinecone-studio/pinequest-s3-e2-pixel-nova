@@ -226,10 +226,36 @@ export const buildExamStats = (params: {
 
   const questionStats = activeExam.questions
     .map((question) => {
-      const correctCount = activeSubmissions.reduce((sum, submission) => {
-        const answer = submission.answers?.find((item) => item.questionId === question.id);
-        return sum + (answer?.correct ? 1 : 0);
-      }, 0);
+      const answers = activeSubmissions
+        .map((submission) =>
+          submission.answers?.find((item) => item.questionId === question.id),
+        )
+        .filter((answer) => answer !== undefined);
+
+      const correctCount = answers.reduce(
+        (sum, answer) => sum + (answer.correct ? 1 : 0),
+        0,
+      );
+      const skippedCount = Math.max(submissionCount - answers.length, 0);
+
+      const wrongAnswerCounts = new Map<string, number>();
+      answers.forEach((answer) => {
+        if (
+          answer.correct ||
+          !answer.selectedAnswer ||
+          !answer.selectedAnswer.trim()
+        ) {
+          return;
+        }
+        const key = answer.selectedAnswer.trim();
+        wrongAnswerCounts.set(key, (wrongAnswerCounts.get(key) ?? 0) + 1);
+      });
+
+      const [topWrongAnswer = null, topWrongAnswerCount = 0] =
+        [...wrongAnswerCounts.entries()].sort((left, right) => {
+          if (right[1] !== left[1]) return right[1] - left[1];
+          return left[0].localeCompare(right[0]);
+        })[0] ?? [];
 
       return {
         id: question.id,
@@ -239,6 +265,9 @@ export const buildExamStats = (params: {
         correctRate:
           submissionCount > 0 ? Math.round((correctCount / submissionCount) * 100) : 0,
         missCount: Math.max(submissionCount - correctCount, 0),
+        skippedCount,
+        topWrongAnswer,
+        topWrongAnswerCount,
       };
     })
     .filter((question) => question.total > 0);

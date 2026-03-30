@@ -1,6 +1,13 @@
 import { Hono } from "hono";
 import { eq, and, desc, sql, count } from "drizzle-orm";
-import { getDb, exams, examSessions, questions, studentAnswers } from "../db";
+import {
+  getDb,
+  exams,
+  examSessions,
+  questions,
+  studentAnswers,
+  options,
+} from "../db";
 import type { AppEnv } from "../types";
 import { success, notFound, error } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
@@ -99,40 +106,112 @@ analyticsRoutes.get("/exam/:examId/questions", async (c) => {
     return notFound(c, "Exam");
   }
 
-  // For each question: count correct vs incorrect answers
-  const questionStats = await db
+  const [submissionRow] = await db
+    .select({ count: count() })
+    .from(examSessions)
+    .where(
+      and(
+        eq(examSessions.examId, examId),
+        eq(examSessions.status, "graded"),
+      ),
+    );
+
+  const gradedSubmissionCount = submissionRow?.count ?? 0;
+
+  const examQuestions = await db
     .select({
-      questionId: questions.id,
+      id: questions.id,
       questionText: questions.questionText,
-      totalAnswers: count(),
-      correctCount: sql<number>`sum(case when ${studentAnswers.isCorrect} = 1 then 1 else 0 end)`,
-      incorrectCount: sql<number>`sum(case when ${studentAnswers.isCorrect} = 0 then 1 else 0 end)`,
+      orderIndex: questions.orderIndex,
     })
     .from(questions)
-    .leftJoin(studentAnswers, eq(questions.id, studentAnswers.questionId))
     .where(eq(questions.examId, examId))
-    .groupBy(questions.id);
+    .orderBy(questions.orderIndex);
 
-  const stats = questionStats.map((q) => ({
-    questionId: q.questionId,
-    questionText: q.questionText,
-    totalAnswers: q.totalAnswers,
-    correctCount: q.correctCount ?? 0,
-    incorrectCount: q.incorrectCount ?? 0,
-    correctRate: q.totalAnswers > 0 ? Math.round(((q.correctCount ?? 0) / q.totalAnswers) * 100) : 0,
-  }));
+  const answers = await db
+    .select({
+      questionId: studentAnswers.questionId,
+      textAnswer: studentAnswers.textAnswer,
+      isCorrect: studentAnswers.isCorrect,
+      selectedOptionText: options.text,
+    })
+    .from(studentAnswers)
+    .innerJoin(
+      examSessions,
+      and(
+        eq(studentAnswers.sessionId, examSessions.id),
+        eq(examSessions.examId, examId),
+        eq(examSessions.status, "graded"),
+      ),
+    )
+    .leftJoin(options, eq(studentAnswers.selectedOptionId, options.id));
+
+  const answersByQuestion = new Map<string, typeof answers>();
+  for (const answer of answers) {
+    const list = answersByQuestion.get(answer.questionId) ?? [];
+    list.push(answer);
+    answersByQuestion.set(answer.questionId, list);
+  }
+
+  const stats = examQuestions.map((question) => {
+    const questionAnswers = answersByQuestion.get(question.id) ?? [];
+    const correctCount = questionAnswers.reduce(
+      (sum, answer) => sum + (answer.isCorrect ? 1 : 0),
+      0,
+    );
+    const skippedCount = Math.max(
+      gradedSubmissionCount - questionAnswers.length,
+      0,
+    );
+    const missCount = Math.max(gradedSubmissionCount - correctCount, 0);
+
+    const wrongAnswerCounts = new Map<string, number>();
+    for (const answer of questionAnswers) {
+      if (answer.isCorrect) continue;
+      const value = (answer.selectedOptionText ?? answer.textAnswer ?? "").trim();
+      if (!value) continue;
+      wrongAnswerCounts.set(value, (wrongAnswerCounts.get(value) ?? 0) + 1);
+    }
+
+    const [topWrongAnswer = null, topWrongAnswerCount = 0] =
+      [...wrongAnswerCounts.entries()].sort((left, right) => {
+        if (right[1] !== left[1]) return right[1] - left[1];
+        return left[0].localeCompare(right[0]);
+      })[0] ?? [];
+
+    return {
+      id: question.id,
+      text: question.questionText,
+      correctCount,
+      total: gradedSubmissionCount,
+      correctRate:
+        gradedSubmissionCount > 0
+          ? Math.round((correctCount / gradedSubmissionCount) * 100)
+          : 0,
+      missCount,
+      skippedCount,
+      topWrongAnswer,
+      topWrongAnswerCount,
+    };
+  });
 
   // Sort for most missed (highest incorrect count)
   const mostMissed = [...stats]
-    .sort((a, b) => b.incorrectCount - a.incorrectCount)
+    .sort((a, b) => {
+      if (b.missCount !== a.missCount) return b.missCount - a.missCount;
+      return a.correctRate - b.correctRate;
+    })
     .slice(0, 5);
 
   // Sort for most correct (highest correct count)
   const mostCorrect = [...stats]
-    .sort((a, b) => b.correctCount - a.correctCount)
+    .sort((a, b) => {
+      if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
+      return a.missCount - b.missCount;
+    })
     .slice(0, 5);
 
-  return success(c, { mostMissed, mostCorrect });
+  return success(c, { questionStats: stats, mostMissed, mostCorrect });
 });
 
 // GET /exam/:examId/summary — Exam-level analytics

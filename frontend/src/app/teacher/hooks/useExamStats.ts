@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { StudentProgress, User } from "@/lib/examGuard";
 import {
   buildCheatStudents,
@@ -6,17 +6,29 @@ import {
   buildTeacherOverviewStats,
   buildXpLeaderboard,
 } from "../analytics";
-import type { Exam, Submission } from "../types";
+import type { Exam, ExamStatsSummary, QuestionInsight, Submission } from "../types";
+import { fetchExamQuestionInsights } from "./teacher-api";
 
 export const useExamStats = (params: {
   exams: Exam[];
   submissions: Submission[];
   studentProgress: StudentProgress;
   users: User[];
+  teacherId?: string | null;
 }) => {
-  const { exams, submissions, studentProgress, users } = params;
+  const { exams, submissions, studentProgress, users, teacherId } = params;
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [remoteInsightsByExam, setRemoteInsightsByExam] = useState<
+    Record<
+      string,
+      {
+        questionStats: QuestionInsight[];
+        mostMissed: QuestionInsight[];
+        mostCorrect: QuestionInsight[];
+      }
+    >
+  >({});
 
   const xpLeaderboard = useMemo(
     () =>
@@ -88,6 +100,44 @@ export const useExamStats = (params: {
     [activeExam, activeSubmissions],
   );
 
+  useEffect(() => {
+    if (!activeExamId || remoteInsightsByExam[activeExamId]) return;
+
+    let cancelled = false;
+
+    const loadInsights = async () => {
+      try {
+        const payload = await fetchExamQuestionInsights(activeExamId, teacherId ?? undefined);
+        if (cancelled) return;
+        setRemoteInsightsByExam((current) => ({
+          ...current,
+          [activeExamId]: payload,
+        }));
+      } catch {
+        if (cancelled) return;
+      }
+    };
+
+    void loadInsights();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeExamId, remoteInsightsByExam, teacherId]);
+
+  const mergedExamStats = useMemo<ExamStatsSummary | null>(() => {
+    if (!examStats || !activeExamId) return examStats;
+    const remote = remoteInsightsByExam[activeExamId];
+    if (!remote) return examStats;
+
+    return {
+      ...examStats,
+      questionStats: remote.questionStats,
+      mostMissed: remote.mostMissed,
+      mostCorrect: remote.mostCorrect,
+    };
+  }, [activeExamId, examStats, remoteInsightsByExam]);
+
   return {
     stats,
     cheatStudents,
@@ -102,6 +152,6 @@ export const useExamStats = (params: {
     activeExamId,
     activeExam,
     activeSubmissions,
-    examStats,
+    examStats: mergedExamStats,
   };
 };

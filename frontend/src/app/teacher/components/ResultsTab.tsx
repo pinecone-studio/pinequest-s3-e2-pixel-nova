@@ -1,5 +1,6 @@
 import ResultsSummaryCard from "./ResultsSummaryCard";
 import ResultsCharts from "./ResultsCharts";
+import QuestionInsightsPanel from "./QuestionInsightsPanel";
 import ResultsSubmissionsList from "./ResultsSubmissionsList";
 import ResultsDetailPanel from "./ResultsDetailPanel";
 import TeacherCardSkeleton from "./TeacherCardSkeleton";
@@ -65,6 +66,7 @@ export default function ResultsTab({
         examStats={examStats}
       />
       <ResultsCharts examStats={examStats} />
+      <QuestionInsightsPanel examStats={examStats} />
       <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
         <ResultsSubmissionsList
           submissions={submissions}

@@ -3,6 +3,10 @@ import type {
   Exam,
   ExamRosterDetail,
   Question,
+  AiAcceptedDraftResponse,
+  AiExamGeneratorInput,
+  AiGeneratedDraft,
+  QuestionInsight,
   Submission,
   XpLeaderboardEntry,
 } from "../types";
@@ -36,44 +40,42 @@ type TeacherExamDetail = TeacherExamSummary & {
   }[];
 };
 
-export const fetchTeacherExams = async (teacherId?: string): Promise<Exam[]> => {
-  const listData = await apiFetch<{ data?: TeacherExamSummary[] } | TeacherExamSummary[]>(
-    "/api/exams",
-    {},
-    "teacher",
-    teacherId,
-  );
+export const fetchTeacherExams = async (
+  teacherId?: string,
+): Promise<Exam[]> => {
+  const listData = await apiFetch<
+    { data?: TeacherExamSummary[] } | TeacherExamSummary[]
+  >("/api/exams", {}, "teacher", teacherId);
   const summaries = unwrapApi(listData);
   const details = await Promise.all(
     summaries.map(async (exam) => {
-      const detailData = await apiFetch<{ data?: TeacherExamDetail } | TeacherExamDetail>(
-        `/api/exams/${exam.id}`,
-        {},
-        "teacher",
-        teacherId,
-      );
+      const detailData = await apiFetch<
+        { data?: TeacherExamDetail } | TeacherExamDetail
+      >(`/api/exams/${exam.id}`, {}, "teacher", teacherId);
       return unwrapApi(detailData);
     }),
   );
 
   return details.map((exam) => {
-    const mappedQuestions: Question[] = (exam.questions ?? []).map((question) => {
-      const sortedOptions = (question.options ?? []).sort((a, b) =>
-        a.label.localeCompare(b.label),
-      );
-      const optionTexts = sortedOptions.map((opt) => opt.text);
-      const correctFromOption =
-        sortedOptions.find((opt) => opt.isCorrect)?.text ?? "";
-      return {
-        id: question.id,
-        text: question.questionText,
-        type: (question.type as Question["type"]) ?? "text",
-        options: optionTexts.length > 0 ? optionTexts : undefined,
-        correctAnswer: question.correctAnswerText ?? correctFromOption ?? "",
-        points: Number(question.points ?? 1),
-        imageUrl: question.imageUrl ?? undefined,
-      };
-    });
+    const mappedQuestions: Question[] = (exam.questions ?? []).map(
+      (question) => {
+        const sortedOptions = (question.options ?? []).sort((a, b) =>
+          a.label.localeCompare(b.label),
+        );
+        const optionTexts = sortedOptions.map((opt) => opt.text);
+        const correctFromOption =
+          sortedOptions.find((opt) => opt.isCorrect)?.text ?? "";
+        return {
+          id: question.id,
+          text: question.questionText,
+          type: (question.type as Question["type"]) ?? "text",
+          options: optionTexts.length > 0 ? optionTexts : undefined,
+          correctAnswer: question.correctAnswerText ?? correctFromOption ?? "",
+          points: Number(question.points ?? 1),
+          imageUrl: question.imageUrl ?? undefined,
+        };
+      },
+    );
 
     return {
       id: exam.id,
@@ -140,9 +142,11 @@ type LeaderboardItem = {
 };
 
 export const fetchXpLeaderboard = async (): Promise<XpLeaderboardEntry[]> => {
-  const data = await apiFetch<
-    { data?: LeaderboardItem[] } | LeaderboardItem[]
-  >("/api/xp/leaderboard", {}, "teacher");
+  const data = await apiFetch<{ data?: LeaderboardItem[] } | LeaderboardItem[]>(
+    "/api/xp/leaderboard",
+    {},
+    "teacher",
+  );
   const list = unwrapApi<LeaderboardItem[]>(data);
   return list.map((student) => {
     const rawLevel = student.level;
@@ -164,4 +168,61 @@ export const fetchXpLeaderboard = async (): Promise<XpLeaderboardEntry[]> => {
       lastActivity: null,
     };
   });
+};
+
+type ExamQuestionInsightsPayload = {
+  questionStats: QuestionInsight[];
+  mostMissed: QuestionInsight[];
+  mostCorrect: QuestionInsight[];
+};
+
+export const fetchExamQuestionInsights = async (
+  examId: string,
+  teacherId?: string,
+): Promise<ExamQuestionInsightsPayload> => {
+  const data = await apiFetch<
+    { data?: ExamQuestionInsightsPayload } | ExamQuestionInsightsPayload
+  >(`/api/analytics/exam/${examId}/questions`, {}, "teacher", teacherId);
+  return unwrapApi(data);
+};
+
+export const generateAiExamDraft = async (
+  input: AiExamGeneratorInput,
+  teacherId?: string,
+): Promise<AiGeneratedDraft> => {
+  const data = await apiFetch<
+    { data?: { draft: AiGeneratedDraft } } | { draft: AiGeneratedDraft }
+  >(
+    "/api/agent/exam-generator/generate",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+    "teacher",
+    teacherId,
+  );
+  const payload = unwrapApi(data);
+  return "draft" in payload ? payload.draft : payload;
+};
+
+export const saveAcceptedAiDraft = async (
+  generatorInput: AiExamGeneratorInput,
+  draft: AiGeneratedDraft,
+  teacherId?: string,
+): Promise<AiAcceptedDraftResponse> => {
+  const data = await apiFetch<
+    { data?: AiAcceptedDraftResponse } | AiAcceptedDraftResponse
+  >(
+    "/api/agent/exam-generator/save",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        generatorInput,
+        draft,
+      }),
+    },
+    "teacher",
+    teacherId,
+  );
+  return unwrapApi(data);
 };

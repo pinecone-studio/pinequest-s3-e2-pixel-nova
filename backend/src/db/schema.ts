@@ -256,3 +256,22 @@ export const savedExams = sqliteTable("saved_exams", {
 }, (table) => [
   uniqueIndex("saved_exams_student_exam_unique").on(table.studentId, table.examId),
 ]);
+
+// Accepted AI exam generator drafts
+export const aiExamGeneratorRuns = sqliteTable("ai_exam_generator_runs", {
+  id: text("id").primaryKey(),
+  teacherId: text("teacher_id")
+    .notNull()
+    .references(() => teachers.id, { onDelete: "cascade" }),
+  topic: text("topic").notNull(),
+  subject: text("subject"),
+  gradeOrClass: text("grade_or_class"),
+  difficulty: text("difficulty").notNull(),
+  questionCount: integer("question_count").notNull(),
+  instructions: text("instructions"),
+  generatedTitle: text("generated_title").notNull(),
+  draftPayload: text("draft_payload").notNull(),
+  status: text("status").notNull().default("accepted"),
+  createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+  updatedAt: text("updated_at").notNull().default(sql`(current_timestamp)`),
+});
