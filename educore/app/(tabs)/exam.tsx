@@ -15,15 +15,6 @@ import {
 import { Camera as VisionCamera } from 'react-native-vision-camera';
 
 import MobileProctorCamera from "@/components/student-app/MobileProctorCamera";
-import {
-  AppScreen,
-  Card,
-  ErrorText,
-  Pill,
-  PrimaryButton,
-  SecondaryButton,
-  SectionTitle,
-} from '@/components/student-app/ui';
 import { useStudentApp } from '@/lib/student-app/context';
 import {
   computeRemainingSeconds,
@@ -350,7 +341,40 @@ export default function ExamScreen() {
             </View>
           )}
 
-        {!isJoined && currentQuestion ? (
+          {activeSession.syncMessage ? (
+            <Text style={styles.warningText}>{activeSession.syncMessage}</Text>
+          ) : null}
+
+          {integrity.warningMessage ? (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>
+                ⚠️ {integrity.warningMessage}
+              </Text>
+            </View>
+          ) : null}
+
+          {syncError ? <Text style={styles.errorText}>{syncError}</Text> : null}
+
+          {isJoined ? (
+            <>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={() => void handleStart()}
+              >
+                <Text style={styles.primaryBtnText}>Шалгалт эхлүүлэх</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.secondaryBtn}
+                onPress={() => void recoverActiveSession()}
+              >
+                <Text style={styles.secondaryBtnText}>Шинэчлэх</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+        </View>
+      </View>
+
+      {!isJoined && currentQuestion ? (
         <MobileProctorCamera
           isEnabled={activeSession.status === "in_progress" && appIsActive}
           onViolation={logIntegrityEvent}
