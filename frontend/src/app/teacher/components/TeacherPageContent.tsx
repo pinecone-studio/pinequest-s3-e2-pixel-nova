@@ -4,6 +4,7 @@ import ExamScheduleCard from "./ExamScheduleCard";
 import ResultsTab from "./ResultsTab";
 import TeacherStudentsTab from "./TeacherStudentsTab";
 import TeacherXpOverviewCard from "./TeacherXpOverviewCard";
+import TeacherPageSkeleton from "./TeacherPageSkeleton";
 import type { useExamAttendanceStats } from "../hooks/useExamAttendanceStats";
 import type { useExamManagement } from "../hooks/useExamManagement";
 import type { useExamStats } from "../hooks/useExamStats";
@@ -88,6 +89,10 @@ export default function TeacherPageContent({
 }: TeacherPageContentProps) {
   const router = useRouter();
 
+  if (data.loading && activeTab !== "Гүйцэтгэл") {
+    return <TeacherPageSkeleton />;
+  }
+
   if (activeTab === "Шалгалтын сан") {
     return (
       <ExamListCard
@@ -135,6 +140,7 @@ export default function TeacherPageContent({
         loading={data.loading}
         onAddSchedule={() => setShowScheduleForm((prev) => !prev)}
         currentUserId={data.currentUser?.id ?? null}
+        onCopyCode={management.copyCode}
       />
       <TeacherScheduleModal
         show={showScheduleForm}

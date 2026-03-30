@@ -6,6 +6,7 @@ import NotificationsCard from "./NotificationsCard";
 import CheatMonitoringCard from "./CheatMonitoringCard";
 import TeacherXpOverviewCard from "./TeacherXpOverviewCard";
 import TeacherCardSkeleton from "./TeacherCardSkeleton";
+import type { CopyCodeHandler } from "./RoomCodeCopyButton";
 import type {
   CheatStudent,
   Question,
@@ -36,7 +37,7 @@ type ExamTabProps = {
   setDurationMinutes: (value: number) => void;
   roomCode: string | null;
   onSchedule: () => void;
-  onCopyCode: (code: string) => void;
+  onCopyCode: CopyCodeHandler;
   examTitle: string;
   setExamTitle: (value: string) => void;
   questionText: string;

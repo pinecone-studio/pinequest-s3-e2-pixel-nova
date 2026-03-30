@@ -1,4 +1,6 @@
 import { ChevronRight } from "lucide-react";
+import RoomCodeCopyButton from "./RoomCodeCopyButton";
+import type { CopyCodeHandler } from "./RoomCodeCopyButton";
 import type { ScheduleCategory, ScheduleItem } from "./teacher-schedule-helpers";
 import { ROW_HEIGHT } from "./teacher-schedule-helpers";
 
@@ -59,11 +61,13 @@ export function ScheduleCard({
 export function ScheduleListCard({
   item,
   onOpen,
+  onCopyCode,
   formatDateValue,
   formatTimeValue,
 }: {
   item: ScheduleItem;
   onOpen: (examId: string) => void;
+  onCopyCode?: CopyCodeHandler;
   formatDateValue: (date: Date) => string;
   formatTimeValue: (date: Date) => string;
 }) {
@@ -73,41 +77,53 @@ export function ScheduleListCard({
       : "bg-[#fff0e7] text-[#ff9a45]";
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(item.id)}
-      className="rounded-[28px] border border-[#efd7d7] bg-white px-7 py-8 text-left shadow-[0_18px_36px_-32px_rgba(15,23,42,0.22)] transition hover:-translate-y-1 hover:shadow-[0_24px_38px_-28px_rgba(15,23,42,0.24)]"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <h3 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
-          {item.title}
-        </h3>
-        <span className={`rounded-full px-4 py-2 text-[12px] font-semibold ${tagTone}`}>
-          {item.category === "required" ? "Заавал судлах" : "Сонгон судлах"}
-        </span>
-      </div>
+    <div className="relative rounded-[28px] border border-[#efd7d7] bg-white px-7 py-8 text-left shadow-[0_18px_36px_-32px_rgba(15,23,42,0.22)] transition hover:-translate-y-1 hover:shadow-[0_24px_38px_-28px_rgba(15,23,42,0.24)]">
+      <button
+        type="button"
+        onClick={() => onOpen(item.id)}
+        aria-label={`${item.title} дэлгэрэнгүй`}
+        className="absolute inset-0 rounded-[28px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#355cde]"
+      />
 
-      <div className="mt-8 grid grid-cols-[auto_1fr] gap-x-8 gap-y-4 text-[16px]">
-        <span className="text-[#b49494]">Өдөр:</span>
-        <span className="justify-self-end text-slate-900">
-          {formatDateValue(item.scheduledDate)}
-        </span>
-        <span className="text-[#b49494]">Эхлэх цаг:</span>
-        <span className="justify-self-end text-slate-900">
-          {formatTimeValue(item.scheduledDate)}
-        </span>
-        <span className="text-[#b49494]">Үргэлжлэх хугацаа:</span>
-        <span className="justify-self-end text-slate-900">{item.duration} минут</span>
-        <span className="text-[#b49494]">Өрөөний код:</span>
-        <span className="justify-self-end text-slate-900">{item.roomCode}</span>
-      </div>
+      <div className="relative">
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
+            {item.title}
+          </h3>
+          <span className={`rounded-full px-4 py-2 text-[12px] font-semibold ${tagTone}`}>
+            {item.category === "required" ? "Заавал судлах" : "Сонгон судлах"}
+          </span>
+        </div>
 
-      <div className="mt-8 border-t border-[#ead7d7] pt-5">
-        <span className="ml-auto flex items-center justify-end gap-3 text-[15px] font-medium text-slate-800 transition hover:text-slate-950">
-          Дэлгэрэнгүй
-          <ChevronRight className="size-4" />
-        </span>
+        <div className="mt-8 grid grid-cols-[auto_1fr] gap-x-8 gap-y-4 text-[16px]">
+          <span className="text-[#b49494]">Өдөр:</span>
+          <span className="justify-self-end text-slate-900">
+            {formatDateValue(item.scheduledDate)}
+          </span>
+          <span className="text-[#b49494]">Эхлэх цаг:</span>
+          <span className="justify-self-end text-slate-900">
+            {formatTimeValue(item.scheduledDate)}
+          </span>
+          <span className="text-[#b49494]">Үргэлжлэх хугацаа:</span>
+          <span className="justify-self-end text-slate-900">{item.duration} минут</span>
+          <span className="text-[#b49494]">Өрөөний код:</span>
+          <div className="relative z-10 flex items-center justify-self-end gap-2 text-slate-900">
+            <span>{item.roomCode}</span>
+            <RoomCodeCopyButton
+              code={item.roomCode}
+              onCopyCode={onCopyCode}
+              className="relative z-10 size-8"
+            />
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-[#ead7d7] pt-5">
+          <span className="ml-auto flex items-center justify-end gap-3 text-[15px] font-medium text-slate-800 transition hover:text-slate-950">
+            Дэлгэрэнгүй
+            <ChevronRight className="size-4" />
+          </span>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
