@@ -111,6 +111,21 @@ const tableExports = {
   cheatEvents: createTable(["id", "sessionId", "examId", "studentId", "eventType", "isNotified", "createdAt"]),
   xpTransactions: createTable(["id", "studentId", "amount", "reason", "referenceId", "createdAt"]),
   savedExams: createTable(["id", "studentId", "examId", "createdAt"]),
+  aiExamGeneratorRuns: createTable([
+    "id",
+    "teacherId",
+    "topic",
+    "subject",
+    "gradeOrClass",
+    "difficulty",
+    "questionCount",
+    "instructions",
+    "generatedTitle",
+    "draftPayload",
+    "status",
+    "createdAt",
+    "updatedAt",
+  ]),
   materials: createTable(["id", "examId", "fileName", "fileType", "materialType", "fileUrl", "createdAt"]),
   questionBank: createTable(["id", "teacherId", "subjectId", "type", "difficulty", "questionText", "imageUrl", "audioUrl", "explanation", "correctAnswerText", "tags", "usageCount", "createdAt", "updatedAt"]),
   questionBankOptions: createTable(["id", "bankQuestionId", "label", "text", "imageUrl", "isCorrect", "orderIndex"]),
@@ -156,6 +171,7 @@ export function resetDbMock() {
   mockDb.insert.mockClear();
   mockDb.update.mockClear();
   mockDb.delete.mockClear();
+  workerEnv.AI.run.mockReset();
 }
 
 export function teacherHeaders(overrides: Record<string, string> = {}) {
@@ -187,4 +203,7 @@ export function jsonRequest(body: unknown, headers: Record<string, string> = {})
 
 export const workerEnv = {
   educore: {},
+  AI: {
+    run: jest.fn(),
+  },
 } as any;

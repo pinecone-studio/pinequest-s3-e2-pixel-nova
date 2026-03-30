@@ -21,6 +21,8 @@ import {
 import { useTeacherData } from "../hooks/useTeacherData";
 import { useExamManagement } from "../hooks/useExamManagement";
 import { useExamImport } from "../hooks/useExamImport";
+import { useAiExamGenerator } from "../hooks/useAiExamGenerator";
+import AiExamGeneratorPanel from "../components/AiExamGeneratorPanel";
 import ExamCreateCard from "../components/ExamCreateCard";
 import { pageShellClass } from "../styles";
 
@@ -86,6 +88,10 @@ export default function CreateExamPage() {
     showToast: data.showToast,
     currentUser: data.currentUser,
   });
+  const generator = useAiExamGenerator({
+    teacherId: sessionUser?.id ?? null,
+    showToast: data.showToast,
+  });
   const imports = useExamImport({
     setQuestions: management.setQuestions,
     examTitle: management.examTitle,
@@ -97,6 +103,13 @@ export default function CreateExamPage() {
   const handleSaveExam = async () => {
     const success = await management.saveExam();
     if (success) router.push("/teacher");
+  };
+
+  const handleUseDraft = async () => {
+    const saved = await generator.acceptDraft();
+    if (!saved || !generator.draft) return;
+    management.setExamTitle(generator.draft.title);
+    management.setQuestions(generator.draft.questions);
   };
 
   return (
@@ -118,6 +131,16 @@ export default function CreateExamPage() {
       </header>
       <main className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1180px]">
+          <AiExamGeneratorPanel
+            input={generator.input}
+            onChange={generator.updateInput}
+            draft={generator.draft}
+            generating={generator.generating}
+            savingAccepted={generator.savingAccepted}
+            error={generator.error}
+            onGenerate={generator.generateDraft}
+            onUseDraft={handleUseDraft}
+          />
           <ExamCreateCard
             examTitle={management.examTitle}
             setExamTitle={management.setExamTitle}

@@ -63,6 +63,9 @@ export type QuestionInsight = {
   total: number;
   correctRate: number;
   missCount: number;
+  skippedCount: number;
+  topWrongAnswer: string | null;
+  topWrongAnswerCount: number;
 };
 
 export type ScoreBand = {
@@ -143,4 +146,24 @@ export type ExamRosterDetail = {
   startedAt: string | null;
   finishedAt: string | null;
   participants: ExamRosterParticipant[];
+};
+
+export type AiExamGeneratorInput = {
+  topic: string;
+  subject?: string;
+  gradeOrClass?: string;
+  difficulty: "easy" | "medium" | "hard";
+  questionCount: number;
+  instructions?: string;
+};
+
+export type AiGeneratedDraft = {
+  title: string;
+  description: string | null;
+  questions: Question[];
+};
+
+export type AiAcceptedDraftResponse = {
+  id: string;
+  status: "accepted";
 };

@@ -71,6 +71,7 @@ export default function TeacherPage() {
     submissions: data.submissions,
     studentProgress: data.studentProgress,
     users: data.users,
+    teacherId: sessionUser?.id ?? null,
   });
   const attendance = useExamAttendanceStats(examStatsState.activeExamId);
 
