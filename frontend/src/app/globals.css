@@ -80,7 +80,7 @@
   --sidebar-accent-foreground: #0f172a;
   --sidebar-border: #dbe4f0;
   --sidebar-ring: #bfdbfe;
-  --font-sans: "Manrope", "Inter", "SF Pro Display", system-ui, sans-serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
   --font-geist-mono: "SFMono-Regular", "JetBrains Mono", "Menlo", monospace;
 }
 

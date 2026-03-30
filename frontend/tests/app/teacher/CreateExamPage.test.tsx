@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import CreateExamPage from "@/app/teacher/createExam/page";
 
 type MockAuthUser = {
@@ -7,8 +7,29 @@ type MockAuthUser = {
   role: string;
 };
 
+const push = jest.fn();
+const consumePendingCreateExamDraft = jest.fn(() => null);
+const setExamTitle = jest.fn();
+const setQuestions = jest.fn();
+const acceptDraft = jest
+  .fn()
+  .mockResolvedValue({ id: "run-1", status: "accepted" });
+const generateDraft = jest.fn().mockResolvedValue({
+  title: "Generated Biology Test",
+  description: null,
+  questions: [
+    {
+      id: "q1",
+      text: "What is a cell?",
+      type: "text",
+      correctAnswer: "Basic unit of life",
+      points: 1,
+    },
+  ],
+});
+
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push }),
 }));
 
 jest.mock("@/lib/backend-auth", () => ({
@@ -43,11 +64,9 @@ jest.mock("@/lib/examGuard", () => ({
   type: {},
 }));
 
-const setExamTitle = jest.fn();
-const setQuestions = jest.fn();
-const acceptDraft = jest
-  .fn()
-  .mockResolvedValue({ id: "run-1", status: "accepted" });
+jest.mock("@/app/teacher/create-exam-dialog-state", () => ({
+  consumePendingCreateExamDraft: () => consumePendingCreateExamDraft(),
+}));
 
 jest.mock("@/app/teacher/hooks/useTeacherData", () => ({
   useTeacherData: () => ({
@@ -97,6 +116,15 @@ jest.mock("@/app/teacher/hooks/useExamImport", () => ({
     setPdfUseOcr: jest.fn(),
     answerKeyPage: "last",
     setAnswerKeyPage: jest.fn(),
+    importMcqCount: 0,
+    setImportMcqCount: jest.fn(),
+    importTextCount: 5,
+    setImportTextCount: jest.fn(),
+    importOpenCount: 0,
+    setImportOpenCount: jest.fn(),
+    shuffleImportedQuestions: false,
+    setShuffleImportedQuestions: jest.fn(),
+    plannedQuestionCount: 5,
     pdfLoading: false,
     pdfError: null,
     importError: null,
@@ -118,6 +146,7 @@ jest.mock("@/app/teacher/hooks/useAiExamGenerator", () => ({
       questionCount: 10,
       instructions: "",
     },
+    setInput: jest.fn(),
     updateInput: jest.fn(),
     draft: {
       title: "Generated Biology Test",
@@ -136,27 +165,84 @@ jest.mock("@/app/teacher/hooks/useAiExamGenerator", () => ({
     generating: false,
     savingAccepted: false,
     error: null,
-    generateDraft: jest.fn(),
+    generateDraft,
     acceptDraft,
   }),
 }));
 
 describe("CreateExamPage", () => {
   beforeEach(() => {
+    push.mockReset();
+    consumePendingCreateExamDraft.mockReset();
+    consumePendingCreateExamDraft.mockReturnValue(null);
     setExamTitle.mockReset();
     setQuestions.mockReset();
     acceptDraft.mockClear();
+    generateDraft.mockClear();
   });
 
   it("renders the current create exam shell without inline AI draft actions", async () => {
     render(<CreateExamPage />);
 
-    expect(screen.getByRole("button", { name: "AI ашиглан үүсгэх" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "AI ашиглан үүсгэх" }),
+    ).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: "Use Draft" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Use Draft" }),
+      ).not.toBeInTheDocument();
     });
     expect(acceptDraft).not.toHaveBeenCalled();
     expect(setExamTitle).not.toHaveBeenCalled();
     expect(setQuestions).not.toHaveBeenCalled();
+  });
+
+  it("prefills the manual exam title from a pending dialog payload", async () => {
+    consumePendingCreateExamDraft.mockReturnValue({
+      mode: "manual",
+      examTitle: "Dialog exam title",
+    });
+
+    render(<CreateExamPage />);
+
+    await waitFor(() => {
+      expect(setExamTitle).toHaveBeenCalledWith("Dialog exam title");
+    });
+  });
+
+  it("generates and loads AI draft content from a pending dialog payload", async () => {
+    consumePendingCreateExamDraft.mockReturnValue({
+      mode: "ai",
+      input: {
+        topic: "Present simple tense",
+        subject: "English",
+        gradeOrClass: "9-р анги",
+        difficulty: "medium",
+        questionCount: 8,
+        instructions: "Mix short and open questions",
+      },
+    });
+
+    render(<CreateExamPage />);
+
+    await waitFor(() => {
+      expect(generateDraft).toHaveBeenCalledWith({
+        topic: "Present simple tense",
+        subject: "English",
+        gradeOrClass: "9-р анги",
+        difficulty: "medium",
+        questionCount: 8,
+        instructions: "Mix short and open questions",
+      });
+    });
+
+    await waitFor(() => {
+      expect(setExamTitle).toHaveBeenCalledWith("Generated Biology Test");
+      expect(setQuestions).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ id: "q1", text: "What is a cell?" }),
+        ]),
+      );
+    });
   });
 });
