@@ -1,4 +1,5 @@
 import { useFocusEffect } from "@react-navigation/native";
+import { useCameraPermissions } from "expo-camera";
 import { Redirect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -11,11 +12,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Camera as VisionCamera } from 'react-native-vision-camera';
+} from "react-native";
 
 import MobileProctorCamera from "@/components/student-app/MobileProctorCamera";
-import { useStudentApp } from '@/lib/student-app/context';
+import { useStudentApp } from "@/lib/student-app/context";
 import {
   computeRemainingSeconds,
   formatCountdown,
@@ -40,7 +40,7 @@ export default function ExamScreen() {
     student,
     submitCurrentExam,
   } = useStudentApp();
-
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [remainingSeconds, setRemainingSeconds] = useState(
     computeRemainingSeconds(activeSession?.timerEndsAt ?? null),
   );
@@ -158,9 +158,9 @@ export default function ExamScreen() {
   }, [activeSession, handleSubmit, remainingSeconds]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      setAppIsActive(nextState === 'active');
-      if (nextState !== 'active' && activeSession?.status === 'in_progress') {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      setAppIsActive(nextState === "active");
+      if (nextState !== "active" && activeSession?.status === "in_progress") {
         setIntegrityWarning(
           "The app moved out of the foreground during an active exam.",
         );
@@ -194,7 +194,6 @@ export default function ExamScreen() {
 
   if (!student) return <Redirect href="/" />;
 
-  // Loading
   if (!hydrated) {
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -210,7 +209,6 @@ export default function ExamScreen() {
     );
   }
 
-  // No active session
   if (!activeSession) {
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -242,17 +240,13 @@ export default function ExamScreen() {
 
   const handleStart = async () => {
     try {
-      const permissionStatus = await VisionCamera.getCameraPermissionStatus();
-      const resolvedStatus =
-        permissionStatus === "granted"
-          ? permissionStatus
-          : permissionStatus === "not-determined"
-            ? await VisionCamera.requestCameraPermission()
-            : permissionStatus;
+      const permissionResult = cameraPermission?.granted
+        ? cameraPermission
+        : await requestCameraPermission();
 
-      if (resolvedStatus !== "granted") {
+      if (!permissionResult?.granted) {
         setSyncError(
-          "Камерын зөвшөөрөл шаардлагатай. Settings-ээс front camera access зөвшөөрөөд дахин оролдоно уу.",
+          "Камерын зөвшөөрөл шаардлагатай. Expo Go build дээр шалгалт эхлэхээс өмнө front camera access зөвшөөрөөд дахин оролдоно уу.",
         );
         return;
       }
@@ -285,7 +279,6 @@ export default function ExamScreen() {
     >
       <Text style={styles.pageTitle}>Шалгалт</Text>
 
-      {/* Exam info card */}
       <View style={styles.examCard}>
         <View style={styles.examCardTop} />
         <View style={styles.examCardBody}>
@@ -374,10 +367,10 @@ export default function ExamScreen() {
         </View>
       </View>
 
-      {!isJoined && currentQuestion ? (
+      {!isJoined ? (
         <MobileProctorCamera
           isEnabled={activeSession.status === "in_progress" && appIsActive}
-          onViolation={logIntegrityEvent}
+          permissionGranted={!!cameraPermission?.granted}
         />
       ) : null}
 
@@ -440,7 +433,6 @@ export default function ExamScreen() {
         </View>
       ) : null}
 
-      {/* Footer nav */}
       {!isJoined ? (
         <View style={styles.footerActions}>
           <TouchableOpacity
