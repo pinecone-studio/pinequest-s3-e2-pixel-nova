@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Exam } from "../types";
-import {
-  buttonPrimary,
-  cardClass,
-} from "../styles";
+import { buttonPrimary, cardClass } from "../styles";
 import ExamScheduleTypeSelector from "./ExamScheduleTypeSelector";
 import ExamScheduleMetaFields from "./ExamScheduleMetaFields";
 import ExamScheduleDatePicker from "./ExamScheduleDatePicker";
@@ -63,7 +60,9 @@ export default function ExamScheduleCard({
   );
 
   return (
-    <div className={`${cardClass} max-h-[calc(100vh-32px)] w-full max-w-[404px] overflow-auto p-5 font-sans sm:p-6`}>
+    <div
+      className={`${cardClass} max-h-[calc(100vh-32px)] w-full max-w-101 overflow-auto p-5 font-sans sm:p-6`}
+    >
       <div className="grid gap-6">
         <div className="flex items-center justify-between">
           <span className="text-[18px] font-semibold text-black">
@@ -126,7 +125,7 @@ export default function ExamScheduleCard({
         <div className="flex items-center justify-end gap-3 pt-1">
           {onClose && (
             <button
-              className="min-w-[82px] rounded-[14px] border border-[#dfdfdf] bg-white px-4 py-2.5 text-[14px] font-medium text-[#5b6068] transition hover:bg-[#f8fafc]"
+              className="min-w-20.5 rounded-[14px] border border-[#dfdfdf] bg-white px-4 py-2.5 text-[14px] font-medium text-[#5b6068] transition hover:bg-[#f8fafc]"
               onClick={onClose}
               type="button"
             >
@@ -134,7 +133,7 @@ export default function ExamScheduleCard({
             </button>
           )}
           <button
-            className={`min-w-[110px] rounded-[14px] px-5 py-2.5 text-[14px] ${buttonPrimary}`}
+            className={`min-w-27.5 rounded-[14px] px-5 py-2.5 text-[14px] ${buttonPrimary}`}
             onClick={onSchedule}
             type="button"
           >

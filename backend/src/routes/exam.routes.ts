@@ -208,7 +208,7 @@ examRoutes.get("/:examId/stats", async (c) => {
       return notFound(c, "Exam");
     }
 
-    const joinedStatuses = ["joined", "in_progress", "submitted", "graded"];
+    const joinedStatuses = ["joined", "late", "in_progress", "submitted", "graded"];
     const submittedStatuses = ["submitted", "graded"];
 
     const [joinedRow] = await db

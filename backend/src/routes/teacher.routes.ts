@@ -89,6 +89,103 @@ teacherRoutes.get("/exams/:examId/submissions", async (c) => {
   return success(c, submissions);
 });
 
+teacherRoutes.get("/exams/:examId/roster", async (c) => {
+  const teacherId = c.get("user").id;
+  const examId = c.req.param("examId");
+  const db = getDb(c.env.educore);
+
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(and(eq(exams.id, examId), eq(exams.teacherId, teacherId)))
+    .limit(1);
+
+  if (!exam) {
+    return notFound(c, "Exam");
+  }
+
+  const [questionCountRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(questions)
+    .where(eq(questions.examId, examId));
+
+  const totalQuestions = Number(questionCountRow?.count ?? 0);
+
+  const sessions = await db
+    .select({
+      sessionId: examSessions.id,
+      studentId: examSessions.studentId,
+      studentName: students.fullName,
+      studentCode: students.code,
+      status: examSessions.status,
+      submittedAt: examSessions.submittedAt,
+      startedAt: examSessions.startedAt,
+      isFlagged: examSessions.isFlagged,
+      flagCount: examSessions.flagCount,
+      score: examSessions.score,
+    })
+    .from(examSessions)
+    .innerJoin(students, eq(examSessions.studentId, students.id))
+    .where(eq(examSessions.examId, examId))
+    .orderBy(students.fullName);
+
+  const sessionIds = sessions.map((session) => session.sessionId);
+  const answerCounts =
+    sessionIds.length > 0
+      ? await db
+          .select({
+            sessionId: studentAnswers.sessionId,
+            count: sql<number>`count(*)`,
+          })
+          .from(studentAnswers)
+          .where(
+            sql`${studentAnswers.sessionId} IN (${sql.join(
+              sessionIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})`,
+          )
+          .groupBy(studentAnswers.sessionId)
+      : [];
+
+  const countBySession = new Map(
+    answerCounts.map((row) => [row.sessionId, Number(row.count ?? 0)]),
+  );
+
+  return success(c, {
+    examId: exam.id,
+    title: exam.title,
+    roomCode: exam.roomCode,
+    durationMin: exam.durationMin,
+    expectedStudentsCount: exam.expectedStudentsCount,
+    scheduledAt: exam.scheduledAt,
+    startedAt: exam.startedAt,
+    finishedAt: exam.finishedAt,
+    participants: sessions.map((session) => {
+      const answeredCount = countBySession.get(session.sessionId) ?? 0;
+      const progressPercent =
+        totalQuestions > 0
+          ? Math.min(100, Math.round((answeredCount / totalQuestions) * 100))
+          : 0;
+
+      return {
+        sessionId: session.sessionId,
+        studentId: session.studentId,
+        studentName: session.studentName,
+        studentCode: session.studentCode,
+        status: session.status,
+        answeredCount,
+        totalQuestions,
+        progressPercent,
+        submittedAt: session.submittedAt,
+        startedAt: session.startedAt,
+        isFlagged: Boolean(session.isFlagged),
+        flagCount: Number(session.flagCount ?? 0),
+        score: session.score,
+      };
+    }),
+  });
+});
+
 // GET /sessions/:sessionId/result — detailed result for teacher
 teacherRoutes.get("/sessions/:sessionId/result", async (c) => {
   const teacherId = c.get("user").id;

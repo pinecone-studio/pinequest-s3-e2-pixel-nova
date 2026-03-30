@@ -124,10 +124,14 @@ describe("session routes", () => {
     });
   });
 
-  it("rejects answers when the session is not in progress", async () => {
+  it("allows late or joined students to answer against the shared exam timer", async () => {
     queueDbResults(
       [{ id: "student-1", fullName: "Nora Student" }],
-      [{ id: "session-1", examId: "exam-1", status: "joined" }],
+      [{ id: "session-1", examId: "exam-1", status: "late", startedAt: null }],
+      [{ id: "exam-1", durationMin: 45, startedAt: "2026-03-30T10:00:00.000Z", scheduledAt: "2026-03-30T10:00:00.000Z" }],
+      undefined,
+      [],
+      undefined,
     );
 
     const response = await app.request(
@@ -142,12 +146,12 @@ describe("session routes", () => {
       workerEnv,
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(201);
     await expect(response.json()).resolves.toEqual({
-      success: false,
-      error: {
-        code: "INVALID_STATUS",
-        message: "Session is not in progress",
+      success: true,
+      data: {
+        answerId: "test-id",
+        updated: false,
       },
     });
   });

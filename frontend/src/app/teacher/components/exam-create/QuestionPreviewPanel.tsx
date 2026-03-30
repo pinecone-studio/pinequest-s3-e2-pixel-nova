@@ -28,7 +28,6 @@ type QuestionPreviewPanelProps = {
   removeQuestionOption: (id: string, optionIndex: number) => void;
   removeQuestion: (id: string) => void;
 };
-
 export default function QuestionPreviewPanel({
   questions,
   previewIndex,
@@ -90,7 +89,6 @@ export default function QuestionPreviewPanel({
       setImageBusy(false);
     }
   };
-
   if (typeof document === "undefined") return null;
 
   return createPortal(

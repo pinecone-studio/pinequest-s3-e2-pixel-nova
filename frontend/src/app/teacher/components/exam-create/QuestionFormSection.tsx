@@ -28,7 +28,6 @@ type QuestionFormSectionProps = {
   saving: boolean;
   hasUser: boolean;
 };
-
 const optionLabels = ["A", "B", "C", "D"];
 
 export default function QuestionFormSection({
@@ -67,7 +66,6 @@ export default function QuestionFormSection({
     };
     reader.readAsDataURL(file);
   };
-
   return (
     <div className="rounded-[28px] border border-[#e7edf5] bg-white px-6 py-5 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.14)]">
       <div className="mb-2 flex justify-center text-slate-300">

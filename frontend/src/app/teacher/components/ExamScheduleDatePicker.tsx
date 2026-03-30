@@ -135,7 +135,9 @@ export default function ExamScheduleDatePicker({
                       year: "numeric",
                     }),
                   formatWeekdayName: (date) =>
-                    date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2),
+                    date
+                      .toLocaleDateString("en-US", { weekday: "short" })
+                      .slice(0, 2),
                 }}
                 className="w-full p-0"
                 classNames={{
@@ -166,7 +168,7 @@ export default function ExamScheduleDatePicker({
             </div>
 
             <div className="border-t border-[#edf0f4]">
-              <div className="h-[172px] overflow-y-auto px-3 py-3">
+              <div className="h-43 overflow-y-auto px-3 py-3">
                 <div className="grid gap-2">
                   {timeOptions.map((time) => {
                     const active = time === selectedTime;
@@ -181,11 +183,14 @@ export default function ExamScheduleDatePicker({
                             : "bg-white text-slate-600 hover:bg-[#f8fafc]"
                         }`}
                       >
-                        {new Date(`2026-01-01T${time}:00`).toLocaleString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
+                        {new Date(`2026-01-01T${time}:00`).toLocaleString(
+                          "en-US",
+                          {
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          },
+                        )}
                       </button>
                     );
                   })}

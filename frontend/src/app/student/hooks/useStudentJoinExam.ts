@@ -40,6 +40,8 @@ export const useStudentJoinExam = () => {
             data?: {
               sessionId: string;
               status: string;
+              sessionStatus?: string;
+              entryStatus?: "on_time" | "late";
               scheduledAt?: string | null;
               startedAt?: string | null;
               exam: {
@@ -53,6 +55,8 @@ export const useStudentJoinExam = () => {
         | {
             sessionId: string;
             status: string;
+            sessionStatus?: string;
+            entryStatus?: "on_time" | "late";
             scheduledAt?: string | null;
             startedAt?: string | null;
             exam: {
@@ -72,6 +76,9 @@ export const useStudentJoinExam = () => {
         id: data.exam.id,
         title: data.exam.title,
         description: null,
+        status: data.status ?? null,
+        sessionStatus: data.sessionStatus ?? null,
+        entryStatus: data.entryStatus ?? null,
         scheduledAt: data.scheduledAt ?? new Date().toISOString(),
         examStartedAt: data.startedAt ?? null,
         roomCode: code,

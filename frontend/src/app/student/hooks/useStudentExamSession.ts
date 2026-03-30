@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch, unwrapApi } from "@/lib/api-client";
-import type { Exam, Question, Submission, Violations } from "../types";
 import type { User } from "@/lib/examGuard";
+import type { Exam, Question, Submission } from "../types";
 import { buildAnswerReport } from "./student-exam-helpers";
-import {
-  EMPTY_VIOLATIONS,
-  EVENT_TYPE_MAP,
-  mapResultToReport,
-  mapSessionToExam,
-} from "./student-exam-session-helpers";
+import { EMPTY_VIOLATIONS, mapResultToReport, mapSessionToExam } from "./student-exam-session-helpers";
+import { useStudentExamResultState } from "./useStudentExamResultState";
+import { useStudentExamWarnings } from "./useStudentExamWarnings";
 
 type UseStudentExamSessionParams = {
   currentUser: User | null;
@@ -17,31 +14,86 @@ type UseStudentExamSessionParams = {
   setJoinError?: (value: string | null) => void;
 };
 
+type SessionData = {
+  exam: { id: string; title: string; description?: string | null; durationMin: number };
+  questions: {
+    id: string;
+    type: string;
+    questionText: string;
+    imageUrl?: string | null;
+    points: number;
+    options?: { id: string; label: string; text: string }[];
+  }[];
+};
+
+type SessionResult = {
+  answers: {
+    questionText: string;
+    selectedAnswer: string | null;
+    correctAnswer: string | null;
+    isCorrect: boolean;
+    points: number;
+    pointsEarned: number;
+  }[];
+  score: number;
+  totalPoints: number;
+};
+
+const parseErrorMessage = (error: unknown, fallback: string) => {
+  if (!(error instanceof Error) || !error.message) return fallback;
+  try {
+    const parsed = JSON.parse(error.message) as { message?: string; error?: string | { code?: string; message?: string } };
+    return parsed.message || (typeof parsed.error === "string" ? parsed.error : parsed.error?.message) || fallback;
+  } catch {
+    return error.message;
+  }
+};
+
+
+const getRemainingSeconds = (exam: Exam) => {
+  const durationMs = (exam.duration ?? 45) * 60 * 1000;
+  const base = exam.finishedAt ?? exam.examStartedAt ?? exam.scheduledAt ?? null;
+  if (!base) return (exam.duration ?? 45) * 60;
+  const baseTime = new Date(base).getTime();
+  if (Number.isNaN(baseTime)) return (exam.duration ?? 45) * 60;
+  const endTime = exam.finishedAt ? baseTime : baseTime + durationMs;
+  return Math.max(Math.floor((endTime - Date.now()) / 1000), 0);
+};
+
+const getErrorCode = (error: unknown) => {
+  if (!(error instanceof Error) || !error.message) return null;
+  try {
+    const parsed = JSON.parse(error.message) as { error?: { code?: string } };
+    return parsed.error?.code ?? null;
+  } catch {
+    return null;
+  }
+};
+
 export const useStudentExamSession = ({
   currentUser,
   roomCodeInput,
   sessionId,
   setJoinError,
 }: UseStudentExamSessionParams) => {
-  const [view, setView] = useState<"dashboard" | "exam" | "result">(
-    "dashboard",
-  );
+  const [view, setView] = useState<"dashboard" | "exam" | "result">("dashboard");
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [lastSubmission, setLastSubmission] = useState<Submission | null>(null);
-  const [resultPending, setResultPending] = useState(false);
-  const [resultReleaseAt, setResultReleaseAt] = useState<string | null>(null);
-  const [resultCountdown, setResultCountdown] = useState("00:00:00");
-  const [answerReport, setAnswerReport] = useState<
-    { question: Question; answer: string; correct: boolean }[]
-  >([]);
-  const [violations, setViolations] = useState<Violations>({
-    ...EMPTY_VIOLATIONS,
-  });
-  const [warning, setWarning] = useState<string | null>(null);
   const sidebarTimerRef = useRef<number | null>(null);
+  const { violations, setViolations, warning, showWarning, logViolation } = useStudentExamWarnings(sessionId);
+  const {
+    lastSubmission,
+    setLastSubmission,
+    resultPending,
+    setResultPending,
+    resultReleaseAt,
+    setResultReleaseAt,
+    resultCountdown,
+    answerReport,
+    setAnswerReport,
+  } = useStudentExamResultState(sessionId, activeExam);
 
   useEffect(() => {
     if (view === "exam") return;
@@ -51,95 +103,26 @@ export const useStudentExamSession = ({
     document.body.style.filter = "none";
   }, [view]);
 
-  const showWarning = (message: string) => {
-    setWarning(message);
-    setTimeout(() => setWarning(null), 3000);
-  };
-
-  const logViolation = (type: string) => {
-    setViolations((prev) => ({
-      ...prev,
-      log: [{ type, timestamp: new Date().toISOString() }, ...prev.log].slice(
-        0,
-        50,
-      ),
-      tabSwitch: type === "TAB_SWITCH" ? prev.tabSwitch + 1 : prev.tabSwitch,
-      windowBlur:
-        type === "WINDOW_BLUR" ? prev.windowBlur + 1 : prev.windowBlur,
-      copyAttempt:
-        type === "COPY_ATTEMPT" ? prev.copyAttempt + 1 : prev.copyAttempt,
-      pasteAttempt:
-        type === "PASTE_ATTEMPT" ? prev.pasteAttempt + 1 : prev.pasteAttempt,
-      fullscreenExit:
-        type === "FULLSCREEN_EXIT"
-          ? prev.fullscreenExit + 1
-          : prev.fullscreenExit,
-      keyboardShortcut:
-        type === "KEYBOARD_SHORTCUT"
-          ? prev.keyboardShortcut + 1
-          : prev.keyboardShortcut,
-    }));
-    if (!sessionId) return;
-    const eventType = EVENT_TYPE_MAP[type] ?? "suspicious_resize";
-    void apiFetch("/api/cheat/event", {
-      method: "POST",
-      body: JSON.stringify({
-        sessionId,
-        eventType,
-        metadata: type,
-      }),
-    });
-  };
-
   const startExam = () => {
     if (!sessionId || !currentUser) {
       setJoinError?.("Шалгалт эхлүүлэхэд шаардлагатай мэдээлэл алга байна.");
       return;
     }
+
     const run = async () => {
       try {
-        const sessionPayload = await apiFetch<
-          | {
-              data?: {
-                exam: {
-                  id: string;
-                  title: string;
-                  description?: string | null;
-                  durationMin: number;
-                };
-                questions: {
-                  id: string;
-                  type: string;
-                  questionText: string;
-                  imageUrl?: string | null;
-                  points: number;
-                  options?: { id: string; label: string; text: string }[];
-                }[];
-              };
-            }
-          | {
-              exam: {
-                id: string;
-                title: string;
-                description?: string | null;
-                durationMin: number;
-              };
-              questions: {
-                id: string;
-                type: string;
-                questionText: string;
-                imageUrl?: string | null;
-                points: number;
-                options?: { id: string; label: string; text: string }[];
-              }[];
-            }
-        >(`/api/sessions/${sessionId}`);
+        const sessionPayload = await apiFetch<SessionData | { data?: SessionData }>(`/api/sessions/${sessionId}`);
         const sessionData = unwrapApi(sessionPayload);
         const mappedExam: Exam = mapSessionToExam(sessionData, roomCodeInput);
-        setActiveExam(mappedExam);
-        await apiFetch(`/api/sessions/${sessionId}/start`, { method: "POST" });
-        const totalSeconds = (mappedExam.duration ?? 45) * 60;
-        setTimeLeft(totalSeconds);
+        const startPayload = await apiFetch<{ startedAt?: string; status?: string } | { data?: { startedAt?: string; status?: string } }>(`/api/sessions/${sessionId}/start`, { method: "POST" });
+        const startData = unwrapApi(startPayload);
+        const nextExam = {
+          ...mappedExam,
+          status: (startData as { status?: string }).status ?? mappedExam.status,
+          examStartedAt: (startData as { startedAt?: string }).startedAt ?? mappedExam.examStartedAt,
+        };
+        setActiveExam(nextExam);
+        setTimeLeft(getRemainingSeconds(nextExam));
         setCurrentQuestionIndex(0);
         setAnswers({});
         setViolations({ ...EMPTY_VIOLATIONS });
@@ -148,245 +131,76 @@ export const useStudentExamSession = ({
         }
         setJoinError?.(null);
         setView("exam");
-      } catch (err) {
-        let message = "Шалгалт эхлүүлэхэд алдаа гарлаа.";
-        if (err instanceof Error && err.message) {
-          try {
-            const parsed = JSON.parse(err.message) as {
-              message?: string;
-              error?: string | { message?: string };
-            };
-            message =
-              parsed.message ||
-              (typeof parsed.error === "string"
-                ? parsed.error
-                : parsed.error?.message) ||
-              message;
-          } catch {
-            message = err.message;
-          }
-        }
+      } catch (error) {
+        const message = parseErrorMessage(error, "Шалгалт эхлүүлэхэд алдаа гарлаа.");
         setJoinError?.(message);
         showWarning(message);
       }
     };
+
     void run();
   };
 
-  const submitExam = useCallback(
-    async (auto = false, terminated = false, reason?: string) => {
-      if (!activeExam || !currentUser) return;
-      if (!auto) {
-        const ok = window.confirm(
-          "Та шалгалтаа илгээхдээ итгэлтэй байна уу?",
-        );
-        if (!ok) return;
+  const submitExam = useCallback(async (auto = false, terminated = false, reason?: string) => {
+    if (!activeExam || !currentUser || !sessionId) return;
+    if (!auto && !window.confirm("Та шалгалтаа илгээхдээ итгэлтэй байна уу?")) return;
+
+    const report = buildAnswerReport(activeExam, answers);
+    await apiFetch(`/api/sessions/${sessionId}/submit`, { method: "POST" });
+
+    const examEndAt = (() => {
+      const durationMs = (activeExam.duration ?? 45) * 60 * 1000;
+      const base = activeExam.finishedAt ?? activeExam.examStartedAt ?? activeExam.scheduledAt ?? null;
+      if (!base) return null;
+      const baseTime = new Date(base).getTime();
+      if (Number.isNaN(baseTime)) return null;
+      return activeExam.finishedAt ? new Date(baseTime).toISOString() : new Date(baseTime + durationMs).toISOString();
+    })();
+
+    const pendingSubmission: Submission = {
+      id: sessionId,
+      examId: activeExam.id,
+      studentId: currentUser.id,
+      studentНэр: currentUser.username,
+      answers: report.map((item) => ({ questionId: item.question.id, selectedAnswer: item.answer, correct: item.correct })),
+      score: 0,
+      totalPoints: 0,
+      percentage: 0,
+      terminated,
+      terminationReason: reason,
+      violations,
+      submittedAt: new Date().toISOString(),
+    };
+
+    try {
+      const resultPayload = await apiFetch<SessionResult | { data?: SessionResult }>(`/api/sessions/${sessionId}/result`);
+      const result = unwrapApi(resultPayload);
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => null);
       }
-      if (!sessionId) return;
-      const report = buildAnswerReport(activeExam, answers);
-      await apiFetch(`/api/sessions/${sessionId}/submit`, { method: "POST" });
-      const getExamEndAt = () => {
-        const durationMs = (activeExam.duration ?? 45) * 60 * 1000;
-        const base =
-          activeExam.finishedAt ??
-          activeExam.examStartedAt ??
-          activeExam.scheduledAt ??
-          null;
-        if (!base) return null;
-        const baseTime = new Date(base).getTime();
-        if (Number.isNaN(baseTime)) return null;
-        if (activeExam.finishedAt) return new Date(baseTime).toISOString();
-        return new Date(baseTime + durationMs).toISOString();
-      };
-
-      try {
-        const resultPayload = await apiFetch<
-          | {
-              data?: {
-                answers: {
-                  questionText: string;
-                  selectedAnswer: string | null;
-                  correctAnswer: string | null;
-                  isCorrect: boolean;
-                  points: number;
-                  pointsEarned: number;
-                }[];
-                score: number;
-                totalPoints: number;
-              };
-            }
-          | {
-              answers: {
-                questionText: string;
-                selectedAnswer: string | null;
-                correctAnswer: string | null;
-                isCorrect: boolean;
-                points: number;
-                pointsEarned: number;
-              }[];
-              score: number;
-              totalPoints: number;
-            }
-        >(`/api/sessions/${sessionId}/result`);
-        const result = unwrapApi(resultPayload);
-        const backendReport = mapResultToReport(result);
-
-        if (document.fullscreenElement) {
-          document.exitFullscreen?.().catch(() => null);
-        }
-        document.body.style.filter = "none";
-        const submission: Submission = {
-          id: sessionId,
-          examId: activeExam.id,
-          studentId: currentUser.id,
-          studentНэр: currentUser.username,
-          answers: report.map((item) => ({
-            questionId: item.question.id,
-            selectedAnswer: item.answer,
-            correct: item.correct,
-          })),
-          score: result.score ?? 0,
-          totalPoints: result.totalPoints ?? 0,
-          percentage: result.score ?? 0,
-          terminated,
-          terminationReason: reason,
-          violations,
-          submittedAt: new Date().toISOString(),
-        };
-        setLastSubmission(submission);
-        setAnswerReport(backendReport);
-        setResultPending(false);
-        setResultReleaseAt(null);
-        setView("result");
-        return;
-      } catch (err) {
-        let errorCode: string | null = null;
-        if (err instanceof Error && err.message) {
-          try {
-            const parsed = JSON.parse(err.message) as {
-              error?: { code?: string; message?: string };
-            };
-            errorCode = parsed.error?.code ?? null;
-          } catch {
-            errorCode = null;
-          }
-        }
-
-        if (errorCode === "RESULTS_PENDING" || errorCode === "NOT_GRADED") {
-          setResultPending(true);
-          setResultReleaseAt(getExamEndAt());
-          setAnswerReport([]);
-          const submission: Submission = {
-            id: sessionId,
-            examId: activeExam.id,
-            studentId: currentUser.id,
-            studentНэр: currentUser.username,
-            answers: report.map((item) => ({
-              questionId: item.question.id,
-              selectedAnswer: item.answer,
-              correct: item.correct,
-            })),
-            score: 0,
-            totalPoints: 0,
-            percentage: 0,
-            terminated,
-            terminationReason: reason,
-            violations,
-            submittedAt: new Date().toISOString(),
-          };
-          setLastSubmission(submission);
-          setView("result");
-          return;
-        }
-      }
-    },
-    [activeExam, answers, currentUser, violations, sessionId],
-  );
-
-  useEffect(() => {
-    if (!resultPending) return;
-    if (!resultReleaseAt) {
-      setResultCountdown("00:00:00");
+      document.body.style.filter = "none";
+      setLastSubmission({ ...pendingSubmission, score: result.score ?? 0, totalPoints: result.totalPoints ?? 0, percentage: result.score ?? 0 });
+      setAnswerReport(mapResultToReport(result));
+      setResultPending(false);
+      setResultReleaseAt(null);
+      setView("result");
       return;
-    }
-    const releaseTime = new Date(resultReleaseAt).getTime();
-    if (Number.isNaN(releaseTime)) return;
-    const timer = window.setInterval(() => {
-      const diff = releaseTime - Date.now();
-      const safeDiff = Math.max(diff, 0);
-      const hours = Math.floor(safeDiff / (1000 * 60 * 60));
-      const minutes = Math.floor((safeDiff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((safeDiff % (1000 * 60)) / 1000);
-      setResultCountdown(
-        `${hours.toString().padStart(2, "0")}:${minutes
-          .toString()
-          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`,
-      );
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resultPending, resultReleaseAt]);
-
-  useEffect(() => {
-    if (!resultPending || !sessionId || !activeExam) return;
-    const interval = window.setInterval(async () => {
-      try {
-        const resultPayload = await apiFetch<
-          | {
-              data?: {
-                answers: {
-                  questionText: string;
-                  selectedAnswer: string | null;
-                  correctAnswer: string | null;
-                  isCorrect: boolean;
-                  points: number;
-                  pointsEarned: number;
-                }[];
-                score: number;
-                totalPoints: number;
-              };
-            }
-          | {
-              answers: {
-                questionText: string;
-                selectedAnswer: string | null;
-                correctAnswer: string | null;
-                isCorrect: boolean;
-                points: number;
-                pointsEarned: number;
-              }[];
-              score: number;
-              totalPoints: number;
-            }
-        >(`/api/sessions/${sessionId}/result`);
-        const result = unwrapApi(resultPayload);
-        const backendReport = mapResultToReport(result);
-        setAnswerReport(backendReport);
-        setLastSubmission((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            score: result.score ?? 0,
-            totalPoints: result.totalPoints ?? 0,
-            percentage: result.score ?? 0,
-          };
-        });
-        setResultPending(false);
-        setResultReleaseAt(null);
-      } catch {
-        return;
+    } catch (error) {
+      const errorCode = getErrorCode(error);
+      if (errorCode === "RESULTS_PENDING" || errorCode === "NOT_GRADED") {
+        setResultPending(true);
+        setResultReleaseAt(examEndAt);
+        setAnswerReport([]);
+        setLastSubmission(pendingSubmission);
+        setView("result");
       }
-    }, 5000);
+    }
+  }, [activeExam, answers, currentUser, sessionId, violations, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt]);
 
-    return () => clearInterval(interval);
-  }, [resultPending, sessionId, activeExam]);
-
-  const terminateExam = useCallback(
-    (reason: string) => {
-      showWarning("Шалгалт зогсоолоо.");
-      submitExam(true, true, reason);
-    },
-    [submitExam],
-  );
+  const terminateExam = useCallback((reason: string) => {
+    showWarning("Шалгалт зогсоолоо.");
+    void submitExam(true, true, reason);
+  }, [showWarning, submitExam]);
 
   const updateAnswer = (questionIdOrValue: string, maybeValue?: string) => {
     if (!activeExam) return;
@@ -398,32 +212,8 @@ export const useStudentExamSession = ({
     if (!sessionId) return;
     void apiFetch(`/api/sessions/${sessionId}/answer`, {
       method: "POST",
-      body: JSON.stringify({
-        questionId,
-        textAnswer: value,
-      }),
+      body: JSON.stringify({ questionId, textAnswer: value }),
     });
-  };
-  const selectMcqAnswer = (questionIdOrValue: string, maybeValue?: string) => {
-    if (maybeValue) {
-      updateAnswer(questionIdOrValue, maybeValue);
-      return;
-    }
-    updateAnswer(questionIdOrValue);
-  };
-
-  const goNext = () => {
-    if (!activeExam) return;
-    const next = Math.min(
-      currentQuestionIndex + 1,
-      activeExam.questions.length - 1,
-    );
-    setCurrentQuestionIndex(next);
-  };
-
-  const goPrev = () => {
-    const prev = Math.max(currentQuestionIndex - 1, 0);
-    setCurrentQuestionIndex(prev);
   };
 
   const resetExamSession = useCallback(() => {
@@ -435,15 +225,13 @@ export const useStudentExamSession = ({
     setLastSubmission(null);
     setResultPending(false);
     setResultReleaseAt(null);
-    setResultCountdown("00:00:00");
     setAnswerReport([]);
     setViolations({ ...EMPTY_VIOLATIONS });
-    setWarning(null);
     if (document.fullscreenElement) {
       document.exitFullscreen?.().catch(() => null);
     }
     document.body.style.filter = "none";
-  }, []);
+  }, [setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt, setViolations]);
 
   return {
     view,
@@ -471,9 +259,9 @@ export const useStudentExamSession = ({
     resultCountdown,
     resultReleaseAt,
     updateAnswer,
-    selectMcqAnswer,
-    goNext,
-    goPrev,
+    selectMcqAnswer: (questionIdOrValue: string, maybeValue?: string) => updateAnswer(questionIdOrValue, maybeValue),
+    goNext: () => activeExam && setCurrentQuestionIndex((prev) => Math.min(prev + 1, activeExam.questions.length - 1)),
+    goPrev: () => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0)),
     resetExamSession,
     sidebarTimerRef,
   };
