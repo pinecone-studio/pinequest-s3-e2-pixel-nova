@@ -9,6 +9,7 @@ import type {
   StudentExamHistoryItem,
   StudentProfile,
 } from "@/types/student-app";
+import type { SnapshotAnalysisResult } from "../proctoring";
 import { getApiBaseUrl } from "../core/utils";
 
 type ApiEnvelope<T> = {
@@ -222,5 +223,22 @@ export const reportCheatEvent = async (
       sessionId: session.sessionId,
       eventType,
       metadata,
+    }),
+  });
+
+export const analyzeCheatSnapshot = async (
+  student: AuthUser,
+  sessionId: string,
+  imageDataUrl: string,
+  capturedAt: string,
+) =>
+  apiRequest<SnapshotAnalysisResult>("/api/cheat/analyze-snapshot", {
+    method: "POST",
+    student,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId,
+      imageDataUrl,
+      capturedAt,
     }),
   });

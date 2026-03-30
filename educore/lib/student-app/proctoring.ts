@@ -1,6 +1,13 @@
 import type { CheatEventType } from '@/types/student-app';
 
-export type MobileCameraPlatform = 'android' | 'ios';
+export type MobileCameraPlatform = 'android' | 'ios' | 'web' | 'unknown';
+export type SnapshotLookingDirection =
+  | 'forward'
+  | 'left'
+  | 'right'
+  | 'down'
+  | 'up'
+  | 'unclear';
 
 export type ProctorEventType = Extract<
   CheatEventType,
@@ -22,6 +29,21 @@ export type ProctorEvent = {
   metadata: string;
 };
 
+export type SnapshotSuspiciousEvent = {
+  eventType: ProctorEventType;
+  confidence: number;
+  reason: string;
+};
+
+export type SnapshotAnalysisResult = {
+  confidence: number;
+  faceCount: number;
+  lookingDirection: SnapshotLookingDirection;
+  source: 'mobile_camera_ai';
+  summary: string;
+  suspiciousEvents: SnapshotSuspiciousEvent[];
+};
+
 type ActiveSinceMap = Partial<Record<ProctorEventType, number>>;
 type CooldownMap = Partial<Record<ProctorEventType, number>>;
 
@@ -35,6 +57,9 @@ type RuleDefinition = {
   predicate: (observation: ProctorObservation) => boolean;
   threshold: number;
 };
+
+export const CAMERA_SNAPSHOT_INTERVAL_MS = 15_000;
+export const SNAPSHOT_EVENT_COOLDOWN_MS = 45_000;
 
 const COOLDOWN_MS = 15_000;
 
@@ -76,6 +101,9 @@ const EVENT_ORDER: ProctorEventType[] = [
 
 const roundMetric = (value: number | null) =>
   value === null ? null : Math.round(value * 100) / 100;
+
+const clampConfidence = (value: number) =>
+  Math.max(0, Math.min(1, Math.round(value * 100) / 100));
 
 export const createInitialProctorState = (): ProctorState => ({
   activeSince: {},
@@ -152,6 +180,39 @@ export const resetProctorActiveTimers = (
   activeSince: {},
   lastTriggeredAt: { ...currentState.lastTriggeredAt },
 });
+
+export const getProctorLocalMessage = (eventType: ProctorEventType) =>
+  RULES[eventType].localMessage;
+
+export const buildAiSnapshotMetadata = ({
+  analysis,
+  capturedAt,
+  event,
+  intervalMs,
+  platform,
+}: {
+  analysis: SnapshotAnalysisResult;
+  capturedAt: string;
+  event: SnapshotSuspiciousEvent;
+  intervalMs: number;
+  platform: MobileCameraPlatform;
+}) =>
+  JSON.stringify({
+    source: analysis.source,
+    platform,
+    faceCount: analysis.faceCount,
+    yaw: null,
+    pitch: null,
+    durationMs: intervalMs,
+    threshold: intervalMs,
+    cameraPosition: 'front',
+    capturedAt,
+    lookingDirection: analysis.lookingDirection,
+    analysisConfidence: clampConfidence(analysis.confidence),
+    eventConfidence: clampConfidence(event.confidence),
+    reason: event.reason,
+    summary: analysis.summary,
+  });
 
 export const getProctorDebugLabel = (observation: {
   faceCount: number;
