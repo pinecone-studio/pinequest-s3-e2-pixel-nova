@@ -6,7 +6,8 @@
 - Preview card only mounts while the exam is in progress.
 - Preview card shows `warming up`, `ready`, and `failed` states for easier demo/debugging.
 - Once the preview is ready, the app captures one snapshot immediately and then about every `15` seconds.
-- Each snapshot is sent to the backend and analyzed with Workers AI vision.
+- Each snapshot is uploaded directly to R2 with a backend-issued signed PUT URL.
+- After upload, the backend analyzes the stored snapshot with Workers AI vision.
 - Suspicious snapshot results are forwarded into the existing `logIntegrityEvent()` flow.
 - Existing mobile integrity events such as `tab_hidden`, `window_blur`, and `rapid_answers` continue to work.
 - Backend accepts the camera event types used by snapshot analysis:
@@ -19,6 +20,7 @@
 - Expo Go supports `expo-camera` preview.
 - Expo Go does not support the custom native frame-by-frame face detection stack from the original plan.
 - This build works around that by using periodic snapshots plus backend AI instead of native realtime detection.
+- Snapshot bytes do not flow through the JSON API anymore, which keeps the backend request bodies smaller when many students are active.
 - If the preview fails to mount, the camera card now shows a local recovery message instead of silently failing.
 
 ## How to run

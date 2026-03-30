@@ -30,6 +30,14 @@ type SubmitSessionResponse = {
   xpEarned?: number;
 };
 
+export type SnapshotUploadTicket = {
+  assetUrl: string;
+  expiresAt: string;
+  objectKey: string;
+  uploadHeaders: Record<string, string>;
+  uploadUrl: string;
+};
+
 const API_BASE_URL = getApiBaseUrl();
 
 const unwrapApi = <T>(payload: ApiEnvelope<T> | T): T => {
@@ -226,11 +234,46 @@ export const reportCheatEvent = async (
     }),
   });
 
+export const createCheatSnapshotUpload = async (
+  student: AuthUser,
+  sessionId: string,
+  mimeType: "image/jpeg" | "image/png" | "image/webp",
+  capturedAt: string,
+) =>
+  apiRequest<SnapshotUploadTicket>("/api/cheat/snapshot-upload-url", {
+    method: "POST",
+    student,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId,
+      mimeType,
+      capturedAt,
+    }),
+  });
+
+export const uploadCheatSnapshot = async (
+  uploadUrl: string,
+  body: BodyInit,
+  uploadHeaders: Record<string, string>,
+) => {
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: uploadHeaders,
+    body,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Snapshot upload failed: ${response.status}`);
+  }
+};
+
 export const analyzeCheatSnapshot = async (
   student: AuthUser,
   sessionId: string,
-  imageDataUrl: string,
+  objectKey: string,
   capturedAt: string,
+  imageUrl?: string,
 ) =>
   apiRequest<SnapshotAnalysisResult>("/api/cheat/analyze-snapshot", {
     method: "POST",
@@ -238,7 +281,8 @@ export const analyzeCheatSnapshot = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       sessionId,
-      imageDataUrl,
+      objectKey,
+      imageUrl,
       capturedAt,
     }),
   });

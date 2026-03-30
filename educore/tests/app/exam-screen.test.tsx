@@ -212,7 +212,9 @@ describe("ExamScreen", () => {
 
     expect(screen.getByText("camera-preview-active")).toBeTruthy();
     expect(
-      screen.getByText(/ойролцоогоор 15 сек тутам snapshot авч backend AI-аар шинжилнэ/),
+      screen.getByText(
+        /ойролцоогоор 15 сек тутам snapshot авч шууд R2 storage руу upload хийгээд backend AI-аар шинжилнэ/,
+      ),
     ).toBeTruthy();
     screen.unmount();
   });

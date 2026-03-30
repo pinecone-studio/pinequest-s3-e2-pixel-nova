@@ -13,6 +13,7 @@ import {
   type RoleKey,
 } from "@/lib/role-session";
 import StudentDashboardView from "./components/StudentDashboardView";
+import DesktopExamCameraCard from "./components/DesktopExamCameraCard";
 import StudentExamView from "./components/StudentExamView";
 import StudentResultView from "./components/StudentResultView";
 import StudentLoadingScreen from "./components/StudentLoadingScreen";
@@ -239,6 +240,14 @@ export default function StudentPage() {
             onNext={exam.goNext}
             onSubmit={() => exam.submitExam(false)}
             onExit={exam.leaveExamFlow}
+            cameraPanel={
+              <DesktopExamCameraCard
+                view={exam.view}
+                sessionId={exam.sessionId}
+                user={data.currentUser}
+                showWarning={exam.showWarning}
+              />
+            }
           />
         </div>
       )}

@@ -9,6 +9,7 @@ import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
 import { notifyTeacherStudentFlagged } from "../services/notifications";
+import { createR2PresignedUrl } from "../utils/r2-presign";
 
 const cheatRoutes = new Hono<AppEnv>();
 
@@ -68,6 +69,21 @@ const SEVERITY_MAP: Record<EventType, { severity: string; weight: number }> = {
 const FLAG_THRESHOLD = 6;
 
 const SNAPSHOT_INTERVAL_MS = 15_000;
+const SNAPSHOT_OBJECT_PREFIX = "cheat-snapshots";
+const SNAPSHOT_UPLOAD_URL_TTL_SECONDS = 10 * 60;
+const DEFAULT_SNAPSHOT_BUCKET_NAME = "educore-exam-files";
+const SNAPSHOT_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+type SnapshotMimeType = (typeof SNAPSHOT_MIME_TYPES)[number];
+
+const SNAPSHOT_EXTENSION_MAP: Record<SnapshotMimeType, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 const SNAPSHOT_ANALYSIS_SCHEMA = {
   type: "object",
   properties: {
@@ -144,8 +160,12 @@ type SnapshotAnalysisResponse = SnapshotAnalysis & {
   source: "mobile_camera_ai";
 };
 
-const analyzeSnapshotSchema = z.object({
+const baseAnalyzeSnapshotSchema = z.object({
   sessionId: z.string().min(1),
+  capturedAt: z.string().datetime().optional(),
+});
+
+const analyzeSnapshotDataUrlSchema = baseAnalyzeSnapshotSchema.extend({
   imageDataUrl: z
     .string()
     .min(1)
@@ -154,11 +174,90 @@ const analyzeSnapshotSchema = z.object({
       /^data:(image\/(?:png|jpeg|jpg|webp));base64,[a-z0-9+/=]+$/i,
       "Unsupported image data URL",
     ),
+});
+
+const analyzeSnapshotObjectSchema = baseAnalyzeSnapshotSchema.extend({
+  imageUrl: z.string().url().optional(),
+  objectKey: z.string().min(1).max(512),
+});
+
+const analyzeSnapshotSchema = z.union([
+  analyzeSnapshotDataUrlSchema,
+  analyzeSnapshotObjectSchema,
+]);
+
+const snapshotUploadSchema = z.object({
+  sessionId: z.string().min(1),
+  mimeType: z.enum(SNAPSHOT_MIME_TYPES),
   capturedAt: z.string().datetime().optional(),
 });
 
 const clampConfidence = (value: number) =>
   Math.max(0, Math.min(1, Math.round(value * 100) / 100));
+
+const getSnapshotBucketName = (env: AppEnv["Bindings"]) =>
+  env.R2_BUCKET_NAME?.trim() || DEFAULT_SNAPSHOT_BUCKET_NAME;
+
+const buildSnapshotObjectKey = ({
+  extension,
+  sessionId,
+  studentId,
+}: {
+  extension: string;
+  sessionId: string;
+  studentId: string;
+}) => {
+  return `${SNAPSHOT_OBJECT_PREFIX}/${sessionId}/${studentId}/${Date.now()}-${newId()}.${extension}`;
+};
+
+const parseSnapshotObjectKey = (objectKey: string) => {
+  const match = objectKey.match(
+    /^cheat-snapshots\/([^/]+)\/([^/]+)\/[^/]+\.(jpg|png|webp)$/i,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    sessionId: match[1],
+    studentId: match[2],
+  };
+};
+
+const buildSnapshotAssetUrl = (requestUrl: string, objectKey: string) => {
+  const url = new URL("/api/cheat/snapshot-assets", requestUrl);
+  url.searchParams.set("key", objectKey);
+  return url.toString();
+};
+
+const inferSnapshotMimeType = (objectKey: string): SnapshotMimeType => {
+  if (objectKey.endsWith(".png")) {
+    return "image/png";
+  }
+
+  if (objectKey.endsWith(".webp")) {
+    return "image/webp";
+  }
+
+  return "image/jpeg";
+};
+
+const ensureSnapshotSigningConfig = (env: AppEnv["Bindings"]) => {
+  const accountId = env.R2_ACCOUNT_ID?.trim();
+  const accessKeyId = env.R2_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = env.R2_SECRET_ACCESS_KEY?.trim();
+
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    return null;
+  }
+
+  return {
+    accessKeyId,
+    accountId,
+    secretAccessKey,
+  };
+};
 
 const parseAiJsonResponse = (response: unknown) => {
   if (typeof response === "string") {
@@ -297,6 +396,148 @@ const analyzeSnapshotWithAi = async (
   return normalizeSnapshotAnalysis(parsed);
 };
 
+const snapshotObjectToDataUrl = async (
+  snapshotObject: R2ObjectBody,
+  objectKey: string,
+) => {
+  const contentType =
+    (snapshotObject.httpMetadata?.contentType as SnapshotMimeType | undefined) ??
+    inferSnapshotMimeType(objectKey);
+  const buffer = Buffer.from(await snapshotObject.arrayBuffer());
+  return `data:${contentType};base64,${buffer.toString("base64")}`;
+};
+
+const verifyStudentSession = async (
+  db: ReturnType<typeof getDb>,
+  sessionId: string,
+  studentId: string,
+) => {
+  const [session] = await db
+    .select()
+    .from(examSessions)
+    .where(and(eq(examSessions.id, sessionId), eq(examSessions.studentId, studentId)))
+    .limit(1);
+
+  return session ?? null;
+};
+
+const verifyTeacherSnapshotAccess = async (
+  db: ReturnType<typeof getDb>,
+  sessionId: string,
+  teacherId: string,
+) => {
+  const [exam] = await db
+    .select({ examId: examSessions.examId })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .where(and(eq(examSessions.id, sessionId), eq(exams.teacherId, teacherId)))
+    .limit(1);
+
+  return exam ?? null;
+};
+
+// ---------------------------------------------------------------------------
+// POST /snapshot-upload-url — Create a presigned upload URL for a camera snapshot
+// ---------------------------------------------------------------------------
+cheatRoutes.post(
+  "/snapshot-upload-url",
+  requireRole("student"),
+  zValidator("json", snapshotUploadSchema),
+  async (c) => {
+    const { mimeType, sessionId } = c.req.valid("json");
+    const user = c.get("user");
+    const db = getDb(c.env.educore);
+
+    const session = await verifyStudentSession(db, sessionId, user.id);
+    if (!session) {
+      return notFound(c, "Session");
+    }
+
+    const signingConfig = ensureSnapshotSigningConfig(c.env);
+    if (!signingConfig) {
+      return error(
+        c,
+        "R2_UPLOAD_NOT_CONFIGURED",
+        "Snapshot uploads are not configured yet.",
+        503,
+      );
+    }
+
+    const objectKey = buildSnapshotObjectKey({
+      extension: SNAPSHOT_EXTENSION_MAP[mimeType],
+      sessionId,
+      studentId: user.id,
+    });
+    const presignedUpload = createR2PresignedUrl({
+      ...signingConfig,
+      bucketName: getSnapshotBucketName(c.env),
+      expiresInSeconds: SNAPSHOT_UPLOAD_URL_TTL_SECONDS,
+      method: "PUT",
+      objectKey,
+    });
+
+    return success(
+      c,
+      {
+        assetUrl: buildSnapshotAssetUrl(c.req.url, objectKey),
+        expiresAt: presignedUpload.expiresAt,
+        objectKey,
+        uploadHeaders: {
+          "Content-Type": mimeType,
+        },
+        uploadUrl: presignedUpload.url,
+      },
+      201,
+    );
+  },
+);
+
+// ---------------------------------------------------------------------------
+// GET /snapshot-assets — Read a stored camera snapshot for the owning student or exam teacher
+// ---------------------------------------------------------------------------
+cheatRoutes.get("/snapshot-assets", async (c) => {
+  const objectKey = c.req.query("key");
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  if (!objectKey) {
+    return error(c, "BAD_REQUEST", "Snapshot key is required.", 400);
+  }
+
+  const snapshotRef = parseSnapshotObjectKey(objectKey);
+  if (!snapshotRef) {
+    return error(c, "BAD_REQUEST", "Invalid snapshot key.", 400);
+  }
+
+  if (user.role === "student") {
+    if (snapshotRef.studentId !== user.id) {
+      return forbidden(c, "You cannot access this snapshot.");
+    }
+
+    const session = await verifyStudentSession(db, snapshotRef.sessionId, user.id);
+    if (!session) {
+      return notFound(c, "Session");
+    }
+  } else {
+    const exam = await verifyTeacherSnapshotAccess(db, snapshotRef.sessionId, user.id);
+    if (!exam) {
+      return forbidden(c, "You cannot access this snapshot.");
+    }
+  }
+
+  const snapshotObject = await c.env.EXAM_FILES.get(objectKey);
+  if (!snapshotObject) {
+    return notFound(c, "Snapshot");
+  }
+
+  c.header(
+    "Content-Type",
+    snapshotObject.httpMetadata?.contentType ?? inferSnapshotMimeType(objectKey),
+  );
+  c.header("Cache-Control", "private, max-age=60");
+  return c.body(await snapshotObject.arrayBuffer());
+});
+
 // ---------------------------------------------------------------------------
 // POST /event — Report a cheat event (student only)
 // ---------------------------------------------------------------------------
@@ -387,24 +628,49 @@ cheatRoutes.post(
   requireRole("student"),
   zValidator("json", analyzeSnapshotSchema),
   async (c) => {
-    const { sessionId, imageDataUrl } = c.req.valid("json");
+    const payload = c.req.valid("json");
+    const { sessionId } = payload;
     const user = c.get("user");
     const db = getDb(c.env.educore);
 
-    const [session] = await db
-      .select()
-      .from(examSessions)
-      .where(and(eq(examSessions.id, sessionId), eq(examSessions.studentId, user.id)))
-      .limit(1);
-
+    const session = await verifyStudentSession(db, sessionId, user.id);
     if (!session) {
       return notFound(c, "Session");
     }
 
     try {
+      const imageDataUrl =
+        "imageDataUrl" in payload
+          ? payload.imageDataUrl
+          : await (async () => {
+              const snapshotRef = parseSnapshotObjectKey(payload.objectKey);
+              if (
+                !snapshotRef ||
+                snapshotRef.sessionId !== sessionId ||
+                snapshotRef.studentId !== user.id
+              ) {
+                throw new Error("FORBIDDEN_SNAPSHOT_KEY");
+              }
+
+              const snapshotObject = await c.env.EXAM_FILES.get(payload.objectKey);
+              if (!snapshotObject) {
+                throw new Error("SNAPSHOT_NOT_FOUND");
+              }
+
+              return snapshotObjectToDataUrl(snapshotObject, payload.objectKey);
+            })();
+
       const analysis = await analyzeSnapshotWithAi(c.env.AI, imageDataUrl);
       return success(c, analysis);
     } catch (err) {
+      if (err instanceof Error && err.message === "FORBIDDEN_SNAPSHOT_KEY") {
+        return forbidden(c, "This snapshot does not belong to the active student session.");
+      }
+
+      if (err instanceof Error && err.message === "SNAPSHOT_NOT_FOUND") {
+        return notFound(c, "Snapshot");
+      }
+
       console.error("snapshot-analysis-failed", err);
       return error(
         c,

@@ -344,7 +344,8 @@ export default function ExamScreen() {
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
               Энэ Expo Go build дээр front camera нээгдэж, ойролцоогоор 15 сек
-              тутам snapshot авч backend AI-аар шинжилнэ. App-ээс гарах,
+              тутам snapshot авч шууд R2 storage руу upload хийгээд backend
+              AI-аар шинжилнэ. App-ээс гарах,
               background руу орох, screen blur зэрэг зөрчлүүд мөн хэвийн log
               хийгдэнэ.
             </Text>

@@ -81,4 +81,27 @@ describe("StudentExamView", () => {
     fireEvent.click(screen.getByRole("button", { name: "A. 2" }));
     expect(onSelectMcq).toHaveBeenCalledWith("q-1", "2");
   });
+
+  it("renders a desktop camera panel when provided", () => {
+    render(
+      <StudentExamView
+        activeExam={exam}
+        warning={null}
+        timeLeft={120}
+        currentQuestionIndex={0}
+        setCurrentQuestionIndex={jest.fn()}
+        violations={violations}
+        answers={{}}
+        onUpdateAnswer={jest.fn()}
+        onSelectMcq={jest.fn()}
+        onPrev={jest.fn()}
+        onNext={jest.fn()}
+        onSubmit={jest.fn()}
+        onExit={jest.fn()}
+        cameraPanel={<div>desktop-camera-panel</div>}
+      />,
+    );
+
+    expect(screen.getByText("desktop-camera-panel")).toBeInTheDocument();
+  });
 });

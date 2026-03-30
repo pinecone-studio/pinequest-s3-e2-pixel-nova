@@ -3,7 +3,11 @@ import { act, render, waitFor } from '@testing-library/react-native';
 
 import MobileProctorCamera from '@/components/student-app/MobileProctorCamera';
 import { CAMERA_SNAPSHOT_INTERVAL_MS } from '@/lib/student-app/proctoring';
-import { analyzeCheatSnapshot } from '@/lib/student-app/services/api';
+import {
+  analyzeCheatSnapshot,
+  createCheatSnapshotUpload,
+  uploadCheatSnapshot,
+} from '@/lib/student-app/services/api';
 
 jest.mock('expo-constants', () => ({
   __esModule: true,
@@ -14,7 +18,9 @@ jest.mock('expo-constants', () => ({
 }));
 
 jest.mock('@/lib/student-app/services/api', () => ({
+  createCheatSnapshotUpload: jest.fn(),
   analyzeCheatSnapshot: jest.fn(),
+  uploadCheatSnapshot: jest.fn(),
 }));
 
 const expoCameraMock = require('expo-camera') as {
@@ -27,6 +33,13 @@ const expoCameraMock = require('expo-camera') as {
 
 const mockAnalyzeCheatSnapshot = analyzeCheatSnapshot as jest.MockedFunction<
   typeof analyzeCheatSnapshot
+>;
+const mockCreateCheatSnapshotUpload =
+  createCheatSnapshotUpload as jest.MockedFunction<
+    typeof createCheatSnapshotUpload
+  >;
+const mockUploadCheatSnapshot = uploadCheatSnapshot as jest.MockedFunction<
+  typeof uploadCheatSnapshot
 >;
 
 const baseProps = {
@@ -44,6 +57,14 @@ const baseProps = {
 describe('MobileProctorCamera', () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    mockCreateCheatSnapshotUpload.mockResolvedValue({
+      assetUrl: 'https://backend.example/api/cheat/snapshot-assets?key=object-key',
+      expiresAt: '2026-03-30T08:10:00.000Z',
+      objectKey: 'cheat-snapshots/session-1/student-1/object-key.jpg',
+      uploadHeaders: { 'Content-Type': 'image/jpeg' },
+      uploadUrl: 'https://r2.example/upload',
+    });
+    mockUploadCheatSnapshot.mockResolvedValue(undefined);
     mockAnalyzeCheatSnapshot.mockResolvedValue({
       source: 'mobile_camera_ai',
       summary: 'One face is visible and the student looks forward.',
@@ -82,6 +103,8 @@ describe('MobileProctorCamera', () => {
     await waitFor(() => {
       expect(mockAnalyzeCheatSnapshot).toHaveBeenCalledTimes(1);
     });
+    expect(mockCreateCheatSnapshotUpload).toHaveBeenCalledTimes(1);
+    expect(mockUploadCheatSnapshot).toHaveBeenCalledTimes(1);
 
     await waitFor(() => {
       expect(
@@ -133,6 +156,7 @@ describe('MobileProctorCamera', () => {
       'looking_away',
       expect.stringContaining('"source":"mobile_camera_ai"'),
     );
+    expect(mockUploadCheatSnapshot).toHaveBeenCalled();
 
     act(() => {
       jest.advanceTimersByTime(CAMERA_SNAPSHOT_INTERVAL_MS);
