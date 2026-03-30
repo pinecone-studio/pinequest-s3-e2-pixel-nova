@@ -5,7 +5,7 @@ import ResultsSubmissionsList from "./ResultsSubmissionsList";
 import ResultsDetailPanel from "./ResultsDetailPanel";
 import TeacherCardSkeleton from "./TeacherCardSkeleton";
 import type { Exam, ExamStatsSummary, Submission } from "../types";
-import type { ExamAttendanceStats } from "../hooks/useExamAttendanceStats";
+import type { ExamAttendanceStats } from "../types";
 import type { StudentProfile } from "@/lib/backend-auth";
 
 type ResultsTabProps = {

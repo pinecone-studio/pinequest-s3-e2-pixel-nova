@@ -7,7 +7,11 @@ import {
   buildXpLeaderboard,
 } from "../analytics";
 import type { Exam, ExamStatsSummary, QuestionInsight, Submission } from "../types";
-import { fetchExamQuestionInsights } from "./teacher-api";
+import {
+  fetchExamQuestionInsights,
+  fetchTeacherExamDetail,
+  fetchTeacherSubmissions,
+} from "./teacher-api";
 
 export const useExamStats = (params: {
   exams: Exam[];
@@ -19,6 +23,8 @@ export const useExamStats = (params: {
   const { exams, submissions, studentProgress, users, teacherId } = params;
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [activeExamDetail, setActiveExamDetail] = useState<Exam | null>(null);
+  const [activeSubmissions, setActiveSubmissions] = useState<Submission[]>([]);
   const [remoteInsightsByExam, setRemoteInsightsByExam] = useState<
     Record<
       string,
@@ -52,35 +58,27 @@ export const useExamStats = (params: {
 
   const selectedSubmission = useMemo(() => {
     if (!selectedSubmissionId) return null;
-    return submissions.find((item) => item.id === selectedSubmissionId) ?? null;
-  }, [selectedSubmissionId, submissions]);
+    return activeSubmissions.find((item) => item.id === selectedSubmissionId) ?? null;
+  }, [activeSubmissions, selectedSubmissionId]);
 
   const selectedExam = useMemo(() => {
-    if (!selectedSubmission) return null;
+    if (!selectedSubmission) return activeExamDetail;
+    if (activeExamDetail?.id === selectedSubmission.examId) return activeExamDetail;
     return exams.find((exam) => exam.id === selectedSubmission.examId) ?? null;
-  }, [selectedSubmission, exams]);
+  }, [activeExamDetail, exams, selectedSubmission]);
 
   const examOptions = useMemo(() => {
-    const finishedIds = new Set(submissions.map((submission) => submission.examId));
     return exams
-      .filter((exam) => finishedIds.has(exam.id))
+      .filter((exam) => Number(exam.submissionCount ?? 0) > 0)
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  }, [exams, submissions]);
+  }, [exams]);
 
   const activeExamId = selectedExamId ?? examOptions[0]?.id ?? null;
 
-  const activeExam = useMemo(
-    () => exams.find((exam) => exam.id === activeExamId) ?? null,
-    [exams, activeExamId],
-  );
-
-  const activeSubmissions = useMemo(
-    () =>
-      submissions
-        .filter((submission) => submission.examId === activeExamId)
-        .sort((left, right) => right.submittedAt.localeCompare(left.submittedAt)),
-    [submissions, activeExamId],
-  );
+  const activeExam = useMemo(() => {
+    if (activeExamDetail?.id === activeExamId) return activeExamDetail;
+    return exams.find((exam) => exam.id === activeExamId) ?? null;
+  }, [activeExamDetail, activeExamId, exams]);
 
   const cheatStudents = useMemo(
     () =>
@@ -124,6 +122,43 @@ export const useExamStats = (params: {
       cancelled = true;
     };
   }, [activeExamId, remoteInsightsByExam, teacherId]);
+
+  useEffect(() => {
+    if (!activeExamId) {
+      setActiveExamDetail(null);
+      setActiveSubmissions([]);
+      setSelectedSubmissionId(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadExamData = async () => {
+      try {
+        const [detail, submissionsForExam] = await Promise.all([
+          fetchTeacherExamDetail(activeExamId, teacherId ?? undefined),
+          fetchTeacherSubmissions(activeExamId, teacherId ?? undefined),
+        ]);
+        if (cancelled) return;
+        setActiveExamDetail(detail);
+        setActiveSubmissions(
+          [...submissionsForExam].sort((left, right) =>
+            right.submittedAt.localeCompare(left.submittedAt),
+          ),
+        );
+      } catch {
+        if (cancelled) return;
+        setActiveExamDetail(exams.find((exam) => exam.id === activeExamId) ?? null);
+        setActiveSubmissions([]);
+      }
+    };
+
+    void loadExamData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeExamId, exams, teacherId]);
 
   const mergedExamStats = useMemo<ExamStatsSummary | null>(() => {
     if (!examStats || !activeExamId) return examStats;

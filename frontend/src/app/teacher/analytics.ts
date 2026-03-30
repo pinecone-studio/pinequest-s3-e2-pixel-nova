@@ -65,7 +65,9 @@ export const buildTeacherOverviewStats = (params: {
   xpLeaderboard: XpLeaderboardEntry[];
 }): TeacherStat[] => {
   const { exams, submissions, xpLeaderboard } = params;
-  const savedExams = exams.filter((exam) => exam.questions.length > 0).length;
+  const savedExams = exams.filter(
+    (exam) => (exam.questionCount ?? exam.questions.length) > 0,
+  ).length;
   const scheduledExams = exams.filter((exam) => Boolean(exam.scheduledAt)).length;
   const totalXp = xpLeaderboard.reduce((sum, student) => sum + student.xp, 0);
   const flaggedCount = submissions.filter((submission) =>

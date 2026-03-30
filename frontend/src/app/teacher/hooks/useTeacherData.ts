@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { getSessionUser, type StudentProgress, type User } from "@/lib/examGuard";
-import type { Exam, Submission } from "../types";
-import { normalizeSubmission } from "../analytics";
 import { useNotifications } from "@/hooks/useNotifications";
+import type { Exam } from "../types";
 import {
   fetchTeacherExams,
-  fetchTeacherSubmissions,
   fetchXpLeaderboard,
 } from "./teacher-api";
+
+const DASHBOARD_POLL_MS = 15000;
 
 export const useTeacherData = (overrideUser?: User | null) => {
   const overrideUserId = overrideUser?.id ?? null;
@@ -22,7 +22,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [exams, setExams] = useState<Exam[]>([]);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [studentProgress, setStudentProgress] = useState<StudentProgress>({});
 
   useEffect(() => {
@@ -50,18 +49,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
 
         setExams(remoteExams);
 
-        const submissionsByExam = await Promise.all(
-          remoteExams.map((exam) => fetchTeacherSubmissions(exam.id, overrideUserId)),
-        );
-        if (cancelled) return;
-
-        const remoteSubmissions = submissionsByExam
-          .flat()
-          .map((item) => normalizeSubmission(item))
-          .filter((item): item is Submission => Boolean(item));
-
-        setSubmissions(remoteSubmissions);
-
         const leaderboard = await fetchXpLeaderboard();
         if (cancelled) return;
 
@@ -86,7 +73,6 @@ export const useTeacherData = (overrideUser?: User | null) => {
       } catch {
         if (!cancelled) {
           setExams([]);
-          setSubmissions([]);
           setUsers([]);
           setStudentProgress({});
         }
@@ -107,6 +93,45 @@ export const useTeacherData = (overrideUser?: User | null) => {
     overrideUserId,
     overrideUsername,
   ]);
+
+  useEffect(() => {
+    if (!overrideUserId) return;
+
+    const teacherId = overrideUserId;
+    const sync = async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+
+      try {
+        const remoteExams = await fetchTeacherExams(teacherId);
+        setExams(remoteExams);
+      } catch {
+        return;
+      }
+    };
+
+    const interval = setInterval(() => {
+      void sync();
+    }, DASHBOARD_POLL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void sync();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
+  }, [overrideUserId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -140,8 +165,8 @@ export const useTeacherData = (overrideUser?: User | null) => {
     exams,
     setExams: persistExams,
     persistExams,
-    submissions,
-    setSubmissions,
+    submissions: [],
+    setSubmissions: () => {},
     studentProgress,
     notifications: notificationsState.notifications,
     unreadNotificationCount: notificationsState.unreadCount,

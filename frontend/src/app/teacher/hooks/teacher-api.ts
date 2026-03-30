@@ -1,6 +1,7 @@
-import { apiFetch, unwrapApi } from "@/lib/api-client";
+import { API_BASE_URL, apiFetch, getApiUserContext, unwrapApi } from "@/lib/api-client";
 import type {
   Exam,
+  ExamAttendanceStats,
   ExamRosterDetail,
   Question,
   AiAcceptedDraftResponse,
@@ -10,6 +11,40 @@ import type {
   Submission,
   XpLeaderboardEntry,
 } from "../types";
+
+const readStreamError = async (response: Response) => {
+  try {
+    const payload = (await response.json()) as
+      | { error?: { message?: string }; message?: string }
+      | undefined;
+    return payload?.error?.message || payload?.message || `Request failed: ${response.status}`;
+  } catch {
+    const text = await response.text();
+    return text || `Request failed: ${response.status}`;
+  }
+};
+
+const parseSseEvent = (rawChunk: string) => {
+  const normalized = rawChunk.replace(/\r\n/g, "\n");
+  const lines = normalized.split("\n");
+  let event = "message";
+  const dataLines: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith("event:")) {
+      event = line.slice("event:".length).trim();
+      continue;
+    }
+    if (line.startsWith("data:")) {
+      dataLines.push(line.slice("data:".length).trimStart());
+    }
+  }
+
+  return {
+    event,
+    data: dataLines.join("\n"),
+  };
+};
 
 type TeacherExamSummary = {
   id: string;
@@ -24,6 +59,8 @@ type TeacherExamSummary = {
   status: string;
   createdAt: string;
   expectedStudentsCount?: number | null;
+  questionCount?: number | null;
+  submissionCount?: number | null;
   startedAt?: string | null;
   finishedAt?: string | null;
 };
@@ -40,61 +77,85 @@ type TeacherExamDetail = TeacherExamSummary & {
   }[];
 };
 
+export type TeacherExamLiveUpdate = {
+  roster: ExamRosterDetail;
+  stats: ExamAttendanceStats;
+  examStatus: string;
+  generatedAt: string;
+};
+
 export const fetchTeacherExams = async (
   teacherId?: string,
 ): Promise<Exam[]> => {
   const listData = await apiFetch<
     { data?: TeacherExamSummary[] } | TeacherExamSummary[]
-  >("/api/exams", {}, "teacher", teacherId);
+  >("/api/teacher/exams/summary", {}, "teacher", teacherId);
   const summaries = unwrapApi(listData);
-  const details = await Promise.all(
-    summaries.map(async (exam) => {
-      const detailData = await apiFetch<
-        { data?: TeacherExamDetail } | TeacherExamDetail
-      >(`/api/exams/${exam.id}`, {}, "teacher", teacherId);
-      return unwrapApi(detailData);
-    }),
-  );
+  return summaries.map((exam) => ({
+    id: exam.id,
+    title: exam.title,
+    description: exam.description ?? null,
+    examType: exam.examType ?? null,
+    className: exam.className ?? null,
+    groupName: exam.groupName ?? null,
+    status: exam.status,
+    scheduledAt: exam.scheduledAt ?? null,
+    examStartedAt: exam.startedAt ?? null,
+    finishedAt: exam.finishedAt ?? null,
+    roomCode: exam.roomCode ?? "",
+    expectedStudentsCount: exam.expectedStudentsCount ?? 0,
+    questionCount: Number(exam.questionCount ?? 0),
+    submissionCount: Number(exam.submissionCount ?? 0),
+    questions: [],
+    duration: exam.durationMin ?? 60,
+    createdAt: exam.createdAt,
+  }));
+};
 
-  return details.map((exam) => {
-    const mappedQuestions: Question[] = (exam.questions ?? []).map(
-      (question) => {
-        const sortedOptions = (question.options ?? []).sort((a, b) =>
-          a.label.localeCompare(b.label),
-        );
-        const optionTexts = sortedOptions.map((opt) => opt.text);
-        const correctFromOption =
-          sortedOptions.find((opt) => opt.isCorrect)?.text ?? "";
-        return {
-          id: question.id,
-          text: question.questionText,
-          type: (question.type as Question["type"]) ?? "text",
-          options: optionTexts.length > 0 ? optionTexts : undefined,
-          correctAnswer: question.correctAnswerText ?? correctFromOption ?? "",
-          points: Number(question.points ?? 1),
-          imageUrl: question.imageUrl ?? undefined,
-        };
-      },
+export const fetchTeacherExamDetail = async (
+  examId: string,
+  teacherId?: string,
+): Promise<Exam> => {
+  const detailData = await apiFetch<
+    { data?: TeacherExamDetail } | TeacherExamDetail
+  >(`/api/exams/${examId}`, {}, "teacher", teacherId);
+  const exam = unwrapApi(detailData);
+  const mappedQuestions: Question[] = (exam.questions ?? []).map((question) => {
+    const sortedOptions = (question.options ?? []).sort((a, b) =>
+      a.label.localeCompare(b.label),
     );
-
+    const optionTexts = sortedOptions.map((opt) => opt.text);
+    const correctFromOption =
+      sortedOptions.find((opt) => opt.isCorrect)?.text ?? "";
     return {
-      id: exam.id,
-      title: exam.title,
-      description: exam.description ?? null,
-      examType: exam.examType ?? null,
-      className: exam.className ?? null,
-      groupName: exam.groupName ?? null,
-      status: exam.status,
-      scheduledAt: exam.scheduledAt ?? null,
-      examStartedAt: exam.startedAt ?? null,
-      finishedAt: exam.finishedAt ?? null,
-      roomCode: exam.roomCode ?? "",
-      expectedStudentsCount: exam.expectedStudentsCount ?? 0,
-      questions: mappedQuestions,
-      duration: exam.durationMin ?? 60,
-      createdAt: exam.createdAt,
+      id: question.id,
+      text: question.questionText,
+      type: (question.type as Question["type"]) ?? "text",
+      options: optionTexts.length > 0 ? optionTexts : undefined,
+      correctAnswer: question.correctAnswerText ?? correctFromOption ?? "",
+      points: Number(question.points ?? 1),
+      imageUrl: question.imageUrl ?? undefined,
     };
   });
+
+  return {
+    id: exam.id,
+    title: exam.title,
+    description: exam.description ?? null,
+    examType: exam.examType ?? null,
+    className: exam.className ?? null,
+    groupName: exam.groupName ?? null,
+    status: exam.status,
+    scheduledAt: exam.scheduledAt ?? null,
+    examStartedAt: exam.startedAt ?? null,
+    finishedAt: exam.finishedAt ?? null,
+    roomCode: exam.roomCode ?? "",
+    expectedStudentsCount: exam.expectedStudentsCount ?? 0,
+    questionCount: mappedQuestions.length,
+    questions: mappedQuestions,
+    duration: exam.durationMin ?? 60,
+    createdAt: exam.createdAt,
+  };
 };
 
 export const fetchTeacherSubmissions = async (
@@ -126,6 +187,77 @@ export const fetchTeacherExamRoster = async (
   );
 
   return unwrapApi(data);
+};
+
+export const openTeacherExamLiveStream = (
+  examId: string,
+  handlers: {
+    onMessage: (payload: TeacherExamLiveUpdate) => void;
+    onError?: (error: Error) => void;
+  },
+  teacherId?: string,
+) => {
+  const controller = new AbortController();
+  const { userId, userRole, userName } = getApiUserContext("teacher");
+  const headers = new Headers();
+  headers.set("Accept", "text/event-stream");
+  headers.set("x-user-id", teacherId ?? userId);
+  headers.set("x-user-role", userRole);
+  headers.set("x-user-name-encoded", encodeURIComponent(userName));
+
+  void (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/exams/${examId}/live`, {
+        headers,
+        signal: controller.signal,
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error(await readStreamError(response));
+      }
+
+      if (!response.body) {
+        throw new Error("Live stream body was empty.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (!controller.signal.aborted) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+
+        let boundaryIndex = buffer.indexOf("\n\n");
+        while (boundaryIndex !== -1) {
+          const rawEvent = buffer.slice(0, boundaryIndex);
+          buffer = buffer.slice(boundaryIndex + 2);
+
+          if (rawEvent.trim()) {
+            const parsed = parseSseEvent(rawEvent);
+            if (parsed.event === "snapshot" && parsed.data) {
+              handlers.onMessage(JSON.parse(parsed.data) as TeacherExamLiveUpdate);
+            } else if (parsed.event === "error" && parsed.data) {
+              const payload = JSON.parse(parsed.data) as { message?: string };
+              throw new Error(payload.message || "Teacher live stream failed.");
+            }
+          }
+
+          boundaryIndex = buffer.indexOf("\n\n");
+        }
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      handlers.onError?.(
+        error instanceof Error ? error : new Error("Teacher live stream failed."),
+      );
+    }
+  })();
+
+  return () => controller.abort();
 };
 
 type LeaderboardItem = {

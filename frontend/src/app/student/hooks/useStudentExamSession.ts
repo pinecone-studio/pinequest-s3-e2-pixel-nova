@@ -7,6 +7,8 @@ import { EMPTY_VIOLATIONS, mapResultToReport, mapSessionToExam } from "./student
 import { useStudentExamResultState } from "./useStudentExamResultState";
 import { useStudentExamWarnings } from "./useStudentExamWarnings";
 
+const ANSWER_SYNC_DEBOUNCE_MS = 1500;
+
 type UseStudentExamSessionParams = {
   currentUser: User | null;
   roomCodeInput: string;
@@ -82,6 +84,8 @@ export const useStudentExamSession = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const sidebarTimerRef = useRef<number | null>(null);
+  const answerFlushTimerRef = useRef<number | null>(null);
+  const pendingAnswersRef = useRef<Record<string, string>>({});
   const { violations, setViolations, warning, showWarning, logViolation } = useStudentExamWarnings(sessionId);
   const {
     lastSubmission,
@@ -102,6 +106,39 @@ export const useStudentExamSession = ({
     }
     document.body.style.filter = "none";
   }, [view]);
+
+  const clearAnswerFlushTimer = useCallback(() => {
+    if (answerFlushTimerRef.current !== null) {
+      window.clearTimeout(answerFlushTimerRef.current);
+      answerFlushTimerRef.current = null;
+    }
+  }, []);
+
+  const flushPendingAnswers = useCallback(async () => {
+    if (!sessionId) return;
+    const pendingEntries = Object.entries(pendingAnswersRef.current);
+    if (pendingEntries.length === 0) return;
+
+    pendingAnswersRef.current = {};
+    clearAnswerFlushTimer();
+
+    await apiFetch(`/api/sessions/${sessionId}/answer`, {
+      method: "POST",
+      body: JSON.stringify({
+        answers: pendingEntries.map(([questionId, textAnswer]) => ({
+          questionId,
+          textAnswer,
+        })),
+      }),
+    });
+  }, [clearAnswerFlushTimer, sessionId]);
+
+  const scheduleAnswerFlush = useCallback(() => {
+    clearAnswerFlushTimer();
+    answerFlushTimerRef.current = window.setTimeout(() => {
+      void flushPendingAnswers();
+    }, ANSWER_SYNC_DEBOUNCE_MS);
+  }, [clearAnswerFlushTimer, flushPendingAnswers]);
 
   const startExam = () => {
     if (!sessionId || !currentUser) {
@@ -146,6 +183,7 @@ export const useStudentExamSession = ({
     if (!auto && !window.confirm("Та шалгалтаа илгээхдээ итгэлтэй байна уу?")) return;
 
     const report = buildAnswerReport(activeExam, answers);
+    await flushPendingAnswers();
     await apiFetch(`/api/sessions/${sessionId}/submit`, { method: "POST" });
 
     const examEndAt = (() => {
@@ -195,7 +233,7 @@ export const useStudentExamSession = ({
         setView("result");
       }
     }
-  }, [activeExam, answers, currentUser, sessionId, violations, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt]);
+  }, [activeExam, answers, currentUser, flushPendingAnswers, sessionId, violations, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt]);
 
   const terminateExam = useCallback((reason: string) => {
     showWarning("Шалгалт зогсоолоо.");
@@ -210,13 +248,16 @@ export const useStudentExamSession = ({
     if (!questionId) return;
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
     if (!sessionId) return;
-    void apiFetch(`/api/sessions/${sessionId}/answer`, {
-      method: "POST",
-      body: JSON.stringify({ questionId, textAnswer: value }),
-    });
+    pendingAnswersRef.current = {
+      ...pendingAnswersRef.current,
+      [questionId]: value,
+    };
+    scheduleAnswerFlush();
   };
 
   const resetExamSession = useCallback(() => {
+    clearAnswerFlushTimer();
+    pendingAnswersRef.current = {};
     setView("dashboard");
     setActiveExam(null);
     setAnswers({});
@@ -231,7 +272,14 @@ export const useStudentExamSession = ({
       document.exitFullscreen?.().catch(() => null);
     }
     document.body.style.filter = "none";
-  }, [setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt, setViolations]);
+  }, [clearAnswerFlushTimer, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt, setViolations]);
+
+  useEffect(() => {
+    return () => {
+      clearAnswerFlushTimer();
+      pendingAnswersRef.current = {};
+    };
+  }, [clearAnswerFlushTimer]);
 
   return {
     view,

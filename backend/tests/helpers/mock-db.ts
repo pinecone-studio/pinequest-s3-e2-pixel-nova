@@ -97,6 +97,7 @@ const tableExports = {
     "totalPoints",
     "isFlagged",
     "flagCount",
+    "violationScore",
   ]),
   studentAnswers: createTable([
     "id",

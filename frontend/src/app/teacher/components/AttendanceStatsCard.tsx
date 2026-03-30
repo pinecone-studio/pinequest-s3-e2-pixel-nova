@@ -1,4 +1,4 @@
-import type { ExamAttendanceStats } from "../hooks/useExamAttendanceStats";
+import type { ExamAttendanceStats } from "../types";
 
 const getTone = (rate: number) => {
   if (rate >= 70) return "stroke-emerald-500";

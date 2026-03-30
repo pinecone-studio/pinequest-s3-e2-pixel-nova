@@ -67,7 +67,7 @@ export default function ExamScheduleFilePicker({
                   {selectedExam.title}
                 </div>
                 <div className="mt-1 truncate text-xs text-slate-500">
-                  {selectedExam.questions.length} асуулт
+                  {selectedExam.questionCount ?? selectedExam.questions.length} асуулт
                   {selectedExam.description
                     ? ` · ${selectedExam.description}`
                     : ""}

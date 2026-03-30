@@ -221,7 +221,7 @@ export default function ExamListCard({
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                       <span className="truncate">
                         {exam.description ||
-                          `${exam.questions.length} асуулттай материал`}
+                          `${exam.questionCount ?? exam.questions.length} асуулттай материал`}
                       </span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${status.tone}`}

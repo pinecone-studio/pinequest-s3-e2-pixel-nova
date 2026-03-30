@@ -155,4 +155,42 @@ describe("session routes", () => {
       },
     });
   });
+
+  it("accepts batched answer writes and persists each pending answer once", async () => {
+    queueDbResults(
+      [{ id: "student-1", fullName: "Nora Student" }],
+      [{ id: "session-1", examId: "exam-1", status: "in_progress", startedAt: "2026-03-30T10:00:00.000Z" }],
+      [{ id: "exam-1", durationMin: 45, startedAt: "2026-03-30T10:00:00.000Z", scheduledAt: "2026-03-30T10:00:00.000Z" }],
+      [],
+      undefined,
+      [],
+      undefined,
+    );
+
+    const response = await app.request(
+      "http://localhost/api/sessions/session-1/answer",
+      jsonRequest(
+        {
+          answers: [
+            { questionId: "question-1", textAnswer: "4" },
+            { questionId: "question-2", textAnswer: "6" },
+          ],
+        },
+        studentHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: {
+        answers: [
+          { questionId: "question-1", answerId: "test-id", updated: false },
+          { questionId: "question-2", answerId: "test-id", updated: false },
+        ],
+        count: 2,
+      },
+    });
+  });
 });

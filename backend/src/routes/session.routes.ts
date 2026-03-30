@@ -368,17 +368,31 @@ sessionRoutes.post("/:sessionId/start", requireRole("student"), async (c) => {
 // ---------------------------------------------------------------------------
 // POST /:sessionId/answer — Submit an answer
 // ---------------------------------------------------------------------------
-const answerSchema = z.object({
+const singleAnswerSchema = z.object({
   questionId: z.string().min(1),
   selectedOptionId: z.string().optional(),
   textAnswer: z.string().optional(),
 });
 
+const batchAnswerItemSchema = z.object({
+  questionId: z.string().min(1),
+  selectedOptionId: z.string().optional(),
+  textAnswer: z.string().optional(),
+});
+
+const answerSchema = z.union([
+  singleAnswerSchema,
+  z.object({
+    answers: z.array(batchAnswerItemSchema).min(1),
+  }),
+]);
+
 sessionRoutes.post("/:sessionId/answer", requireRole("student"), zValidator("json", answerSchema), async (c) => {
   const sessionId = c.req.param("sessionId");
-  const { questionId, selectedOptionId, textAnswer } = c.req.valid("json");
+  const payload = c.req.valid("json");
   const user = c.get("user");
   const db = getDb(c.env.educore);
+  const answersToPersist = "answers" in payload ? payload.answers : [payload];
 
   // Verify session ownership and status
   const [session] = await db
@@ -427,45 +441,75 @@ sessionRoutes.post("/:sessionId/answer", requireRole("student"), zValidator("jso
     }
   }
 
-  // Check if answer already exists for this question in this session
-  const [existing] = await db
-    .select()
-    .from(studentAnswers)
-    .where(and(eq(studentAnswers.sessionId, sessionId), eq(studentAnswers.questionId, questionId)))
-    .limit(1);
-
   const now = new Date().toISOString();
+  const persistedAnswers: { questionId: string; answerId: string; updated: boolean }[] = [];
 
-  if (existing) {
-    // Update existing answer
-    await db
-      .update(studentAnswers)
-      .set({
-        selectedOptionId: selectedOptionId ?? null,
-        textAnswer: textAnswer ?? null,
-        answeredAt: now,
-      })
-      .where(eq(studentAnswers.id, existing.id));
+  for (const answer of answersToPersist) {
+    const { questionId, selectedOptionId, textAnswer } = answer;
+    const [existing] = await db
+      .select()
+      .from(studentAnswers)
+      .where(and(eq(studentAnswers.sessionId, sessionId), eq(studentAnswers.questionId, questionId)))
+      .limit(1);
 
-    await notifyStudentSubmissionSaved(db, user.id, exam.id, sessionId);
+    if (existing) {
+      await db
+        .update(studentAnswers)
+        .set({
+          selectedOptionId: selectedOptionId ?? null,
+          textAnswer: textAnswer ?? null,
+          answeredAt: now,
+        })
+        .where(eq(studentAnswers.id, existing.id));
 
-    return success(c, { answerId: existing.id, updated: true });
+      persistedAnswers.push({
+        questionId,
+        answerId: existing.id,
+        updated: true,
+      });
+      continue;
+    }
+
+    const answerId = newId();
+    await db.insert(studentAnswers).values({
+      id: answerId,
+      sessionId,
+      questionId,
+      selectedOptionId: selectedOptionId ?? null,
+      textAnswer: textAnswer ?? null,
+      answeredAt: now,
+    });
+
+    persistedAnswers.push({
+      questionId,
+      answerId,
+      updated: false,
+    });
   }
-
-  // Insert new answer
-  const answerId = newId();
-  await db.insert(studentAnswers).values({
-    id: answerId,
-    sessionId,
-    questionId,
-    selectedOptionId: selectedOptionId ?? null,
-    textAnswer: textAnswer ?? null,
-    answeredAt: now,
-  });
 
   await notifyStudentSubmissionSaved(db, user.id, exam.id, sessionId);
 
-  return success(c, { answerId, updated: false }, 201);
+  if ("answers" in payload) {
+    const createdOnly = persistedAnswers.every((item) => !item.updated);
+    return success(
+      c,
+      {
+        answers: persistedAnswers,
+        count: persistedAnswers.length,
+      },
+      createdOnly ? 201 : 200,
+    );
+  }
+
+  const [persisted] = persistedAnswers;
+  return success(
+    c,
+    {
+      answerId: persisted.answerId,
+      updated: persisted.updated,
+    },
+    persisted.updated ? 200 : 201,
+  );
 });
 
 // ---------------------------------------------------------------------------

@@ -8,13 +8,189 @@ import {
   studentAnswers,
   options,
 } from "../db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { AppEnv } from "../types";
 import { success, notFound } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 
 const teacherRoutes = new Hono<AppEnv>();
+const LIVE_UPDATE_MS = 5000;
+
+const getOwnedExam = async (
+  teacherId: string,
+  examId: string,
+  d1: D1Database,
+) => {
+  const db = getDb(d1);
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(and(eq(exams.id, examId), eq(exams.teacherId, teacherId)))
+    .limit(1);
+
+  return exam;
+};
+
+const getExamAttendanceStats = async (
+  examId: string,
+  expectedStudentsCount: number | null | undefined,
+  d1: D1Database,
+) => {
+  const db = getDb(d1);
+  const joinedStatuses = ["joined", "late", "in_progress", "submitted", "graded"];
+  const submittedStatuses = ["submitted", "graded"];
+
+  const [joinedRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(examSessions)
+    .where(
+      and(
+        eq(examSessions.examId, examId),
+        sql`${examSessions.status} IN (${sql.join(
+          joinedStatuses.map((status) => sql`${status}`),
+          sql`, `,
+        )})`,
+      ),
+    );
+
+  const [submittedRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(examSessions)
+    .where(
+      and(
+        eq(examSessions.examId, examId),
+        sql`${examSessions.status} IN (${sql.join(
+          submittedStatuses.map((status) => sql`${status}`),
+          sql`, `,
+        )})`,
+      ),
+    );
+
+  const expected = Number(expectedStudentsCount ?? 0);
+  const joined = Number(joinedRow?.count ?? 0);
+  const submitted = Number(submittedRow?.count ?? 0);
+
+  return {
+    expected,
+    joined,
+    submitted,
+    attendance_rate: expected > 0 ? Math.round((joined / expected) * 100) : 0,
+    submission_rate: expected > 0 ? Math.round((submitted / expected) * 100) : 0,
+  };
+};
+
+const getExamRosterDetail = async (
+  exam: Awaited<ReturnType<typeof getOwnedExam>>,
+  d1: D1Database,
+) => {
+  if (!exam) return null;
+
+  const db = getDb(d1);
+  const examId = exam.id;
+
+  const [questionCountRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(questions)
+    .where(eq(questions.examId, examId));
+
+  const totalQuestions = Number(questionCountRow?.count ?? 0);
+
+  const sessions = await db
+    .select({
+      sessionId: examSessions.id,
+      studentId: examSessions.studentId,
+      studentName: students.fullName,
+      studentCode: students.code,
+      status: examSessions.status,
+      submittedAt: examSessions.submittedAt,
+      startedAt: examSessions.startedAt,
+      isFlagged: examSessions.isFlagged,
+      flagCount: examSessions.flagCount,
+      score: examSessions.score,
+    })
+    .from(examSessions)
+    .innerJoin(students, eq(examSessions.studentId, students.id))
+    .where(eq(examSessions.examId, examId))
+    .orderBy(students.fullName);
+
+  const sessionIds = sessions.map((session) => session.sessionId);
+  const answerCounts =
+    sessionIds.length > 0
+      ? await db
+          .select({
+            sessionId: studentAnswers.sessionId,
+            count: sql<number>`count(*)`,
+          })
+          .from(studentAnswers)
+          .where(
+            sql`${studentAnswers.sessionId} IN (${sql.join(
+              sessionIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})`,
+          )
+          .groupBy(studentAnswers.sessionId)
+      : [];
+
+  const countBySession = new Map(
+    answerCounts.map((row) => [row.sessionId, Number(row.count ?? 0)]),
+  );
+
+  return {
+    examId: exam.id,
+    title: exam.title,
+    roomCode: exam.roomCode,
+    durationMin: exam.durationMin,
+    expectedStudentsCount: exam.expectedStudentsCount,
+    scheduledAt: exam.scheduledAt,
+    startedAt: exam.startedAt,
+    finishedAt: exam.finishedAt,
+    participants: sessions.map((session) => {
+      const answeredCount = countBySession.get(session.sessionId) ?? 0;
+      const progressPercent =
+        totalQuestions > 0
+          ? Math.min(100, Math.round((answeredCount / totalQuestions) * 100))
+          : 0;
+
+      return {
+        sessionId: session.sessionId,
+        studentId: session.studentId,
+        studentName: session.studentName,
+        studentCode: session.studentCode,
+        status: session.status,
+        answeredCount,
+        totalQuestions,
+        progressPercent,
+        submittedAt: session.submittedAt,
+        startedAt: session.startedAt,
+        isFlagged: Boolean(session.isFlagged),
+        flagCount: Number(session.flagCount ?? 0),
+        score: session.score,
+      };
+    }),
+  };
+};
+
+const getTeacherExamLiveSnapshot = async (
+  teacherId: string,
+  examId: string,
+  d1: D1Database,
+) => {
+  const exam = await getOwnedExam(teacherId, examId, d1);
+  if (!exam) return null;
+
+  const [roster, stats] = await Promise.all([
+    getExamRosterDetail(exam, d1),
+    getExamAttendanceStats(examId, exam.expectedStudentsCount, d1),
+  ]);
+
+  return {
+    roster,
+    stats,
+    examStatus: exam.status,
+    generatedAt: new Date().toISOString(),
+  };
+};
 
 // Apply auth + teacher role globally
 teacherRoutes.use("*", authMiddleware, requireRole("teacher"));
@@ -92,98 +268,129 @@ teacherRoutes.get("/exams/:examId/submissions", async (c) => {
 teacherRoutes.get("/exams/:examId/roster", async (c) => {
   const teacherId = c.get("user").id;
   const examId = c.req.param("examId");
-  const db = getDb(c.env.educore);
-
-  const [exam] = await db
-    .select()
-    .from(exams)
-    .where(and(eq(exams.id, examId), eq(exams.teacherId, teacherId)))
-    .limit(1);
+  const exam = await getOwnedExam(teacherId, examId, c.env.educore);
 
   if (!exam) {
     return notFound(c, "Exam");
   }
 
-  const [questionCountRow] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(questions)
-    .where(eq(questions.examId, examId));
+  const roster = await getExamRosterDetail(exam, c.env.educore);
+  return success(c, roster);
+});
 
-  const totalQuestions = Number(questionCountRow?.count ?? 0);
+teacherRoutes.get("/exams/:examId/live", async (c) => {
+  const teacherId = c.get("user").id;
+  const examId = c.req.param("examId");
+  const exam = await getOwnedExam(teacherId, examId, c.env.educore);
 
-  const sessions = await db
-    .select({
-      sessionId: examSessions.id,
-      studentId: examSessions.studentId,
-      studentName: students.fullName,
-      studentCode: students.code,
-      status: examSessions.status,
-      submittedAt: examSessions.submittedAt,
-      startedAt: examSessions.startedAt,
-      isFlagged: examSessions.isFlagged,
-      flagCount: examSessions.flagCount,
-      score: examSessions.score,
-    })
-    .from(examSessions)
-    .innerJoin(students, eq(examSessions.studentId, students.id))
-    .where(eq(examSessions.examId, examId))
-    .orderBy(students.fullName);
+  if (!exam) {
+    return notFound(c, "Exam");
+  }
 
-  const sessionIds = sessions.map((session) => session.sessionId);
-  const answerCounts =
-    sessionIds.length > 0
-      ? await db
-          .select({
-            sessionId: studentAnswers.sessionId,
-            count: sql<number>`count(*)`,
-          })
-          .from(studentAnswers)
-          .where(
-            sql`${studentAnswers.sessionId} IN (${sql.join(
-              sessionIds.map((id) => sql`${id}`),
-              sql`, `,
-            )})`,
-          )
-          .groupBy(studentAnswers.sessionId)
-      : [];
+  const encoder = new TextEncoder();
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let closed = false;
 
-  const countBySession = new Map(
-    answerCounts.map((row) => [row.sessionId, Number(row.count ?? 0)]),
-  );
-
-  return success(c, {
-    examId: exam.id,
-    title: exam.title,
-    roomCode: exam.roomCode,
-    durationMin: exam.durationMin,
-    expectedStudentsCount: exam.expectedStudentsCount,
-    scheduledAt: exam.scheduledAt,
-    startedAt: exam.startedAt,
-    finishedAt: exam.finishedAt,
-    participants: sessions.map((session) => {
-      const answeredCount = countBySession.get(session.sessionId) ?? 0;
-      const progressPercent =
-        totalQuestions > 0
-          ? Math.min(100, Math.round((answeredCount / totalQuestions) * 100))
-          : 0;
-
-      return {
-        sessionId: session.sessionId,
-        studentId: session.studentId,
-        studentName: session.studentName,
-        studentCode: session.studentCode,
-        status: session.status,
-        answeredCount,
-        totalQuestions,
-        progressPercent,
-        submittedAt: session.submittedAt,
-        startedAt: session.startedAt,
-        isFlagged: Boolean(session.isFlagged),
-        flagCount: Number(session.flagCount ?? 0),
-        score: session.score,
+  const stream = new ReadableStream<Uint8Array>({
+    start: (controller) => {
+      const closeStream = () => {
+        if (closed) return;
+        closed = true;
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        controller.close();
       };
-    }),
+
+      const sendEvent = (event: string, payload: unknown) => {
+        controller.enqueue(
+          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`),
+        );
+      };
+
+      const tick = async () => {
+        if (closed) return;
+
+        try {
+          const snapshot = await getTeacherExamLiveSnapshot(
+            teacherId,
+            examId,
+            c.env.educore,
+          );
+
+          if (!snapshot) {
+            sendEvent("error", { message: "Exam no longer exists." });
+            closeStream();
+            return;
+          }
+
+          sendEvent("snapshot", snapshot);
+
+          if (snapshot.examStatus !== "active") {
+            closeStream();
+            return;
+          }
+
+          timeoutId = setTimeout(() => {
+            void tick();
+          }, LIVE_UPDATE_MS);
+        } catch {
+          sendEvent("error", { message: "Failed to stream exam updates." });
+          closeStream();
+        }
+      };
+
+      c.req.raw.signal.addEventListener("abort", closeStream);
+      controller.enqueue(encoder.encode(": connected\n\n"));
+      void tick();
+    },
+    cancel: () => {
+      closed = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    },
   });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+    },
+  });
+});
+
+teacherRoutes.get("/exams/summary", async (c) => {
+  const teacherId = c.get("user").id;
+  const db = getDb(c.env.educore);
+
+  const summary = await db
+    .select({
+      id: exams.id,
+      title: exams.title,
+      description: exams.description,
+      examType: exams.examType,
+      className: exams.className,
+      groupName: exams.groupName,
+      scheduledAt: exams.scheduledAt,
+      startedAt: exams.startedAt,
+      finishedAt: exams.finishedAt,
+      roomCode: exams.roomCode,
+      durationMin: exams.durationMin,
+      status: exams.status,
+      expectedStudentsCount: exams.expectedStudentsCount,
+      createdAt: exams.createdAt,
+      questionCount:
+        sql<number>`(select count(*) from questions where questions.exam_id = ${exams.id})`,
+      submissionCount:
+        sql<number>`(select count(*) from exam_sessions where exam_sessions.exam_id = ${exams.id} and exam_sessions.status = 'graded')`,
+    })
+    .from(exams)
+    .where(eq(exams.teacherId, teacherId))
+    .orderBy(desc(exams.createdAt));
+
+  return success(c, summary);
 });
 
 // GET /sessions/:sessionId/result — detailed result for teacher

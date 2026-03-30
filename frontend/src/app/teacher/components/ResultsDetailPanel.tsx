@@ -4,9 +4,9 @@ import { cardClass, sectionDescriptionClass } from "../styles";
 import type { Exam, Submission, ExamStatsSummary } from "../types";
 import type { StudentProfile } from "@/lib/backend-auth";
 import AttendanceStatsCard from "./AttendanceStatsCard";
-import type { ExamAttendanceStats } from "../hooks/useExamAttendanceStats";
 import TeacherEmptyState from "./TeacherEmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { ExamAttendanceStats } from "../types";
 
 type ResultsDetailPanelProps = {
   selectedSubmission: Submission | null;

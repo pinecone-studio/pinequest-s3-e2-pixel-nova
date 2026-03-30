@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import { apiFetch, unwrapApi } from "@/lib/api-client";
+import type { ExamAttendanceStats } from "../types";
 
-export type ExamAttendanceStats = {
-  expected: number;
-  joined: number;
-  submitted: number;
-  attendance_rate: number;
-  submission_rate: number;
-};
+const ACTIVE_POLL_MS = 5000;
 
-export const useExamAttendanceStats = (examId: string | null) => {
+export const useExamAttendanceStats = (
+  examId: string | null,
+  shouldPoll = true,
+) => {
   const [stats, setStats] = useState<ExamAttendanceStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,11 +51,19 @@ export const useExamAttendanceStats = (examId: string | null) => {
     };
 
     void fetchStats();
+    const timer = shouldPoll
+      ? window.setInterval(() => {
+          void fetchStats();
+        }, ACTIVE_POLL_MS)
+      : null;
 
     return () => {
       active = false;
+      if (timer !== null) {
+        window.clearInterval(timer);
+      }
     };
-  }, [examId]);
+  }, [examId, shouldPoll]);
 
   return { stats, loading, error };
 };

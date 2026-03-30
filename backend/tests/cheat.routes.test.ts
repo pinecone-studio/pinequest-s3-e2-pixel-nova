@@ -77,9 +77,9 @@ describe("cheat routes", () => {
   it("accepts the new mobile camera event types", async () => {
     queueDbResults(
       { id: "auth-result" },
-      [{ id: "session-1", examId: "exam-1", studentId: "student-1" }],
+      [{ id: "session-1", examId: "exam-1", studentId: "student-1", flagCount: 0, violationScore: 0 }],
       undefined,
-      [{ eventType: "multiple_faces" }],
+      undefined,
     );
 
     const response = await app.request(
@@ -114,9 +114,9 @@ describe("cheat routes", () => {
   it("combines looking_down and looking_away into the flag threshold", async () => {
     queueDbResults(
       { id: "auth-result" },
-      [{ id: "session-1", examId: "exam-1", studentId: "student-1" }],
+      [{ id: "session-1", examId: "exam-1", studentId: "student-1", flagCount: 1, violationScore: 2 }],
       undefined,
-      [{ eventType: "looking_down" }, { eventType: "looking_away" }],
+      undefined,
     );
 
     const response = await app.request(
@@ -139,6 +139,7 @@ describe("cheat routes", () => {
         flagged: true,
       },
     });
+    expect(mockDb.update).toHaveBeenCalled();
   });
 
   it("rejects unsupported camera event types", async () => {
