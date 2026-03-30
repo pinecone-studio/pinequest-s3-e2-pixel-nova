@@ -28,6 +28,10 @@ const EVENT_TYPES = [
   "suspicious_resize",
   "rapid_answers",
   "idle_too_long",
+  "face_missing",
+  "multiple_faces",
+  "looking_away",
+  "looking_down",
   "disqualification",
 ] as const;
 
@@ -40,11 +44,15 @@ const SEVERITY_MAP: Record<EventType, { severity: string; weight: number }> = {
   tab_hidden:         { severity: "medium",   weight: 2 },
   window_blur:        { severity: "medium",   weight: 2 },
   idle_too_long:      { severity: "medium",   weight: 2 },
+  face_missing:       { severity: "medium",   weight: 2 },
+  looking_down:       { severity: "medium",   weight: 2 },
   copy_paste:         { severity: "high",     weight: 4 },
   devtools_open:      { severity: "high",     weight: 4 },
   rapid_answers:      { severity: "high",     weight: 4 },
+  looking_away:       { severity: "high",     weight: 4 },
   screen_capture:     { severity: "critical", weight: 8 },
   multiple_monitors:  { severity: "critical", weight: 8 },
+  multiple_faces:     { severity: "critical", weight: 8 },
   disqualification:   { severity: "critical", weight: 8 },
 };
 

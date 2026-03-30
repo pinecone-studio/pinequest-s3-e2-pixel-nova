@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import ExamScreen from '@/app/(tabs)/exam';
 import { useStudentApp } from '@/lib/student-app/context';
@@ -21,9 +21,61 @@ jest.mock('@/lib/student-app/context', () => ({
   useStudentApp: jest.fn(),
 }));
 
+jest.mock("react-native-vision-camera", () => ({
+  Camera: {
+    getCameraPermissionStatus: jest.fn(async () => "granted"),
+    requestCameraPermission: jest.fn(async () => "granted"),
+  },
+}));
+
+jest.mock("@/components/student-app/MobileProctorCamera", () => ({
+  __esModule: true,
+  default: ({ isEnabled }: { isEnabled: boolean }) =>
+    isEnabled
+      ? require("react").createElement("Text", null, "camera-proctor-active")
+      : null,
+}));
+
 const mockUseStudentApp = useStudentApp as jest.MockedFunction<
   typeof useStudentApp
 >;
+const mockVisionCamera = jest.requireMock("react-native-vision-camera") as {
+  Camera: {
+    getCameraPermissionStatus: jest.Mock;
+    requestCameraPermission: jest.Mock;
+  };
+};
+
+const buildActiveSession = (status: "joined" | "in_progress" | "submitting" | "submitted" = "joined") => ({
+  sessionId: "session-1",
+  roomCode: "ROOM01",
+  status,
+  exam: {
+    id: "exam-1",
+    title: "Demo exam",
+    description: null,
+    durationMin: 45,
+    questionCount: 1,
+  },
+  questions: [
+    {
+      id: "question-1",
+      type: "multiple_choice" as const,
+      questionText: "2 + 2 = ?",
+      imageUrl: null,
+      points: 1,
+      options: [
+        { id: "opt-1", label: "A", text: "4" },
+        { id: "opt-2", label: "B", text: "5" },
+      ],
+    },
+  ],
+  answers: {},
+  currentQuestionIndex: 0,
+  timerEndsAt: Date.now() + 60_000,
+  startedAt: new Date().toISOString(),
+  lastAnswerAt: null,
+});
 
 const baseContext = {
   authMode: 'user_switcher' as const,
@@ -98,5 +150,69 @@ describe('ExamScreen', () => {
 
     expect(screen.getByText('No active exam')).toBeTruthy();
     expect(screen.getByText('Join exam')).toBeTruthy();
+  });
+
+  it("blocks exam start when camera permission is denied", async () => {
+    mockVisionCamera.Camera.getCameraPermissionStatus.mockResolvedValue("denied");
+    const startExam = jest.fn();
+
+    mockUseStudentApp.mockReturnValue({
+      activeSession: buildActiveSession("joined"),
+      answerQuestion: jest.fn(),
+      availableUsers: [],
+      clearResult: jest.fn(),
+      hydrated: true,
+      joinExam: jest.fn(),
+      logIntegrityEvent: jest.fn(),
+      logout: jest.fn(),
+      profile: null,
+      refreshProfile: jest.fn(),
+      saveProfile: jest.fn(),
+      setCurrentQuestionIndex: jest.fn(),
+      signingIn: false,
+      startExam,
+      student: { id: "s1", fullName: "Student", role: "student" },
+      submittedResult: null,
+      submitCurrentExam: jest.fn(),
+      switchUser: jest.fn(),
+    });
+
+    const screen = render(<ExamScreen />);
+
+    fireEvent.press(screen.getByText("Шалгалтыг эхлүүлэх"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Камерын зөвшөөрөл шаардлагатай/)
+      ).toBeTruthy();
+    });
+    expect(startExam).not.toHaveBeenCalled();
+  });
+
+  it("renders the camera proctor when the exam is in progress", () => {
+    mockUseStudentApp.mockReturnValue({
+      activeSession: buildActiveSession("in_progress"),
+      answerQuestion: jest.fn(),
+      availableUsers: [],
+      clearResult: jest.fn(),
+      hydrated: true,
+      joinExam: jest.fn(),
+      logIntegrityEvent: jest.fn(),
+      logout: jest.fn(),
+      profile: null,
+      refreshProfile: jest.fn(),
+      saveProfile: jest.fn(),
+      setCurrentQuestionIndex: jest.fn(),
+      signingIn: false,
+      startExam: jest.fn(),
+      student: { id: "s1", fullName: "Student", role: "student" },
+      submittedResult: null,
+      submitCurrentExam: jest.fn(),
+      switchUser: jest.fn(),
+    });
+
+    const screen = render(<ExamScreen />);
+
+    expect(screen.getByText("camera-proctor-active")).toBeTruthy();
   });
 });

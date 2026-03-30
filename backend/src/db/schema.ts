@@ -220,7 +220,7 @@ export const cheatEvents = sqliteTable("cheat_events", {
   studentId: text("student_id")
     .notNull()
     .references(() => students.id, { onDelete: "cascade" }),
-  eventType: text("event_type").notNull(), // tab_switch | tab_hidden | window_blur | copy_paste | right_click | screen_capture | devtools_open | multiple_monitors | suspicious_resize | rapid_answers | idle_too_long
+  eventType: text("event_type").notNull(), // tab_switch | tab_hidden | window_blur | copy_paste | right_click | screen_capture | devtools_open | multiple_monitors | suspicious_resize | rapid_answers | idle_too_long | face_missing | multiple_faces | looking_away | looking_down
   severity: text("severity").notNull().default("low"), // low | medium | high | critical
   metadata: text("metadata"), // JSON string
   isNotified: integer("is_notified", { mode: "boolean" }).notNull().default(false),
