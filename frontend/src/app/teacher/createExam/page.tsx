@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -22,10 +22,10 @@ import { useTeacherData } from "../hooks/useTeacherData";
 import { useExamManagement } from "../hooks/useExamManagement";
 import { useExamImport } from "../hooks/useExamImport";
 import { useAiExamGenerator } from "../hooks/useAiExamGenerator";
-import AiExamGeneratorPanel from "../components/AiExamGeneratorPanel";
 import ExamCreateCard from "../components/ExamCreateCard";
 import { pageShellClass } from "../styles";
 import { Button } from "@/components/ui/button";
+import { consumePendingCreateExamDraft } from "../create-exam-dialog-state";
 
 const role: RoleKey = "teacher";
 
@@ -44,6 +44,7 @@ const getLocalAuthUsers = (r: RoleKey): AuthUser[] => {
 
 export default function CreateExamPage() {
   const router = useRouter();
+  const pendingAppliedRef = useRef(false);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export default function CreateExamPage() {
         if (user) setSessionUser(buildSessionUser(user));
       }
     };
-    load();
+    void load();
     return () => {
       cancelled = true;
     };
@@ -101,16 +102,44 @@ export default function CreateExamPage() {
     currentUser: data.currentUser,
   });
 
+  useEffect(() => {
+    if (pendingAppliedRef.current || !sessionUser?.id) return;
+    pendingAppliedRef.current = true;
+
+    const pending = consumePendingCreateExamDraft();
+    if (!pending) return;
+
+    if (pending.mode === "manual") {
+      management.setExamTitle(pending.examTitle);
+      return;
+    }
+
+    if (pending.mode === "pdf") {
+      management.setExamTitle(pending.examTitle);
+      imports.setImportMcqCount(pending.importMcqCount);
+      imports.setImportTextCount(pending.importTextCount);
+      imports.setImportOpenCount(pending.importOpenCount);
+      data.showToast("PDF импортын тохиргоо бэлэн боллоо. Файлаа оруулаад үргэлжлүүлнэ үү.");
+      return;
+    }
+
+    void (async () => {
+      const draft = await generator.generateDraft(pending.input);
+      if (!draft) return;
+      management.setExamTitle(draft.title);
+      management.setQuestions(draft.questions);
+    })();
+  }, [
+    data,
+    generator,
+    imports,
+    management,
+    sessionUser?.id,
+  ]);
+
   const handleSaveExam = async () => {
     const success = await management.saveExam();
     if (success) router.push("/teacher");
-  };
-
-  const handleUseDraft = async () => {
-    const saved = await generator.acceptDraft();
-    if (!saved || !generator.draft) return;
-    management.setExamTitle(generator.draft.title);
-    management.setQuestions(generator.draft.questions);
   };
 
   return (
@@ -124,7 +153,8 @@ export default function CreateExamPage() {
         <Button
           type="button"
           onClick={() => router.push("/teacher")}
-          variant="outline">
+          variant="outline"
+        >
           <ArrowLeft className="h-4 w-4" />
           Буцах
         </Button>
@@ -132,16 +162,6 @@ export default function CreateExamPage() {
       </header>
       <main className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1180px]">
-          {/* <AiExamGeneratorPanel
-              input={generator.input}
-              onChange={generator.updateInput}
-              draft={generator.draft}
-              generating={generator.generating}
-              savingAccepted={generator.savingAccepted}
-              error={generator.error}
-              onGenerate={generator.generateDraft}
-              onUseDraft={handleUseDraft}
-            /> */}
           <ExamCreateCard
             examTitle={management.examTitle}
             setExamTitle={management.setExamTitle}

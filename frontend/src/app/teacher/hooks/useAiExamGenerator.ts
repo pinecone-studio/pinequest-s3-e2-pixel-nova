@@ -33,21 +33,29 @@ export const useAiExamGenerator = (params: {
     setInput((current) => ({ ...current, [key]: value }));
   };
 
-  const generateDraft = async () => {
-    if (!input.topic.trim()) {
+  const generateDraft = async (override?: Partial<AiExamGeneratorInput>) => {
+    const effectiveInput: AiExamGeneratorInput = {
+      ...input,
+      ...override,
+    };
+
+    if (!effectiveInput.topic.trim()) {
       setError("Сэдэв эсвэл гарчиг оруулна уу.");
       return null;
     }
+
     setGenerating(true);
     setError(null);
+    setInput(effectiveInput);
+
     try {
       const nextDraft = await generateAiExamDraft(
         {
-          ...input,
-          topic: input.topic.trim(),
-          subject: input.subject?.trim() || undefined,
-          gradeOrClass: input.gradeOrClass?.trim() || undefined,
-          instructions: input.instructions?.trim() || undefined,
+          ...effectiveInput,
+          topic: effectiveInput.topic.trim(),
+          subject: effectiveInput.subject?.trim() || undefined,
+          gradeOrClass: effectiveInput.gradeOrClass?.trim() || undefined,
+          instructions: effectiveInput.instructions?.trim() || undefined,
         },
         teacherId ?? undefined,
       );
@@ -71,7 +79,11 @@ export const useAiExamGenerator = (params: {
     setSavingAccepted(true);
     setError(null);
     try {
-      const result = await saveAcceptedAiDraft(input, draft, teacherId ?? undefined);
+      const result = await saveAcceptedAiDraft(
+        input,
+        draft,
+        teacherId ?? undefined,
+      );
       showToast("AI ноорог хадгалагдаж, редакторт ачааллаа.");
       return result;
     } catch (err) {
@@ -88,6 +100,7 @@ export const useAiExamGenerator = (params: {
 
   return {
     input,
+    setInput,
     updateInput,
     draft,
     setDraft,

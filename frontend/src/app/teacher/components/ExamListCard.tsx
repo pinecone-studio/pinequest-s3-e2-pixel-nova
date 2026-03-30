@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ChevronRightIcon,
   CopyIcon,
   DownloadIcon,
   EyeIcon,
-  FolderIcon,
+  FileTextIcon,
   FolderSearch,
+  PlusIcon,
   SearchIcon,
 } from "lucide-react";
-import { sectionDescriptionClass, contentCanvasClass } from "../styles";
-import { formatDateTime } from "../utils";
+import { sectionDescriptionClass } from "../styles";
 import type { Exam } from "../types";
 import type { CopyCodeHandler } from "./RoomCodeCopyButton";
 import TeacherEmptyState from "./TeacherEmptyState";
+import { Input } from "@/components/ui/input";
 
 type ExamListCardProps = {
   exams: Exam[];
@@ -52,6 +54,19 @@ const getStatus = (exam: Exam) => {
     }
   }
   return { label: "Бэлэн сан", tone: "bg-slate-100 text-slate-600" };
+};
+
+const formatCreatedDate = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(date)
+    .replace(/-/g, "/");
 };
 
 export default function ExamListCard({
@@ -108,155 +123,129 @@ export default function ExamListCard({
   }, [activeFolder, folders.length, safeActiveFolder]);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-[1.65rem] font-semibold tracking-[-0.02em] text-slate-900">
-            Шалгалтын сан
-          </h2>
-          <p className={`mt-1 ${sectionDescriptionClass}`}>
-            Таны үүсгэсэн шалгалтын материалууд
-          </p>
+    <section className="grid gap-4 lg:grid-cols-[250px_minmax(0,1fr)]  max-w-[1480px]">
+      <aside className="h-screen border border-[#e6e9ef] bg-white/90 p-3 w-[250px]">
+        <div className="relative rounded-[8px] border border-[#e5e7eb] bg-white flex items-center px-2 justify-start h-10">
+          <SearchIcon className="text-[#a3a9b6] text-xs" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Хайх"
+            className="outline-none border-none bg-transparent text-xs"
+          />
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-2xl bg-[#2563eb] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
-          onClick={onCreateExam}
-        >
-          <svg
-            className="size-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2.2}
-            strokeLinecap="round"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Шалгалт үүсгэх
-        </button>
-      </div>
 
-      <div
-        className={`grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] ${contentCanvasClass}`}
-      >
-        <aside className="space-y-4 border-b border-[#edf1f6] pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-5">
-          <div className="relative">
-            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Хайх"
-              className="h-11 w-full rounded-2xl border border-[#dce5ef] bg-white pl-10 pr-4 text-sm text-slate-700 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
-            />
+        <div className="mt-4 space-y-1">
+          {folders.map((folder) => {
+            const active = folder.label === safeActiveFolder;
+            return (
+              <button
+                key={folder.label}
+                type="button"
+                onClick={() => setActiveFolder(folder.label)}
+                className={`flex w-full items-center justify-between rounded-[8px] px-2.5 py-2 text-left text-xs transition ${
+                  active
+                    ? "bg-[#f1f3f5] text-slate-900"
+                    : "text-slate-600 hover:bg-[#f8fafc] hover:text-slate-900"
+                }`}>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <ChevronRightIcon className="size-3.5 shrink-0 text-slate-400" />
+                  <span className="truncate">{folder.label}</span>
+                </span>
+                <span className="shrink-0 text-[11px] text-slate-400">
+                  {folder.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      <div className="overflow-hidden p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#edf1f6] px-4 py-3">
+          <div>
+            <h2 className="text-2xl font-semibold text-slate-900">
+              Шалгалтын сан
+            </h2>
+            <p
+              className={`mt-0.5 text-xl font-normal ${sectionDescriptionClass}`}>
+              Таны үүсгэсэн шалгалтын материалууд
+            </p>
           </div>
 
-          <div className="space-y-1">
-            {folders.map((folder) => {
-              const active = folder.label === safeActiveFolder;
-              return (
-                <button
-                  key={folder.label}
-                  type="button"
-                  onClick={() => setActiveFolder(folder.label)}
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                    active
-                      ? "bg-white border border-black text-slate-900"
-                      : "text-slate-600 hover:bg-[#f8fafc] hover:text-slate-900"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <FolderIcon className="size-4" />
-                    <span>{folder.label}</span>
-                  </span>
-                  <span className="text-xs text-slate-400">{folder.count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
+          <button
+            type="button"
+            className="inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-[#2563eb] px-3 text-xs font-medium text-white transition hover:bg-[#1d4ed8]"
+            onClick={onCreateExam}>
+            <PlusIcon className="size-3.5" />
+            Шалгалт үүсгэх
+          </button>
+        </div>
 
-        <div className="space-y-3">
+        <div className="divide-y divide-[#edf1f6]">
           {visibleExams.length === 0 ? (
-            <TeacherEmptyState
-              icon={<FolderSearch className="size-5" />}
-              title="Шалгалт олдсонгүй"
-              description="Сонгосон ангилал эсвэл хайлтад тохирох шалгалт алга байна. Хайлтаа өөрчилж эсвэл шинэ шалгалт үүсгээд үзээрэй."
-              actionLabel={onCreateExam ? "Шалгалт үүсгэх" : undefined}
-              onAction={onCreateExam}
-            />
+            <div className="p-6">
+              <TeacherEmptyState
+                icon={<FolderSearch className="size-5" />}
+                title="Шалгалт олдсонгүй"
+                description="Сонгосон ангилал эсвэл хайлтад тохирох шалгалт алга байна."
+                actionLabel={onCreateExam ? "Шалгалт үүсгэх" : undefined}
+                onAction={onCreateExam}
+              />
+            </div>
           ) : (
             visibleExams.map((exam) => {
               const status = getStatus(exam);
               return (
                 <div
                   key={exam.id}
-                  className="grid grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-4 rounded-[24px] border border-[#edf1f6] bg-white px-5 py-4 transition hover:border-[#dbe4f0] hover:bg-white"
-                >
-                  <div className="flex size-11 items-center justify-center rounded-[16px] border border-[#e3e8ef] bg-white text-slate-400">
-                    <svg
-                      className="size-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M14 2v6h6"
-                      />
-                    </svg>
+                  className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-4">
+                  <div className="flex size-8 items-center justify-center rounded-full border border-[#d8dde6] text-[#9aa4b2]">
+                    <FileTextIcon className="size-4" strokeWidth={1.7} />
                   </div>
 
                   <div className="min-w-0">
-                    <div className="truncate text-[15px] font-semibold text-slate-900">
+                    <button
+                      type="button"
+                      onClick={() => onOpenExam?.(exam.id)}
+                      className="truncate text-left text-[13px] font-medium text-slate-800 transition hover:text-[#2563eb]">
                       {exam.title}
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                    </button>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
                       <span className="truncate">
                         {exam.description ||
                           `${exam.questionCount ?? exam.questions.length} асуулттай материал`}
                       </span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${status.tone}`}
-                      >
+                        className={`rounded-full px-2 py-0.5 font-semibold ${status.tone}`}>
                         {status.label}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 text-slate-500">
+                  <div className="flex items-center gap-4 text-[#4b5563]">
                     <button
                       type="button"
-                      className="transition hover:text-slate-800"
+                      className="transition hover:text-slate-900"
                       title="Дэлгэрэнгүй харах"
-                      onClick={() => onOpenExam?.(exam.id)}
-                    >
-                      <EyeIcon className="size-4" />
+                      onClick={() => onOpenExam?.(exam.id)}>
+                      <EyeIcon className="size-3.5" />
                     </button>
                     <button
                       type="button"
-                      className="transition hover:text-slate-800"
-                      title="Өрөөний код хуулах"
-                      onClick={() => onCopyCode(exam.roomCode)}
-                    >
-                      <CopyIcon className="size-4" />
+                      className="transition hover:text-slate-900"
+                      title="Код хуулах"
+                      onClick={() => onCopyCode(exam.roomCode)}>
+                      <CopyIcon className="size-3.5" />
                     </button>
                     <button
                       type="button"
-                      className="transition hover:text-slate-800"
-                      title="Татаж авах"
-                    >
-                      <DownloadIcon className="size-4" />
+                      className="transition hover:text-slate-900"
+                      title="Татаж авах">
+                      <DownloadIcon className="size-3.5" />
                     </button>
-                    <span className="w-24 text-right text-xs text-slate-500">
-                      {formatDateTime(exam.createdAt)}
+                    <span className="w-20 text-right text-[11px] text-slate-500">
+                      {formatCreatedDate(exam.createdAt)}
                     </span>
                   </div>
                 </div>
@@ -265,6 +254,6 @@ export default function ExamListCard({
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

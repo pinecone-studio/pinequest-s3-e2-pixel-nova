@@ -1,6 +1,15 @@
 import type { AuthUser } from "@/lib/backend-auth";
 import type { RoleKey } from "@/lib/role-session";
 import { getRoleLabel } from "@/lib/role-session";
+import { Button } from "./ui/button";
+import { ButtonGroup } from "./ui/button-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 type RoleNavbarProps = {
   activeRole: RoleKey;
@@ -24,31 +33,34 @@ export default function RoleNavbar({
   return (
     <div className="flex items-center gap-2">
       {users.length > 0 && (
-        <select
-          className="rounded-xl border border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground focus:outline-none"
-          value={activeUserId ?? ""}
+        <Select
+          value={activeUserId ?? undefined}
           disabled={loading}
-          onChange={(e) => onChangeUser(e.target.value)}
-        >
-          {users.map((user) => (
-            <option key={user.id} value={user.id}>
-              {user.fullName}
-            </option>
-          ))}
-        </select>
+          onValueChange={onChangeUser}>
+          <SelectTrigger
+            size="sm"
+            className="min-w-40 rounded-xl bg-muted text-xs font-semibold">
+            <SelectValue placeholder="Select user" />
+          </SelectTrigger>
+          <SelectContent>
+            {users.map((user) => (
+              <SelectItem key={user.id} value={user.id}>
+                {user.fullName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
       {roles.map((role) => (
-        <button
+        <Button
           key={role}
-          className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-            activeRole === role
-              ? "bg-primary text-primary-foreground"
-              : "border border-border bg-muted text-foreground hover:bg-muted/70"
-          }`}
-          onClick={() => onChangeRole(role)}
-        >
+          type="button"
+          size="sm"
+          variant={activeRole === role ? "default" : "outline"}
+          className="rounded-xl text-xs font-semibold"
+          onClick={() => onChangeRole(role)}>
           {getRoleLabel(role)}
-        </button>
+        </Button>
       ))}
     </div>
   );

@@ -21,7 +21,9 @@ import {
   type RoleKey,
 } from "@/lib/role-session";
 import TeacherHeader from "./components/TeacherHeader";
-import TeacherPageContent, { type TeacherTab } from "./components/TeacherPageContent";
+import TeacherPageContent, {
+  type TeacherTab,
+} from "./components/TeacherPageContent";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamStats } from "./hooks/useExamStats";
@@ -52,7 +54,9 @@ export default function TeacherPage() {
   const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын сан");
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
-  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
+  const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
+    null,
+  );
   const [profileLoading, setProfileLoading] = useState(false);
 
   const sessionUser = useMemo(
@@ -97,14 +101,22 @@ export default function TeacherPage() {
     const loadUsers = async () => {
       setUsersLoading(true);
       try {
-        const authUsers = await getAuthUsers().catch(() => getLocalAuthUsers(role));
+        const authUsers = await getAuthUsers().catch(() =>
+          getLocalAuthUsers(role),
+        );
         if (cancelled) return;
         const nextUsers = authUsers.filter((user) => user.role === role);
         const storedUserId = getStoredSelectedUserId(role);
-        const nextUser = nextUsers.find((user) => user.id === storedUserId) ?? nextUsers[0] ?? null;
+        const nextUser =
+          nextUsers.find((user) => user.id === storedUserId) ??
+          nextUsers[0] ??
+          null;
         setUsers(nextUsers);
         setSelectedUser(nextUser);
-        setJSON(STORAGE_KEYS.users, nextUsers.map((user) => buildSessionUser(user)));
+        setJSON(
+          STORAGE_KEYS.users,
+          nextUsers.map((user) => buildSessionUser(user)),
+        );
         if (nextUser) {
           setStoredSelectedUserId(role, nextUser.id);
           setSessionUser(buildSessionUser(nextUser));
@@ -185,22 +197,21 @@ export default function TeacherPage() {
           />
         }
       />
-      <main className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-[1480px] space-y-6">
-          <div className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-3 scale-[0.985] opacity-0"}`}>
-            <TeacherPageContent
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              showScheduleForm={showScheduleForm}
-              setShowScheduleForm={setShowScheduleForm}
-              data={data}
-              management={management}
-              examStatsState={examStatsState}
-              attendance={attendance}
-              studentProfile={studentProfile}
-              profileLoading={profileLoading}
-            />
-          </div>
+      <main className="mx-auto w-full space-y-6">
+        <div
+          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-3 scale-[0.985] opacity-0"}`}>
+          <TeacherPageContent
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            showScheduleForm={showScheduleForm}
+            setShowScheduleForm={setShowScheduleForm}
+            data={data}
+            management={management}
+            examStatsState={examStatsState}
+            attendance={attendance}
+            studentProfile={studentProfile}
+            profileLoading={profileLoading}
+          />
         </div>
       </main>
     </div>
