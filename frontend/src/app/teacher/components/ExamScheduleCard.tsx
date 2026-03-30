@@ -57,31 +57,27 @@ export default function ExamScheduleCard({
   const selectableExams = useMemo(
     () =>
       exams
-        .filter((exam) => {
-          if (exam.questions.length === 0) return false;
-          const status = exam.status ?? "draft";
-          return status === "draft" || status === "scheduled";
-        })
+        .filter((exam) => exam.questions.length > 0)
         .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
     [exams],
   );
 
   return (
-    <div className={`${cardClass} overflow-auto font-sans w-125 h-211 `}>
+    <div className={`${cardClass} max-h-[calc(100vh-32px)] w-full max-w-[404px] overflow-auto p-5 font-sans sm:p-6`}>
       <div className="grid gap-6">
-        {onClose && (
-          <div className="flex items-center justify-between">
-            <span className="text-[18px] font-semibold text-black">
-              Шалгалтын хуваарь
-            </span>
+        <div className="flex items-center justify-between">
+          <span className="text-[18px] font-semibold text-black">
+            Шалгалтын хуваарь
+          </span>
+          {onClose && (
             <button
               type="button"
-              className="flex size-8 items-center justify-center rounded-full hover:bg-gray-100"
+              className="flex size-8 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100"
               onClick={onClose}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="size-4 text-gray-600"
+                className="size-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -94,50 +90,57 @@ export default function ExamScheduleCard({
                 />
               </svg>
             </button>
-          </div>
-        )}
-
-        <div className="grid gap-4">
-          <div className="grid gap-4">
-            <ExamScheduleTypeSelector
-              scheduleExamType={scheduleExamType}
-              setScheduleExamType={setScheduleExamType}
-            />
-            <ExamScheduleMetaFields
-              scheduleClassName={scheduleClassName}
-              setScheduleClassName={setScheduleClassName}
-              scheduleGroupName={scheduleGroupName}
-              setScheduleGroupName={setScheduleGroupName}
-              scheduleSubjectName={scheduleSubjectName}
-              setScheduleSubjectName={setScheduleSubjectName}
-              scheduleDescription={scheduleDescription}
-              setScheduleDescription={setScheduleDescription}
-            />
-            <ExamScheduleDatePicker
-              scheduleDate={scheduleDate}
-              setScheduleDate={setScheduleDate}
-            />
-            <ExamScheduleDuration
-              durationMinutes={durationMinutes}
-              setDurationMinutes={setDurationMinutes}
-              seconds={seconds}
-              setSeconds={setSeconds}
-            />
-            <ExamScheduleFilePicker
-              selectableExams={selectableExams}
-              selectedScheduleExamId={selectedScheduleExamId}
-              setSelectedScheduleExamId={setSelectedScheduleExamId}
-            />
-          </div>
+          )}
         </div>
 
-        <button
-          className={`w-full ${buttonPrimary}`}
-          onClick={onSchedule}
-          type="button"
-        >
-          Хуваарь үүсгэх
-        </button>
+        <div className="grid gap-5">
+          <ExamScheduleTypeSelector
+            scheduleExamType={scheduleExamType}
+            setScheduleExamType={setScheduleExamType}
+          />
+          <ExamScheduleMetaFields
+            scheduleClassName={scheduleClassName}
+            setScheduleClassName={setScheduleClassName}
+            scheduleDescription={scheduleDescription}
+            setScheduleDescription={setScheduleDescription}
+            scheduleSubjectName={scheduleSubjectName}
+            setScheduleSubjectName={setScheduleSubjectName}
+          />
+          <ExamScheduleFilePicker
+            selectableExams={selectableExams}
+            selectedScheduleExamId={selectedScheduleExamId}
+            setSelectedScheduleExamId={setSelectedScheduleExamId}
+          />
+          <ExamScheduleDatePicker
+            scheduleDate={scheduleDate}
+            setScheduleDate={setScheduleDate}
+          />
+          <ExamScheduleDuration
+            durationMinutes={durationMinutes}
+            setDurationMinutes={setDurationMinutes}
+            seconds={seconds}
+            setSeconds={setSeconds}
+          />
+        </div>
+
+        <div className="flex items-center justify-end gap-3 pt-1">
+          {onClose && (
+            <button
+              className="min-w-[82px] rounded-[14px] border border-[#dfdfdf] bg-white px-4 py-2.5 text-[14px] font-medium text-[#5b6068] transition hover:bg-[#f8fafc]"
+              onClick={onClose}
+              type="button"
+            >
+              Болих
+            </button>
+          )}
+          <button
+            className={`min-w-[110px] rounded-[14px] px-5 py-2.5 text-[14px] ${buttonPrimary}`}
+            onClick={onSchedule}
+            type="button"
+          >
+            Хадгалах
+          </button>
+        </div>
       </div>
     </div>
   );

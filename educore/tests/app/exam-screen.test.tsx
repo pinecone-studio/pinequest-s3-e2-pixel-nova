@@ -5,20 +5,20 @@ import ExamScreen from '@/app/(tabs)/exam';
 import { useStudentApp } from '@/lib/student-app/context';
 import type { ActiveExamSession } from '@/types/student-app';
 
-jest.mock('@react-navigation/native', () => ({
+jest.mock("@react-navigation/native", () => ({
   useFocusEffect: jest.fn(),
 }));
 
-jest.mock('expo-router', () => ({
+jest.mock("expo-router", () => ({
   Redirect: ({ href }: { href: string }) =>
-    require('react').createElement('Text', null, `redirect:${href}`),
+    require("react").createElement("Text", null, `redirect:${href}`),
   useRouter: () => ({
     push: jest.fn(),
     replace: jest.fn(),
   }),
 }));
 
-jest.mock('@/lib/student-app/context', () => ({
+jest.mock("@/lib/student-app/context", () => ({
   useStudentApp: jest.fn(),
 }));
 
@@ -84,7 +84,7 @@ const buildActiveSession = (
 });
 
 const baseContext = {
-  authMode: 'user_switcher' as const,
+  authMode: "user_switcher" as const,
   activeSession: null,
   answerQuestion: jest.fn(),
   availableUsers: [],
@@ -127,18 +127,18 @@ const baseContext = {
   signInWithCode: jest.fn(),
   signingIn: false,
   startExam: jest.fn(),
-  student: { id: 's1', fullName: 'Student', role: 'student' as const },
+  student: { id: "s1", fullName: "Student", role: "student" as const },
   submittedResult: null,
   submitCurrentExam: jest.fn(),
   switchUser: jest.fn(),
 };
 
-describe('ExamScreen', () => {
+describe("ExamScreen", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('keeps the tab mounted while session state hydrates', () => {
+  it("keeps the tab mounted while session state hydrates", () => {
     mockUseStudentApp.mockReturnValue({
       ...baseContext,
       hydrated: false,
@@ -146,16 +146,18 @@ describe('ExamScreen', () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText('Loading active exam')).toBeTruthy();
+    expect(screen.getByText("Уншиж байна...")).toBeTruthy();
   });
 
-  it('shows an empty state when there is no active exam', () => {
+  it("shows an empty state when there is no active exam", () => {
     mockUseStudentApp.mockReturnValue(baseContext);
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText('No active exam')).toBeTruthy();
-    expect(screen.getByText('Join exam')).toBeTruthy();
+    expect(
+      screen.getByText("Өнөөдөр товлогдсон шалгалт байхгүй байна"),
+    ).toBeTruthy();
+    expect(screen.getByText("Шалгалтанд нэгдэх")).toBeTruthy();
   });
 
   it("blocks exam start when camera permission is denied", async () => {

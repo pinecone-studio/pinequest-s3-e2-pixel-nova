@@ -56,6 +56,7 @@ export default function TeacherPage() {
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
   const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын сан");
   const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [contentVisible, setContentVisible] = useState(false);
 
   const sessionUser = useMemo(
     () => (selectedUser ? buildSessionUser(selectedUser) : null),
@@ -85,6 +86,15 @@ export default function TeacherPage() {
       document.body.style.overflow = "";
     };
   }, [showScheduleForm]);
+
+  useEffect(() => {
+    setContentVisible(false);
+    const timer = window.setTimeout(() => {
+      setContentVisible(true);
+    }, 24);
+
+    return () => window.clearTimeout(timer);
+  }, [activeTab]);
 
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
     null,
@@ -225,11 +235,11 @@ export default function TeacherPage() {
           />
           {showScheduleForm && (
             <div
-              className="fixed inset-0 z-50 flex justify-center bg-black/10"
+              className="fixed inset-0 z-50 flex justify-center bg-black/10 backdrop-blur-[2px] transition-all duration-300"
               onClick={() => setShowScheduleForm(false)}
             >
               <div
-                className="mt-10 h-[820px] w-full max-w-sm"
+                className="mt-10 h-[820px] w-full max-w-sm transition-all duration-500 ease-out motion-safe:translate-y-0"
                 onClick={(e) => e.stopPropagation()}
               >
                 <ExamScheduleCard
@@ -291,13 +301,21 @@ export default function TeacherPage() {
       />
       <main className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1480px] space-y-6">
-          {activeTab === "Шалгалтын сан" || activeTab === "Хуваарь" ? (
-            <div>{renderActiveTab()}</div>
-          ) : (
-            <section className={contentCanvasClass}>
-              {renderActiveTab()}
-            </section>
-          )}
+          <div
+            className={`transform-gpu transition-all duration-500 ease-out ${
+              contentVisible
+                ? "translate-y-0 scale-100 opacity-100"
+                : "translate-y-3 scale-[0.985] opacity-0"
+            }`}
+          >
+            {activeTab === "Шалгалтын сан" || activeTab === "Хуваарь" ? (
+              <div>{renderActiveTab()}</div>
+            ) : (
+              <section className={contentCanvasClass}>
+                {renderActiveTab()}
+              </section>
+            )}
+          </div>
         </div>
       </main>
     </div>

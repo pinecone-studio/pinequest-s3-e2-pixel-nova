@@ -1,15 +1,12 @@
 import { figmaFieldClass, figmaTextareaClass } from "../styles";
 import {
   classOptions,
-  groupOptions,
   subjectOptions,
 } from "./exam-schedule-constants";
 
 type ExamScheduleMetaFieldsProps = {
   scheduleClassName: string;
   setScheduleClassName: (value: string) => void;
-  scheduleGroupName: string;
-  setScheduleGroupName: (value: string) => void;
   scheduleSubjectName: string;
   setScheduleSubjectName: (value: string) => void;
   scheduleDescription: string;
@@ -19,48 +16,70 @@ type ExamScheduleMetaFieldsProps = {
 export default function ExamScheduleMetaFields({
   scheduleClassName,
   setScheduleClassName,
-  scheduleGroupName,
-  setScheduleGroupName,
   scheduleSubjectName,
   setScheduleSubjectName,
   scheduleDescription,
   setScheduleDescription,
 }: ExamScheduleMetaFieldsProps) {
+  const selectedClasses = scheduleClassName
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const availableClasses = classOptions.filter(
+    (item) => !selectedClasses.includes(item),
+  );
+
+  const addClass = (value: string) => {
+    if (!value || selectedClasses.includes(value)) return;
+    setScheduleClassName([...selectedClasses, value].join(", "));
+  };
+
+  const removeClass = (value: string) => {
+    setScheduleClassName(
+      selectedClasses.filter((item) => item !== value).join(", "),
+    );
+  };
+
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="grid gap-3">
-          <span className="text-[16px] font-semibold text-black">Анги</span>
+      <label className="grid gap-3">
+        <span className="text-[16px] font-semibold text-black">Анги</span>
+        <div className="grid gap-2">
+          <div className="text-[12px] text-[#8a8f98]">
+            Жишээ: 9А, 8Б заавал судлах
+          </div>
+          {selectedClasses.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedClasses.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => removeClass(item)}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#d9dee8] bg-[#f3f5f9] px-3 py-1 text-[12px] font-medium text-[#515761] transition hover:bg-[#e9edf4]"
+                >
+                  <span>{item}</span>
+                  <span className="text-[13px] leading-none text-[#7c8493]">
+                    ×
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           <select
             className={figmaFieldClass}
-            value={scheduleClassName}
-            onChange={(event) => setScheduleClassName(event.target.value)}
+            value=""
+            onChange={(event) => addClass(event.target.value)}
           >
             <option value="">Анги сонгоно уу.</option>
-            {classOptions.map((item) => (
+            {availableClasses.map((item) => (
               <option key={item} value={item}>
                 {item}
               </option>
             ))}
           </select>
-        </label>
-
-        <label className="grid gap-3">
-          <span className="text-[16px] font-semibold text-black">Бүлэг</span>
-          <select
-            className={figmaFieldClass}
-            value={scheduleGroupName}
-            onChange={(event) => setScheduleGroupName(event.target.value)}
-          >
-            <option value="">Бүлэг сонгоно уу.</option>
-            {groupOptions.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+        </div>
+      </label>
 
       <label className="grid gap-3">
         <span className="text-[16px] font-semibold text-black">Хичээл</span>
@@ -82,7 +101,7 @@ export default function ExamScheduleMetaFields({
         <span className="text-[16px] font-semibold text-black">Тайлбар</span>
         <textarea
           className={figmaTextareaClass}
-          placeholder="Жишээ нь: Шалгалтын сэдэв"
+          placeholder="Хичээлтэй холбоотой тайлбар болон шалгалтын чиглэлийг энд бичнэ үү."
           value={scheduleDescription}
           onChange={(event) => setScheduleDescription(event.target.value)}
         />

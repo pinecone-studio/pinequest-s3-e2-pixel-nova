@@ -50,7 +50,7 @@ describe("ExamScheduleDatePicker", () => {
     );
 
     expect(
-      screen.getByText("Өнөөдрөөс 1 сар хүртэл хуваарьлана."),
+      screen.getByRole("button", { name: "today" }),
     ).toBeInTheDocument();
 
     expect(lastFromDate).toBeDefined();
