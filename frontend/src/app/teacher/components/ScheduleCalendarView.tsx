@@ -244,14 +244,13 @@ export default function ScheduleCalendarView({
       {/* Add schedule modal */}
       {showForm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/22 px-4 py-6 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowForm(false);
           }}
         >
           <div
-            className="w-full max-w-md overflow-y-auto"
-            style={{ maxHeight: "90vh" }}
+            className="w-full max-w-[32rem]"
           >
             <ExamScheduleCard
               exams={exams}
