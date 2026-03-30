@@ -12,6 +12,9 @@ import { getLevel } from "../utils/level-calc";
 import { awardXpForGrading } from "../utils/xp-award";
 import { parseExamDate } from "../utils/exam-time";
 
+const getEffectiveExamStart = (exam: { startedAt?: string | null; scheduledAt?: string | null }) =>
+  parseExamDate(exam.startedAt) ?? parseExamDate(exam.scheduledAt);
+
 const sessionRoutes = new Hono<AppEnv>();
 
 sessionRoutes.use("*", authMiddleware);
@@ -64,7 +67,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     }
   }
 
-  const startTime = parseExamDate(exam.startedAt) ?? scheduledAt;
+  const startTime = getEffectiveExamStart(exam) ?? scheduledAt;
   const isLateEntry = startTime
     ? now.getTime() - startTime.getTime() > 5 * 60 * 1000
     : false;
@@ -297,13 +300,15 @@ sessionRoutes.post("/:sessionId/start", requireRole("student"), async (c) => {
     exam.startedAt = startedAt;
   }
 
-  const now = nowDate.toISOString();
+  const effectiveStart = getEffectiveExamStart(exam) ?? nowDate;
+  const startedAt = effectiveStart.toISOString();
+
   await db
     .update(examSessions)
-    .set({ status: "in_progress", startedAt: now })
+    .set({ status: "in_progress", startedAt })
     .where(eq(examSessions.id, sessionId));
 
-  return success(c, { sessionId, status: "in_progress", startedAt: now });
+  return success(c, { sessionId, status: "in_progress", startedAt });
 });
 
 // ---------------------------------------------------------------------------
@@ -332,11 +337,11 @@ sessionRoutes.post("/:sessionId/answer", requireRole("student"), zValidator("jso
     return notFound(c, "Session");
   }
 
-  if (session.status !== "in_progress") {
+  if (!["in_progress", "late", "joined"].includes(session.status)) {
     return error(c, "INVALID_STATUS", "Session is not in progress", 400);
   }
 
-  // Verify exam hasn't expired (startedAt + durationMin)
+  // Verify exam hasn't expired using the shared exam schedule rather than a student's join time
   const [exam] = await db
     .select()
     .from(exams)
@@ -347,9 +352,22 @@ sessionRoutes.post("/:sessionId/answer", requireRole("student"), zValidator("jso
     return notFound(c, "Exam");
   }
 
-  if (session.startedAt) {
-    const startTime = new Date(session.startedAt).getTime();
-    const expiresAt = startTime + exam.durationMin * 60 * 1000;
+  const effectiveStart = getEffectiveExamStart(exam);
+  if (session.status !== "in_progress") {
+    const startedAt = session.startedAt ?? effectiveStart?.toISOString() ?? new Date().toISOString();
+    await db
+      .update(examSessions)
+      .set({
+        status: "in_progress",
+        startedAt,
+      })
+      .where(eq(examSessions.id, sessionId));
+    session.status = "in_progress";
+    session.startedAt = startedAt;
+  }
+
+  if (effectiveStart) {
+    const expiresAt = effectiveStart.getTime() + exam.durationMin * 60 * 1000;
     if (Date.now() > expiresAt) {
       return error(c, "EXAM_EXPIRED", "The exam time has expired", 400);
     }
@@ -410,8 +428,8 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
     return notFound(c, "Session");
   }
 
-  if (session.status !== "in_progress") {
-    return error(c, "INVALID_STATUS", "Session must be in 'in_progress' status to submit", 400);
+  if (!["in_progress", "late", "joined"].includes(session.status)) {
+    return error(c, "INVALID_STATUS", "Session must be in 'in_progress', 'late', or 'joined' status to submit", 400);
   }
 
   // Fetch exam and questions for grading
@@ -423,6 +441,20 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
 
   if (!exam) {
     return notFound(c, "Exam");
+  }
+
+  const effectiveStart = getEffectiveExamStart(exam);
+  if (session.status !== "in_progress") {
+    const startedAt = session.startedAt ?? effectiveStart?.toISOString() ?? new Date().toISOString();
+    await db
+      .update(examSessions)
+      .set({
+        status: "in_progress",
+        startedAt,
+      })
+      .where(eq(examSessions.id, sessionId));
+    session.status = "in_progress";
+    session.startedAt = startedAt;
   }
 
   const examQuestions = await db

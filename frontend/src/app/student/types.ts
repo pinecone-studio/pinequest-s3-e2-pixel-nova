@@ -24,6 +24,8 @@ export type Exam = {
   title: string;
   description?: string | null;
   status?: string | null;
+  sessionStatus?: string | null;
+  entryStatus?: "on_time" | "late" | null;
   scheduledAt: string | null;
   examStartedAt?: string | null;
   finishedAt?: string | null;

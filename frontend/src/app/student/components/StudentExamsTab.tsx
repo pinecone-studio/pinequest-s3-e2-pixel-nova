@@ -59,26 +59,30 @@ export default function StudentExamsTab({
 
     return {
       subject: subjectFromExam(selectedExam),
-      status: selectedExam.examStartedAt
-        ? "Идэвхтэй"
-        : isUpcoming
-          ? "Хүлээгдэж байна"
-          : "Бэлэн",
+      status: isUpcoming
+        ? "Хүлээгдэж байна"
+        : selectedExam.entryStatus === "late"
+          ? "Хоцорч орж байна"
+          : selectedExam.examStartedAt
+            ? "Идэвхтэй"
+            : "Бэлэн",
       teacher: teacherName?.trim() || "EduCore баг",
       room: selectedExam.roomCode || "Нээлттэй",
       dateLabel: formatDate(safeStart.toISOString()),
       startLabel: formatClock(safeStart),
       endLabel: formatClock(end),
       durationLabel: `${selectedExam.duration ?? 45} минут`,
-      examStatusMessage:
-        joinError || "Та энэ шалгалтыг эхлүүлэхэд бэлэн байна.",
+      examStatusMessage: joinError
+        ? joinError
+        : selectedExam.entryStatus === "late"
+          ? "Та энэ шалгалтад хоцорч нэвтэрч байна. Статус нь хоцорсон гэж бүртгэгдэнэ."
+          : "Та энэ шалгалтыг эхлүүлэхэд бэлэн байна.",
       isUpcoming,
       scheduledAt: safeStart,
     };
   }, [joinError, selectedExam, teacherName]);
 
-  const canStart =
-    !joinError && !selectedExam?.examStartedAt && !examMeta?.isUpcoming;
+  const canStart = !joinError && !examMeta?.isUpcoming;
 
   useEffect(() => {
     if (!examMeta?.isUpcoming || !examMeta.scheduledAt) {
