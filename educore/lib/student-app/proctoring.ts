@@ -189,13 +189,17 @@ export const buildAiSnapshotMetadata = ({
   capturedAt,
   event,
   intervalMs,
+  objectKey,
   platform,
+  snapshotUrl,
 }: {
   analysis: SnapshotAnalysisResult;
   capturedAt: string;
   event: SnapshotSuspiciousEvent;
   intervalMs: number;
+  objectKey?: string;
   platform: MobileCameraPlatform;
+  snapshotUrl?: string;
 }) =>
   JSON.stringify({
     source: analysis.source,
@@ -212,6 +216,8 @@ export const buildAiSnapshotMetadata = ({
     eventConfidence: clampConfidence(event.confidence),
     reason: event.reason,
     summary: analysis.summary,
+    snapshotKey: objectKey ?? null,
+    snapshotUrl: snapshotUrl ?? null,
   });
 
 export const getProctorDebugLabel = (observation: {

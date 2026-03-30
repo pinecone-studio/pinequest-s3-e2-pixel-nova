@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { formatTimer } from "../utils";
 import type { Exam, Violations } from "../types";
@@ -17,6 +17,7 @@ type StudentExamViewProps = {
   onNext: () => void;
   onSubmit: () => void;
   onExit: () => void;
+  cameraPanel?: ReactNode;
 };
 
 function QuestionBlock({
@@ -109,6 +110,7 @@ export default function StudentExamView({
   onSelectMcq,
   onSubmit,
   onExit,
+  cameraPanel,
 }: StudentExamViewProps) {
   const questionRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -251,31 +253,35 @@ export default function StudentExamView({
           )}
         </div>
 
-        <aside className="rounded-2xl border border-border bg-card p-4 shadow-sm lg:sticky lg:top-6 lg:self-start">
-          <div className="text-xs text-muted-foreground">Явц</div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {Array.from({ length: totalQuestions || 6 }).map((_, idx) => {
-              const question = activeExam?.questions[idx];
-              const isAnswered = question ? Boolean(answers[question.id]?.trim()) : false;
-              const isCurrent = idx === currentQuestionIndex;
+        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          {cameraPanel}
 
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  className={`grid h-10 place-items-center rounded-xl border text-sm transition ${
-                    isCurrent
-                      ? "border-[#355cde] bg-[#edf3ff] text-[#355cde]"
-                      : isAnswered
-                        ? "border-[#9edec2] bg-[#eefcf3] text-[#069668]"
-                        : "border-border bg-muted text-slate-700 hover:bg-muted/70"
-                  }`}
-                  onClick={() => scrollToQuestion(idx)}
-                >
-                  {idx + 1}
-                </button>
-              );
-            })}
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="text-xs text-muted-foreground">Явц</div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {Array.from({ length: totalQuestions || 6 }).map((_, idx) => {
+                const question = activeExam?.questions[idx];
+                const isAnswered = question ? Boolean(answers[question.id]?.trim()) : false;
+                const isCurrent = idx === currentQuestionIndex;
+
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`grid h-10 place-items-center rounded-xl border text-sm transition ${
+                      isCurrent
+                        ? "border-[#355cde] bg-[#edf3ff] text-[#355cde]"
+                        : isAnswered
+                          ? "border-[#9edec2] bg-[#eefcf3] text-[#069668]"
+                          : "border-border bg-muted text-slate-700 hover:bg-muted/70"
+                    }`}
+                    onClick={() => scrollToQuestion(idx)}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </aside>
       </div>

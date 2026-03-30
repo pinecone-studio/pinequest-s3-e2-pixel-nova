@@ -72,6 +72,29 @@ const getErrorCode = (error: unknown) => {
   }
 };
 
+const requestDesktopCameraPermission = async () => {
+  if (
+    typeof window === "undefined" ||
+    !window.isSecureContext ||
+    !navigator.mediaDevices?.getUserMedia
+  ) {
+    throw new Error(
+      "Desktop web camera ашиглахын тулд secure browser environment шаардлагатай.",
+    );
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: {
+      facingMode: "user",
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    },
+  });
+
+  stream.getTracks().forEach((track) => track.stop());
+};
+
 export const useStudentExamSession = ({
   currentUser,
   roomCodeInput,
@@ -148,6 +171,7 @@ export const useStudentExamSession = ({
 
     const run = async () => {
       try {
+        await requestDesktopCameraPermission();
         const sessionPayload = await apiFetch<SessionData | { data?: SessionData }>(`/api/sessions/${sessionId}`);
         const sessionData = unwrapApi(sessionPayload);
         const mappedExam: Exam = mapSessionToExam(sessionData, roomCodeInput);

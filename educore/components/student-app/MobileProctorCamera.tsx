@@ -16,7 +16,11 @@ import {
   type ProctorEventType,
   type SnapshotAnalysisResult,
 } from '@/lib/student-app/proctoring';
-import { analyzeCheatSnapshot } from '@/lib/student-app/services/api';
+import {
+  analyzeCheatSnapshot,
+  createCheatSnapshotUpload,
+  uploadCheatSnapshot,
+} from '@/lib/student-app/services/api';
 import type { AuthUser, CheatEventType } from '@/types/student-app';
 
 type MobileProctorCameraProps = {
@@ -38,6 +42,48 @@ const getPlatformLabel = () => {
   return 'unknown';
 };
 
+const decodeBase64ToBytes = (base64: string) => {
+  if (typeof globalThis.atob === 'function') {
+    try {
+      const binary = globalThis.atob(base64);
+      const bytes = new Uint8Array(binary.length);
+
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+
+      return bytes;
+    } catch {
+      // Fall back to a lenient decoder so test doubles and platform-specific
+      // base64 quirks do not block snapshot uploads.
+    }
+  }
+
+  const alphabet =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const sanitized = base64.replace(/=+$/u, '');
+  const decoded: number[] = [];
+  let buffer = 0;
+  let bitsCollected = 0;
+
+  for (const character of sanitized) {
+    const value = alphabet.indexOf(character);
+    if (value < 0) {
+      continue;
+    }
+
+    buffer = (buffer << 6) | value;
+    bitsCollected += 6;
+
+    if (bitsCollected >= 8) {
+      bitsCollected -= 8;
+      decoded.push((buffer >> bitsCollected) & 0xff);
+    }
+  }
+
+  return Uint8Array.from(decoded);
+};
+
 export default function MobileProctorCamera({
   isEnabled,
   permissionGranted,
@@ -54,7 +100,7 @@ export default function MobileProctorCamera({
   );
   const [mountError, setMountError] = useState<string | null>(null);
   const [analysisState, setAnalysisState] = useState<
-    'idle' | 'capturing' | 'analyzing' | 'ready' | 'error'
+    'idle' | 'capturing' | 'uploading' | 'analyzing' | 'ready' | 'error'
   >('idle');
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [lastAnalysisAt, setLastAnalysisAt] = useState<string | null>(null);
@@ -95,6 +141,10 @@ export default function MobileProctorCamera({
 
     if (analysisState === 'capturing') {
       return 'Snapshot авч байна';
+    }
+
+    if (analysisState === 'uploading') {
+      return 'R2 руу илгээж байна';
     }
 
     if (analysisState === 'analyzing') {
@@ -157,15 +207,29 @@ export default function MobileProctorCamera({
 
       const mimeType = picture.format === 'png' ? 'image/png' : 'image/jpeg';
       const capturedAt = new Date().toISOString();
-      const imageDataUrl = `data:${mimeType};base64,${picture.base64}`;
+      const snapshotUpload = await createCheatSnapshotUpload(
+        student,
+        sessionId,
+        mimeType,
+        capturedAt,
+      );
+
+      setAnalysisState('uploading');
+
+      await uploadCheatSnapshot(
+        snapshotUpload.uploadUrl,
+        decodeBase64ToBytes(picture.base64),
+        snapshotUpload.uploadHeaders,
+      );
 
       setAnalysisState('analyzing');
 
       const analysis = await analyzeCheatSnapshot(
         student,
         sessionId,
-        imageDataUrl,
+        snapshotUpload.objectKey,
         capturedAt,
+        snapshotUpload.assetUrl,
       );
 
       if (!isMountedRef.current) {
@@ -199,7 +263,9 @@ export default function MobileProctorCamera({
           capturedAt,
           event: suspiciousEvent,
           intervalMs: CAMERA_SNAPSHOT_INTERVAL_MS,
+          objectKey: snapshotUpload.objectKey,
           platform,
+          snapshotUrl: snapshotUpload.assetUrl,
         });
 
         setLastAnalysisSummary(
@@ -314,7 +380,9 @@ export default function MobileProctorCamera({
       </View>
       <Text style={styles.status}>
         {previewState === 'ready'
-          ? analysisState === 'analyzing'
+          ? analysisState === 'uploading'
+            ? 'Snapshot-ийг шууд R2 storage руу илгээж байна.'
+            : analysisState === 'analyzing'
             ? 'Camera snapshot-ийг AI-аар шалгаж байна.'
             : `Camera preview бэлэн. ${Math.round(
                 CAMERA_SNAPSHOT_INTERVAL_MS / 1000,
@@ -323,8 +391,8 @@ export default function MobileProctorCamera({
       </Text>
       <Text style={styles.message}>
         {isExpoGoEnvironment()
-          ? 'Expo Go дээр front camera preview нээгдэж, snapshot-уудыг backend AI-аар шинжилнэ. App background, tab blur зэрэг зөрчлүүд мөн хэвийн log хийгдэнэ.'
-          : 'Front camera preview болон periodic AI snapshot analysis шалгалтын үеэр идэвхтэй байна.'}
+          ? 'Expo Go дээр front camera preview нээгдэж, snapshot-уудыг шууд R2 storage руу upload хийгээд backend AI-аар шинжилнэ. App background, tab blur зэрэг зөрчлүүд мөн хэвийн log хийгдэнэ.'
+          : 'Front camera preview, direct R2 upload, болон periodic AI snapshot analysis шалгалтын үеэр идэвхтэй байна.'}
       </Text>
       {analysisError ? <Text style={styles.error}>{analysisError}</Text> : null}
       {lastAnalysisSummary ? (

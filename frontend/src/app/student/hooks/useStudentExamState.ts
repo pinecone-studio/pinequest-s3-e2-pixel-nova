@@ -88,6 +88,7 @@ export const useStudentExamState = (params: {
     setJoinError,
     selectedExam,
     setSelectedExam,
+    sessionId,
     activeExam,
     answers,
     setAnswers,
