@@ -43,7 +43,7 @@ export default function TeacherHeader({
         <span className="text-sm font-bold text-slate-900">PineQuest</span>
       </div>
 
-      <nav className="flex items-center gap-1 overflow-x-auto">
+      <nav className="flex items-center gap-2 overflow-x-auto rounded-2xl bg-[#fbfcff] px-2 py-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab;
           const icon = tabIcons[tab];
@@ -52,25 +52,22 @@ export default function TeacherHeader({
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`relative flex items-center gap-2 whitespace-nowrap px-4 py-[18px] text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-500 ease-out ${
                 isActive
-                  ? "text-[#2563eb]"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? "bg-[#f5f4ff] text-slate-900 shadow-[inset_0_-2px_0_0_#5c6cff]"
+                  : "text-slate-400 hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-700"
               }`}
             >
               <span
-                className={`grid h-7 w-7 place-items-center rounded-xl border text-[11px] transition ${
+                className={`grid h-8 w-8 place-items-center rounded-xl border text-[11px] transition-all duration-500 ease-out ${
                   isActive
-                    ? "border-[#bfdbfe] bg-[#eff6ff] text-[#2563eb]"
-                    : "border-[#e2e8f0] bg-white text-slate-400"
+                    ? "scale-100 border-[#d9d5ff] bg-[#eeebff] text-[#5c6cff]"
+                    : "border-[#e2e8f0] bg-white text-slate-400 group-hover:scale-105"
                 }`}
               >
                 {icon}
               </span>
               <span>{tab}</span>
-              {isActive && (
-                <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-[#2563eb]" />
-              )}
             </button>
           );
         })}

@@ -388,21 +388,28 @@ export const useStudentExamSession = ({
     [submitExam],
   );
 
-  const updateAnswer = (value: string) => {
+  const updateAnswer = (questionIdOrValue: string, maybeValue?: string) => {
     if (!activeExam) return;
     const currentQuestion = activeExam.questions[currentQuestionIndex];
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
+    const questionId = maybeValue ? questionIdOrValue : currentQuestion?.id;
+    const value = maybeValue ?? questionIdOrValue;
+    if (!questionId) return;
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
     if (!sessionId) return;
     void apiFetch(`/api/sessions/${sessionId}/answer`, {
       method: "POST",
       body: JSON.stringify({
-        questionId: currentQuestion.id,
+        questionId,
         textAnswer: value,
       }),
     });
   };
-  const selectMcqAnswer = (value: string) => {
-    updateAnswer(value);
+  const selectMcqAnswer = (questionIdOrValue: string, maybeValue?: string) => {
+    if (maybeValue) {
+      updateAnswer(questionIdOrValue, maybeValue);
+      return;
+    }
+    updateAnswer(questionIdOrValue);
   };
 
   const goNext = () => {
