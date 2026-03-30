@@ -13,12 +13,12 @@ describe("cheat routes", () => {
     resetDbMock();
   });
 
-  it("accepts mobile camera events and flags a session at the configured weight", async () => {
+  it("accepts the new mobile camera event types", async () => {
     queueDbResults(
       { id: "auth-result" },
       [{ id: "session-1", examId: "exam-1", studentId: "student-1" }],
       undefined,
-      [{ eventType: "multiple_faces" }]
+      [{ eventType: "multiple_faces" }],
     );
 
     const response = await app.request(
@@ -27,11 +27,15 @@ describe("cheat routes", () => {
         {
           sessionId: "session-1",
           eventType: "multiple_faces",
-          metadata: JSON.stringify({ source: "mobile_camera" }),
+          metadata: JSON.stringify({
+            source: "mobile_camera",
+            platform: "ios",
+            faceCount: 2,
+          }),
         },
-        studentHeaders()
+        studentHeaders(),
       ),
-      workerEnv
+      workerEnv,
     );
 
     expect(response.status).toBe(201);
@@ -46,12 +50,12 @@ describe("cheat routes", () => {
     expect(mockDb.update).toHaveBeenCalled();
   });
 
-  it("combines medium and high mobile events into the weighted threshold", async () => {
+  it("combines looking_down and looking_away into the flag threshold", async () => {
     queueDbResults(
       { id: "auth-result" },
       [{ id: "session-1", examId: "exam-1", studentId: "student-1" }],
       undefined,
-      [{ eventType: "looking_down" }, { eventType: "looking_away" }]
+      [{ eventType: "looking_down" }, { eventType: "looking_away" }],
     );
 
     const response = await app.request(
@@ -61,9 +65,9 @@ describe("cheat routes", () => {
           sessionId: "session-1",
           eventType: "looking_away",
         },
-        studentHeaders()
+        studentHeaders(),
       ),
-      workerEnv
+      workerEnv,
     );
 
     expect(response.status).toBe(201);
@@ -86,9 +90,9 @@ describe("cheat routes", () => {
           sessionId: "session-1",
           eventType: "eye_tracking",
         },
-        studentHeaders()
+        studentHeaders(),
       ),
-      workerEnv
+      workerEnv,
     );
 
     expect(response.status).toBe(400);
