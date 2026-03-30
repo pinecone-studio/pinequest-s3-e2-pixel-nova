@@ -4,6 +4,7 @@ import type { Exam, Question, Submission } from "../types";
 import { mapResultToReport } from "./student-exam-session-helpers";
 
 type AnswerReportItem = { question: Question; answer: string; correct: boolean }[];
+const RESULT_PENDING_POLL_MS = 15000;
 
 export function useStudentExamResultState(sessionId: string | null, activeExam: Exam | null) {
   const [lastSubmission, setLastSubmission] = useState<Submission | null>(null);
@@ -38,7 +39,16 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
   useEffect(() => {
     if (!resultPending || !sessionId || !activeExam) return;
 
-    const interval = window.setInterval(async () => {
+    const fetchResult = async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+
+      const examStatus = activeExam.status ?? null;
+      if (examStatus === "finished" || examStatus === "archived") {
+        return;
+      }
+
       try {
         const resultPayload = await apiFetch(`/api/sessions/${sessionId}/result`);
         const result = unwrapApi(resultPayload as never) as {
@@ -69,9 +79,28 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
       } catch {
         return;
       }
-    }, 5000);
+    };
 
-    return () => clearInterval(interval);
+    const interval = window.setInterval(() => {
+      void fetchResult();
+    }, RESULT_PENDING_POLL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void fetchResult();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
   }, [resultPending, sessionId, activeExam]);
 
   return {

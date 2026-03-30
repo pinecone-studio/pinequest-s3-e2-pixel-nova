@@ -23,6 +23,8 @@ export type Exam = {
   finishedAt?: string | null;
   roomCode: string;
   expectedStudentsCount?: number;
+  questionCount?: number;
+  submissionCount?: number;
   questions: Question[];
   duration?: number;
   createdAt: string;
@@ -88,6 +90,14 @@ export type ExamStatsSummary = {
   correctTotal: number;
   incorrectTotal: number;
   performanceBands: ScoreBand[];
+};
+
+export type ExamAttendanceStats = {
+  expected: number;
+  joined: number;
+  submitted: number;
+  attendance_rate: number;
+  submission_rate: number;
 };
 
 export type NotificationItem = AppNotificationItem;

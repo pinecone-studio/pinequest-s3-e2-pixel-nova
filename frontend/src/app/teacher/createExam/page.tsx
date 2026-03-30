@@ -25,6 +25,7 @@ import { useAiExamGenerator } from "../hooks/useAiExamGenerator";
 import AiExamGeneratorPanel from "../components/AiExamGeneratorPanel";
 import ExamCreateCard from "../components/ExamCreateCard";
 import { pageShellClass } from "../styles";
+import { Button } from "@/components/ui/button";
 
 const role: RoleKey = "teacher";
 
@@ -119,28 +120,28 @@ export default function CreateExamPage() {
           {data.toast}
         </div>
       )}
-      <header className="flex items-center gap-3 bg-white/80 px-6 py-4 backdrop-blur">
-        <button
+      <header className="flex items-center justify-between gap-3 bg-white/80 px-6 py-4 backdrop-blur">
+        <Button
           type="button"
           onClick={() => router.push("/teacher")}
-          className="flex items-center gap-2 rounded-xl border border-[#dce5ef] bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-[#f8fafc]"
-        >
+          variant="outline">
           <ArrowLeft className="h-4 w-4" />
           Буцах
-        </button>
+        </Button>
+        <Button className="text-sm py-5">AI ашиглан үүсгэх</Button>
       </header>
       <main className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1180px]">
-          <AiExamGeneratorPanel
-            input={generator.input}
-            onChange={generator.updateInput}
-            draft={generator.draft}
-            generating={generator.generating}
-            savingAccepted={generator.savingAccepted}
-            error={generator.error}
-            onGenerate={generator.generateDraft}
-            onUseDraft={handleUseDraft}
-          />
+          {/* <AiExamGeneratorPanel
+              input={generator.input}
+              onChange={generator.updateInput}
+              draft={generator.draft}
+              generating={generator.generating}
+              savingAccepted={generator.savingAccepted}
+              error={generator.error}
+              onGenerate={generator.generateDraft}
+              onUseDraft={handleUseDraft}
+            /> */}
           <ExamCreateCard
             examTitle={management.examTitle}
             setExamTitle={management.setExamTitle}

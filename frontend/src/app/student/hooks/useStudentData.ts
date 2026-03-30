@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { getSessionUser, type User } from "@/lib/examGuard";
 import { getStudentResults } from "@/lib/backend-auth";
-import type { Exam } from "../types";
 import { useNotifications } from "@/hooks/useNotifications";
+import type { Exam } from "../types";
+
+const DASHBOARD_POLL_MS = 30000;
 
 export const useStudentData = (overrideUser?: User | null) => {
   const overrideUserId = overrideUser?.id ?? null;
@@ -78,6 +80,10 @@ export const useStudentData = (overrideUser?: User | null) => {
 
   useEffect(() => {
     const sync = async () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+
       const user = getSessionUser();
       if (!user) {
         setExams([]);
@@ -102,8 +108,26 @@ export const useStudentData = (overrideUser?: User | null) => {
     };
 
     void sync();
-    const interval = setInterval(sync, 3000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      void sync();
+    }, DASHBOARD_POLL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void sync();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
   }, []);
 
   useEffect(() => {

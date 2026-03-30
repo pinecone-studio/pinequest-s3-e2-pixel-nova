@@ -133,4 +133,61 @@ describe("teacher roster route", () => {
       },
     });
   });
+
+  it("returns teacher exam summaries without loading full question payloads", async () => {
+    queueDbResults(
+      [{ id: "teacher-1", fullName: "Ada Teacher" }],
+      [
+        {
+          id: "exam-2",
+          title: "Physics Midterm",
+          description: "Mechanics",
+          examType: "midterm",
+          className: "10A",
+          groupName: "Group 1",
+          scheduledAt: "2026-03-30T09:00:00.000Z",
+          startedAt: null,
+          finishedAt: null,
+          roomCode: "ROOM02",
+          durationMin: 60,
+          status: "scheduled",
+          expectedStudentsCount: 28,
+          createdAt: "2026-03-29T12:00:00.000Z",
+          questionCount: 25,
+          submissionCount: 8,
+        },
+      ],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/teacher/exams/summary",
+      { headers: teacherHeaders() },
+      workerEnv,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: [
+        {
+          id: "exam-2",
+          title: "Physics Midterm",
+          description: "Mechanics",
+          examType: "midterm",
+          className: "10A",
+          groupName: "Group 1",
+          scheduledAt: "2026-03-30T09:00:00.000Z",
+          startedAt: null,
+          finishedAt: null,
+          roomCode: "ROOM02",
+          durationMin: 60,
+          status: "scheduled",
+          expectedStudentsCount: 28,
+          createdAt: "2026-03-29T12:00:00.000Z",
+          questionCount: 25,
+          submissionCount: 8,
+        },
+      ],
+    });
+  });
 });

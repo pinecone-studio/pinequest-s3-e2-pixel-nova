@@ -322,7 +322,7 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     return notFound(c, "Session");
   }
 
-  const { severity } = SEVERITY_MAP[eventType];
+  const { severity, weight } = SEVERITY_MAP[eventType];
 
   // Insert cheat event
   const eventId = newId();
@@ -337,27 +337,18 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     isNotified: false,
   });
 
-  // Recalculate weighted score for this session
-  const sessionEvents = await db
-    .select({ eventType: cheatEvents.eventType })
-    .from(cheatEvents)
-    .where(eq(cheatEvents.sessionId, sessionId));
-
-  let weightedScore = 0;
-  for (const evt of sessionEvents) {
-    const mapping = SEVERITY_MAP[evt.eventType as EventType];
-    if (mapping) {
-      weightedScore += mapping.weight;
-    }
-  }
-
-  const isFlagged = weightedScore >= FLAG_THRESHOLD;
-  const flagCount = sessionEvents.length;
+  const nextViolationScore = Number(session.violationScore ?? 0) + weight;
+  const flagCount = Number(session.flagCount ?? 0) + 1;
+  const isFlagged = nextViolationScore >= FLAG_THRESHOLD;
 
   // Update session flag status
   await db
     .update(examSessions)
-    .set({ isFlagged, flagCount })
+    .set({
+      isFlagged,
+      flagCount,
+      violationScore: nextViolationScore,
+    })
     .where(eq(examSessions.id, sessionId));
 
   const [student] = await db

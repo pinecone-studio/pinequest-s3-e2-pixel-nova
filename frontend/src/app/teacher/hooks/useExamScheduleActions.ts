@@ -76,7 +76,9 @@ export const useExamScheduleActions = ({
     }
 
     if (selectedScheduleExam) {
-      if (selectedScheduleExam.questions.length === 0) {
+      if (
+        (selectedScheduleExam.questionCount ?? selectedScheduleExam.questions.length) === 0
+      ) {
         showToast("Асуултгүй шалгалтыг хуваарьлах боломжгүй.");
         return;
       }

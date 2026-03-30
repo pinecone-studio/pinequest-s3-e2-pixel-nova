@@ -82,6 +82,10 @@ describe("useStudentData", () => {
 				markAllNotificationsRead: jest.fn(),
 			};
 		});
+		Object.defineProperty(document, "visibilityState", {
+			configurable: true,
+			value: "visible",
+		});
 	});
 
 	afterEach(() => {
@@ -153,7 +157,7 @@ describe("useStudentData", () => {
 		expect(result.current.theme).toBe("dark");
 	});
 
-	it("syncs data every 5 seconds", async () => {
+	it("syncs data every 30 seconds when the tab is visible", async () => {
 		const { result } = renderHook(() => useStudentData(mockUser));
 
 		await waitFor(() => expect(result.current.loading).toBe(false));
@@ -161,9 +165,28 @@ describe("useStudentData", () => {
 		const callsBefore = mockGetStudentResults.mock.calls.length;
 
 		await act(async () => {
-			jest.advanceTimersByTime(5000);
+			jest.advanceTimersByTime(30000);
 		});
 
 		expect(mockGetStudentResults.mock.calls.length).toBeGreaterThan(callsBefore);
+	});
+
+	it("skips polling while the tab is hidden", async () => {
+		const { result } = renderHook(() => useStudentData(mockUser));
+
+		await waitFor(() => expect(result.current.loading).toBe(false));
+
+		Object.defineProperty(document, "visibilityState", {
+			configurable: true,
+			value: "hidden",
+		});
+
+		const callsBefore = mockGetStudentResults.mock.calls.length;
+
+		await act(async () => {
+			jest.advanceTimersByTime(30000);
+		});
+
+		expect(mockGetStudentResults.mock.calls.length).toBe(callsBefore);
 	});
 });

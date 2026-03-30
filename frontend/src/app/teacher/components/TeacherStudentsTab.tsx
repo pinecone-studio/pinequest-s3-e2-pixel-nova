@@ -2,9 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Layers } from "lucide-react";
-import { fetchTeacherExamRoster } from "../hooks/teacher-api";
+import {
+  fetchTeacherExamRoster,
+  openTeacherExamLiveStream,
+  type TeacherExamLiveUpdate,
+} from "../hooks/teacher-api";
 import { useExamAttendanceStats } from "../hooks/useExamAttendanceStats";
-import type { Exam, ExamRosterDetail } from "../types";
+import type { Exam, ExamAttendanceStats, ExamRosterDetail } from "../types";
 import { sectionTitleClass } from "../styles";
 import { LegendDot, ScheduleCard, ScheduleListCard } from "./TeacherScheduleCards";
 import TeacherScheduleDetailPanel from "./TeacherScheduleDetailPanel";
@@ -20,6 +24,8 @@ import {
   formatSectionLabel,
   formatTimeValue,
 } from "./teacher-schedule-helpers";
+
+const ACTIVE_MONITOR_POLL_MS = 5000;
 
 type TeacherStudentsTabProps = {
   exams: Exam[];
@@ -45,11 +51,22 @@ export default function TeacherStudentsTab({
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [roster, setRoster] = useState<ExamRosterDetail | null>(null);
   const [rosterLoading, setRosterLoading] = useState(false);
+  const [liveAttendance, setLiveAttendance] = useState<ExamAttendanceStats | null>(null);
+  const [liveStreamFailed, setLiveStreamFailed] = useState(false);
   const selectedExam = useMemo(
     () => exams.find((exam) => exam.id === selectedExamId) ?? null,
     [exams, selectedExamId],
   );
-  const attendance = useExamAttendanceStats(selectedExamId);
+  const isActiveSelectedExam = selectedExam?.status === "active";
+  const shouldUseLiveStream = Boolean(selectedExamId && isActiveSelectedExam && !liveStreamFailed);
+  const shouldPollSelectedExam = Boolean(selectedExamId && isActiveSelectedExam && liveStreamFailed);
+  const attendance = useExamAttendanceStats(selectedExamId, shouldPollSelectedExam);
+  const effectiveAttendance = liveAttendance ?? attendance.stats;
+
+  useEffect(() => {
+    setLiveStreamFailed(false);
+    setLiveAttendance(null);
+  }, [selectedExamId]);
 
   useEffect(() => {
     const node = scrollHostRef.current;
@@ -69,12 +86,39 @@ export default function TeacherStudentsTab({
     if (!selectedExamId) {
       setRoster(null);
       setRosterLoading(false);
+      setLiveAttendance(null);
       return;
     }
 
     let active = true;
+    setRosterLoading(true);
+
+    if (shouldUseLiveStream) {
+      const stopStreaming = openTeacherExamLiveStream(
+        selectedExamId,
+        {
+          onMessage: (payload: TeacherExamLiveUpdate) => {
+            if (!active) return;
+            setRoster(payload.roster);
+            setLiveAttendance(payload.stats);
+            setRosterLoading(false);
+          },
+          onError: () => {
+            if (!active) return;
+            setLiveStreamFailed(true);
+            setRosterLoading(false);
+          },
+        },
+        currentUserId ?? undefined,
+      );
+
+      return () => {
+        active = false;
+        stopStreaming();
+      };
+    }
+
     const loadRoster = async () => {
-      setRosterLoading(true);
       try {
         const nextRoster = await fetchTeacherExamRoster(
           selectedExamId,
@@ -89,10 +133,21 @@ export default function TeacherStudentsTab({
     };
 
     void loadRoster();
+    if (!shouldPollSelectedExam) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const timer = window.setInterval(() => {
+      void loadRoster();
+    }, ACTIVE_MONITOR_POLL_MS);
+
     return () => {
       active = false;
+      window.clearInterval(timer);
     };
-  }, [currentUserId, selectedExamId]);
+  }, [currentUserId, selectedExamId, shouldPollSelectedExam, shouldUseLiveStream]);
 
   const groupedItems = useMemo(
     () =>
@@ -111,8 +166,8 @@ export default function TeacherStudentsTab({
         exam={selectedExam}
         roster={roster}
         rosterLoading={rosterLoading}
-        attendanceJoined={attendance.stats?.joined ?? 0}
-        attendanceSubmitted={attendance.stats?.submitted ?? 0}
+        attendanceJoined={effectiveAttendance?.joined ?? 0}
+        attendanceSubmitted={effectiveAttendance?.submitted ?? 0}
         onBack={() => setSelectedExamId(null)}
         onCopyCode={onCopyCode}
       />

@@ -148,23 +148,15 @@ describe("CreateExamPage", () => {
     acceptDraft.mockClear();
   });
 
-  it("hydrates the existing exam editor from an accepted AI draft", async () => {
+  it("renders the current create exam shell without inline AI draft actions", async () => {
     render(<CreateExamPage />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Use Draft" }));
-
+    expect(screen.getByRole("button", { name: "AI ашиглан үүсгэх" })).toBeInTheDocument();
     await waitFor(() => {
-      expect(acceptDraft).toHaveBeenCalled();
-      expect(setExamTitle).toHaveBeenCalledWith("Generated Biology Test");
-      expect(setQuestions).toHaveBeenCalledWith([
-        {
-          id: "q1",
-          text: "What is a cell?",
-          type: "text",
-          correctAnswer: "Basic unit of life",
-          points: 1,
-        },
-      ]);
+      expect(screen.queryByRole("button", { name: "Use Draft" })).not.toBeInTheDocument();
     });
+    expect(acceptDraft).not.toHaveBeenCalled();
+    expect(setExamTitle).not.toHaveBeenCalled();
+    expect(setQuestions).not.toHaveBeenCalled();
   });
 });

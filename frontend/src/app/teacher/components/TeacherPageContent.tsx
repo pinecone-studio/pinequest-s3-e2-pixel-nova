@@ -10,7 +10,8 @@ import type { useExamManagement } from "../hooks/useExamManagement";
 import type { useExamStats } from "../hooks/useExamStats";
 import type { useTeacherData } from "../hooks/useTeacherData";
 
-const contentCanvasClass = "rounded-[40px] border border-[#dce5ef] bg-white/92 p-6 shadow-[0_35px_60px_-42px_rgba(15,23,42,0.2)] backdrop-blur xl:p-8";
+const contentCanvasClass =
+  "rounded-[40px] border border-[#dce5ef] bg-white/92 p-6 shadow-[0_35px_60px_-42px_rgba(15,23,42,0.2)] backdrop-blur xl:p-8";
 
 export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Гүйцэтгэл";
 
@@ -23,7 +24,11 @@ type TeacherPageContentProps = {
   management: ReturnType<typeof useExamManagement>;
   examStatsState: ReturnType<typeof useExamStats>;
   attendance: ReturnType<typeof useExamAttendanceStats>;
-  studentProfile: ReturnType<typeof useTeacherData>["studentProgress"] extends never ? never : unknown;
+  studentProfile: ReturnType<
+    typeof useTeacherData
+  >["studentProgress"] extends never
+    ? never
+    : unknown;
   profileLoading: boolean;
 };
 
@@ -43,12 +48,10 @@ function TeacherScheduleModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/22 px-4 py-6 backdrop-blur-sm transition-all duration-300 sm:px-6 sm:py-8"
-      onClick={onClose}
-    >
+      onClick={onClose}>
       <div
-        className="w-full max-w-[32rem] transition-all duration-500 ease-out motion-safe:translate-y-0"
-        onClick={(e) => e.stopPropagation()}
-      >
+        className="w-full max-w-lg transition-all duration-500 ease-out motion-safe:translate-y-0"
+        onClick={(e) => e.stopPropagation()}>
         <ExamScheduleCard
           exams={data.exams}
           selectedScheduleExamId={management.selectedScheduleExamId}

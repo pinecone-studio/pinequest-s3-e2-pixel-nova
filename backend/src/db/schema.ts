@@ -184,6 +184,7 @@ export const examSessions = sqliteTable("exam_sessions", {
   earnedPoints: integer("earned_points"),
   isFlagged: integer("is_flagged", { mode: "boolean" }).notNull().default(false),
   flagCount: integer("flag_count").notNull().default(0),
+  violationScore: integer("violation_score").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
 }, (table) => [
   uniqueIndex("exam_sessions_exam_student_unique").on(table.examId, table.studentId),
