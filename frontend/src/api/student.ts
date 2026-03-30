@@ -48,6 +48,12 @@ export type StudentResultDetail = StudentResultSummary & {
   }[];
 };
 
+export type StudentTermRankOverview = {
+  rank: number | null;
+  totalStudents: number;
+  termExamCount: number;
+};
+
 export const getStudentExams = (user?: User | null) =>
   apiRequest<StudentExamSummary[]>("/api/student/exams", { user });
 
@@ -59,6 +65,9 @@ export const getStudentResult = (sessionId: string, user?: User | null) =>
 
 export const getStudentProfile = (user?: User | null) =>
   apiRequest<StudentProfile>("/api/student/profile", { user });
+
+export const getStudentTermRank = (user?: User | null) =>
+  apiRequest<StudentTermRankOverview>("/api/student/term-rank", { user });
 
 export const updateStudentProfile = (
   payload: StudentProfile,

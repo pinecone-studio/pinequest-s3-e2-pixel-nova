@@ -154,7 +154,7 @@ export default function TeacherPage() {
     <div className={pageShellClass}>
       {data.toast && (
         <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
-          {data.toast}
+          {data.toast}  
         </div>
       )}
       <TeacherHeader

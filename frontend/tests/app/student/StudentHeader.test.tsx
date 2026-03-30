@@ -4,9 +4,15 @@ import type { NotificationItem } from "@/app/student/types";
 
 const notifications: NotificationItem[] = [
   {
+    id: "notification-1",
+    userId: "student-1",
+    role: "student",
+    type: "result_published",
+    severity: "info",
+    status: "unread",
+    title: "Дүн шинэчлэгдлээ",
     examId: "exam-1",
     message: "Mathematics Final Exam шалгалтын дүн шинэчлэгдлээ.",
-    read: false,
     createdAt: "2026-03-26T01:00:00.000Z",
   },
 ];
@@ -21,6 +27,9 @@ describe("StudentHeader", () => {
         currentUserName="John Doe"
         currentUserInitials="JD"
         notifications={notifications}
+        unreadCount={1}
+        onMarkNotificationRead={jest.fn()}
+        onMarkAllNotificationsRead={jest.fn()}
         xp={2450}
         onTabChange={onTabChange}
         onOpenProfile={jest.fn()}
@@ -44,6 +53,9 @@ describe("StudentHeader", () => {
         currentUserName="John Doe"
         currentUserInitials="JD"
         notifications={notifications}
+        unreadCount={1}
+        onMarkNotificationRead={jest.fn()}
+        onMarkAllNotificationsRead={jest.fn()}
         xp={2450}
         onTabChange={jest.fn()}
         onOpenProfile={onOpenProfile}

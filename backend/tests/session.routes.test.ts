@@ -125,10 +125,12 @@ describe("session routes", () => {
   });
 
   it("allows late or joined students to answer against the shared exam timer", async () => {
+    const sharedStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
     queueDbResults(
       [{ id: "student-1", fullName: "Nora Student" }],
       [{ id: "session-1", examId: "exam-1", status: "late", startedAt: null }],
-      [{ id: "exam-1", durationMin: 45, startedAt: "2026-03-30T10:00:00.000Z", scheduledAt: "2026-03-30T10:00:00.000Z" }],
+      [{ id: "exam-1", durationMin: 45, startedAt: sharedStart, scheduledAt: sharedStart }],
       undefined,
       [],
       undefined,
@@ -157,10 +159,12 @@ describe("session routes", () => {
   });
 
   it("accepts batched answer writes and persists each pending answer once", async () => {
+    const sharedStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
     queueDbResults(
       [{ id: "student-1", fullName: "Nora Student" }],
-      [{ id: "session-1", examId: "exam-1", status: "in_progress", startedAt: "2026-03-30T10:00:00.000Z" }],
-      [{ id: "exam-1", durationMin: 45, startedAt: "2026-03-30T10:00:00.000Z", scheduledAt: "2026-03-30T10:00:00.000Z" }],
+      [{ id: "session-1", examId: "exam-1", status: "in_progress", startedAt: sharedStart }],
+      [{ id: "exam-1", durationMin: 45, startedAt: sharedStart, scheduledAt: sharedStart }],
       [],
       undefined,
       [],
