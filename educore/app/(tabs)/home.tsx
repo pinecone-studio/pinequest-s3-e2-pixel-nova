@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { useStudentApp } from "@/lib/student-app/context";
 import { formatDateTime, getSessionStateLabel } from "@/lib/student-app/utils";
 import { homeStyles as styles } from "@/styles/screens/home";
-// Greeting helper
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Өглөөний мэнд";
@@ -12,7 +12,6 @@ function getGreeting() {
   return "Оройн мэнд";
 }
 
-// Achievement badge
 function AchievementBadge({
   icon,
   label,
@@ -31,6 +30,7 @@ function AchievementBadge({
     </View>
   );
 }
+
 export default function HomeScreen() {
   const router = useRouter();
   const {
@@ -53,13 +53,19 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.name}>
-            Тавтай морил, {student?.fullName?.split(" ")[0] ?? "Оюутан"}
-          </Text>
+        <View style={styles.brandWrap}>
+          <Image
+            source={require("../../assets/images/icon.png")}
+            style={styles.brandIcon}
+          />
+          <View style={styles.brandTextWrap}>
+            <Text style={styles.brandName}>PineQuest</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.name}>
+              Тавтай морил, {student?.fullName?.split(" ")[0] ?? "Оюутан"}
+            </Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.bell}>
           <Text style={{ fontSize: 20 }}>🔔</Text>
@@ -67,12 +73,10 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Шалгалт өгөх */}
       <Text style={styles.sectionTitle}>Шалгалт өгөх</Text>
       <View style={styles.card}>
         {activeSession ? (
           <>
-            {/* Gradient-style top bar */}
             <View style={styles.cardTopBar} />
             <View style={styles.cardBody}>
               <View style={styles.cardRow}>
@@ -111,7 +115,6 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Recent Achievements */}
       <View style={styles.sectionRow}>
         <Text style={styles.sectionTitle}>Recent Achievements</Text>
         <TouchableOpacity>
@@ -125,7 +128,6 @@ export default function HomeScreen() {
         <AchievementBadge icon="⚡" label="Speed Run" color="#6C5CE7" />
       </View>
 
-      {/* Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{xp}</Text>
@@ -149,7 +151,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Latest result */}
       {(submittedResult || latestHistory) && (
         <View style={styles.card}>
           <View style={styles.cardBody}>

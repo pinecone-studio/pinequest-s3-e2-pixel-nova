@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "educore",
+    "name": "PineQuest",
     "slug": "educore",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,15 +11,15 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow Educore to access your front camera during exams for proctoring."
+        "NSCameraUsageDescription": "Allow PineQuest to access your front camera during exams for proctoring."
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-      "foregroundImage": "./assets/images/android-icon-foreground.png",
-      "backgroundImage": "./assets/images/android-icon-background.png",
-      "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -36,7 +36,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Educore to access your front camera during exams.",
+          "cameraPermission": "Allow PineQuest to access your front camera during exams.",
           "recordAudioAndroid": false
         }
       ],

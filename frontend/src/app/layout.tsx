@@ -5,6 +5,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 export const metadata: Metadata = {
   title: "EduCore LMS",
   description: "AI-д суурилсан онлайн шалгалтын платформ",
+  icons: {
+    icon: [
+      { url: "/favicon.svg?v=2", type: "image/svg+xml" },
+      { url: "/icon.svg?v=2", type: "image/svg+xml" },
+    ],
+    shortcut: ["/favicon.svg?v=2"],
+    apple: ["/favicon.svg?v=2"],
+  },
 };
 
 export default function RootLayout({
@@ -14,9 +22,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="mn">
-      <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml"></link>
-      </head>
       <body className="antialiased">
         <TooltipProvider>{children}</TooltipProvider>
       </body>
