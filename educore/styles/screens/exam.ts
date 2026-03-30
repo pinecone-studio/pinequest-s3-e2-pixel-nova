@@ -76,6 +76,16 @@ export const examStyles = StyleSheet.create({
   },
   metaChipLabel: { fontSize: 11, color: "#888", marginBottom: 4 },
   metaChipValue: { fontSize: 18, fontWeight: "800", color: "#111" },
+  infoBox: {
+    backgroundColor: "#EEF4FF",
+    borderRadius: 12,
+    padding: 10,
+  },
+  infoText: {
+    color: "#3657B0",
+    fontSize: 13,
+    lineHeight: 19,
+  },
   warningBox: { backgroundColor: "#FEF3C7", borderRadius: 12, padding: 10 },
   warningText: { color: "#B45309", fontSize: 13 },
   errorText: { color: "#DC2626", fontSize: 13, textAlign: "center" },

@@ -341,6 +341,15 @@ export default function ExamScreen() {
             </View>
           ) : null}
 
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>
+              Энэ Expo Go build дээр front camera нээгдэж, ойролцоогоор 15 сек
+              тутам snapshot авч backend AI-аар шинжилнэ. App-ээс гарах,
+              background руу орох, screen blur зэрэг зөрчлүүд мөн хэвийн log
+              хийгдэнэ.
+            </Text>
+          </View>
+
           {syncError ? <Text style={styles.errorText}>{syncError}</Text> : null}
 
           {isJoined ? (
@@ -364,6 +373,9 @@ export default function ExamScreen() {
         <MobileProctorCamera
           isEnabled={activeSession.status === "in_progress" && appIsActive}
           permissionGranted={!!cameraPermission?.granted}
+          sessionId={activeSession.sessionId}
+          student={student}
+          onViolation={logIntegrityEvent}
         />
       ) : null}
 

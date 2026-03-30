@@ -211,6 +211,9 @@ describe("ExamScreen", () => {
     const screen = render(<ExamScreen />);
 
     expect(screen.getByText("camera-preview-active")).toBeTruthy();
+    expect(
+      screen.getByText(/ойролцоогоор 15 сек тутам snapshot авч backend AI-аар шинжилнэ/),
+    ).toBeTruthy();
     screen.unmount();
   });
 });
