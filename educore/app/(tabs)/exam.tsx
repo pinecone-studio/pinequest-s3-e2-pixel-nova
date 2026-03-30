@@ -11,11 +11,11 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Camera as VisionCamera } from 'react-native-vision-camera';
+} from "react-native";
+import { Camera as VisionCamera } from "react-native-vision-camera";
 
 import MobileProctorCamera from "@/components/student-app/MobileProctorCamera";
-import { useStudentApp } from '@/lib/student-app/context';
+import { useStudentApp } from "@/lib/student-app/context";
 import {
   computeRemainingSeconds,
   formatCountdown,
@@ -158,9 +158,9 @@ export default function ExamScreen() {
   }, [activeSession, handleSubmit, remainingSeconds]);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      setAppIsActive(nextState === 'active');
-      if (nextState !== 'active' && activeSession?.status === 'in_progress') {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      setAppIsActive(nextState === "active");
+      if (nextState !== "active" && activeSession?.status === "in_progress") {
         setIntegrityWarning(
           "The app moved out of the foreground during an active exam.",
         );
@@ -225,14 +225,12 @@ export default function ExamScreen() {
           </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() => router.push("/join")}
-          >
+            onPress={() => router.push("/join")}>
             <Text style={styles.primaryBtnText}>Шалгалтанд нэгдэх</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.secondaryBtn}
-            onPress={() => router.push("/home")}
-          >
+            onPress={() => router.push("/home")}>
             <Text style={styles.secondaryBtnText}>Нүүр хуудас руу буцах</Text>
           </TouchableOpacity>
         </View>
@@ -281,8 +279,7 @@ export default function ExamScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+      showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Шалгалт</Text>
 
       {/* Exam info card */}
@@ -310,15 +307,13 @@ export default function ExamScreen() {
                 styles.statusPill,
                 activeSession.entryStatus === "late" &&
                   styles.statusPillWarning,
-              ]}
-            >
+              ]}>
               <Text
                 style={[
                   styles.statusPillText,
                   activeSession.entryStatus === "late" &&
                     styles.statusPillTextWarning,
-                ]}
-              >
+                ]}>
                 {activeSession.entryStatus === "late"
                   ? "Хоцорсон"
                   : getEntryStatusLabel(activeSession.entryStatus)}
@@ -359,14 +354,12 @@ export default function ExamScreen() {
             <>
               <TouchableOpacity
                 style={styles.primaryBtn}
-                onPress={() => void handleStart()}
-              >
+                onPress={() => void handleStart()}>
                 <Text style={styles.primaryBtnText}>Шалгалт эхлүүлэх</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.secondaryBtn}
-                onPress={() => void recoverActiveSession()}
-              >
+                onPress={() => void recoverActiveSession()}>
                 <Text style={styles.secondaryBtnText}>Шинэчлэх</Text>
               </TouchableOpacity>
             </>
@@ -410,14 +403,12 @@ export default function ExamScreen() {
                     style={[
                       styles.optionButton,
                       selected && styles.optionButtonSelected,
-                    ]}
-                  >
+                    ]}>
                     <Text
                       style={[
                         styles.optionLabel,
                         selected && styles.optionLabelSelected,
-                      ]}
-                    >
+                      ]}>
                       {option.label}. {option.text}
                     </Text>
                   </Pressable>
@@ -450,8 +441,7 @@ export default function ExamScreen() {
                 styles.navBtnDisabled,
             ]}
             disabled={activeSession.currentQuestionIndex === 0 || isSyncBlocked}
-            onPress={() => void moveQuestion(-1)}
-          >
+            onPress={() => void moveQuestion(-1)}>
             <Text style={styles.navBtnText}>← Өмнөх</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -466,15 +456,13 @@ export default function ExamScreen() {
               activeSession.currentQuestionIndex >=
                 activeSession.questions.length - 1 || isSyncBlocked
             }
-            onPress={() => void moveQuestion(1)}
-          >
+            onPress={() => void moveQuestion(1)}>
             <Text style={styles.navBtnText}>Дараах →</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.primaryBtn, isSyncBlocked && styles.navBtnDisabled]}
             disabled={isSyncBlocked}
-            onPress={() => void handleSubmit(false)}
-          >
+            onPress={() => void handleSubmit(false)}>
             <Text style={styles.primaryBtnText}>
               {submitting ? "Илгээж байна..." : "Шалгалт илгээх"}
             </Text>

@@ -1,6 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CreateExamPage from "@/app/teacher/createExam/page";
 
+type MockAuthUser = {
+  id: string;
+  fullName: string;
+  role: string;
+};
+
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
@@ -18,7 +24,7 @@ jest.mock("@/lib/backend-auth", () => ({
 }));
 
 jest.mock("@/lib/role-session", () => ({
-  buildSessionUser: (user: any) => ({
+  buildSessionUser: (user: MockAuthUser) => ({
     id: user.id,
     username: user.fullName,
     password: "",
@@ -39,7 +45,9 @@ jest.mock("@/lib/examGuard", () => ({
 
 const setExamTitle = jest.fn();
 const setQuestions = jest.fn();
-const acceptDraft = jest.fn().mockResolvedValue({ id: "run-1", status: "accepted" });
+const acceptDraft = jest
+  .fn()
+  .mockResolvedValue({ id: "run-1", status: "accepted" });
 
 jest.mock("@/app/teacher/hooks/useTeacherData", () => ({
   useTeacherData: () => ({
