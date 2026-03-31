@@ -8,9 +8,7 @@ type UseExamQuestionsParams = {
 
 export const useExamQuestions = ({ showToast }: UseExamQuestionsParams) => {
   const [questionText, setQuestionText] = useState("");
-  const [questionType, setQuestionType] = useState<"text" | "open" | "mcq">(
-    "text",
-  );
+  const [questionType, setQuestionType] = useState<"open" | "mcq">("open");
   const [questionAnswer, setQuestionAnswer] = useState("");
   const [questionImageUrl, setQuestionImageUrl] = useState<string | undefined>(
     undefined,

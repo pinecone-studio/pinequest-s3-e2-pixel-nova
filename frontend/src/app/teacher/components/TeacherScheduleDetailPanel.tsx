@@ -14,6 +14,7 @@ import type { Exam, ExamRosterDetail, ExamRosterParticipant } from "../types";
 import { sectionTitleClass } from "../styles";
 import { formatDateTime } from "../utils";
 import TeacherEmptyState from "./TeacherEmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function getParticipantMeta(participant: ExamRosterParticipant) {
   if (participant.isFlagged || participant.flagCount > 0) {
@@ -237,7 +238,12 @@ export default function TeacherScheduleDetailPanel({
           <div className="divide-y divide-[#f4e7e7]">
             {rosterLoading ? Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="grid grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_0.9fr] gap-4 px-6 py-5">
-                {Array.from({ length: 6 }).map((__, cellIndex) => <div key={cellIndex} className="h-6 animate-pulse rounded-full bg-[#f3f4f7]" />)}
+                {Array.from({ length: 6 }).map((__, cellIndex) => (
+                  <Skeleton
+                    key={cellIndex}
+                    className="h-6 rounded-full border border-[#edf2fb]"
+                  />
+                ))}
               </div>
             )) : participants.length === 0 ? (
               <div className="px-6 py-8">

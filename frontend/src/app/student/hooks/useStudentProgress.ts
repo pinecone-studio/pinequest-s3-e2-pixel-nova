@@ -12,8 +12,10 @@ import {
 } from "@/lib/backend-auth";
 import {
   getXpHistory,
+  getXpLeaderboard,
   getXpProfile,
   type XpActivity,
+  type XpLeaderboardEntry,
 } from "@/api/xp";
 
 export const useStudentProgress = (currentUser: User | null) => {
@@ -21,6 +23,7 @@ export const useStudentProgress = (currentUser: User | null) => {
     StudentProgress[string]["history"]
   >([]);
   const [xpActivities, setXpActivities] = useState<XpActivity[]>([]);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<XpLeaderboardEntry[]>([]);
   const [rankOverview, setRankOverview] = useState({
     rank: null as number | null,
     totalStudents: 0,
@@ -62,6 +65,12 @@ export const useStudentProgress = (currentUser: User | null) => {
         setXpActivities(await getXpHistory(currentUser));
       } catch {
         setXpActivities([]);
+      }
+
+      try {
+        setLeaderboardEntries(await getXpLeaderboard(currentUser));
+      } catch {
+        setLeaderboardEntries([]);
       }
 
       try {
@@ -121,6 +130,7 @@ export const useStudentProgress = (currentUser: User | null) => {
   return {
     studentHistory,
     xpActivities,
+    leaderboardEntries,
     rankOverview,
     termRankOverview,
     progressLeaderboard,

@@ -197,9 +197,9 @@ export default function TeacherPage() {
           />
         }
       />
-      <main className="mx-auto w-full space-y-6">
+      <main className="mx-auto w-full max-w-[1380px] space-y-5 px-4 py-4 sm:px-6 lg:px-8">
         <div
-          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-3 scale-[0.985] opacity-0"}`}>
+          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}>
           <TeacherPageContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}

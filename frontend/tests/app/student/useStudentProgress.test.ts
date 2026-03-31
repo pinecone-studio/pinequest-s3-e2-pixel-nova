@@ -1,5 +1,6 @@
 const mockGetXpProfile = jest.fn();
 const mockGetXpHistory = jest.fn();
+const mockGetXpLeaderboard = jest.fn();
 const mockGetStudentResults = jest.fn();
 const mockGetStudentTermRank = jest.fn();
 const mockGetStudentProgressLeaderboard = jest.fn();
@@ -7,6 +8,7 @@ const mockGetStudentProgressLeaderboard = jest.fn();
 jest.mock("@/api/xp", () => ({
   getXpProfile: (...args: unknown[]) => mockGetXpProfile(...args),
   getXpHistory: (...args: unknown[]) => mockGetXpHistory(...args),
+  getXpLeaderboard: (...args: unknown[]) => mockGetXpLeaderboard(...args),
 }));
 
 jest.mock("@/lib/backend-auth", () => ({
@@ -62,6 +64,10 @@ describe("useStudentProgress", () => {
       totalStudents: 12,
     });
     mockGetXpHistory.mockResolvedValue([]);
+    mockGetXpLeaderboard.mockResolvedValue([
+      { rank: 1, id: "s9", fullName: "Сурагч 1", xp: 500, level: 3 },
+      { rank: 2, id: "s1", fullName: "Бат", xp: 250, level: 2 },
+    ]);
     mockGetStudentResults.mockResolvedValue(mockResults);
     mockGetStudentTermRank.mockResolvedValue({
       rank: 2,
@@ -112,6 +118,7 @@ describe("useStudentProgress", () => {
       totalStudents: 5,
       termExamCount: 2,
     });
+    expect(result.current.leaderboardEntries).toHaveLength(2);
     expect(result.current.progressLeaderboard).toEqual([
       {
         id: "s2",
@@ -172,6 +179,16 @@ describe("useStudentProgress", () => {
       rank: null,
       totalStudents: 0,
     });
+  });
+
+  it("handles leaderboard API error gracefully", async () => {
+    mockGetXpLeaderboard.mockRejectedValue(new Error("fail"));
+
+    const { result } = renderHook(() => useStudentProgress(mockUser));
+
+    await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
+
+    expect(result.current.leaderboardEntries).toEqual([]);
   });
 
   it("handles results API error gracefully", async () => {
