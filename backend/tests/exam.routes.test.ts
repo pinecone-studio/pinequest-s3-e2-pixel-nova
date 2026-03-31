@@ -49,6 +49,7 @@ describe("exam routes", () => {
         durationMin: 45,
         passScore: 70,
         shuffleQuestions: true,
+        requiresAudioRecording: true,
         enabledCheatDetections: '["tab_switch","copy_paste"]',
       }],
     );
@@ -64,6 +65,7 @@ describe("exam routes", () => {
             durationMin: 45,
             passScore: 70,
             shuffleQuestions: true,
+            requiresAudioRecording: true,
           },
           teacherHeaders(),
         ),
@@ -83,6 +85,7 @@ describe("exam routes", () => {
         durationMin: 45,
         passScore: 70,
         shuffleQuestions: true,
+        requiresAudioRecording: true,
         enabledCheatDetections: ["tab_switch", "copy_paste"],
       },
     });
@@ -122,6 +125,41 @@ describe("exam routes", () => {
     expect(payload.data.enabledCheatDetections).toHaveLength(16);
     expect(payload.data.enabledCheatDetections).toContain("tab_switch");
     expect(payload.data.enabledCheatDetections).toContain("camera_blocked");
+  });
+
+  it("persists the audio recording requirement on exam create", async () => {
+    queueDbResults(
+      [{ id: "teacher-1", fullName: "Ada Teacher" }],
+      [{ id: "math-1" }],
+      undefined,
+      [{
+        id: "exam-1",
+        teacherId: "teacher-1",
+        subjectId: "math-1",
+        title: "Speaking Exam",
+        requiresAudioRecording: 1,
+        enabledCheatDetections: '["tab_switch"]',
+      }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/exams",
+      {
+        ...jsonRequest(
+          {
+            subjectId: "math-1",
+            title: "Speaking Exam",
+            requiresAudioRecording: true,
+          },
+          teacherHeaders(),
+        ),
+      },
+      workerEnv,
+    );
+
+    expect(response.status).toBe(201);
+    const payload: any = await response.json();
+    expect(payload.data.requiresAudioRecording).toBe(true);
   });
 
   it("blocks cheat detection updates after an exam starts", async () => {

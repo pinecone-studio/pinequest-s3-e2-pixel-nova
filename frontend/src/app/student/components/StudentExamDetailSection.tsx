@@ -114,7 +114,9 @@ export default function StudentExamDetailSection({
         durationLabel={examMeta.durationLabel}
       />
 
-      <StudentExamCautionPanel />
+      <StudentExamCautionPanel
+        requiresAudioRecording={selectedExam.requiresAudioRecording}
+      />
 
       {examMeta.isUpcoming && (
         <div className="rounded-[22px] border border-[#dbe6ff] bg-[#f4f8ff] px-5 py-4 text-center text-sm font-semibold text-[#3659c8] shadow-[0_18px_40px_rgba(54,89,200,0.12)]">

@@ -46,6 +46,7 @@ export default function StudentExamsTab({
         joinLoading={joinLoading}
         joinError={joinError}
         onLookup={onLookup}
+        selectedExam={selectedExam}
         studentHistory={studentHistory}
       />
     );

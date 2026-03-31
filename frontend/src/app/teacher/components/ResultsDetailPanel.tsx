@@ -1,12 +1,13 @@
 import { FileSearch, UserRoundSearch } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { cardClass, sectionDescriptionClass } from "../styles";
-import type { Exam, Submission, ExamStatsSummary } from "../types";
+import type { Exam, Submission, ExamStatsSummary, ExamAudioChunk } from "../types";
 import type { StudentProfile } from "@/lib/backend-auth";
 import AttendanceStatsCard from "./AttendanceStatsCard";
 import TeacherEmptyState from "./TeacherEmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ExamAttendanceStats } from "../types";
+import { getExamAudioChunks, getStudentCheatEvents } from "@/api/cheat";
 
 type ResultsDetailPanelProps = {
   selectedSubmission: Submission | null;
@@ -44,6 +45,9 @@ export default function ResultsDetailPanel({
 }: ResultsDetailPanelProps) {
   const [countdown, setCountdown] = useState("00:00:00");
   const [nowTs, setNowTs] = useState(() => Date.now());
+  const [audioChunks, setAudioChunks] = useState<ExamAudioChunk[]>([]);
+  const [flaggedEventTimes, setFlaggedEventTimes] = useState<string[]>([]);
+  const [audioLoading, setAudioLoading] = useState(false);
 
   const violationEntries = selectedSubmission?.violations
     ? [
@@ -67,11 +71,59 @@ export default function ResultsDetailPanel({
     }
     return null;
   }, [selectedExam]);
+  const resolvedSessionId = selectedSubmission?.sessionId ?? selectedSubmission?.id ?? null;
+  const selectedExamId = selectedExam?.id ?? null;
+  const selectedStudentId = selectedSubmission?.studentId ?? null;
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowTs(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!resolvedSessionId) {
+      setAudioChunks([]);
+      setFlaggedEventTimes([]);
+      setAudioLoading(false);
+      return;
+    }
+
+    let active = true;
+    setAudioLoading(true);
+    void Promise.all([
+      getExamAudioChunks(resolvedSessionId),
+      selectedExamId && selectedStudentId
+        ? getStudentCheatEvents(selectedExamId, selectedStudentId)
+        : Promise.resolve([]),
+    ])
+      .then(([chunks, events]) => {
+        if (!active) {
+          return;
+        }
+        setAudioChunks(chunks);
+        setFlaggedEventTimes(
+          events
+            .map((event) => event.createdAt)
+            .filter((createdAt) => typeof createdAt === "string" && createdAt.length > 0),
+        );
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+        setAudioChunks([]);
+        setFlaggedEventTimes([]);
+      })
+      .finally(() => {
+        if (active) {
+          setAudioLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [resolvedSessionId, selectedExamId, selectedStudentId]);
 
   const derivedFinished = useMemo(() => {
     if (!selectedExam) return false;
@@ -87,6 +139,29 @@ export default function ResultsDetailPanel({
     selectedExam &&
       !derivedFinished,
   );
+  const highlightedChunkIds = useMemo(() => {
+    if (flaggedEventTimes.length === 0) {
+      return new Set<string>();
+    }
+
+    const violationTimes = flaggedEventTimes
+      .map((value) => new Date(value).getTime())
+      .filter((value) => !Number.isNaN(value));
+
+    return new Set(
+      audioChunks
+        .filter((chunk) => {
+          const start = new Date(chunk.chunkStartedAt).getTime();
+          const end = new Date(chunk.chunkEndedAt).getTime();
+          return (
+            !Number.isNaN(start) &&
+            !Number.isNaN(end) &&
+            violationTimes.some((violationTs) => violationTs >= start && violationTs <= end)
+          );
+        })
+        .map((chunk) => chunk.id),
+    );
+  }, [audioChunks, flaggedEventTimes]);
 
   useEffect(() => {
     if (!finishAt || !resultsLocked) {
@@ -115,7 +190,8 @@ export default function ResultsDetailPanel({
     <div className={cardClass}>
       <h2 className="text-xl font-semibold text-slate-900">Дэлгэрэнгүй</h2>
       <p className={`mt-2 ${sectionDescriptionClass}`}>
-        Сонгосон сурагчийн профайл, зөрчил, асуулт тус бүрийн хариултыг нэг дороос харна.
+        Сонгосон сурагчийн профайл, зөрчил, асуулт тус бүрийн хариултыг нэг
+        дороос харна.
       </p>
       {!selectedSubmission && (
         <div className="mt-6">
@@ -218,6 +294,65 @@ export default function ResultsDetailPanel({
               </div>
             </div>
           )}
+          <div className="rounded-xl border border-border bg-muted px-3 py-3 text-xs">
+            <div className="font-semibold text-foreground">Аудио баримт</div>
+            {audioLoading && (
+              <div className="mt-2 text-muted-foreground">Ачаалж байна...</div>
+            )}
+            {!audioLoading && audioChunks.length === 0 && (
+              <div className="mt-2 text-muted-foreground">
+                Энэ сессэд аудио файл одоогоор алга.
+              </div>
+            )}
+            {!audioLoading && audioChunks.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <div className="text-[11px] text-slate-500">
+                  {audioChunks.length} clip, flagged event overlap: {highlightedChunkIds.size}
+                </div>
+                {audioChunks.map((chunk) => (
+                  <div
+                    key={chunk.id}
+                    className={`rounded-xl border px-3 py-3 ${
+                      highlightedChunkIds.has(chunk.id)
+                        ? "border-[#f4b183] bg-[#fff7ed]"
+                        : "border-[#dce5ef] bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          Clip #{chunk.sequenceNumber + 1}
+                        </div>
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {new Date(chunk.chunkStartedAt).toLocaleTimeString()} -{" "}
+                          {new Date(chunk.chunkEndedAt).toLocaleTimeString()}
+                        </div>
+                      </div>
+                      <span className="rounded-full border border-[#dce5ef] bg-[#f8fafc] px-2 py-1 text-[11px] font-semibold text-slate-600">
+                        {Math.round(chunk.durationMs / 1000)}s
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <audio controls preload="none" src={chunk.assetUrl} className="max-w-full" />
+                      <a
+                        className="inline-flex items-center rounded-lg border border-[#dce5ef] bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:bg-[#f8fafc]"
+                        href={chunk.assetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open
+                      </a>
+                    </div>
+                    {highlightedChunkIds.has(chunk.id) && (
+                      <div className="mt-2 text-[11px] font-semibold text-[#c46a17]">
+                        Contains a flagged event window
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {resultsLocked && (
             <div className="rounded-2xl border border-[#fde68a] bg-[#fffbeb] px-4 py-4 text-xs text-amber-800">
               <div className="text-sm font-semibold">

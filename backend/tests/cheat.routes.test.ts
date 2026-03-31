@@ -62,6 +62,71 @@ describe("cheat routes", () => {
     expect(payload.data.assetUrl).toContain("/api/cheat/snapshot-assets?key=");
   });
 
+  it("creates a presigned upload URL for audio chunks without storing metadata yet", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{ id: "session-1", examId: "exam-1", studentId: "student-1", status: "in_progress" }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/cheat/audio-upload-url",
+      jsonRequest(
+        {
+          sessionId: "session-1",
+          mimeType: "audio/webm",
+          sequenceNumber: 0,
+          chunkStartedAt: "2026-03-30T08:00:00.000Z",
+          chunkEndedAt: "2026-03-30T08:00:30.000Z",
+          durationMs: 30000,
+          sizeBytes: 2048,
+        },
+        studentHeaders(),
+      ),
+      cheatEnv,
+    );
+
+    expect(response.status).toBe(201);
+    const payload: any = await response.json();
+    expect(payload.data.objectKey).toMatch(
+      /^cheat-audio\/session-1\/student-1\/.+\.webm$/,
+    );
+    expect(mockDb.insert).not.toHaveBeenCalled();
+  });
+
+  it("stores audio chunk metadata only after upload finalization", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{ id: "session-1", examId: "exam-1", studentId: "student-1", status: "in_progress" }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/cheat/audio-chunks",
+      jsonRequest(
+        {
+          sessionId: "session-1",
+          objectKey: "cheat-audio/session-1/student-1/000000-1710000000000-test-id.webm",
+          mimeType: "audio/webm",
+          sequenceNumber: 0,
+          chunkStartedAt: "2026-03-30T08:00:00.000Z",
+          chunkEndedAt: "2026-03-30T08:00:30.000Z",
+          durationMs: 30000,
+          sizeBytes: 2048,
+        },
+        studentHeaders(),
+      ),
+      cheatEnv,
+    );
+
+    expect(response.status).toBe(201);
+    const payload: any = await response.json();
+    expect(payload.success).toBe(true);
+    expect(payload.data.assetUrl).toContain("/api/cheat/audio-assets?key=");
+    expect(payload.data.objectKey).toBe(
+      "cheat-audio/session-1/student-1/000000-1710000000000-test-id.webm",
+    );
+    expect(mockDb.insert).toHaveBeenCalled();
+  });
+
   it("analyzes a periodic snapshot from stored R2 data with Workers AI", async () => {
     queueDbResults(
       { id: "auth-result" },
@@ -336,6 +401,50 @@ describe("cheat routes", () => {
       },
     });
     expect(mockDb.insert).not.toHaveBeenCalled();
+  });
+
+  it("accepts microphone permission failures before the session starts", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{
+        id: "session-1",
+        examId: "exam-1",
+        studentId: "student-1",
+        flagCount: 0,
+        violationScore: 0,
+        riskLevel: "low",
+        status: "joined",
+      }],
+      [{
+        enabledCheatDetections: '["tab_switch","camera_blocked"]',
+        teacherId: "teacher-1",
+      }],
+      [],
+      undefined,
+      [{
+        createdAt: "2026-03-31T00:00:00.000Z",
+        eventSource: "browser_audio",
+        eventType: "microphone_permission_denied",
+      }],
+      undefined,
+      [],
+      [{ fullName: "Nora Student" }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/cheat/event",
+      jsonRequest(
+        {
+          sessionId: "session-1",
+          eventType: "microphone_permission_denied",
+          source: "browser_audio",
+        },
+        studentHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(201);
   });
 
   it("ignores disabled exam cheat detections without persisting risk changes", async () => {

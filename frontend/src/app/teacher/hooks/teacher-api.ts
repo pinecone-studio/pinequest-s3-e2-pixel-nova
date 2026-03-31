@@ -69,6 +69,7 @@ type TeacherExamSummary = {
   locationLongitude?: number | null;
   allowedRadiusMeters?: number | null;
   enabledCheatDetections?: string[];
+  requiresAudioRecording?: boolean;
 };
 
 type TeacherExamDetail = TeacherExamSummary & {
@@ -118,6 +119,7 @@ export const fetchTeacherExams = async (
     locationLongitude: exam.locationLongitude ?? null,
     allowedRadiusMeters: exam.allowedRadiusMeters ?? 3000,
     enabledCheatDetections: exam.enabledCheatDetections ?? undefined,
+    requiresAudioRecording: exam.requiresAudioRecording ?? false,
     questions: [],
     duration: exam.durationMin ?? 60,
     createdAt: exam.createdAt,
@@ -170,6 +172,7 @@ export const fetchTeacherExamDetail = async (
     locationLongitude: exam.locationLongitude ?? null,
     allowedRadiusMeters: exam.allowedRadiusMeters ?? 3000,
     enabledCheatDetections: exam.enabledCheatDetections ?? undefined,
+    requiresAudioRecording: exam.requiresAudioRecording ?? false,
     questions: mappedQuestions,
     duration: exam.durationMin ?? 60,
     createdAt: exam.createdAt,
