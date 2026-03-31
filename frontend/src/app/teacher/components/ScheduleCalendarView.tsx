@@ -62,6 +62,16 @@ type Props = {
   setScheduleSubjectName: (v: string) => void;
   scheduleDescription: string;
   setScheduleDescription: (v: string) => void;
+  scheduleLocationPolicy: "anywhere" | "school_only";
+  setScheduleLocationPolicy: (v: "anywhere" | "school_only") => void;
+  scheduleLocationLabel: string;
+  setScheduleLocationLabel: (v: string) => void;
+  scheduleLocationLatitude: string;
+  setScheduleLocationLatitude: (v: string) => void;
+  scheduleLocationLongitude: string;
+  setScheduleLocationLongitude: (v: string) => void;
+  scheduleAllowedRadiusMeters: number;
+  setScheduleAllowedRadiusMeters: (v: number) => void;
   durationMinutes: number;
   setDurationMinutes: (v: number) => void;
   onSchedule: () => void;
@@ -83,6 +93,16 @@ export default function ScheduleCalendarView({
   setScheduleSubjectName,
   scheduleDescription,
   setScheduleDescription,
+  scheduleLocationPolicy,
+  setScheduleLocationPolicy,
+  scheduleLocationLabel,
+  setScheduleLocationLabel,
+  scheduleLocationLatitude,
+  setScheduleLocationLatitude,
+  scheduleLocationLongitude,
+  setScheduleLocationLongitude,
+  scheduleAllowedRadiusMeters,
+  setScheduleAllowedRadiusMeters,
   durationMinutes,
   setDurationMinutes,
   onSchedule,
@@ -268,6 +288,16 @@ export default function ScheduleCalendarView({
               setScheduleSubjectName={setScheduleSubjectName}
               scheduleDescription={scheduleDescription}
               setScheduleDescription={setScheduleDescription}
+              scheduleLocationPolicy={scheduleLocationPolicy}
+              setScheduleLocationPolicy={setScheduleLocationPolicy}
+              scheduleLocationLabel={scheduleLocationLabel}
+              setScheduleLocationLabel={setScheduleLocationLabel}
+              scheduleLocationLatitude={scheduleLocationLatitude}
+              setScheduleLocationLatitude={setScheduleLocationLatitude}
+              scheduleLocationLongitude={scheduleLocationLongitude}
+              setScheduleLocationLongitude={setScheduleLocationLongitude}
+              scheduleAllowedRadiusMeters={scheduleAllowedRadiusMeters}
+              setScheduleAllowedRadiusMeters={setScheduleAllowedRadiusMeters}
               durationMinutes={durationMinutes}
               setDurationMinutes={setDurationMinutes}
               onSchedule={() => {

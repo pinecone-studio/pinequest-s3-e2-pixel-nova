@@ -51,18 +51,40 @@ function getParticipantMeta(participant: ExamRosterParticipant) {
 }
 
 function formatParticipantEvidence(participant: ExamRosterParticipant) {
+  const locationLabel =
+    participant.joinLocationStatus === "inside"
+      ? "Сургуулийн бүс дотор"
+      : participant.joinLocationStatus === "near_edge"
+        ? "Сургуулийн бүсийн зааг дээр"
+        : participant.joinLocationStatus === "outside"
+          ? "Сургуулийн бүсээс гадуур"
+          : participant.joinLocationStatus === "not_required"
+            ? "Байршил шаардаагүй"
+            : null;
+  const distanceLabel =
+    typeof participant.joinDistanceMeters === "number"
+      ? `${(participant.joinDistanceMeters / 1000).toFixed(1)} км`
+      : null;
+
   if (!participant.latestEvent) {
-    return "No suspicious activity recorded.";
+    return [locationLabel, distanceLabel, "Зөрчил бүртгэгдээгүй"].filter(Boolean).join(" · ");
   }
 
   const sourceLabel =
     participant.latestEvent.eventSource === "browser_camera"
-      ? "camera"
+      ? "камер"
       : participant.latestEvent.eventSource === "browser"
         ? "browser"
         : (participant.latestEvent.eventSource ?? "unknown");
 
-  return `${participant.latestEvent.label} via ${sourceLabel} · ${participant.eventCount} events`;
+  return [
+    locationLabel,
+    distanceLabel,
+    `${participant.latestEvent.label} · ${sourceLabel}`,
+    `${participant.eventCount} үйлдэл`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function SummaryStatCard({

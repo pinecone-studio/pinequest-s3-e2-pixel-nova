@@ -9,6 +9,11 @@ export const useExamScheduleState = () => {
   const [scheduleSubjectName, setScheduleSubjectName] = useState("");
   const [scheduleDescription, setScheduleDescription] = useState("");
   const [selectedScheduleExamId, setSelectedScheduleExamId] = useState("");
+  const [scheduleLocationPolicy, setScheduleLocationPolicy] = useState<"anywhere" | "school_only">("anywhere");
+  const [scheduleLocationLabel, setScheduleLocationLabel] = useState("Сургууль");
+  const [scheduleLocationLatitude, setScheduleLocationLatitude] = useState("");
+  const [scheduleLocationLongitude, setScheduleLocationLongitude] = useState("");
+  const [scheduleAllowedRadiusMeters, setScheduleAllowedRadiusMeters] = useState(3000);
 
   useEffect(() => {
     const examTypeLabel =
@@ -50,5 +55,15 @@ export const useExamScheduleState = () => {
     setScheduleDescription,
     selectedScheduleExamId,
     setSelectedScheduleExamId,
+    scheduleLocationPolicy,
+    setScheduleLocationPolicy,
+    scheduleLocationLabel,
+    setScheduleLocationLabel,
+    scheduleLocationLatitude,
+    setScheduleLocationLatitude,
+    scheduleLocationLongitude,
+    setScheduleLocationLongitude,
+    scheduleAllowedRadiusMeters,
+    setScheduleAllowedRadiusMeters,
   };
 };

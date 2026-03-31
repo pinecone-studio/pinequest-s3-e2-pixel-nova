@@ -24,7 +24,20 @@ type RemoteExamDetail = {
   roomCode?: string | null;
   durationMin?: number;
   expectedStudentsCount?: number | null;
+  locationPolicy?: "anywhere" | "school_only" | null;
+  locationLabel?: string | null;
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  allowedRadiusMeters?: number | null;
   createdAt?: string;
+};
+
+export type ExamLocationConfig = {
+  locationPolicy: "anywhere" | "school_only";
+  locationLabel?: string | null;
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  allowedRadiusMeters?: number;
 };
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
@@ -64,6 +77,7 @@ export type SyncExamPayload = {
   duration: number;
   scheduledAt?: string | null;
   expectedStudentsCount?: number;
+  location?: ExamLocationConfig;
   questions: Array<{
     type: "text" | "open" | "mcq";
     text: string;
@@ -84,6 +98,7 @@ export type ScheduleExistingExamPayload = {
   duration: number;
   scheduledAt: string;
   expectedStudentsCount?: number;
+  location?: ExamLocationConfig;
 };
 
 export const syncExamToBackend = async (
@@ -152,6 +167,11 @@ export const syncExamToBackend = async (
       headers: buildHeaders(user),
       body: JSON.stringify({
         scheduledAt: exam.scheduledAt,
+        locationPolicy: exam.location?.locationPolicy,
+        locationLabel: exam.location?.locationLabel,
+        locationLatitude: exam.location?.locationLatitude,
+        locationLongitude: exam.location?.locationLongitude,
+        allowedRadiusMeters: exam.location?.allowedRadiusMeters,
       }),
     });
 
@@ -180,6 +200,11 @@ export const scheduleExistingExamInBackend = async (
       headers: buildHeaders(user),
       body: JSON.stringify({
         scheduledAt: exam.scheduledAt,
+        locationPolicy: exam.location?.locationPolicy,
+        locationLabel: exam.location?.locationLabel,
+        locationLatitude: exam.location?.locationLatitude,
+        locationLongitude: exam.location?.locationLongitude,
+        allowedRadiusMeters: exam.location?.allowedRadiusMeters,
       }),
     },
   );

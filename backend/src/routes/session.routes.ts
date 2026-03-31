@@ -22,6 +22,48 @@ import {
 const getEffectiveExamStart = (exam: { startedAt?: string | null; scheduledAt?: string | null }) =>
   parseExamDate(exam.startedAt) ?? parseExamDate(exam.scheduledAt);
 
+const EARTH_RADIUS_METERS = 6371000;
+
+const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+
+const calculateDistanceMeters = (
+  fromLatitude: number,
+  fromLongitude: number,
+  toLatitude: number,
+  toLongitude: number,
+) => {
+  const latDelta = toRadians(toLatitude - fromLatitude);
+  const lonDelta = toRadians(toLongitude - fromLongitude);
+  const startLat = toRadians(fromLatitude);
+  const endLat = toRadians(toLatitude);
+
+  const a =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(startLat) * Math.cos(endLat) * Math.sin(lonDelta / 2) ** 2;
+
+  return 2 * EARTH_RADIUS_METERS * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+const getLocationGuard = (exam: {
+  locationPolicy?: string | null;
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  allowedRadiusMeters?: number | null;
+  locationLabel?: string | null;
+}) => {
+  const isRestricted = exam.locationPolicy === "school_only";
+  const hasCoordinates =
+    typeof exam.locationLatitude === "number" &&
+    typeof exam.locationLongitude === "number";
+
+  return {
+    isRestricted,
+    hasCoordinates,
+    locationLabel: exam.locationLabel?.trim() || "Сургуулийн бүс",
+    radiusMeters: Math.max(100, Number(exam.allowedRadiusMeters ?? 3000)),
+  };
+};
+
 const sessionRoutes = new Hono<AppEnv>();
 
 sessionRoutes.use("*", authMiddleware);
@@ -31,10 +73,17 @@ sessionRoutes.use("*", authMiddleware);
 // ---------------------------------------------------------------------------
 const joinSchema = z.object({
   roomCode: z.string().min(1),
+  location: z
+    .object({
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180),
+      accuracy: z.number().nonnegative().optional(),
+    })
+    .optional(),
 });
 
 sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchema), async (c) => {
-  const { roomCode } = c.req.valid("json");
+  const { roomCode, location } = c.req.valid("json");
   const user = c.get("user");
   const db = getDb(c.env.educore);
 
@@ -78,6 +127,79 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
   const isLateEntry = startTime
     ? now.getTime() - startTime.getTime() > 5 * 60 * 1000
     : false;
+  const locationGuard = getLocationGuard(exam);
+  const locationCheckedAt = now.toISOString();
+
+  const evaluateJoinLocation = () => {
+    if (!locationGuard.isRestricted) {
+      return {
+        allowed: true,
+        status: "not_required",
+        distanceMeters: null as number | null,
+      };
+    }
+
+    if (!locationGuard.hasCoordinates) {
+      return {
+        allowed: true,
+        status: "not_checked",
+        distanceMeters: null as number | null,
+      };
+    }
+
+    if (!location) {
+      return {
+        allowed: false,
+        status: "not_checked",
+        distanceMeters: null as number | null,
+      };
+    }
+
+    const distanceMeters = calculateDistanceMeters(
+      Number(location.latitude),
+      Number(location.longitude),
+      Number(exam.locationLatitude),
+      Number(exam.locationLongitude),
+    );
+    const accuracyPadding = Math.min(Math.max(Number(location.accuracy ?? 0), 0), 1000);
+    const allowedBoundary = locationGuard.radiusMeters + accuracyPadding;
+    const edgeBoundary = locationGuard.radiusMeters + accuracyPadding + 250;
+
+    if (distanceMeters <= allowedBoundary) {
+      return {
+        allowed: true,
+        status: distanceMeters <= locationGuard.radiusMeters ? "inside" : "near_edge",
+        distanceMeters,
+      };
+    }
+
+    return {
+      allowed: false,
+      status: distanceMeters <= edgeBoundary ? "near_edge" : "outside",
+      distanceMeters,
+    };
+  };
+
+  const locationDecision = evaluateJoinLocation();
+
+  if (!locationDecision.allowed) {
+    if (!location) {
+      return error(
+        c,
+        "LOCATION_REQUIRED",
+        `${locationGuard.locationLabel}-ээс шалгалт өгөх тул байршлаа зөвшөөрнө үү.`,
+        403,
+      );
+    }
+
+    const distanceKm = ((locationDecision.distanceMeters ?? 0) / 1000).toFixed(1);
+    return error(
+      c,
+      "LOCATION_OUTSIDE_ALLOWED_AREA",
+      `Та ${locationGuard.locationLabel}-ээс ${distanceKm} км зайд байна. Энэ шалгалтыг зөвшөөрөгдсөн бүсээс өгнө.`,
+      403,
+    );
+  }
 
   // Get question count
   const [questionCount] = await db
@@ -118,6 +240,17 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
       );
     }
 
+    await db
+      .update(examSessions)
+      .set({
+        joinLocationStatus: locationDecision.status,
+        joinDistanceMeters: locationDecision.distanceMeters,
+        joinLatitude: location?.latitude ?? null,
+        joinLongitude: location?.longitude ?? null,
+        joinLocationCheckedAt: locationCheckedAt,
+      })
+      .where(eq(examSessions.id, existing.id));
+
     return success(c, {
       sessionId: existing.id,
       status: exam.status,
@@ -141,6 +274,11 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     examId: exam.id,
     studentId: user.id,
     status: isLateEntry ? "late" : "joined",
+    joinLocationStatus: locationDecision.status,
+    joinDistanceMeters: locationDecision.distanceMeters,
+    joinLatitude: location?.latitude ?? null,
+    joinLongitude: location?.longitude ?? null,
+    joinLocationCheckedAt: locationCheckedAt,
   });
 
   const targets = await enrichTeacherNotificationTargets(db, exam.id, user.id);
