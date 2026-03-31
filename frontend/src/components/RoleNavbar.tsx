@@ -39,12 +39,16 @@ export default function RoleNavbar({
           onValueChange={onChangeUser}>
           <SelectTrigger
             size="sm"
-            className="min-w-40 rounded-xl bg-muted text-xs font-semibold">
+            className="min-w-40 rounded-xl border-[#dce5ef] bg-[#f8fafc] text-xs font-semibold text-slate-700 hover:bg-white">
             <SelectValue placeholder="Select user" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-2xl border border-[#dce5ef] bg-white p-2 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.24)]">
             {users.map((user) => (
-              <SelectItem key={user.id} value={user.id}>
+              <SelectItem
+                key={user.id}
+                value={user.id}
+                className="rounded-xl px-3 py-2 text-sm text-slate-700 focus:bg-[#eff6ff] focus:text-slate-900 data-[state=checked]:bg-[#eff6ff] data-[state=checked]:text-slate-900"
+              >
                 {user.fullName}
               </SelectItem>
             ))}

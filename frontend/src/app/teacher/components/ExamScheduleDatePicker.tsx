@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { figmaFieldClass } from "../styles";
 
@@ -12,17 +12,9 @@ export default function ExamScheduleDatePicker({
   setScheduleDate,
 }: ExamScheduleDatePickerProps) {
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedTime, setSelectedTime] = useState("09:00");
+  const [selectedHour, setSelectedHour] = useState("09");
+  const [selectedMinute, setSelectedMinute] = useState("00");
   const calendarRef = useRef<HTMLDivElement>(null);
-  const timeOptions = useMemo(
-    () =>
-      Array.from({ length: 48 }, (_, index) => {
-        const hours = Math.floor(index / 2);
-        const minutes = index % 2 === 0 ? "00" : "30";
-        return `${String(hours).padStart(2, "0")}:${minutes}`;
-      }),
-    [],
-  );
   const minDate = useMemo(() => {
     const next = new Date();
     next.setHours(0, 0, 0, 0);
@@ -44,28 +36,38 @@ export default function ExamScheduleDatePicker({
     const nextSelectedDate = new Date(scheduleDate);
     if (isNaN(nextSelectedDate.getTime())) return;
 
-    setSelectedTime(
-      `${String(nextSelectedDate.getHours()).padStart(2, "0")}:${String(nextSelectedDate.getMinutes()).padStart(2, "0")}`,
-    );
+    const nextHour = String(nextSelectedDate.getHours()).padStart(2, "0");
+    const nextMinute = String(nextSelectedDate.getMinutes()).padStart(2, "0");
+    setSelectedHour(nextHour);
+    setSelectedMinute(nextMinute);
   }, [scheduleDate]);
+
+  const selectedTime = `${selectedHour}:${selectedMinute}`;
 
   const handleDaySelect = (day: Date | undefined) => {
     if (!day) return;
     if (!isDateSelectable(day)) return;
-    const [hours, mins] = selectedTime.split(":").map(Number);
     const next = new Date(day);
-    next.setHours(hours, mins);
+    next.setHours(Number(selectedHour), Number(selectedMinute));
     setScheduleDate(next.toISOString());
   };
 
-  const handleTimeChange = (value: string) => {
-    setSelectedTime(value);
+  const syncDateTime = (hour: string, minute: string) => {
     if (selectedDate && !isNaN(selectedDate.getTime())) {
-      const [hours, mins] = value.split(":").map(Number);
       const next = new Date(selectedDate);
-      next.setHours(hours, mins);
+      next.setHours(Number(hour), Number(minute));
       setScheduleDate(next.toISOString());
     }
+  };
+
+  const handleExactTimeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const nextValue = event.target.value;
+    const [hour, minute] = nextValue.split(":");
+    if (!hour || !minute) return;
+
+    setSelectedHour(hour);
+    setSelectedMinute(minute);
+    syncDateTime(hour, minute);
   };
 
   const isValidDate =
@@ -75,18 +77,8 @@ export default function ExamScheduleDatePicker({
     : "";
 
   const pendingLabel = isValidDate
-    ? `${selectedDate.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })} ${new Date(
-        `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}T${selectedTime}:00`,
-      ).toLocaleString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      })}`
-    : "Өдөр, цагаа сонгоно уу";
+    ? `${selectedDate.getFullYear()} оны ${selectedDate.getMonth() + 1} сарын ${selectedDate.getDate()} • ${selectedTime}`
+    : "";
 
   return (
     <div className="relative grid gap-3">
@@ -167,42 +159,29 @@ export default function ExamScheduleDatePicker({
               />
             </div>
 
-            <div className="border-t border-[#edf0f4]">
-              <div className="h-43 overflow-y-auto px-3 py-3">
-                <div className="grid gap-2">
-                  {timeOptions.map((time) => {
-                    const active = time === selectedTime;
-                    return (
-                      <button
-                        key={time}
-                        type="button"
-                        onClick={() => handleTimeChange(time)}
-                        className={`rounded-xl px-4 py-2.5 text-left text-[14px] font-medium transition ${
-                          active
-                            ? "bg-[#2563EB] text-white shadow-[0_12px_24px_-16px_rgba(37,99,235,0.9)]"
-                            : "bg-white text-slate-600 hover:bg-[#f8fafc]"
-                        }`}
-                      >
-                        {new Date(`2026-01-01T${time}:00`).toLocaleString(
-                          "en-US",
-                          {
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true,
-                          },
-                        )}
-                      </button>
-                    );
-                  })}
+            <div className="border-t border-[#edf0f4] px-4 py-4">
+              <div className="grid gap-2">
+                <div className="flex justify-center">
+                  <input
+                    type="time"
+                    min="08:00"
+                    max="23:59"
+                    step={60}
+                    value={`${selectedHour}:${selectedMinute}`}
+                    onChange={handleExactTimeChange}
+                    className="h-12 w-full max-w-[220px] rounded-[14px] border border-[#dbe4f1] bg-white px-4 text-center text-[18px] font-semibold tracking-[0.08em] text-slate-900 outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#bfdbfe]"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 border-t border-[#edf0f4] bg-white px-4 py-4">
-            <div className="flex min-w-0 items-center justify-center rounded-xl border border-[#e5e7eb] bg-[#f8fafc] px-4 py-2.5 text-center text-[14px] font-medium text-slate-700">
-              <span className="truncate">{pendingLabel}</span>
-            </div>
+            {isValidDate ? (
+              <div className="flex min-w-0 items-center justify-center rounded-xl border border-[#e5e7eb] bg-[#f8fafc] px-4 py-2.5 text-center text-[14px] font-medium text-slate-700">
+                <span className="truncate">{pendingLabel}</span>
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -210,14 +189,14 @@ export default function ExamScheduleDatePicker({
                 className="rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-[14px] font-medium text-slate-600 transition hover:bg-[#f8fafc]"
                 onClick={() => setShowCalendar(false)}
               >
-                Cancel
+                Болих
               </button>
               <button
                 type="button"
                 className="rounded-xl bg-[#2563EB] px-4 py-2.5 text-[14px] font-semibold text-white transition hover:bg-[#1d4ed8]"
                 onClick={() => setShowCalendar(false)}
               >
-                Schedule
+                Сонгох
               </button>
             </div>
           </div>

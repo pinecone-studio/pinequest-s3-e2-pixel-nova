@@ -51,9 +51,9 @@ function TeacherScheduleModal({
       className="fixed inset-0 z-[120] overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
       onClick={onClose}
     >
-      <div className="mx-auto flex min-h-screen w-full max-w-[46rem] items-center justify-end py-4 sm:py-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-[46rem] items-center justify-center py-4 sm:py-8">
         <div
-          className="w-full transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
+          className="flex w-full justify-center transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
           onClick={(event) => event.stopPropagation()}
         >
           <ExamScheduleCard
