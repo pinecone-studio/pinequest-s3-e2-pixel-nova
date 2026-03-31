@@ -25,6 +25,28 @@ describe("StudentLeaderboardTab", () => {
             level: 3,
           },
         ]}
+        improvementLeaderboard={[
+          {
+            rank: 1,
+            id: "current-student",
+            fullName: "Anu Bold",
+            xp: 25,
+            level: 1,
+            examCount: 3,
+            improvementCount: 2,
+            missedCount: 0,
+          },
+          {
+            rank: 2,
+            id: "s2",
+            fullName: "Saraa T.",
+            xp: 10,
+            level: 1,
+            examCount: 2,
+            improvementCount: 1,
+            missedCount: 0,
+          },
+        ]}
       />,
     );
 

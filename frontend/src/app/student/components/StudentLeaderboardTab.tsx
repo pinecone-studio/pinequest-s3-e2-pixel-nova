@@ -19,7 +19,7 @@ type StudentLeaderboardTabProps = {
   currentLevel: number;
   termRankOverview: StudentTermRankOverview;
   leaderboardEntries: XpLeaderboardEntry[];
-  improvementLeaderboard: StudentImprovementLeaderboardEntry[];
+  improvementLeaderboard?: StudentImprovementLeaderboardEntry[];
 };
 
 type LeaderboardView = "xp" | "improvement";
@@ -47,7 +47,7 @@ export default function StudentLeaderboardTab({
   currentLevel,
   termRankOverview,
   leaderboardEntries,
-  improvementLeaderboard,
+  improvementLeaderboard = [],
 }: StudentLeaderboardTabProps) {
   const [activeView, setActiveView] = useState<LeaderboardView>("xp");
 
