@@ -95,7 +95,11 @@ export const useExamScheduleActions = ({
       return null;
     }
 
+<<<<<<< HEAD
     let sourceExam = selectedScheduleExam;
+=======
+    let sourceExam: Exam | null = selectedScheduleExam ?? null;
+>>>>>>> 761b946 (bug)
 
     if (sourceExam && sourceExam.questions.length === 0) {
       try {
