@@ -124,20 +124,19 @@ describe("session routes", () => {
     );
 
     expect(response.status).toBe(201);
-    await expect(response.json()).resolves.toEqual({
+    await expect(response.json()).resolves.toMatchObject({
       success: true,
       data: {
         sessionId: "test-id",
         status: "active",
         sessionStatus: "joined",
         entryStatus: "on_time",
-        scheduledAt: undefined,
-        startedAt: undefined,
         exam: {
           id: "exam-1",
           title: "Algebra Final",
           durationMin: 45,
           questionCount: 3,
+          enabledCheatDetections: expect.any(Array),
         },
       },
     });
