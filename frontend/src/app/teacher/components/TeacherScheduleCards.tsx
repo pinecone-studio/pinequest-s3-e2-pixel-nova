@@ -1,7 +1,10 @@
 import { ChevronRight } from "lucide-react";
 import RoomCodeCopyButton from "./RoomCodeCopyButton";
 import type { CopyCodeHandler } from "./RoomCodeCopyButton";
-import type { ScheduleCategory, ScheduleItem } from "./teacher-schedule-helpers";
+import type {
+  ScheduleCategory,
+  ScheduleItem,
+} from "./teacher-schedule-helpers";
 import { ROW_HEIGHT } from "./teacher-schedule-helpers";
 
 function formatTimeRange(date: Date, duration: number) {
@@ -14,9 +17,7 @@ function formatTimeRange(date: Date, duration: number) {
 
 export function LegendDot({ category }: { category: ScheduleCategory }) {
   const tone =
-    category === "required"
-      ? "border-[#2d6cff]"
-      : "border-[#ffb14a]";
+    category === "required" ? "border-[#2d6cff]" : "border-[#ffb14a]";
 
   return (
     <span className={`inline-block size-4 rounded-full border-[4px] ${tone}`} />
@@ -34,8 +35,14 @@ export function ScheduleCard({
 }) {
   const tone =
     item.category === "required"
-      ? { border: "border-t-[4px] border-t-[#2d6cff]", dot: "required" as const }
-      : { border: "border-t-[4px] border-t-[#ffb14a]", dot: "elective" as const };
+      ? {
+          border: "border-t-[4px] border-t-[#2d6cff]",
+          dot: "required" as const,
+        }
+      : {
+          border: "border-t-[4px] border-t-[#ffb14a]",
+          dot: "elective" as const,
+        };
 
   return (
     <button
@@ -85,7 +92,7 @@ export function ScheduleListCard({
       : "bg-[rgba(255,174,88,0.12)] text-[#ffae58]";
 
   return (
-    <div className="relative h-[292px] rounded-[24px] border border-[#dfdfdf] bg-white px-[25px] pb-[25px] pt-[31px] text-left transition hover:border-[#d3d7de]">
+    <div className="relative min-h-[320px] rounded-[24px] border border-[#dfdfdf] bg-white px-6 pb-5 pt-6 text-left transition hover:border-[#d3d7de]">
       <button
         type="button"
         onClick={() => onOpen(item.id)}
@@ -94,23 +101,29 @@ export function ScheduleListCard({
       />
 
       <div className="relative flex h-full flex-col">
-        <div className="space-y-[22px]">
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="text-[26px] font-semibold leading-[31px] tracking-[-0.03em] text-black">
+        <div className="space-y-5">
+          <div className="flex items-start justify-between gap-4">
+            <h3 className="min-h-[64px] max-w-[64%] text-[26px] font-semibold leading-[31px] tracking-[-0.03em] text-black break-words">
               {item.title}
             </h3>
-            <span className={`rounded-full px-3 py-1.5 text-[12px] font-semibold leading-4 ${tagTone}`}>
+            <span
+              className={`mt-1 shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold leading-4 ${tagTone}`}
+            >
               {item.category === "required" ? "Заавал судлах" : "Сонгон судлах"}
             </span>
           </div>
-          <div className="space-y-[14px]">
+          <div className="space-y-4">
             <div className="flex items-center justify-between text-[16px] leading-5">
               <span className="text-[#959595]">Өдөр:</span>
-              <span className="text-black">{formatDateValue(item.scheduledDate)}</span>
+              <span className="text-black">
+                {formatDateValue(item.scheduledDate)}
+              </span>
             </div>
             <div className="flex items-center justify-between text-[16px] leading-5">
               <span className="text-[#959595]">Эхлэх цаг:</span>
-              <span className="text-black">{formatTimeValue(item.scheduledDate)}</span>
+              <span className="text-black">
+                {formatTimeValue(item.scheduledDate)}
+              </span>
             </div>
             <div className="flex items-center justify-between text-[16px] leading-5">
               <span className="text-[#959595]">Үргэлжлэх хугацаа:</span>
@@ -131,8 +144,8 @@ export function ScheduleListCard({
           </div>
         </div>
 
-        <div className="mt-auto border-t border-[#dfe4ff] pt-[16px]">
-          <span className="ml-auto flex items-center justify-end gap-[18px] text-[16px] font-normal leading-5 text-black transition hover:text-slate-950">
+        <div className="mt-auto border-t border-[#dfe4ff] pt-4">
+          <span className="ml-auto flex items-center justify-end gap-4 text-[16px] font-normal leading-5 text-black transition hover:text-slate-950">
             Дэлгэрэнгүй
             <ChevronRight className="size-5" />
           </span>

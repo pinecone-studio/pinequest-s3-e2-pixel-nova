@@ -69,7 +69,8 @@ export default function ExamListCard({
   exams,
   onCreateExam,
   onOpenExam,
-}: Omit<ExamListCardProps, "onCopyCode"> & Pick<ExamListCardProps, "onCopyCode">) {
+}: Omit<ExamListCardProps, "onCopyCode"> &
+  Pick<ExamListCardProps, "onCopyCode">) {
   const [search, setSearch] = useState("");
 
   const folders = useMemo(() => {
@@ -146,7 +147,10 @@ export default function ExamListCard({
                 }`}
               >
                 <ChevronRightIcon className="size-[16px] shrink-0 text-[#666666]" />
-                <FolderIcon className="size-[18px] shrink-0" strokeWidth={1.8} />
+                <FolderIcon
+                  className="size-[18px] shrink-0"
+                  strokeWidth={1.8}
+                />
                 <span className="truncate">{folder.label}</span>
               </button>
             );
@@ -170,7 +174,7 @@ export default function ExamListCard({
             className="inline-flex h-[49px] w-[192px] items-center justify-center gap-[10px] whitespace-nowrap rounded-[14px] bg-[linear-gradient(180deg,#3f78ff_0%,#2f66ef_100%)] px-[18px] text-[18px] font-semibold leading-6 text-white shadow-[0_14px_24px_-22px_rgba(37,99,235,0.8)] transition hover:brightness-[1.03]"
             onClick={onCreateExam}
           >
-            <PlusIcon className="size-[22px]" strokeWidth={2.4} />
+            <PlusIcon className="w-5 h-5" />
             Шалгалт үүсгэх
           </button>
         </div>

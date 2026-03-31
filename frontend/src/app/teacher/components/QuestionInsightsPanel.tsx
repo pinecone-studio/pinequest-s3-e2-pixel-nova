@@ -31,7 +31,7 @@ export default function QuestionInsightsPanel({
     <section className={cardClass}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <span className={badgeClass}>Question Insights</span>
+          <span className={badgeClass}>Асуултын задлан</span>
           <h3 className="mt-3 text-xl font-semibold text-slate-900">
             Асуулт тус бүрийн үзүүлэлт
           </h3>
@@ -63,7 +63,7 @@ export default function QuestionInsightsPanel({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Question {index + 1}
+                      Асуулт {index + 1}
                     </div>
                     <div className="mt-2 text-sm font-semibold leading-6 text-slate-900">
                       {question.text}
@@ -86,7 +86,7 @@ export default function QuestionInsightsPanel({
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
                   <div className="rounded-2xl border border-[#dce5ef] bg-white px-3 py-3">
                     <div className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
-                      Correct
+                      Зөв хариулт
                     </div>
                     <div className="mt-1 text-lg font-semibold text-slate-900">
                       {question.correctCount}/{question.total}
@@ -94,7 +94,7 @@ export default function QuestionInsightsPanel({
                   </div>
                   <div className="rounded-2xl border border-[#dce5ef] bg-white px-3 py-3">
                     <div className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
-                      Skipped
+                      Алгассан
                     </div>
                     <div className="mt-1 text-lg font-semibold text-slate-900">
                       {question.skippedCount}
@@ -102,12 +102,12 @@ export default function QuestionInsightsPanel({
                   </div>
                   <div className="rounded-2xl border border-[#dce5ef] bg-white px-3 py-3">
                     <div className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
-                      Top Wrong Answer
+                      Түгээмэл буруу хариулт
                     </div>
                     <div className="mt-1 text-sm font-semibold text-slate-900">
                       {question.topWrongAnswer
                         ? `${question.topWrongAnswer} (${question.topWrongAnswerCount})`
-                        : "No repeated wrong answer"}
+                        : "Давтагдсан буруу хариулт байхгүй"}
                     </div>
                   </div>
                 </div>

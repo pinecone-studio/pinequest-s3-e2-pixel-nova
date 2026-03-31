@@ -3,7 +3,12 @@ import { apiFetch, unwrapApi } from "@/lib/api-client";
 import type { User } from "@/lib/examGuard";
 import type { Exam, Question, Submission } from "../types";
 import { buildAnswerReport } from "./student-exam-helpers";
-import { EMPTY_VIOLATIONS, mapResultToReport, mapSessionToExam } from "./student-exam-session-helpers";
+import {
+  EMPTY_VIOLATIONS,
+  mapResultToReport,
+  mapSessionAnswers,
+  mapSessionToExam,
+} from "./student-exam-session-helpers";
 import { useStudentExamResultState } from "./useStudentExamResultState";
 import { useStudentExamWarnings } from "./useStudentExamWarnings";
 
@@ -18,6 +23,12 @@ type UseStudentExamSessionParams = {
 
 type SessionData = {
   exam: { id: string; title: string; description?: string | null; durationMin: number };
+  answers?: {
+    questionId: string;
+    selectedOptionId?: string | null;
+    textAnswer?: string | null;
+    answeredAt?: string | null;
+  }[];
   questions: {
     id: string;
     type: string;
@@ -69,6 +80,49 @@ const getErrorCode = (error: unknown) => {
     return parsed.error?.code ?? null;
   } catch {
     return null;
+  }
+};
+
+const getDraftStorageKey = (currentSessionId: string) =>
+  `student-exam-draft:${currentSessionId}`;
+
+const readDraftAnswers = (currentSessionId: string | null) => {
+  if (!currentSessionId || typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(getDraftStorageKey(currentSessionId));
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeDraftAnswers = (
+  currentSessionId: string | null,
+  nextAnswers: Record<string, string>,
+) => {
+  if (!currentSessionId || typeof window === "undefined") return;
+  try {
+    if (Object.keys(nextAnswers).length === 0) {
+      window.localStorage.removeItem(getDraftStorageKey(currentSessionId));
+      return;
+    }
+    window.localStorage.setItem(
+      getDraftStorageKey(currentSessionId),
+      JSON.stringify(nextAnswers),
+    );
+  } catch {
+    // Ignore storage quota / private mode errors and keep exam flow working.
+  }
+};
+
+const clearDraftAnswers = (currentSessionId: string | null) => {
+  if (!currentSessionId || typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(getDraftStorageKey(currentSessionId));
+  } catch {
+    // Ignore storage errors.
   }
 };
 
@@ -142,24 +196,40 @@ export const useStudentExamSession = ({
     const pendingEntries = Object.entries(pendingAnswersRef.current);
     if (pendingEntries.length === 0) return;
 
-    pendingAnswersRef.current = {};
     clearAnswerFlushTimer();
+    const pendingSnapshot = { ...pendingAnswersRef.current };
 
-    await apiFetch(`/api/sessions/${sessionId}/answer`, {
-      method: "POST",
-      body: JSON.stringify({
-        answers: pendingEntries.map(([questionId, textAnswer]) => ({
-          questionId,
-          textAnswer,
-        })),
-      }),
-    });
+    try {
+      await apiFetch(`/api/sessions/${sessionId}/answer`, {
+        method: "POST",
+        body: JSON.stringify({
+          answers: pendingEntries.map(([questionId, textAnswer]) => ({
+            questionId,
+            textAnswer,
+          })),
+        }),
+      });
+
+      const remainingPending = { ...pendingAnswersRef.current };
+      pendingEntries.forEach(([questionId, textAnswer]) => {
+        if (remainingPending[questionId] === textAnswer) {
+          delete remainingPending[questionId];
+        }
+      });
+      pendingAnswersRef.current = remainingPending;
+    } catch (error) {
+      pendingAnswersRef.current = {
+        ...pendingSnapshot,
+        ...pendingAnswersRef.current,
+      };
+      throw error;
+    }
   }, [clearAnswerFlushTimer, sessionId]);
 
   const scheduleAnswerFlush = useCallback(() => {
     clearAnswerFlushTimer();
     answerFlushTimerRef.current = window.setTimeout(() => {
-      void flushPendingAnswers();
+      void flushPendingAnswers().catch(() => null);
     }, ANSWER_SYNC_DEBOUNCE_MS);
   }, [clearAnswerFlushTimer, flushPendingAnswers]);
 
@@ -175,6 +245,12 @@ export const useStudentExamSession = ({
         const sessionPayload = await apiFetch<SessionData | { data?: SessionData }>(`/api/sessions/${sessionId}`);
         const sessionData = unwrapApi(sessionPayload);
         const mappedExam: Exam = mapSessionToExam(sessionData, roomCodeInput);
+        const restoredServerAnswers = mapSessionAnswers(sessionData);
+        const restoredDraftAnswers = readDraftAnswers(sessionId);
+        const restoredAnswers = {
+          ...restoredServerAnswers,
+          ...restoredDraftAnswers,
+        };
         const startPayload = await apiFetch<{ startedAt?: string; status?: string } | { data?: { startedAt?: string; status?: string } }>(`/api/sessions/${sessionId}/start`, { method: "POST" });
         const startData = unwrapApi(startPayload);
         const nextExam = {
@@ -185,7 +261,9 @@ export const useStudentExamSession = ({
         setActiveExam(nextExam);
         setTimeLeft(getRemainingSeconds(nextExam));
         setCurrentQuestionIndex(0);
-        setAnswers({});
+        setAnswers(restoredAnswers);
+        pendingAnswersRef.current = {};
+        writeDraftAnswers(sessionId, restoredAnswers);
         setViolations({ ...EMPTY_VIOLATIONS });
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().catch(() => null);
@@ -237,6 +315,7 @@ export const useStudentExamSession = ({
     try {
       const resultPayload = await apiFetch<SessionResult | { data?: SessionResult }>(`/api/sessions/${sessionId}/result`);
       const result = unwrapApi(resultPayload);
+      clearDraftAnswers(sessionId);
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => null);
       }
@@ -250,6 +329,7 @@ export const useStudentExamSession = ({
     } catch (error) {
       const errorCode = getErrorCode(error);
       if (errorCode === "RESULTS_PENDING" || errorCode === "NOT_GRADED") {
+        clearDraftAnswers(sessionId);
         setResultPending(true);
         setResultReleaseAt(examEndAt);
         setAnswerReport([]);
@@ -270,7 +350,11 @@ export const useStudentExamSession = ({
     const questionId = maybeValue ? questionIdOrValue : currentQuestion?.id;
     const value = maybeValue ?? questionIdOrValue;
     if (!questionId) return;
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    setAnswers((prev) => {
+      const nextAnswers = { ...prev, [questionId]: value };
+      writeDraftAnswers(sessionId, nextAnswers);
+      return nextAnswers;
+    });
     if (!sessionId) return;
     pendingAnswersRef.current = {
       ...pendingAnswersRef.current,
@@ -282,6 +366,7 @@ export const useStudentExamSession = ({
   const resetExamSession = useCallback(() => {
     clearAnswerFlushTimer();
     pendingAnswersRef.current = {};
+    clearDraftAnswers(sessionId);
     setView("dashboard");
     setActiveExam(null);
     setAnswers({});
@@ -296,7 +381,7 @@ export const useStudentExamSession = ({
       document.exitFullscreen?.().catch(() => null);
     }
     document.body.style.filter = "none";
-  }, [clearAnswerFlushTimer, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt, setViolations]);
+  }, [clearAnswerFlushTimer, sessionId, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt, setViolations]);
 
   useEffect(() => {
     return () => {
