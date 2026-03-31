@@ -49,6 +49,7 @@ export const useStudentJoinExam = () => {
                 title: string;
                 durationMin: number;
                 questionCount: number;
+                enabledCheatDetections?: string[];
               };
             };
           }
@@ -64,6 +65,7 @@ export const useStudentJoinExam = () => {
               title: string;
               durationMin: number;
               questionCount: number;
+              enabledCheatDetections?: string[];
             };
           }
       >("/api/sessions/join", {
@@ -82,6 +84,7 @@ export const useStudentJoinExam = () => {
         scheduledAt: data.scheduledAt ?? new Date().toISOString(),
         examStartedAt: data.startedAt ?? null,
         roomCode: code,
+        enabledCheatDetections: data.exam.enabledCheatDetections ?? undefined,
         questions: [],
         duration: data.exam.durationMin,
         createdAt: new Date().toISOString(),

@@ -17,11 +17,40 @@ import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
 import { generateRoomCode } from "../utils/room-code";
 import { normalizeExamDate, parseExamDate } from "../utils/exam-time";
+import {
+  canUpdateExamCheatDetections,
+  DEFAULT_ENABLED_CHEAT_DETECTIONS,
+  isConfigurableCheatDetection,
+  parseEnabledCheatDetections,
+  serializeEnabledCheatDetections,
+} from "../utils/exam-cheat-detections";
 
 const examRoutes = new Hono<AppEnv>();
 
 examRoutes.use("*", authMiddleware);
 examRoutes.use("*", requireRole("teacher"));
+
+const enabledCheatDetectionsSchema = z
+  .array(
+    z
+      .string()
+      .refine(isConfigurableCheatDetection, "Unsupported cheat detection type"),
+  )
+  .min(1)
+  .optional();
+
+const mapExamForResponse = <
+  T extends {
+    enabledCheatDetections?: string | null;
+  },
+>(
+  exam: T,
+) => ({
+  ...exam,
+  enabledCheatDetections: parseEnabledCheatDetections(
+    exam.enabledCheatDetections,
+  ),
+});
 
 // ──────────────────────────────────────────────
 // POST / — Create exam
@@ -41,6 +70,7 @@ examRoutes.post(
       expectedStudentsCount: z.number().int().min(0).optional(),
       passScore: z.number().int().min(0).max(100).optional(),
       shuffleQuestions: z.boolean().optional(),
+      enabledCheatDetections: enabledCheatDetectionsSchema,
     }),
   ),
   async (c) => {
@@ -132,6 +162,9 @@ examRoutes.post(
           roomCode,
           passScore: body.passScore ?? 50,
           shuffleQuestions: body.shuffleQuestions ?? false,
+          enabledCheatDetections: serializeEnabledCheatDetections(
+            body.enabledCheatDetections ?? DEFAULT_ENABLED_CHEAT_DETECTIONS,
+          ),
           createdAt: now,
           updatedAt: now,
         });
@@ -159,7 +192,7 @@ examRoutes.post(
         .where(eq(exams.id, id))
         .limit(1);
 
-      return success(c, created, 201);
+      return success(c, mapExamForResponse(created), 201);
     } catch (err) {
       const message =
         err instanceof Error && err.message
@@ -183,7 +216,7 @@ examRoutes.get("/", async (c) => {
       .from(exams)
       .where(eq(exams.teacherId, teacherId));
 
-    return success(c, teacherExams);
+    return success(c, teacherExams.map(mapExamForResponse));
   } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to fetch exams", 500);
   }
@@ -292,7 +325,10 @@ examRoutes.get("/:examId", async (c) => {
       }),
     );
 
-    return success(c, { ...exam, questions: questionsWithOptions });
+    return success(c, {
+      ...mapExamForResponse(exam),
+      questions: questionsWithOptions,
+    });
   } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to fetch exam", 500);
   }
@@ -316,6 +352,7 @@ examRoutes.put(
       passScore: z.number().int().min(0).max(100).optional(),
       shuffleQuestions: z.boolean().optional(),
       subjectId: z.string().optional(),
+      enabledCheatDetections: enabledCheatDetectionsSchema,
     }),
   ),
   async (c) => {
@@ -333,6 +370,18 @@ examRoutes.put(
 
       if (!exam) {
         return notFound(c, "Exam");
+      }
+
+      if (
+        body.enabledCheatDetections !== undefined &&
+        !canUpdateExamCheatDetections(exam.status)
+      ) {
+        return error(
+          c,
+          "BAD_REQUEST",
+          "Cheat detection settings can only be changed for draft or scheduled exams.",
+          400,
+        );
       }
 
       await db
@@ -357,6 +406,11 @@ examRoutes.put(
             shuffleQuestions: body.shuffleQuestions,
           }),
           ...(body.subjectId !== undefined && { subjectId: body.subjectId }),
+          ...(body.enabledCheatDetections !== undefined && {
+            enabledCheatDetections: serializeEnabledCheatDetections(
+              body.enabledCheatDetections,
+            ),
+          }),
         })
         .where(eq(exams.id, examId));
 
@@ -366,7 +420,7 @@ examRoutes.put(
         .where(eq(exams.id, examId))
         .limit(1);
 
-      return success(c, updated);
+      return success(c, mapExamForResponse(updated));
     } catch (err) {
       console.error(
         "[PUT exam] Error:",
@@ -862,7 +916,7 @@ examRoutes.post(
         .where(eq(exams.id, examId))
         .limit(1);
 
-      return success(c, updated);
+      return success(c, mapExamForResponse(updated));
     } catch (err) {
       return error(c, "INTERNAL_ERROR", "Failed to schedule exam", 500);
     }
@@ -926,7 +980,7 @@ examRoutes.post("/:examId/start", async (c) => {
       .where(eq(exams.id, examId))
       .limit(1);
 
-    return success(c, updated);
+    return success(c, mapExamForResponse(updated));
   } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to start exam", 500);
   }
@@ -972,7 +1026,7 @@ examRoutes.post("/:examId/finish", async (c) => {
       .where(eq(exams.id, examId))
       .limit(1);
 
-    return success(c, updated);
+    return success(c, mapExamForResponse(updated));
   } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to finish exam", 500);
   }
@@ -1022,7 +1076,7 @@ examRoutes.post("/:examId/archive", async (c) => {
       .where(eq(exams.id, examId))
       .limit(1);
 
-    return success(c, updated);
+    return success(c, mapExamForResponse(updated));
   } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to archive exam", 500);
   }

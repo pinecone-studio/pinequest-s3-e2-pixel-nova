@@ -10,6 +10,7 @@ import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
 import { notifyTeacherStudentFlagged } from "../services/notifications";
 import { createR2PresignedUrl } from "../utils/r2-presign";
+import { parseEnabledCheatDetections } from "../utils/exam-cheat-detections";
 
 const cheatRoutes = new Hono<AppEnv>();
 
@@ -858,6 +859,32 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     );
   }
 
+  const [examConfig] = await db
+    .select({
+      enabledCheatDetections: exams.enabledCheatDetections,
+      teacherId: exams.teacherId,
+    })
+    .from(exams)
+    .where(eq(exams.id, session.examId))
+    .limit(1);
+
+  const enabledCheatDetections = parseEnabledCheatDetections(
+    examConfig?.enabledCheatDetections,
+  );
+
+  if (
+    eventType !== "disqualification" &&
+    !enabledCheatDetections.some((value) => value === eventType)
+  ) {
+    return success(c, {
+      deduped: false,
+      ignored: true,
+      flagged: Boolean(session.isFlagged),
+      riskLevel: (session.riskLevel ?? "low") as RiskLevel,
+      violationScore: Number(session.violationScore ?? 0),
+    });
+  }
+
   const { confidence, details, source } = parseStructuredMetadata(payload);
   const dedupeKey = buildEventDedupeKey({ eventType, source, details });
   const [previousEvent] = await db
@@ -925,16 +952,10 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     .where(eq(students.id, user.id))
     .limit(1);
 
-  const [exam] = await db
-    .select({ teacherId: exams.teacherId })
-    .from(exams)
-    .where(eq(exams.id, session.examId))
-    .limit(1);
-
-  if (exam?.teacherId) {
+  if (examConfig?.teacherId) {
     await notifyTeacherStudentFlagged(
       db,
-      exam.teacherId,
+      examConfig.teacherId,
       session.examId,
       sessionId,
       user.id,

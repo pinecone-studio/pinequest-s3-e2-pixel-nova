@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { reportCheatEvent } from "@/api/cheat";
 import type { User } from "@/lib/examGuard";
+import { isCheatDetectionEnabled } from "@/lib/exam-cheat-detections";
 import {
   useProctoringCamera,
   type ProctoringEvent,
@@ -13,6 +14,7 @@ type DesktopExamCameraCardProps = {
   showWarning: (message: string) => void;
   user: User | null;
   view: "dashboard" | "exam" | "result";
+  enabledCheatDetections?: string[] | null;
 };
 
 const EVENT_LABELS: Record<ProctoringEvent["type"], string> = {
@@ -54,9 +56,15 @@ export default function DesktopExamCameraCard({
   showWarning,
   user,
   view,
+  enabledCheatDetections,
 }: DesktopExamCameraCardProps) {
   const handleEvent = useCallback(
     (event: ProctoringEvent) => {
+      const backendEventType = mapEventTypeToBackend(event.type);
+      if (!isCheatDetectionEnabled(backendEventType, enabledCheatDetections)) {
+        return;
+      }
+
       showWarning(`${EVENT_LABELS[event.type]} (${formatDuration(event.duration)})`);
 
       if (!sessionId || !user) {
@@ -66,7 +74,7 @@ export default function DesktopExamCameraCard({
       void reportCheatEvent(
         {
           sessionId,
-          eventType: mapEventTypeToBackend(event.type),
+          eventType: backendEventType,
           source: "browser_camera",
           confidence: event.confidence,
           details: {
@@ -87,7 +95,7 @@ export default function DesktopExamCameraCard({
         console.error("camera-event-log-failed", error);
       });
     },
-    [sessionId, showWarning, user],
+    [enabledCheatDetections, sessionId, showWarning, user],
   );
 
   const { canvasRef, error, events, latestObservation, start, status, stop, videoRef } =

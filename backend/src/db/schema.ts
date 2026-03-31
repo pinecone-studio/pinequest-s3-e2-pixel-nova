@@ -1,5 +1,6 @@
 import { sqliteTable, text, integer, real, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import { serializeEnabledCheatDetections } from "../utils/exam-cheat-detections";
 
 // ============================================
 // SHARED — Code-based auth (no external provider)
@@ -73,6 +74,9 @@ export const exams = sqliteTable("exams", {
   roomCode: text("room_code").unique(),
   passScore: integer("pass_score").default(50),
   shuffleQuestions: integer("shuffle_questions", { mode: "boolean" }).notNull().default(false),
+  enabledCheatDetections: text("enabled_cheat_detections")
+    .notNull()
+    .default(serializeEnabledCheatDetections()),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
   updatedAt: text("updated_at").notNull().default(sql`(current_timestamp)`),
 });

@@ -18,6 +18,7 @@ import {
   notifyTeacherStudentJoined,
   notifyTeacherStudentSubmitted,
 } from "../services/notifications";
+import { parseEnabledCheatDetections } from "../utils/exam-cheat-detections";
 
 const getEffectiveExamStart = (exam: { startedAt?: string | null; scheduledAt?: string | null }) =>
   parseExamDate(exam.startedAt) ?? parseExamDate(exam.scheduledAt);
@@ -134,6 +135,9 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
         title: exam.title,
         durationMin: exam.durationMin,
         questionCount: totalQuestions,
+        enabledCheatDetections: parseEnabledCheatDetections(
+          exam.enabledCheatDetections,
+        ),
       },
     });
   }
@@ -190,6 +194,9 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
       title: exam.title,
       durationMin: exam.durationMin,
       questionCount: totalQuestions,
+      enabledCheatDetections: parseEnabledCheatDetections(
+        exam.enabledCheatDetections,
+      ),
     },
   }, 201);
 });
@@ -299,6 +306,9 @@ sessionRoutes.get("/:sessionId", requireRole("student"), async (c) => {
       scheduledAt: exam.scheduledAt,
       startedAt: exam.startedAt,
       finishedAt: exam.finishedAt,
+      enabledCheatDetections: parseEnabledCheatDetections(
+        exam.enabledCheatDetections,
+      ),
     },
     answers: savedAnswers,
     questions: questionsWithOptions,

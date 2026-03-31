@@ -15,7 +15,13 @@ describe("session routes", () => {
   it("joins an active exam and returns session metadata", async () => {
     queueDbResults(
       [{ id: "student-1", fullName: "Nora Student" }],
-      [{ id: "exam-1", title: "Algebra Final", durationMin: 45, status: "active" }],
+      [{
+        id: "exam-1",
+        title: "Algebra Final",
+        durationMin: 45,
+        status: "active",
+        enabledCheatDetections: '["tab_switch","camera_blocked"]',
+      }],
       [],
       [{ count: 3 }],
       undefined,
@@ -38,6 +44,7 @@ describe("session routes", () => {
           title: "Algebra Final",
           durationMin: 45,
           questionCount: 0,
+          enabledCheatDetections: ["tab_switch", "camera_blocked"],
         },
       },
     });
@@ -47,7 +54,13 @@ describe("session routes", () => {
     queueDbResults(
       [{ id: "student-1", fullName: "Nora Student" }],
       [{ id: "session-1", examId: "exam-1", status: "joined", startedAt: null, submittedAt: null }],
-      [{ id: "exam-1", title: "Algebra Final", description: "Practice", durationMin: 45 }],
+      [{
+        id: "exam-1",
+        title: "Algebra Final",
+        description: "Practice",
+        durationMin: 45,
+        enabledCheatDetections: '["tab_switch","camera_blocked"]',
+      }],
       [
         {
           id: "question-1",
@@ -104,6 +117,7 @@ describe("session routes", () => {
           title: "Algebra Final",
           description: "Practice",
           durationMin: 45,
+          enabledCheatDetections: ["tab_switch", "camera_blocked"],
         },
         answers: [
           {

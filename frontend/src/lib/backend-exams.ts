@@ -24,6 +24,7 @@ type RemoteExamDetail = {
   roomCode?: string | null;
   durationMin?: number;
   expectedStudentsCount?: number | null;
+  enabledCheatDetections?: string[];
   createdAt?: string;
 };
 

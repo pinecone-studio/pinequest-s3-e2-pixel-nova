@@ -34,6 +34,7 @@ export const buildLocalExam = (params: {
     finishedAt?: string | null;
     durationMin?: number;
     expectedStudentsCount?: number | null;
+    enabledCheatDetections?: string[];
     createdAt?: string;
   } | null;
 }): Exam => {
@@ -52,6 +53,7 @@ export const buildLocalExam = (params: {
     roomCode: remote?.roomCode ?? generateRoomCode(),
     expectedStudentsCount:
       remote?.expectedStudentsCount ?? payload.expectedStudentsCount,
+    enabledCheatDetections: remote?.enabledCheatDetections,
     questions: payload.questions,
     duration: remote?.durationMin ?? durationMinutes,
     createdAt: remote?.createdAt ?? new Date().toISOString(),
