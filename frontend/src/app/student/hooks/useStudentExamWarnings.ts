@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { apiFetch } from "@/lib/api-client";
+import { apiRequest } from "@/api/client";
 import { isCheatDetectionEnabled } from "@/lib/exam-cheat-detections";
 import type { Violations } from "../types";
 import { EMPTY_VIOLATIONS, EVENT_TYPE_MAP } from "./student-exam-session-helpers";
@@ -63,8 +63,7 @@ export function useStudentExamWarnings(
     }));
     if (!sessionId) return;
 
-    void apiFetch<{
-      data?: { deduped?: boolean; riskLevel?: Violations["riskLevel"] };
+    void apiRequest<{
       deduped?: boolean;
       riskLevel?: Violations["riskLevel"];
     }>("/api/cheat/event", {
@@ -87,11 +86,10 @@ export function useStudentExamWarnings(
       }),
     })
       .then((response) => {
-        const payload = response?.data ?? response;
-        if (payload?.riskLevel) {
+        if (response?.riskLevel) {
           setViolations((prev) => ({
             ...prev,
-            riskLevel: payload.riskLevel ?? prev.riskLevel,
+            riskLevel: response.riskLevel ?? prev.riskLevel,
           }));
         }
       })

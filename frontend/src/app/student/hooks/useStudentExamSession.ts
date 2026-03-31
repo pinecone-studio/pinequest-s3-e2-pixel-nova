@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiFetch, unwrapApi } from "@/lib/api-client";
+import { apiRequest } from "@/api/client";
 import type { User } from "@/lib/examGuard";
 import type { Exam, Question, Submission } from "../types";
 import { buildAnswerReport } from "./student-exam-helpers";
@@ -226,7 +226,7 @@ export const useStudentExamSession = ({
     const pendingSnapshot = { ...pendingAnswersRef.current };
 
     try {
-      await apiFetch(`/api/sessions/${sessionId}/answer`, {
+      await apiRequest(`/api/sessions/${sessionId}/answer`, {
         method: "POST",
         body: JSON.stringify({
           answers: pendingEntries.map(([questionId, textAnswer]) => ({
@@ -268,8 +268,7 @@ export const useStudentExamSession = ({
     const run = async () => {
       let requiresAudioRecording = false;
       try {
-        const sessionPayload = await apiFetch<SessionData | { data?: SessionData }>(`/api/sessions/${sessionId}`);
-        const sessionData = unwrapApi(sessionPayload);
+        const sessionData = await apiRequest<SessionData>(`/api/sessions/${sessionId}`);
         const mappedExam: Exam = mapSessionToExam(sessionData, roomCodeInput);
         requiresAudioRecording = Boolean(mappedExam.requiresAudioRecording);
         await requestDesktopCameraPermission();
@@ -282,13 +281,12 @@ export const useStudentExamSession = ({
           ...restoredServerAnswers,
           ...restoredDraftAnswers,
         };
-        const startPayload = await apiFetch<{ startedAt?: string; status?: string } | { data?: { startedAt?: string; status?: string } }>(`/api/sessions/${sessionId}/start`, {
+        const startData = await apiRequest<{ startedAt?: string; status?: string }>(`/api/sessions/${sessionId}/start`, {
           method: "POST",
           body: JSON.stringify({
             audioReady: requiresAudioRecording ? true : undefined,
           }),
         });
-        const startData = unwrapApi(startPayload);
         const nextExam = {
           ...mappedExam,
           status: (startData as { status?: string }).status ?? mappedExam.status,
@@ -309,7 +307,7 @@ export const useStudentExamSession = ({
       } catch (error) {
         const message = parseErrorMessage(error, "Шалгалт эхлүүлэхэд алдаа гарлаа.");
         if (requiresAudioRecording) {
-          void apiFetch(`/api/cheat/event`, {
+          void apiRequest(`/api/cheat/event`, {
             method: "POST",
             body: JSON.stringify({
               sessionId,
@@ -336,7 +334,7 @@ export const useStudentExamSession = ({
 
     const report = buildAnswerReport(activeExam, answers);
     await flushPendingAnswers();
-    await apiFetch(`/api/sessions/${sessionId}/submit`, { method: "POST" });
+    await apiRequest(`/api/sessions/${sessionId}/submit`, { method: "POST" });
 
     const examEndAt = (() => {
       const durationMs = (activeExam.duration ?? 45) * 60 * 1000;
@@ -363,8 +361,7 @@ export const useStudentExamSession = ({
     };
 
     try {
-      const resultPayload = await apiFetch<SessionResult | { data?: SessionResult }>(`/api/sessions/${sessionId}/result`);
-      const result = unwrapApi(resultPayload);
+      const result = await apiRequest<SessionResult>(`/api/sessions/${sessionId}/result`);
       clearDraftAnswers(sessionId);
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => null);

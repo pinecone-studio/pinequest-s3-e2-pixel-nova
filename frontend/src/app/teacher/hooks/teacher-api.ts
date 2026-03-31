@@ -1,4 +1,4 @@
-import { API_BASE_URL, apiFetch, getApiUserContext, unwrapApi } from "@/lib/api-client";
+import { API_BASE_URL, apiRequest, getApiUserContext } from "@/api/client";
 import type {
   Exam,
   ExamAttendanceStats,
@@ -94,10 +94,10 @@ export type TeacherExamLiveUpdate = {
 export const fetchTeacherExams = async (
   teacherId?: string,
 ): Promise<Exam[]> => {
-  const listData = await apiFetch<
-    { data?: TeacherExamSummary[] } | TeacherExamSummary[]
-  >("/api/teacher/exams/summary", {}, "teacher", teacherId);
-  const summaries = unwrapApi(listData);
+  const summaries = await apiRequest<TeacherExamSummary[]>("/api/teacher/exams/summary", {
+    roleOverride: "teacher",
+    userIdOverride: teacherId,
+  });
   return summaries.map((exam) => ({
     id: exam.id,
     title: exam.title,
@@ -130,10 +130,10 @@ export const fetchTeacherExamDetail = async (
   examId: string,
   teacherId?: string,
 ): Promise<Exam> => {
-  const detailData = await apiFetch<
-    { data?: TeacherExamDetail } | TeacherExamDetail
-  >(`/api/exams/${examId}`, {}, "teacher", teacherId);
-  const exam = unwrapApi(detailData);
+  const exam = await apiRequest<TeacherExamDetail>(`/api/exams/${examId}`, {
+    roleOverride: "teacher",
+    userIdOverride: teacherId,
+  });
   const mappedQuestions: Question[] = (exam.questions ?? []).map((question) => {
     const sortedOptions = (question.options ?? []).sort((a, b) =>
       a.label.localeCompare(b.label),
@@ -183,13 +183,11 @@ export const fetchTeacherSubmissions = async (
   examId: string,
   teacherId?: string,
 ): Promise<Submission[]> => {
-  const data = await apiFetch<{ data?: Submission[] } | Submission[]>(
-    `/api/teacher/exams/${examId}/submissions`,
-    {},
-    "teacher",
-    teacherId,
-  );
-  return unwrapApi(data).map((item) => {
+  const data = await apiRequest<Submission[]>(`/api/teacher/exams/${examId}/submissions`, {
+    roleOverride: "teacher",
+    userIdOverride: teacherId,
+  });
+  return data.map((item) => {
     const totalPoints = Number(item.totalPoints ?? 0);
     const rawScore = Number(item.score ?? 0);
     const normalizedPercentage =
@@ -214,14 +212,10 @@ export const fetchTeacherExamRoster = async (
   examId: string,
   teacherId?: string,
 ): Promise<ExamRosterDetail> => {
-  const data = await apiFetch<{ data?: ExamRosterDetail } | ExamRosterDetail>(
-    `/api/teacher/exams/${examId}/roster`,
-    {},
-    "teacher",
-    teacherId,
-  );
-
-  return unwrapApi(data);
+  return apiRequest<ExamRosterDetail>(`/api/teacher/exams/${examId}/roster`, {
+    roleOverride: "teacher",
+    userIdOverride: teacherId,
+  });
 };
 
 export const openTeacherExamLiveStream = (
@@ -309,12 +303,9 @@ type LeaderboardItem = {
 };
 
 export const fetchXpLeaderboard = async (): Promise<XpLeaderboardEntry[]> => {
-  const data = await apiFetch<{ data?: LeaderboardItem[] } | LeaderboardItem[]>(
-    "/api/xp/leaderboard",
-    {},
-    "teacher",
-  );
-  const list = unwrapApi<LeaderboardItem[]>(data);
+  const list = await apiRequest<LeaderboardItem[]>("/api/xp/leaderboard", {
+    roleOverride: "teacher",
+  });
   return list.map((student) => {
     const rawLevel = student.level;
     const levelValue = typeof rawLevel === "number" ? rawLevel : rawLevel.level;
@@ -347,29 +338,26 @@ export const fetchExamQuestionInsights = async (
   examId: string,
   teacherId?: string,
 ): Promise<ExamQuestionInsightsPayload> => {
-  const data = await apiFetch<
-    { data?: ExamQuestionInsightsPayload } | ExamQuestionInsightsPayload
-  >(`/api/analytics/exam/${examId}/questions`, {}, "teacher", teacherId);
-  return unwrapApi(data);
+  return apiRequest<ExamQuestionInsightsPayload>(`/api/analytics/exam/${examId}/questions`, {
+    roleOverride: "teacher",
+    userIdOverride: teacherId,
+  });
 };
 
 export const generateAiExamDraft = async (
   input: AiExamGeneratorInput,
   teacherId?: string,
 ): Promise<AiGeneratedDraft> => {
-  const data = await apiFetch<
-    { data?: { draft: AiGeneratedDraft } } | { draft: AiGeneratedDraft }
-  >(
+  const payload = await apiRequest<{ draft: AiGeneratedDraft }>(
     "/api/agent/exam-generator/generate",
     {
       method: "POST",
       body: JSON.stringify(input),
+      roleOverride: "teacher",
+      userIdOverride: teacherId,
     },
-    "teacher",
-    teacherId,
   );
-  const payload = unwrapApi(data);
-  return "draft" in payload ? payload.draft : payload;
+  return payload.draft;
 };
 
 export const saveAcceptedAiDraft = async (
@@ -377,9 +365,7 @@ export const saveAcceptedAiDraft = async (
   draft: AiGeneratedDraft,
   teacherId?: string,
 ): Promise<AiAcceptedDraftResponse> => {
-  const data = await apiFetch<
-    { data?: AiAcceptedDraftResponse } | AiAcceptedDraftResponse
-  >(
+  return apiRequest<AiAcceptedDraftResponse>(
     "/api/agent/exam-generator/save",
     {
       method: "POST",
@@ -387,9 +373,8 @@ export const saveAcceptedAiDraft = async (
         generatorInput,
         draft,
       }),
+      roleOverride: "teacher",
+      userIdOverride: teacherId,
     },
-    "teacher",
-    teacherId,
   );
-  return unwrapApi(data);
 };

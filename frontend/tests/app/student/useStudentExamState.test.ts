@@ -7,6 +7,11 @@ jest.mock("@/lib/api-client", () => ({
 	unwrapApi: (...args: unknown[]) => mockUnwrapApi(...args),
 }));
 
+jest.mock("@/api/client", () => ({
+	apiRequest: (...args: unknown[]) => mockApiFetch(...args),
+	unwrapApi: (...args: unknown[]) => mockUnwrapApi(...args),
+}));
+
 jest.mock("@/app/student/hooks/student-exam-helpers", () => ({
 	buildAnswerReport: (...args: unknown[]) => mockBuildAnswerReport(...args),
 }));
