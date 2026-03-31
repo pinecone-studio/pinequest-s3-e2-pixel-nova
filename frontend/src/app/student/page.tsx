@@ -137,7 +137,7 @@ export default function StudentPage() {
         examId: item.examId,
         title:
           data.exams.find((examItem) => examItem.id === item.examId)?.title ??
-          `Exam #${item.examId.slice(-4)}`,
+          `Шалгалт #${item.examId.slice(-4)}`,
         percentage: item.percentage,
         score: item.score,
         totalPoints: item.totalPoints,

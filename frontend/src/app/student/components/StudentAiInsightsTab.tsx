@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BrainCircuit, Lightbulb, Sparkles, TrendingUp } from "lucide-react";
+import {
+  BrainCircuit,
+  Lightbulb,
+  Sparkles,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 import {
   buildStudentAiInsight,
   buildStudentAiInsightSignature,
+  formatInsightRefreshCountdown,
   getMsUntilNextInsightRefresh,
   getStudentAiInsightBucket,
   type StudentAiInsightSnapshot,
@@ -47,6 +54,9 @@ export default function StudentAiInsightsTab({
 }: StudentAiInsightsTabProps) {
   const [bucket, setBucket] = useState(() => getStudentAiInsightBucket());
   const [snapshot, setSnapshot] = useState<StudentAiInsightSnapshot | null>(null);
+  const [refreshCountdown, setRefreshCountdown] = useState(() =>
+    formatInsightRefreshCountdown(getMsUntilNextInsightRefresh()),
+  );
 
   const signature = useMemo(
     () =>
@@ -67,6 +77,19 @@ export default function StudentAiInsightsTab({
     }, getMsUntilNextInsightRefresh());
 
     return () => window.clearTimeout(timeoutId);
+  }, [bucket]);
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      setRefreshCountdown(
+        formatInsightRefreshCountdown(getMsUntilNextInsightRefresh()),
+      );
+    };
+
+    updateCountdown();
+    const intervalId = window.setInterval(updateCountdown, 60 * 1000);
+
+    return () => window.clearInterval(intervalId);
   }, [bucket]);
 
   useEffect(() => {
@@ -121,6 +144,11 @@ export default function StudentAiInsightsTab({
         minute: "2-digit",
       });
 
+  const rankLabel =
+    currentRank && totalStudents > 0
+      ? `#${currentRank} / ${totalStudents}`
+      : "Тооцогдож байна";
+
   return (
     <section className="space-y-6">
       <div className="relative overflow-hidden rounded-[32px] border border-[#dfe4ff] bg-[linear-gradient(135deg,#ffffff_0%,#f7f9ff_54%,#eef4ff_100%)] px-5 py-6 shadow-[0_24px_60px_rgba(77,92,148,0.10)] sm:px-6 lg:px-8">
@@ -149,6 +177,9 @@ export default function StudentAiInsightsTab({
             <div className="mt-2 text-lg font-semibold text-slate-900">{generatedLabel}</div>
             <div className="mt-2 text-sm text-slate-500">
               Энэ дүгнэлт 5 цаг тутам шинэчлэгдэж, ижил өгөгдөлтэй үед ч өөр өнцгөөс зөвлөмж өгнө.
+            </div>
+            <div className="mt-3 rounded-2xl border border-[#e8ecfb] bg-[#fbfcff] px-3 py-2 text-sm font-medium text-slate-600">
+              Дараагийн шинэчлэлт: <span className="text-slate-900">{refreshCountdown}</span>
             </div>
           </div>
         </div>
@@ -184,6 +215,25 @@ export default function StudentAiInsightsTab({
                 <div className="text-xs text-slate-400">Шалгалтын тоо</div>
                 <div className="mt-2 text-2xl font-semibold text-slate-900">
                   {snapshot.stats.examCount}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[22px] border border-[#e8ecfb] bg-white px-4 py-4">
+                <div className="text-xs text-slate-400">XP эрэмбэ</div>
+                <div className="mt-2 text-xl font-semibold text-slate-900">{rankLabel}</div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Одоогийн түвшин: {levelInfo.name}
+                </div>
+              </div>
+              <div className="rounded-[22px] border border-[#e8ecfb] bg-white px-4 py-4">
+                <div className="text-xs text-slate-400">Явцын төлөв</div>
+                <div className="mt-2 text-sm font-semibold text-slate-900">
+                  {snapshot.stats.trendLabel}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {snapshot.stats.consistencyLabel}
                 </div>
               </div>
             </div>
@@ -229,6 +279,9 @@ export default function StudentAiInsightsTab({
       <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
         <div className={cardClass}>
           <div className="text-sm font-semibold text-slate-900">Сэдвийн ажиглалт</div>
+          <div className="mt-1 text-sm text-slate-500">
+            Аль сэдэв дээр тогтвортой, аль хэсэг дээр илүү ажиллах хэрэгтэйг харуулна.
+          </div>
           <div className="mt-4 space-y-3">
             {snapshot.subjectSignals.length === 0 ? (
               <div className="rounded-[18px] border border-dashed border-[#dfe5fb] bg-[#fbfcff] px-4 py-5 text-sm text-slate-400">
@@ -238,22 +291,44 @@ export default function StudentAiInsightsTab({
               snapshot.subjectSignals.map((subject) => (
                 <div
                   key={subject.subject}
-                  className="flex items-center justify-between gap-3 rounded-[18px] border border-[#edf1ff] bg-[#fbfcff] px-4 py-4"
+                  className="rounded-[18px] border border-[#edf1ff] bg-[#fbfcff] px-4 py-4"
                 >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-slate-900">
-                      {subject.subject}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-slate-900">
+                        {subject.subject}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {subject.status === "strong"
+                          ? "Давуу гүйцэтгэл"
+                          : subject.status === "focus"
+                            ? "Анхаарах шаардлагатай"
+                            : "Тогтвортой түвшин"}
+                      </div>
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      {subject.status === "strong"
-                        ? "Давуу гүйцэтгэл"
-                        : subject.status === "focus"
-                          ? "Анхаарах шаардлагатай"
-                          : "Тогтвортой түвшин"}
+                    <div
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                        subject.status === "strong"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : subject.status === "focus"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-white text-slate-700"
+                      }`}
+                    >
+                      {subject.average}%
                     </div>
                   </div>
-                  <div className="shrink-0 rounded-full bg-white px-3 py-1 text-sm font-semibold text-slate-700">
-                    {subject.average}%
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e8eefc]">
+                    <div
+                      className={`h-full rounded-full ${
+                        subject.status === "strong"
+                          ? "bg-emerald-500"
+                          : subject.status === "focus"
+                            ? "bg-amber-500"
+                            : "bg-[#7b8cff]"
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(0, subject.average))}%` }}
+                    />
                   </div>
                 </div>
               ))
@@ -262,7 +337,10 @@ export default function StudentAiInsightsTab({
         </div>
 
         <div className={cardClass}>
-          <div className="text-sm font-semibold text-slate-900">Дараагийн алхам</div>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <Target className="h-4 w-4 text-[#5167f6]" />
+            Дараагийн алхам
+          </div>
           <div className="mt-2 text-sm text-slate-500">
             Энэ 3 алхмыг дарааллаар нь хийвэл дараагийн шалгалтад илүү тогтвортой өсөлт гарна.
           </div>

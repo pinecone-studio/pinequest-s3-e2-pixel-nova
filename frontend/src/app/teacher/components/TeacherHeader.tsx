@@ -39,14 +39,14 @@ export default function TeacherHeader({
         <div className="overflow-hidden rounded-xl">
           <Image
             src="/group-web.svg"
-            alt="PineQuest"
+            alt="Pinecone"
             width={32}
             height={32}
             className="h-8 w-8"
             priority
           />
         </div>
-        <span className="text-[15px] font-bold text-slate-900">Educore</span>
+        <span className="text-[15px] font-bold text-slate-900">Pinecone</span>
       </div>
 
       <nav className="flex items-center gap-2 overflow-x-auto rounded-[20px] border border-[#e7edf5] bg-[#fbfcff] px-1.5 py-1.5 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)]">

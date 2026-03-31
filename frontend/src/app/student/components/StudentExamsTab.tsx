@@ -66,7 +66,10 @@ export default function StudentExamsTab({
           : selectedExam.examStartedAt
             ? "Идэвхтэй"
             : "Бэлэн",
-      teacher: teacherName?.trim() || "EduCore баг",
+      teacher:
+        selectedExam.teacherName?.trim() ||
+        teacherName?.trim() ||
+        "Pinecone баг",
       room: selectedExam.roomCode || "Нээлттэй",
       dateLabel: formatDate(safeStart.toISOString()),
       startLabel: formatClock(safeStart),

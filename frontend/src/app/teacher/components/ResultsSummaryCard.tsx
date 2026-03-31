@@ -82,7 +82,7 @@ export default function ResultsSummaryCard({
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-4">
               <div className="rounded-[24px] border border-[#bfdbfe] bg-[#eff6ff] px-4 py-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-[#1d4ed8]">
                   Тэнцсэн хувь
@@ -90,6 +90,19 @@ export default function ResultsSummaryCard({
                 <div className="mt-2 text-3xl font-semibold">{examStats.passRate}%</div>
                 <div className="mt-1 text-xs text-slate-500">
                   60%-иас дээш авсан / нийт хүлээгдэж буй сурагч
+                </div>
+              </div>
+              <div className="rounded-[24px] border border-violet-200 bg-violet-50 px-4 py-4">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-violet-600">
+                  Ирц
+                </div>
+                <div className="mt-2 text-3xl font-semibold">
+                  {examStats.cohortSize > 0
+                    ? Math.round((examStats.submissionCount / examStats.cohortSize) * 100)
+                    : 0}%
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {examStats.submissionCount}/{examStats.cohortSize} сурагч шалгалтаа өгсөн
                 </div>
               </div>
               <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4">

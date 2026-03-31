@@ -163,9 +163,15 @@ export default function TeacherStudentsTab({
       days
         .map((day, dayIndex) => ({
           label: formatSectionLabel(day),
-          items: items.filter((item) => item.dayIndex === dayIndex),
+          items: items
+            .filter((item) => item.dayIndex === dayIndex)
+            .sort(
+              (left, right) =>
+                right.scheduledDate.getTime() - left.scheduledDate.getTime(),
+            ),
         }))
-        .filter((group) => group.items.length > 0),
+        .filter((group) => group.items.length > 0)
+        .reverse(),
     [days, items],
   );
 

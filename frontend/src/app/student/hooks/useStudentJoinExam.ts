@@ -85,6 +85,7 @@ export const useStudentJoinExam = () => {
               exam: {
                 id: string;
                 title: string;
+                teacherName?: string | null;
                 durationMin: number;
                 questionCount: number;
                 enabledCheatDetections?: string[];
@@ -101,6 +102,7 @@ export const useStudentJoinExam = () => {
             exam: {
               id: string;
               title: string;
+              teacherName?: string | null;
               durationMin: number;
               questionCount: number;
               enabledCheatDetections?: string[];
@@ -137,6 +139,7 @@ export const useStudentJoinExam = () => {
       setSelectedExam({
         id: data.exam.id,
         title: data.exam.title,
+        teacherName: data.exam.teacherName ?? null,
         description: null,
         status: data.status ?? null,
         sessionStatus: data.sessionStatus ?? null,

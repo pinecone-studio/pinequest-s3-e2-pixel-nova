@@ -90,9 +90,21 @@ export function ScheduleListCard({
     item.category === "required"
       ? "bg-[#f3f7fb] text-[#2563eb]"
       : "bg-[rgba(255,174,88,0.12)] text-[#ffae58]";
+  const lifecycleTone =
+    item.lifecycle === "finished"
+      ? "bg-slate-100 text-slate-600"
+      : item.lifecycle === "active"
+        ? "bg-emerald-50 text-emerald-700"
+        : "bg-[#eef2ff] text-[#5c6cff]";
+  const lifecycleLabel =
+    item.lifecycle === "finished"
+      ? "Дууссан"
+      : item.lifecycle === "active"
+        ? null
+        : "Товлосон";
 
   return (
-    <div className="relative min-h-[320px] rounded-[24px] border border-[#dfdfdf] bg-white px-6 pb-5 pt-6 text-left transition hover:border-[#d3d7de]">
+    <div className="relative min-h-[340px] rounded-[24px] border border-[#dfdfdf] bg-white px-6 pb-5 pt-6 text-left transition hover:border-[#d3d7de]">
       <button
         type="button"
         onClick={() => onOpen(item.id)}
@@ -106,11 +118,20 @@ export function ScheduleListCard({
             <h3 className="min-h-[64px] max-w-[64%] text-[26px] font-semibold leading-[31px] tracking-[-0.03em] text-black break-words">
               {item.title}
             </h3>
-            <span
-              className={`mt-1 shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold leading-4 ${tagTone}`}
-            >
-              {item.category === "required" ? "Заавал судлах" : "Сонгон судлах"}
-            </span>
+            <div className="mt-1 flex shrink-0 flex-col items-end gap-2">
+              <span
+                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold leading-4 ${tagTone}`}
+              >
+                {item.category === "required" ? "Заавал судлах" : "Сонгон судлах"}
+              </span>
+              {lifecycleLabel ? (
+                <span
+                  className={`rounded-full px-3 py-1 text-[11px] font-semibold leading-4 ${lifecycleTone}`}
+                >
+                  {lifecycleLabel}
+                </span>
+              ) : null}
+            </div>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between text-[16px] leading-5">
@@ -140,6 +161,22 @@ export function ScheduleListCard({
                   iconClassName="size-[18px]"
                 />
               </div>
+            </div>
+            <div className="flex items-center justify-between text-[16px] leading-5">
+              <span className="text-[#959595]">Хүлээгдэж буй ирц:</span>
+              <span className="text-black">
+                {item.expectedStudentsCount > 0
+                  ? `${item.expectedStudentsCount} сурагч`
+                  : "Тохируулаагүй"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[16px] leading-5">
+              <span className="text-[#959595]">Байршлын нөхцөл:</span>
+              <span className="text-right text-black">
+                {item.locationPolicy === "school_only"
+                  ? `${item.locationLabel || "Сургууль"} дотор`
+                  : "Хаанаас ч өгч болно"}
+              </span>
             </div>
           </div>
         </div>

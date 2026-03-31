@@ -17,6 +17,27 @@ type ResultsChartsProps = {
 
 type ViewMode = "graphic" | "text";
 
+function ScoreTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value?: number }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="rounded-2xl border border-[#dce8f8] bg-white px-3 py-2 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.25)]">
+      <div className="text-xs font-semibold text-slate-900">{label}</div>
+      <div className="mt-1 text-xs text-slate-500">
+        Оноо: <span className="font-semibold text-slate-800">{payload[0]?.value ?? 0}%</span>
+      </div>
+    </div>
+  );
+}
+
 function QuestionInsightList({
   items,
   title,
@@ -127,6 +148,34 @@ export default function ResultsCharts({ examStats }: ResultsChartsProps) {
             <p className="mt-1 text-xs text-slate-500">
               Шалгалт өгсөн сурагч бүрийн хувийн онооны хувийг харуулна.
             </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-[18px] border border-[#e4ebfb] bg-white px-4 py-3">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                  Хамгийн өндөр
+                </div>
+                <div className="mt-2 text-xl font-semibold text-slate-900">
+                  {Math.max(...examStats.scoreDistribution.map((item) => item.score), 0)}%
+                </div>
+              </div>
+              <div className="rounded-[18px] border border-[#e4ebfb] bg-white px-4 py-3">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                  Хамгийн бага
+                </div>
+                <div className="mt-2 text-xl font-semibold text-slate-900">
+                  {examStats.scoreDistribution.length > 0
+                    ? Math.min(...examStats.scoreDistribution.map((item) => item.score))
+                    : 0}%
+                </div>
+              </div>
+              <div className="rounded-[18px] border border-[#e4ebfb] bg-white px-4 py-3">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                  Илгээсэн сурагч
+                </div>
+                <div className="mt-2 text-xl font-semibold text-slate-900">
+                  {examStats.scoreDistribution.length}
+                </div>
+              </div>
+            </div>
             <div className="mt-4 h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={examStats.scoreDistribution}>
@@ -139,7 +188,7 @@ export default function ResultsCharts({ examStats }: ResultsChartsProps) {
                     axisLine={false}
                     tick={{ fill: "#64748b", fontSize: 12 }}
                   />
-                  <Tooltip />
+                  <Tooltip content={<ScoreTooltip />} cursor={{ fill: "#eef4ff" }} />
                   <Bar dataKey="score" radius={[10, 10, 0, 0]} fill="#4f7cff" />
                 </BarChart>
               </ResponsiveContainer>
