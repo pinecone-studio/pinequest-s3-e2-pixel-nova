@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch, unwrapApi } from "@/lib/api-client";
+import { openTeacherExamLiveStream } from "./teacher-api";
 import type { ExamAttendanceStats } from "../types";
 
 const ACTIVE_POLL_MS = 5000;
@@ -21,6 +22,8 @@ export const useExamAttendanceStats = (
     }
 
     let active = true;
+    let streamFailed = false;
+    let fallbackTimer: number | null = null;
 
     const fetchStats = async () => {
       setLoading(true);
@@ -51,16 +54,44 @@ export const useExamAttendanceStats = (
     };
 
     void fetchStats();
-    const timer = shouldPoll
-      ? window.setInterval(() => {
+
+    if (shouldPoll) {
+      const stopStream = openTeacherExamLiveStream(examId, {
+        onMessage: (payload) => {
+          if (!active) return;
+          setStats({
+            expected: Number(payload.stats.expected ?? 0),
+            joined: Number(payload.stats.joined ?? 0),
+            submitted: Number(payload.stats.submitted ?? 0),
+            attendance_rate: Number(payload.stats.attendance_rate ?? 0),
+            submission_rate: Number(payload.stats.submission_rate ?? 0),
+          });
+          setError(null);
+          setLoading(false);
+        },
+        onError: () => {
+          if (!active || streamFailed) return;
+          streamFailed = true;
           void fetchStats();
-        }, ACTIVE_POLL_MS)
-      : null;
+          fallbackTimer = window.setInterval(() => {
+            void fetchStats();
+          }, ACTIVE_POLL_MS);
+        },
+      });
+
+      return () => {
+        active = false;
+        stopStream();
+        if (fallbackTimer !== null) {
+          window.clearInterval(fallbackTimer);
+        }
+      };
+    }
 
     return () => {
       active = false;
-      if (timer !== null) {
-        window.clearInterval(timer);
+      if (fallbackTimer !== null) {
+        window.clearInterval(fallbackTimer);
       }
     };
   }, [examId, shouldPoll]);

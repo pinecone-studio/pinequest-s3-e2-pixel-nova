@@ -73,7 +73,7 @@ export const useNotifications = ({
         await sync();
       } finally {
         if (!active) return;
-        const interval = document.hidden ? 15000 : 5000;
+        const interval = document.hidden ? 30_000 : 15_000;
         timer = window.setTimeout(() => {
           void tick();
         }, interval);
@@ -82,7 +82,7 @@ export const useNotifications = ({
 
     timer = window.setTimeout(() => {
       void tick();
-    }, 5000);
+    }, 15_000);
 
     return () => {
       active = false;

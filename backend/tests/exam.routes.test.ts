@@ -1,4 +1,5 @@
 import {
+  mockDb,
   jsonRequest,
   queueDbResults,
   resetDbMock,
@@ -110,5 +111,62 @@ describe("exam routes", () => {
         { id: "exam-2", title: "Geometry Quiz", status: "scheduled" },
       ],
     });
+  });
+
+  it("batch creates exam questions with bulk inserts", async () => {
+    queueDbResults(
+      [{ id: "teacher-1", fullName: "Ada Teacher" }],
+      [{ id: "exam-1", teacherId: "teacher-1", title: "Algebra Final" }],
+      [{ id: "existing-question" }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/exams/exam-1/questions/batch",
+      {
+        ...jsonRequest(
+          {
+            questions: [
+              {
+                type: "mcq",
+                questionText: "2 + 2 = ?",
+                correctAnswerText: "4",
+                points: 2,
+                options: [
+                  { label: "A", text: "3", isCorrect: false },
+                  { label: "B", text: "4", isCorrect: true },
+                ],
+              },
+              {
+                type: "text",
+                questionText: "Name a prime number",
+                correctAnswerText: "2",
+                points: 1,
+              },
+            ],
+          },
+          teacherHeaders(),
+        ),
+      },
+      workerEnv,
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: {
+        created: 2,
+        questions: [
+          { questionId: "test-id", orderIndex: 1 },
+          { questionId: "test-id", orderIndex: 2 },
+        ],
+      },
+    });
+
+    expect(mockDb.insert).toHaveBeenCalledTimes(2);
+    const insertCalls = mockDb.insert.mock.calls as unknown as Array<
+      [Record<string, unknown>]
+    >;
+    expect(insertCalls[0]?.[0]).toMatchObject({ questionText: "questionText" });
+    expect(insertCalls[1]?.[0]).toMatchObject({ questionId: "questionId" });
   });
 });

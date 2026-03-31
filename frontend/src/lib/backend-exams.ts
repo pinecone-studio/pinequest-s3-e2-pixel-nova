@@ -112,32 +112,36 @@ export const syncExamToBackend = async (
 
   const created = await unwrap<RemoteExamDetail>(createRes);
 
-  for (const question of exam.questions) {
-    const options = question.options?.map((text, index) => ({
-      label: OPTION_LABELS[index] ?? String(index + 1),
-      text,
-      isCorrect: text === question.correctAnswer,
-    }));
+  if (exam.questions.length > 0) {
+    const batchPayload = exam.questions.map((question) => {
+      const opts = question.options?.map((text, index) => ({
+        label: OPTION_LABELS[index] ?? String(index + 1),
+        text,
+        isCorrect: text === question.correctAnswer,
+      }));
 
-    const questionRes = await fetch(
-      `${API_BASE_URL}/api/exams/${created.id}/questions`,
+      return {
+        type: question.type,
+        questionText: question.text,
+        points: question.points,
+        correctAnswerText: question.correctAnswer,
+        imageUrl: question.imageUrl,
+        options: opts?.length ? opts : undefined,
+      };
+    });
+
+    const batchRes = await fetch(
+      `${API_BASE_URL}/api/exams/${created.id}/questions/batch`,
       {
         method: "POST",
         headers: buildHeaders(user),
-        body: JSON.stringify({
-          type: question.type,
-          questionText: question.text,
-          points: question.points,
-          correctAnswerText: question.correctAnswer,
-          imageUrl: question.imageUrl,
-          options: options?.length ? options : undefined,
-        }),
+        body: JSON.stringify({ questions: batchPayload }),
       },
     );
 
-    if (!questionRes.ok) {
+    if (!batchRes.ok) {
       throw new Error(
-        await readBackendError(questionRes, "Backend question create failed"),
+        await readBackendError(batchRes, "Backend batch question create failed"),
       );
     }
   }
