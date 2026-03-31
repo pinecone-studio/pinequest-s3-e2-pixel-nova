@@ -276,6 +276,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
         teacherName: teacher?.fullName ?? null,
         durationMin: exam.durationMin,
         questionCount: totalQuestions,
+        requiresAudioRecording: Boolean(exam.requiresAudioRecording),
         enabledCheatDetections: parseEnabledCheatDetections(
           exam.enabledCheatDetections,
         ),
@@ -341,6 +342,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
       teacherName: teacher?.fullName ?? null,
       durationMin: exam.durationMin,
       questionCount: totalQuestions,
+      requiresAudioRecording: Boolean(exam.requiresAudioRecording),
       enabledCheatDetections: parseEnabledCheatDetections(
         exam.enabledCheatDetections,
       ),
@@ -462,6 +464,7 @@ sessionRoutes.get("/:sessionId", requireRole("student"), async (c) => {
       scheduledAt: exam.scheduledAt,
       startedAt: exam.startedAt,
       finishedAt: exam.finishedAt,
+      requiresAudioRecording: Boolean(exam.requiresAudioRecording),
       enabledCheatDetections: parseEnabledCheatDetections(
         exam.enabledCheatDetections,
       ),
@@ -474,8 +477,17 @@ sessionRoutes.get("/:sessionId", requireRole("student"), async (c) => {
 // ---------------------------------------------------------------------------
 // POST /:sessionId/start — Start taking the exam
 // ---------------------------------------------------------------------------
-sessionRoutes.post("/:sessionId/start", requireRole("student"), async (c) => {
+const startSessionSchema = z.object({
+  audioReady: z.boolean().optional(),
+});
+
+sessionRoutes.post(
+  "/:sessionId/start",
+  requireRole("student"),
+  zValidator("json", startSessionSchema),
+  async (c) => {
   const sessionId = c.req.param("sessionId");
+  const { audioReady } = c.req.valid("json");
   const user = c.get("user");
   const db = getDb(c.env.educore);
 
@@ -506,6 +518,15 @@ sessionRoutes.post("/:sessionId/start", requireRole("student"), async (c) => {
 
   if (!exam) {
     return notFound(c, "Exam");
+  }
+
+  if (exam.requiresAudioRecording && !audioReady) {
+    return error(
+      c,
+      "AUDIO_REQUIRED",
+      "Microphone recording must be ready before the exam can start.",
+      409,
+    );
   }
 
   const nowDate = new Date();

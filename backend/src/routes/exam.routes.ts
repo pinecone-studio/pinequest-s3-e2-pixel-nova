@@ -42,11 +42,13 @@ const enabledCheatDetectionsSchema = z
 const mapExamForResponse = <
   T extends {
     enabledCheatDetections?: string | null;
+    requiresAudioRecording?: boolean | number | null;
   },
 >(
   exam: T,
 ) => ({
   ...exam,
+  requiresAudioRecording: Boolean(exam.requiresAudioRecording),
   enabledCheatDetections: parseEnabledCheatDetections(
     exam.enabledCheatDetections,
   ),
@@ -70,6 +72,7 @@ examRoutes.post(
       expectedStudentsCount: z.number().int().min(0).optional(),
       passScore: z.number().int().min(0).max(100).optional(),
       shuffleQuestions: z.boolean().optional(),
+      requiresAudioRecording: z.boolean().optional(),
       enabledCheatDetections: enabledCheatDetectionsSchema,
     }),
   ),
@@ -162,6 +165,7 @@ examRoutes.post(
           roomCode,
           passScore: body.passScore ?? 50,
           shuffleQuestions: body.shuffleQuestions ?? false,
+          requiresAudioRecording: body.requiresAudioRecording ?? false,
           enabledCheatDetections: serializeEnabledCheatDetections(
             body.enabledCheatDetections ?? DEFAULT_ENABLED_CHEAT_DETECTIONS,
           ),
@@ -352,6 +356,7 @@ examRoutes.put(
       passScore: z.number().int().min(0).max(100).optional(),
       shuffleQuestions: z.boolean().optional(),
       subjectId: z.string().optional(),
+      requiresAudioRecording: z.boolean().optional(),
       enabledCheatDetections: enabledCheatDetectionsSchema,
     }),
   ),
@@ -404,6 +409,9 @@ examRoutes.put(
           ...(body.passScore !== undefined && { passScore: body.passScore }),
           ...(body.shuffleQuestions !== undefined && {
             shuffleQuestions: body.shuffleQuestions,
+          }),
+          ...(body.requiresAudioRecording !== undefined && {
+            requiresAudioRecording: body.requiresAudioRecording,
           }),
           ...(body.subjectId !== undefined && { subjectId: body.subjectId }),
           ...(body.enabledCheatDetections !== undefined && {

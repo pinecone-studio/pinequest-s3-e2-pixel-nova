@@ -1,7 +1,10 @@
 import { render, waitFor } from "@testing-library/react";
 import DesktopExamCameraCard from "@/app/student/components/DesktopExamCameraCard";
 import { reportCheatEvent } from "@/api/cheat";
-import { useProctoringCamera } from "@/app/student/hooks/useProctoringCamera";
+import {
+  useProctoringCamera,
+  type ProctoringEvent,
+} from "@/app/student/hooks/useProctoringCamera";
 
 jest.mock("@/api/cheat", () => ({
   reportCheatEvent: jest.fn().mockResolvedValue({}),
@@ -19,14 +22,19 @@ const mockUseProctoringCamera =
 describe("DesktopExamCameraCard", () => {
   beforeEach(() => {
     mockReportCheatEvent.mockReset();
-    mockUseProctoringCamera.mockImplementation(({ onEvent }) => {
+    mockUseProctoringCamera.mockImplementation((options) => {
+      const onEvent = options?.onEvent as ((event: ProctoringEvent) => void) | undefined;
       queueMicrotask(() => {
         onEvent?.({
           type: "NO_FACE",
           confidence: 0.91,
           duration: 3200,
           timestamp: "2026-03-31T10:00:00.000Z",
-          details: {},
+          details: {
+            brightness: null,
+            faceCount: 0,
+            yaw: null,
+          },
         });
       });
 

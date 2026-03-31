@@ -1,19 +1,12 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import RoleNavbar from "@/components/RoleNavbar";
-import type {
-  AuthUser,
-  StudentImprovementLeaderboardEntry,
-  StudentProgressRankOverview,
-  StudentTermRankOverview,
-} from "@/lib/backend-auth";
+import type { AuthUser } from "@/lib/backend-auth";
 import type { XpLeaderboardEntry } from "@/api/xp";
 import type { RoleKey } from "@/lib/role-session";
 import StudentHeader from "./StudentHeader";
 import StudentDashboardTab from "./StudentDashboardTab";
 import StudentExamsTab from "./StudentExamsTab";
 import StudentHelpTab from "./StudentHelpTab";
-import StudentAiInsightsTab from "./StudentAiInsightsTab";
-import StudentLeaderboardTab from "./StudentLeaderboardTab";
 import StudentPreferencesTab from "./StudentPreferencesTab";
 import StudentProgressTab from "./StudentProgressTab";
 import StudentSettingsTab from "./StudentSettingsTab";
@@ -68,10 +61,7 @@ type StudentProgressState = {
   };
   nextLevel: { level: number; name: string; minXP: number } | null;
   progressSegments: number;
-  termRankOverview: StudentTermRankOverview;
-  progressRankOverview: StudentProgressRankOverview;
   termLeaderboardEntries: XpLeaderboardEntry[];
-  improvementLeaderboard: StudentImprovementLeaderboardEntry[];
 };
 
 type StudentDashboardViewProps = {
@@ -113,12 +103,21 @@ export default function StudentDashboardView({
 }: StudentDashboardViewProps) {
   const resolvedNextLevel = progress.nextLevel ?? progress.levelInfo;
   const currentUser = data.currentUser;
+  const [homeSelectedExam, setHomeSelectedExam] = useState<Exam | null>(null);
+
+  const handleTabChange = (value: StudentTab) => {
+    if (value !== "Home") {
+      setHomeSelectedExam(null);
+    }
+    exam.setActiveTab(value);
+  };
+
   return (
     <main
       key={`student-${exam.activeTab}`}
-      className="page-transition px-4 py-7 sm:px-6 lg:px-8"
+      className="page-transition px-4 pb-10 pt-6 sm:px-6 lg:px-8"
     >
-      <div className="mx-auto w-full max-w-[1272px] space-y-6">
+      <div className="mx-auto w-full max-w-[1272px] space-y-7">
         <StudentHeader
           activeTab={exam.activeTab}
           currentUserName={currentUserName}
@@ -128,10 +127,10 @@ export default function StudentDashboardView({
           onMarkNotificationRead={data.markNotificationRead}
           onMarkAllNotificationsRead={data.markAllNotificationsRead}
           xp={currentXp}
-          onTabChange={exam.setActiveTab}
-          onOpenProfile={() => exam.setActiveTab("Profile")}
-          onOpenSettings={() => exam.setActiveTab("Settings")}
-          onOpenHelp={() => exam.setActiveTab("Help")}
+          onTabChange={handleTabChange}
+          onOpenProfile={() => handleTabChange("Profile")}
+          onOpenSettings={() => handleTabChange("Settings")}
+          onOpenHelp={() => handleTabChange("Help")}
           onToggleTheme={() =>
             data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
           }
@@ -153,7 +152,7 @@ export default function StudentDashboardView({
             currentUserId={data.currentUser?.id ?? null}
             currentUserName={currentUserName}
             exams={data.exams}
-            selectedExam={exam.selectedExam}
+            selectedExam={homeSelectedExam}
             levelInfo={progress.levelInfo}
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}
@@ -161,8 +160,21 @@ export default function StudentDashboardView({
             studentCount={totalStudents}
             studentHistory={studentHistory}
             termLeaderboardEntries={progress.termLeaderboardEntries}
-            onOpenExams={() => exam.setActiveTab("Exams")}
-            onOpenProgress={() => exam.setActiveTab("Progress")}
+            teacherName={
+              typeof teacherUsers[0]?.fullName === "string"
+                ? (teacherUsers[0]?.fullName ?? null)
+                : null
+            }
+            onOpenExamDetail={setHomeSelectedExam}
+            onCloseExamDetail={() => setHomeSelectedExam(null)}
+            onOpenExams={() => {
+              setHomeSelectedExam(null);
+              exam.setActiveTab("Exams");
+            }}
+            onOpenProgress={() => {
+              setHomeSelectedExam(null);
+              exam.setActiveTab("Progress");
+            }}
           />
         )}
 
@@ -190,35 +202,12 @@ export default function StudentDashboardView({
         )}
 
         {exam.activeTab === "Progress" && (
-            <StudentProgressTab
-              levelInfo={progress.levelInfo}
-              studentProgress={progress.studentProgress}
-              nextLevel={resolvedNextLevel}
-              progressSegments={progress.progressSegments}
-              studentHistory={studentHistory}
-            />
-        )}
-
-        {exam.activeTab === "Insights" && (
-          <StudentAiInsightsTab
-            currentUserId={data.currentUser?.id ?? null}
-            currentUserName={currentUserName}
-            currentXp={currentXp}
-            currentRank={currentRank}
-            totalStudents={totalStudents}
+          <StudentProgressTab
             levelInfo={progress.levelInfo}
+            studentProgress={progress.studentProgress}
+            nextLevel={resolvedNextLevel}
+            progressSegments={progress.progressSegments}
             studentHistory={studentHistory}
-          />
-        )}
-
-        {exam.activeTab === "Leaderboard" && (
-          <StudentLeaderboardTab
-            currentUserId={data.currentUser?.id ?? null}
-            currentUserName={currentUserName}
-            termRankOverview={progress.termRankOverview}
-            progressRankOverview={progress.progressRankOverview}
-            termLeaderboardEntries={progress.termLeaderboardEntries}
-            improvementLeaderboard={progress.improvementLeaderboard}
           />
         )}
 

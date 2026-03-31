@@ -110,6 +110,7 @@ export const getStudentExamHistory = async (student: AuthUser) => {
         title: string;
         sessionStatus: string;
         score: number | null;
+        scheduledAt: string | null;
         startedAt: string | null;
         submittedAt: string | null;
       }[]
@@ -143,6 +144,7 @@ export const getStudentExamHistory = async (student: AuthUser) => {
         score: result?.score ?? session.score ?? null,
         earnedPoints: result?.earnedPoints ?? null,
         totalPoints: result?.totalPoints ?? null,
+        scheduledAt: session.scheduledAt ?? null,
         startedAt: result?.startedAt ?? session.startedAt ?? null,
         submittedAt: result?.submittedAt ?? session.submittedAt ?? null,
       };

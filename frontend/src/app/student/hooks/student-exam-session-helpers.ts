@@ -48,6 +48,7 @@ type SessionExam = {
   teacherName?: string | null;
   description?: string | null;
   durationMin: number;
+  requiresAudioRecording?: boolean;
   enabledCheatDetections?: string[];
   status?: string | null;
   scheduledAt?: string | null;
@@ -77,6 +78,7 @@ export const mapSessionToExam = (
     examStartedAt: examData.startedAt ?? null,
     finishedAt: examData.finishedAt ?? null,
     roomCode: roomCodeInput.trim().toUpperCase(),
+    requiresAudioRecording: Boolean(examData.requiresAudioRecording),
     enabledCheatDetections: examData.enabledCheatDetections ?? undefined,
     questions: sessionData.questions.map((question) => ({
       id: question.id,

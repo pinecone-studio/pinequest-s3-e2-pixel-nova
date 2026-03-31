@@ -1,10 +1,7 @@
 const mockGetXpProfile = jest.fn();
 const mockGetXpHistory = jest.fn();
 const mockGetStudentResults = jest.fn();
-const mockGetStudentTermRank = jest.fn();
 const mockGetStudentTermLeaderboard = jest.fn();
-const mockGetStudentProgressRank = jest.fn();
-const mockGetStudentImprovementLeaderboard = jest.fn();
 
 jest.mock("@/api/xp", () => ({
   getXpProfile: (...args: unknown[]) => mockGetXpProfile(...args),
@@ -13,13 +10,8 @@ jest.mock("@/api/xp", () => ({
 
 jest.mock("@/lib/backend-auth", () => ({
   getStudentResults: (...args: unknown[]) => mockGetStudentResults(...args),
-  getStudentTermRank: (...args: unknown[]) => mockGetStudentTermRank(...args),
   getStudentTermLeaderboard: (...args: unknown[]) =>
     mockGetStudentTermLeaderboard(...args),
-  getStudentProgressRank: (...args: unknown[]) =>
-    mockGetStudentProgressRank(...args),
-  getStudentImprovementLeaderboard: (...args: unknown[]) =>
-    mockGetStudentImprovementLeaderboard(...args),
 }));
 
 jest.mock("@/lib/examGuard", () => ({
@@ -58,15 +50,17 @@ const mockUser: User = {
 const mockResults = [
   {
     examId: "e1",
-    earnedPoints: 90,
+    title: "Math",
     score: 90,
+    earnedPoints: 90,
     totalPoints: 100,
     submittedAt: "2024-06-02",
   },
   {
     examId: "e2",
-    earnedPoints: 75,
+    title: "Science",
     score: 75,
+    earnedPoints: 75,
     totalPoints: 100,
     submittedAt: "2024-06-01",
   },
@@ -81,37 +75,10 @@ describe("useStudentProgress", () => {
       totalStudents: 12,
     });
     mockGetXpHistory.mockResolvedValue([]);
-    mockGetStudentTermLeaderboard.mockResolvedValue([
-      { rank: 1, id: "s9", fullName: "Сурагч 1", xp: 500, level: 3 },
-      { rank: 2, id: "s1", fullName: "Бат", xp: 250, level: 2 },
-    ]);
     mockGetStudentResults.mockResolvedValue(mockResults);
-    mockGetStudentTermRank.mockResolvedValue({
-      rank: 2,
-      totalStudents: 5,
-      termExamCount: 2,
-      xp: 250,
-      level: 2,
-    });
-    mockGetStudentProgressRank.mockResolvedValue({
-      rank: 1,
-      totalStudents: 5,
-      progressExamCount: 4,
-      xp: 120,
-      level: 2,
-      isPrivate: true,
-    });
-    mockGetStudentImprovementLeaderboard.mockResolvedValue([
-      {
-        id: "s2",
-        rank: 1,
-        fullName: "Сараа",
-        xp: 35,
-        level: 4,
-        examCount: 4,
-        improvementCount: 3,
-        missedCount: 0,
-      }
+    mockGetStudentTermLeaderboard.mockResolvedValue([
+      { rank: 1, id: "s9", fullName: "Сурагч 1", xp: 300, level: 3 },
+      { rank: 2, id: "s1", fullName: "Бат", xp: 120, level: 2 },
     ]);
   });
 
@@ -128,26 +95,10 @@ describe("useStudentProgress", () => {
       history: [],
     });
     expect(result.current.studentHistory).toEqual([]);
-    expect(result.current.termRankOverview).toEqual({
-      rank: null,
-      totalStudents: 0,
-      termExamCount: 0,
-      xp: 0,
-      level: 1,
-    });
-    expect(result.current.progressRankOverview).toEqual({
-      rank: null,
-      totalStudents: 0,
-      progressExamCount: 0,
-      xp: 0,
-      level: 1,
-      isPrivate: true,
-    });
-    expect(result.current.improvementLeaderboard).toEqual([]);
     expect(result.current.termLeaderboardEntries).toEqual([]);
   });
 
-  it("loads XP profile, student results, and term rank", async () => {
+  it("loads XP and term leaderboard data", async () => {
     const { result } = renderHook(() => useStudentProgress(mockUser));
 
     await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
@@ -157,23 +108,7 @@ describe("useStudentProgress", () => {
       rank: 3,
       totalStudents: 12,
     });
-    expect(result.current.termRankOverview).toEqual({
-      rank: 2,
-      totalStudents: 5,
-      termExamCount: 2,
-      xp: 250,
-      level: 2,
-    });
-    expect(result.current.progressRankOverview).toEqual({
-      rank: 1,
-      totalStudents: 5,
-      progressExamCount: 4,
-      xp: 120,
-      level: 2,
-      isPrivate: true,
-    });
     expect(result.current.termLeaderboardEntries).toHaveLength(2);
-    expect(result.current.improvementLeaderboard).toHaveLength(1);
     expect(result.current.studentHistory).toHaveLength(2);
   });
 
@@ -226,7 +161,7 @@ describe("useStudentProgress", () => {
     });
   });
 
-  it("handles leaderboard API error gracefully", async () => {
+  it("handles term leaderboard API error gracefully", async () => {
     mockGetStudentTermLeaderboard.mockRejectedValue(new Error("fail"));
 
     const { result } = renderHook(() => useStudentProgress(mockUser));
@@ -244,48 +179,5 @@ describe("useStudentProgress", () => {
     await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
 
     expect(result.current.studentHistory).toEqual([]);
-  });
-
-  it("handles term rank API error gracefully", async () => {
-    mockGetStudentTermRank.mockRejectedValue(new Error("fail"));
-
-    const { result } = renderHook(() => useStudentProgress(mockUser));
-
-    await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
-
-    expect(result.current.termRankOverview).toEqual({
-      rank: null,
-      totalStudents: 0,
-      termExamCount: 0,
-      xp: 0,
-      level: 1,
-    });
-  });
-
-  it("handles progress rank API error gracefully", async () => {
-    mockGetStudentProgressRank.mockRejectedValue(new Error("fail"));
-
-    const { result } = renderHook(() => useStudentProgress(mockUser));
-
-    await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
-
-    expect(result.current.progressRankOverview).toEqual({
-      rank: null,
-      totalStudents: 0,
-      progressExamCount: 0,
-      xp: 0,
-      level: 1,
-      isPrivate: true,
-    });
-  });
-
-  it("handles improvement leaderboard API error gracefully", async () => {
-    mockGetStudentImprovementLeaderboard.mockRejectedValue(new Error("fail"));
-
-    const { result } = renderHook(() => useStudentProgress(mockUser));
-
-    await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
-
-    expect(result.current.improvementLeaderboard).toEqual([]);
   });
 });

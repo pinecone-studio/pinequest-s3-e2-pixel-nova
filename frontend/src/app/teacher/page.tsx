@@ -131,6 +131,8 @@ export default function TeacherPage() {
   const [selectedCheatDetections, setSelectedCheatDetections] = useState<
     string[]
   >([]);
+  const [selectedRequiresAudioRecording, setSelectedRequiresAudioRecording] =
+    useState(false);
   const [savingCheatDetections, setSavingCheatDetections] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
@@ -248,6 +250,7 @@ export default function TeacherPage() {
     setShowCheatDetectionDialog(false);
     setCheatDetectionExam(null);
     setSelectedCheatDetections([]);
+    setSelectedRequiresAudioRecording(false);
     setSavingCheatDetections(false);
   };
 
@@ -264,6 +267,9 @@ export default function TeacherPage() {
         scheduledExam.enabledCheatDetections ??
           DEFAULT_ENABLED_CHEAT_DETECTIONS,
       ),
+    );
+    setSelectedRequiresAudioRecording(
+      Boolean(scheduledExam.requiresAudioRecording),
     );
     setShowCheatDetectionDialog(true);
   };
@@ -286,6 +292,7 @@ export default function TeacherPage() {
       const updated = await updateExam(
         cheatDetectionExam.id,
         {
+          requiresAudioRecording: selectedRequiresAudioRecording,
           enabledCheatDetections: selectedConfig,
         },
         data.currentUser,
@@ -296,6 +303,8 @@ export default function TeacherPage() {
           exam.id === cheatDetectionExam.id
             ? {
                 ...exam,
+                requiresAudioRecording:
+                  updated.requiresAudioRecording ?? selectedRequiresAudioRecording,
                 enabledCheatDetections:
                   updated.enabledCheatDetections ?? selectedConfig,
               }
@@ -379,7 +388,9 @@ export default function TeacherPage() {
         exam={cheatDetectionExam}
         open={showCheatDetectionDialog}
         saving={savingCheatDetections}
+        requiresAudioRecording={selectedRequiresAudioRecording}
         selectedDetections={selectedCheatDetections}
+        onAudioRequirementChange={setSelectedRequiresAudioRecording}
         onChange={setSelectedCheatDetections}
         onClose={closeCheatDetectionDialog}
         onSave={saveCheatDetectionSettings}

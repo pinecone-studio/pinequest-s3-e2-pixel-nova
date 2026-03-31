@@ -2,7 +2,14 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
-import { getDb, exams, examSessions, cheatEvents, students } from "../db";
+import {
+  getDb,
+  exams,
+  examSessions,
+  cheatEvents,
+  students,
+  examAudioChunks,
+} from "../db";
 import type { AppEnv } from "../types";
 import { success, error, notFound, forbidden } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
@@ -36,6 +43,9 @@ const EVENT_TYPES = [
   "looking_away",
   "looking_down",
   "camera_blocked",
+  "microphone_permission_denied",
+  "audio_recording_interrupted",
+  "audio_upload_failed",
   "disqualification",
 ] as const;
 
@@ -66,6 +76,9 @@ const SEVERITY_MAP: Record<EventType, { severity: string; weight: number }> = {
   multiple_monitors:  { severity: "critical", weight: 8 },
   multiple_faces:     { severity: "critical", weight: 8 },
   camera_blocked:     { severity: "high",     weight: 4 },
+  microphone_permission_denied: { severity: "critical", weight: 8 },
+  audio_recording_interrupted: { severity: "critical", weight: 8 },
+  audio_upload_failed: { severity: "high", weight: 4 },
   disqualification:   { severity: "critical", weight: 8 },
 };
 
@@ -76,6 +89,7 @@ const CRITICAL_RISK_THRESHOLD = 12;
 const EVENT_SOURCES = [
   "browser",
   "browser_camera",
+  "browser_audio",
   "mobile_camera",
   "mobile_camera_ai",
   "teacher_action",
@@ -85,6 +99,12 @@ const EVENT_SOURCES = [
 
 type EventSource = (typeof EVENT_SOURCES)[number];
 type RiskLevel = "low" | "medium" | "high" | "critical";
+const ALWAYS_ALLOWED_EVENT_TYPES: EventType[] = [
+  "disqualification",
+  "microphone_permission_denied",
+  "audio_recording_interrupted",
+  "audio_upload_failed",
+];
 
 const EVENT_COOLDOWN_MS: Partial<Record<EventType, number>> = {
   tab_switch: 5_000,
@@ -102,10 +122,13 @@ const EVENT_COOLDOWN_MS: Partial<Record<EventType, number>> = {
   looking_away: 15_000,
   looking_down: 15_000,
   camera_blocked: 20_000,
+  microphone_permission_denied: 0,
+  audio_recording_interrupted: 0,
+  audio_upload_failed: 15_000,
   disqualification: 0,
 };
 
-const EVENT_LABELS: Record<EventType, string> = {
+const EVENT_LABELS = {
   tab_switch: "Таб сольсон",
   tab_hidden: "Бүтэн дэлгэцээс гарсан",
   window_blur: "Цонхноос гарсан",
@@ -125,9 +148,17 @@ const EVENT_LABELS: Record<EventType, string> = {
   disqualification: "Шалгалтаас хасагдсан",
 };
 
+Object.assign(EVENT_LABELS, {
+  microphone_permission_denied: "Microphone permission denied",
+  audio_recording_interrupted: "Audio recording interrupted",
+  audio_upload_failed: "Audio upload failed",
+} satisfies Record<string, string>);
+
 const SNAPSHOT_INTERVAL_MS = 15_000;
 const SNAPSHOT_OBJECT_PREFIX = "cheat-snapshots";
+const AUDIO_OBJECT_PREFIX = "cheat-audio";
 const SNAPSHOT_UPLOAD_URL_TTL_SECONDS = 10 * 60;
+const AUDIO_UPLOAD_URL_TTL_SECONDS = 10 * 60;
 const DEFAULT_SNAPSHOT_BUCKET_NAME = "educore-exam-files";
 const SNAPSHOT_MIME_TYPES = [
   "image/jpeg",
@@ -249,6 +280,35 @@ const snapshotUploadSchema = z.object({
   capturedAt: z.string().datetime().optional(),
 });
 
+const AUDIO_MIME_TYPES = [
+  "audio/webm",
+  "audio/webm;codecs=opus",
+  "audio/ogg",
+  "audio/ogg;codecs=opus",
+] as const;
+type AudioMimeType = (typeof AUDIO_MIME_TYPES)[number];
+
+const AUDIO_EXTENSION_MAP: Record<AudioMimeType, string> = {
+  "audio/webm": "webm",
+  "audio/webm;codecs=opus": "webm",
+  "audio/ogg": "ogg",
+  "audio/ogg;codecs=opus": "ogg",
+};
+
+const audioUploadSchema = z.object({
+  sessionId: z.string().min(1),
+  mimeType: z.enum(AUDIO_MIME_TYPES),
+  sequenceNumber: z.number().int().min(0),
+  chunkStartedAt: z.string().datetime(),
+  chunkEndedAt: z.string().datetime(),
+  durationMs: z.number().int().positive(),
+  sizeBytes: z.number().int().positive(),
+});
+
+const audioChunkFinalizeSchema = audioUploadSchema.extend({
+  objectKey: z.string().min(1).max(512),
+});
+
 const clampConfidence = (value: number) =>
   Math.max(0, Math.min(1, Math.round(value * 100) / 100));
 
@@ -267,9 +327,40 @@ const buildSnapshotObjectKey = ({
   return `${SNAPSHOT_OBJECT_PREFIX}/${sessionId}/${studentId}/${Date.now()}-${newId()}.${extension}`;
 };
 
+const buildAudioObjectKey = ({
+  extension,
+  sequenceNumber,
+  sessionId,
+  studentId,
+}: {
+  extension: string;
+  sequenceNumber: number;
+  sessionId: string;
+  studentId: string;
+}) => {
+  return `${AUDIO_OBJECT_PREFIX}/${sessionId}/${studentId}/${String(
+    sequenceNumber,
+  ).padStart(6, "0")}-${Date.now()}-${newId()}.${extension}`;
+};
+
 const parseSnapshotObjectKey = (objectKey: string) => {
   const match = objectKey.match(
     /^cheat-snapshots\/([^/]+)\/([^/]+)\/[^/]+\.(jpg|png|webp)$/i,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    sessionId: match[1],
+    studentId: match[2],
+  };
+};
+
+const parseAudioObjectKey = (objectKey: string) => {
+  const match = objectKey.match(
+    /^cheat-audio\/([^/]+)\/([^/]+)\/[^/]+\.(webm|ogg)$/i,
   );
 
   if (!match) {
@@ -288,6 +379,12 @@ const buildSnapshotAssetUrl = (requestUrl: string, objectKey: string) => {
   return url.toString();
 };
 
+const buildAudioAssetUrl = (requestUrl: string, objectKey: string) => {
+  const url = new URL("/api/cheat/audio-assets", requestUrl);
+  url.searchParams.set("key", objectKey);
+  return url.toString();
+};
+
 const inferSnapshotMimeType = (objectKey: string): SnapshotMimeType => {
   if (objectKey.endsWith(".png")) {
     return "image/png";
@@ -298,6 +395,10 @@ const inferSnapshotMimeType = (objectKey: string): SnapshotMimeType => {
   }
 
   return "image/jpeg";
+};
+
+const inferAudioMimeType = (objectKey: string): AudioMimeType => {
+  return objectKey.endsWith(".ogg") ? "audio/ogg" : "audio/webm";
 };
 
 const ensureSnapshotSigningConfig = (env: AppEnv["Bindings"]) => {
@@ -790,6 +891,142 @@ cheatRoutes.post(
   },
 );
 
+cheatRoutes.post(
+  "/audio-upload-url",
+  requireRole("student"),
+  zValidator("json", audioUploadSchema),
+  async (c) => {
+    const payload = c.req.valid("json");
+    const user = c.get("user");
+    const db = getDb(c.env.educore);
+
+    const session = await verifyStudentSession(db, payload.sessionId, user.id);
+    if (!session) {
+      return notFound(c, "Session");
+    }
+
+    if (session.status !== "in_progress") {
+      return error(
+        c,
+        "INVALID_STATUS",
+        "Audio chunks are only accepted while a session is in progress.",
+        409,
+      );
+    }
+
+    const signingConfig = ensureSnapshotSigningConfig(c.env);
+    if (!signingConfig) {
+      return error(
+        c,
+        "R2_UPLOAD_NOT_CONFIGURED",
+        "Audio uploads are not configured yet.",
+        503,
+      );
+    }
+
+    const objectKey = buildAudioObjectKey({
+      extension: AUDIO_EXTENSION_MAP[payload.mimeType],
+      sequenceNumber: payload.sequenceNumber,
+      sessionId: payload.sessionId,
+      studentId: user.id,
+    });
+    const presignedUpload = createR2PresignedUrl({
+      ...signingConfig,
+      bucketName: getSnapshotBucketName(c.env),
+      expiresInSeconds: AUDIO_UPLOAD_URL_TTL_SECONDS,
+      method: "PUT",
+      objectKey,
+    });
+
+    return success(
+      c,
+      {
+        expiresAt: presignedUpload.expiresAt,
+        objectKey,
+        uploadHeaders: {
+          "Content-Type": payload.mimeType,
+        },
+        uploadUrl: presignedUpload.url,
+      },
+      201,
+    );
+  },
+);
+
+cheatRoutes.post(
+  "/audio-chunks",
+  requireRole("student"),
+  zValidator("json", audioChunkFinalizeSchema),
+  async (c) => {
+    const payload = c.req.valid("json");
+    const user = c.get("user");
+    const db = getDb(c.env.educore);
+
+    const session = await verifyStudentSession(db, payload.sessionId, user.id);
+    if (!session) {
+      return notFound(c, "Session");
+    }
+
+    if (session.status !== "in_progress") {
+      return error(
+        c,
+        "INVALID_STATUS",
+        "Audio chunks are only accepted while a session is in progress.",
+        409,
+      );
+    }
+
+    const objectKey = payload.objectKey;
+    const audioRef = parseAudioObjectKey(objectKey);
+    if (
+      !audioRef ||
+      audioRef.sessionId !== payload.sessionId ||
+      audioRef.studentId !== user.id
+    ) {
+      return error(c, "BAD_REQUEST", "Invalid audio object key.", 400);
+    }
+
+    const now = new Date().toISOString();
+    const chunkId = newId();
+
+    await db.insert(examAudioChunks).values({
+      id: chunkId,
+      sessionId: payload.sessionId,
+      examId: session.examId,
+      studentId: user.id,
+      objectKey,
+      mimeType: payload.mimeType,
+      sequenceNumber: payload.sequenceNumber,
+      chunkStartedAt: payload.chunkStartedAt,
+      chunkEndedAt: payload.chunkEndedAt,
+      uploadedAt: now,
+      durationMs: payload.durationMs,
+      sizeBytes: payload.sizeBytes,
+      createdAt: now,
+    });
+
+    return success(
+      c,
+      {
+        id: chunkId,
+        sessionId: payload.sessionId,
+        examId: session.examId,
+        studentId: user.id,
+        objectKey,
+        mimeType: payload.mimeType,
+        sequenceNumber: payload.sequenceNumber,
+        chunkStartedAt: payload.chunkStartedAt,
+        chunkEndedAt: payload.chunkEndedAt,
+        uploadedAt: now,
+        durationMs: payload.durationMs,
+        sizeBytes: payload.sizeBytes,
+        assetUrl: buildAudioAssetUrl(c.req.url, objectKey),
+      },
+      201,
+    );
+  },
+);
+
 // ---------------------------------------------------------------------------
 // GET /snapshot-assets — Read a stored camera snapshot for the owning student or exam teacher
 // ---------------------------------------------------------------------------
@@ -836,6 +1073,49 @@ cheatRoutes.get("/snapshot-assets", async (c) => {
   return c.body(await snapshotObject.arrayBuffer());
 });
 
+cheatRoutes.get("/audio-assets", async (c) => {
+  const objectKey = c.req.query("key");
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  if (!objectKey) {
+    return error(c, "BAD_REQUEST", "Audio key is required.", 400);
+  }
+
+  const audioRef = parseAudioObjectKey(objectKey);
+  if (!audioRef) {
+    return error(c, "BAD_REQUEST", "Invalid audio key.", 400);
+  }
+
+  if (user.role === "student") {
+    if (audioRef.studentId !== user.id) {
+      return forbidden(c, "You cannot access this audio clip.");
+    }
+
+    const session = await verifyStudentSession(db, audioRef.sessionId, user.id);
+    if (!session) {
+      return notFound(c, "Session");
+    }
+  } else {
+    const exam = await verifyTeacherSnapshotAccess(db, audioRef.sessionId, user.id);
+    if (!exam) {
+      return forbidden(c, "You cannot access this audio clip.");
+    }
+  }
+
+  const audioObject = await c.env.EXAM_FILES.get(objectKey);
+  if (!audioObject) {
+    return notFound(c, "Audio clip");
+  }
+
+  c.header(
+    "Content-Type",
+    audioObject.httpMetadata?.contentType ?? inferAudioMimeType(objectKey),
+  );
+  c.header("Cache-Control", "private, max-age=60");
+  return c.body(await audioObject.arrayBuffer());
+});
+
 // ---------------------------------------------------------------------------
 // POST /event — Report a cheat event (student only)
 // ---------------------------------------------------------------------------
@@ -850,7 +1130,10 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     return notFound(c, "Session");
   }
 
-  if (session.status !== "in_progress") {
+  if (
+    session.status !== "in_progress" &&
+    eventType !== "microphone_permission_denied"
+  ) {
     return error(
       c,
       "INVALID_STATUS",
@@ -873,7 +1156,7 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
   );
 
   if (
-    eventType !== "disqualification" &&
+    !ALWAYS_ALLOWED_EVENT_TYPES.includes(eventType) &&
     !enabledCheatDetections.some((value) => value === eventType)
   ) {
     return success(c, {
@@ -1045,6 +1328,44 @@ cheatRoutes.post(
 // ---------------------------------------------------------------------------
 // GET /events/:examId — All cheat events for an exam (teacher only)
 // ---------------------------------------------------------------------------
+cheatRoutes.get("/audio-chunks/:sessionId", requireRole("teacher"), async (c) => {
+  const sessionId = c.req.param("sessionId");
+  const teacherId = c.get("user").id;
+  const db = getDb(c.env.educore);
+
+  const exam = await verifyTeacherSnapshotAccess(db, sessionId, teacherId);
+  if (!exam) {
+    return forbidden(c, "You cannot access audio chunks for this session.");
+  }
+
+  const chunks = await db
+    .select({
+      id: examAudioChunks.id,
+      sessionId: examAudioChunks.sessionId,
+      examId: examAudioChunks.examId,
+      studentId: examAudioChunks.studentId,
+      objectKey: examAudioChunks.objectKey,
+      mimeType: examAudioChunks.mimeType,
+      sequenceNumber: examAudioChunks.sequenceNumber,
+      chunkStartedAt: examAudioChunks.chunkStartedAt,
+      chunkEndedAt: examAudioChunks.chunkEndedAt,
+      uploadedAt: examAudioChunks.uploadedAt,
+      durationMs: examAudioChunks.durationMs,
+      sizeBytes: examAudioChunks.sizeBytes,
+    })
+    .from(examAudioChunks)
+    .where(eq(examAudioChunks.sessionId, sessionId))
+    .orderBy(examAudioChunks.sequenceNumber);
+
+  return success(
+    c,
+    chunks.map((chunk) => ({
+      ...chunk,
+      assetUrl: buildAudioAssetUrl(c.req.url, chunk.objectKey),
+    })),
+  );
+});
+
 cheatRoutes.get("/events/:examId", requireRole("teacher"), async (c) => {
   const examId = c.req.param("examId");
   const db = getDb(c.env.educore);

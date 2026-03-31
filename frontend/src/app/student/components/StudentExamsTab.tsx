@@ -1,13 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Play } from "lucide-react";
 import type { Exam } from "../types";
-import { formatDate, gradeFromPercentage } from "../utils";
-import StudentExamCautionPanel from "./StudentExamCautionPanel";
-import StudentExamDetailHeader from "./StudentExamDetailHeader";
-import StudentExamRulesPanel from "./StudentExamRulesPanel";
-import StudentExamTimingPanel from "./StudentExamTimingPanel";
 import StudentJoinExamPanel from "./StudentJoinExamPanel";
-import { formatClock, subjectFromExam } from "./student-exams-helpers";
+import StudentExamDetailSection from "./StudentExamDetailSection";
 
 type StudentExamsTabProps = {
   loading: boolean;
@@ -108,6 +101,7 @@ export default function StudentExamsTab({
   }, [examMeta?.isUpcoming, examMeta?.scheduledAt]);
 
   if (!selectedExam || !examMeta) {
+  if (!selectedExam) {
     return (
       <StudentJoinExamPanel
         loading={loading}
@@ -116,55 +110,20 @@ export default function StudentExamsTab({
         joinLoading={joinLoading}
         joinError={joinError}
         onLookup={onLookup}
+        selectedExam={selectedExam}
         studentHistory={studentHistory}
       />
     );
   }
 
   return (
-    <section className="mx-auto w-full max-w-[1088px] space-y-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-        Шалгалтын дэлгэрэнгүй
-      </div>
-
-      <StudentExamDetailHeader
-        title={selectedExam.title}
-        subject={examMeta.subject}
-        status={examMeta.status}
-        teacher={examMeta.teacher}
-        room={examMeta.room}
-        onBack={onClearSelection}
-      />
-
-      <StudentExamTimingPanel
-        dateLabel={examMeta.dateLabel}
-        startLabel={examMeta.startLabel}
-        endLabel={examMeta.endLabel}
-        durationLabel={examMeta.durationLabel}
-      />
-
-      <StudentExamRulesPanel
-        rulesOpen={rulesOpen}
-        setRulesOpen={setRulesOpen}
-      />
-
-      <StudentExamCautionPanel message={examMeta.examStatusMessage} />
-
-      {examMeta.isUpcoming && (
-        <div className="rounded-[22px] border border-[#dbe6ff] bg-[#f4f8ff] px-5 py-4 text-center text-sm font-semibold text-[#3659c8] shadow-[0_18px_40px_rgba(54,89,200,0.12)]">
-          Шалгалт эхлэх хүртэл{" "}
-          <span className="text-base font-bold">{countdown}</span>
-        </div>
-      )}
-
-      <button
-        className="inline-flex w-full items-center justify-center gap-2 rounded-[14px] bg-gradient-to-r from-[#5c4fe6] to-[#5148df] px-5 py-4 text-base font-semibold text-white shadow-[0_18px_40px_rgba(92,79,230,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-        onClick={onStartExam}
-        disabled={!canStart}
-      >
-        <Play className="h-4 w-4" />
-        Шалгалт эхлүүлэх
-      </button>
-    </section>
+    <StudentExamDetailSection
+      selectedExam={selectedExam}
+      joinError={joinError}
+      teacherName={teacherName}
+      onBack={onClearSelection}
+      onPrimaryAction={onStartExam}
+      primaryActionLabel="Start Exam"
+    />
   );
 }

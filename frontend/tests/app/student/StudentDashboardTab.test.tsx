@@ -78,6 +78,9 @@ const defaultProps = {
     { rank: 2, id: "student-3", fullName: "Сараа", xp: 2300, level: 11 },
     { rank: 4, id: "student-1", fullName: "Золбоо Бат", xp: 2100, level: 12 },
   ],
+  teacherName: "Г. Сарантуяа",
+  onOpenExamDetail: jest.fn(),
+  onCloseExamDetail: jest.fn(),
   onOpenExams: jest.fn(),
   onOpenProgress: jest.fn(),
 };
@@ -106,6 +109,23 @@ describe("StudentDashboardTab", () => {
     expect(onOpenExams).toHaveBeenCalledTimes(1);
   });
 
+  it("opens inline exam detail from a schedule card", () => {
+    const onOpenExamDetail = jest.fn();
+    render(
+      <StudentDashboardTab
+        {...defaultProps}
+        onOpenExamDetail={onOpenExamDetail}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Дэлгэрэнгүй" })[0]!);
+    expect(onOpenExamDetail).toHaveBeenCalledTimes(1);
+    expect(onOpenExamDetail.mock.calls[0]?.[0]).toMatchObject({
+      id: "exam-1",
+      title: "English Mock Exam",
+    });
+  });
+
   it("opens progress from the compact chart action", () => {
     const onOpenProgress = jest.fn();
     render(
@@ -117,10 +137,11 @@ describe("StudentDashboardTab", () => {
   });
 
   it("renders loading skeletons", () => {
-    const { container } = render(
-      <StudentDashboardTab {...defaultProps} loading={true} />,
-    );
+    const { container } = render(<StudentDashboardTab {...defaultProps} loading={true} />);
 
+    expect(
+      screen.getByLabelText("student-dashboard-loading"),
+    ).toBeInTheDocument();
     expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
   });
 
@@ -137,5 +158,19 @@ describe("StudentDashboardTab", () => {
 
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
     expect(screen.queryByText("#4 / 20")).not.toBeInTheDocument();
+  });
+
+  it("renders exam detail inline when a home exam is selected", () => {
+    render(
+      <StudentDashboardTab
+        {...defaultProps}
+        selectedExam={defaultProps.exams[0]}
+      />,
+    );
+
+    expect(screen.getByText("Start Exam")).toBeInTheDocument();
+    expect(screen.getByText("English Mock Exam")).toBeInTheDocument();
+    expect(screen.getByText("Англи хэл")).toBeInTheDocument();
+    expect(screen.getByText("ROOM01")).toBeInTheDocument();
   });
 });

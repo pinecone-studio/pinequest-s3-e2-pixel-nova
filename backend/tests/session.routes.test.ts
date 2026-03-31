@@ -20,6 +20,7 @@ describe("session routes", () => {
         title: "Algebra Final",
         durationMin: 45,
         status: "active",
+        requiresAudioRecording: 1,
         enabledCheatDetections: '["tab_switch","camera_blocked"]',
       }],
       [{ fullName: "Б.Сундуйбасар" }],
@@ -46,6 +47,7 @@ describe("session routes", () => {
           teacherName: "Б.Сундуйбасар",
           durationMin: 45,
           questionCount: 0,
+          requiresAudioRecording: true,
           enabledCheatDetections: ["tab_switch", "camera_blocked"],
         },
       },
@@ -156,6 +158,7 @@ describe("session routes", () => {
         title: "Algebra Final",
         description: "Practice",
         durationMin: 45,
+        requiresAudioRecording: 1,
         enabledCheatDetections: '["tab_switch","camera_blocked"]',
       }],
       [{ fullName: "Б.Сундуйбасар" }],
@@ -216,6 +219,7 @@ describe("session routes", () => {
           teacherName: "Б.Сундуйбасар",
           description: "Practice",
           durationMin: 45,
+          requiresAudioRecording: true,
           enabledCheatDetections: ["tab_switch", "camera_blocked"],
         },
         answers: [
@@ -323,6 +327,29 @@ describe("session routes", () => {
           { questionId: "question-2", answerId: "test-id", updated: false },
         ],
         count: 2,
+      },
+    });
+  });
+
+  it("blocks starting a required-audio exam when audio is not ready", async () => {
+    queueDbResults(
+      [{ id: "student-1", fullName: "Nora Student" }],
+      [{ id: "session-1", examId: "exam-1", status: "joined" }],
+      [{ id: "exam-1", requiresAudioRecording: 1, status: "active" }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/sessions/session-1/start",
+      jsonRequest({}, studentHeaders()),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      success: false,
+      error: {
+        code: "AUDIO_REQUIRED",
+        message: "Microphone recording must be ready before the exam can start.",
       },
     });
   });

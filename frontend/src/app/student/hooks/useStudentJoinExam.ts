@@ -88,6 +88,7 @@ export const useStudentJoinExam = () => {
                 teacherName?: string | null;
                 durationMin: number;
                 questionCount: number;
+                requiresAudioRecording?: boolean;
                 enabledCheatDetections?: string[];
               };
             };
@@ -105,6 +106,7 @@ export const useStudentJoinExam = () => {
               teacherName?: string | null;
               durationMin: number;
               questionCount: number;
+              requiresAudioRecording?: boolean;
               enabledCheatDetections?: string[];
             };
           }
@@ -147,6 +149,7 @@ export const useStudentJoinExam = () => {
         scheduledAt: data.scheduledAt ?? new Date().toISOString(),
         examStartedAt: data.startedAt ?? null,
         roomCode: code,
+        requiresAudioRecording: Boolean(data.exam.requiresAudioRecording),
         enabledCheatDetections: data.exam.enabledCheatDetections ?? undefined,
         questions: [],
         duration: data.exam.durationMin,

@@ -16,8 +16,6 @@ export type StudentTab =
   | "Home"
   | "Exams"
   | "Progress"
-  | "Insights"
-  | "Leaderboard"
   | "Profile"
   | "Settings"
   | "Help";
@@ -34,6 +32,7 @@ export type Exam = {
   examStartedAt?: string | null;
   finishedAt?: string | null;
   roomCode: string;
+  requiresAudioRecording?: boolean;
   enabledCheatDetections?: string[];
   questions: Question[];
   duration?: number;
@@ -105,4 +104,20 @@ export type ExamSession = {
   currentQuestionIndex: number;
   timeLeft: number;
   startedAt: string;
+};
+
+export type ExamAudioChunk = {
+  id: string;
+  sessionId: string;
+  examId: string;
+  studentId: string;
+  objectKey: string;
+  mimeType: string;
+  sequenceNumber: number;
+  chunkStartedAt: string;
+  chunkEndedAt: string;
+  uploadedAt: string;
+  durationMs: number;
+  sizeBytes: number;
+  assetUrl: string;
 };

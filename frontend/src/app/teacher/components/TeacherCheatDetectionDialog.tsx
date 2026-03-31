@@ -11,7 +11,9 @@ type TeacherCheatDetectionDialogProps = {
   exam: Exam | null;
   open: boolean;
   saving?: boolean;
+  requiresAudioRecording: boolean;
   selectedDetections: string[];
+  onAudioRequirementChange: (next: boolean) => void;
   onChange: (next: string[]) => void;
   onClose: () => void;
   onSave: () => void;
@@ -21,7 +23,9 @@ export default function TeacherCheatDetectionDialog({
   exam,
   open,
   saving = false,
+  requiresAudioRecording,
   selectedDetections,
+  onAudioRequirementChange,
   onChange,
   onClose,
   onSave,
@@ -61,7 +65,8 @@ export default function TeacherCheatDetectionDialog({
                 </h2>
                 <p className="mt-1 text-sm text-slate-600">{exam.title}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Хуваарь аль хэдийн хадгалагдсан. Энэ шалгалтад ямар автомат илрүүлэлтүүд идэвхтэй байхыг эндээс тохируулна.
+                  Хуваарь аль хэдийн хадгалагдсан. Энэ шалгалтад ямар автомат
+                  илрүүлэлтүүд идэвхтэй байхыг эндээс тохируулна.
                 </p>
               </div>
               <button
@@ -110,6 +115,33 @@ export default function TeacherCheatDetectionDialog({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
+              <label
+                className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition ${
+                  requiresAudioRecording
+                    ? "border-[#8bc5be] bg-[#f1fbf8]"
+                    : "border-[#dbe4ec] bg-white hover:border-[#b9cad8]"
+                } sm:col-span-2`}
+              >
+                <input
+                  type="checkbox"
+                  className="mt-1 size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                  checked={requiresAudioRecording}
+                  onChange={(event) => onAudioRequirementChange(event.target.checked)}
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-slate-900">
+                    Микрофоны аудио бичлэг шаардах
+                  </span>
+                  <span className="mt-1 block text-xs text-slate-500">
+                    Сурагч шалгалтын турш аудио баримт хэлбэрээр тасралтгүй
+                    бичигдэнэ.
+                  </span>
+                  <span className="mt-1 block text-xs uppercase tracking-[0.14em] text-slate-400">
+                    requires_audio_recording
+                  </span>
+                </span>
+              </label>
+
               {DEFAULT_ENABLED_CHEAT_DETECTIONS.map((detection) => {
                 const checked = selectedSet.has(detection);
 

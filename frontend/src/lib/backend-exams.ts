@@ -29,6 +29,7 @@ type RemoteExamDetail = {
   locationLatitude?: number | null;
   locationLongitude?: number | null;
   allowedRadiusMeters?: number | null;
+  requiresAudioRecording?: boolean;
   enabledCheatDetections?: string[];
   createdAt?: string;
 };
@@ -55,7 +56,7 @@ const readBackendError = async (response: Response, fallback: string) => {
   }
 };
 
-const unwrap = async <T,>(response: Response): Promise<T> => {
+const unwrap = async <T>(response: Response): Promise<T> => {
   const payload = (await response.json()) as ApiEnvelope<T> | T;
   if (payload && typeof payload === "object" && "data" in payload) {
     return (payload as ApiEnvelope<T>).data as T;
@@ -123,7 +124,9 @@ export const syncExamToBackend = async (
   });
 
   if (!createRes.ok) {
-    throw new Error(await readBackendError(createRes, "Backend exam create failed"));
+    throw new Error(
+      await readBackendError(createRes, "Backend exam create failed"),
+    );
   }
 
   const created = await unwrap<RemoteExamDetail>(createRes);
@@ -157,24 +160,30 @@ export const syncExamToBackend = async (
 
     if (!batchRes.ok) {
       throw new Error(
-        await readBackendError(batchRes, "Backend batch question create failed"),
+        await readBackendError(
+          batchRes,
+          "Backend batch question create failed",
+        ),
       );
     }
   }
 
   if (exam.scheduledAt && exam.questions.length > 0) {
-    const scheduleRes = await fetch(`${API_BASE_URL}/api/exams/${created.id}/schedule`, {
-      method: "POST",
-      headers: buildHeaders(user),
-      body: JSON.stringify({
-        scheduledAt: exam.scheduledAt,
-        locationPolicy: exam.location?.locationPolicy,
-        locationLabel: exam.location?.locationLabel,
-        locationLatitude: exam.location?.locationLatitude,
-        locationLongitude: exam.location?.locationLongitude,
-        allowedRadiusMeters: exam.location?.allowedRadiusMeters,
-      }),
-    });
+    const scheduleRes = await fetch(
+      `${API_BASE_URL}/api/exams/${created.id}/schedule`,
+      {
+        method: "POST",
+        headers: buildHeaders(user),
+        body: JSON.stringify({
+          scheduledAt: exam.scheduledAt,
+          locationPolicy: exam.location?.locationPolicy,
+          locationLabel: exam.location?.locationLabel,
+          locationLatitude: exam.location?.locationLatitude,
+          locationLongitude: exam.location?.locationLongitude,
+          allowedRadiusMeters: exam.location?.allowedRadiusMeters,
+        }),
+      },
+    );
 
     if (!scheduleRes.ok) {
       throw new Error(

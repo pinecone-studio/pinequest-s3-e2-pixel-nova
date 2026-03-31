@@ -14,6 +14,7 @@ import {
 } from "@/lib/role-session";
 import StudentDashboardView from "./components/StudentDashboardView";
 import DesktopExamCameraCard from "./components/DesktopExamCameraCard";
+import DesktopExamAudioCard from "./components/DesktopExamAudioCard";
 import StudentExamView from "./components/StudentExamView";
 import StudentResultView from "./components/StudentResultView";
 import StudentLoadingScreen from "./components/StudentLoadingScreen";
@@ -164,9 +165,9 @@ export default function StudentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-foreground">
+    <div className="min-h-screen bg-[#f6f7fd] text-foreground">
       {data.toast && (
-        <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#e7e3fb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
+        <div className="fixed right-6 top-6 z-50 rounded-[24px] border border-[#e7e9fb] bg-white/95 px-4 py-3 text-sm font-medium text-slate-700 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.28)] backdrop-blur">
           {data.toast}
         </div>
       )}
@@ -208,15 +209,25 @@ export default function StudentPage() {
             onSubmit={() => exam.submitExam(false)}
             onExit={exam.leaveExamFlow}
             cameraPanel={
-              <DesktopExamCameraCard
-                view={exam.view}
-                sessionId={exam.sessionId}
-                user={data.currentUser}
-                showWarning={exam.showWarning}
-                enabledCheatDetections={
-                  exam.activeExam?.enabledCheatDetections ?? null
-                }
-              />
+              <div className="space-y-4">
+                <DesktopExamCameraCard
+                  view={exam.view}
+                  sessionId={exam.sessionId}
+                  user={data.currentUser}
+                  showWarning={exam.showWarning}
+                  enabledCheatDetections={
+                    exam.activeExam?.enabledCheatDetections ?? null
+                  }
+                />
+                <DesktopExamAudioCard
+                  view={exam.view}
+                  sessionId={exam.sessionId}
+                  user={data.currentUser}
+                  showWarning={exam.showWarning}
+                  required={Boolean(exam.activeExam?.requiresAudioRecording)}
+                  onTerminateExam={exam.terminateExam}
+                />
+              </div>
             }
           />
         </div>

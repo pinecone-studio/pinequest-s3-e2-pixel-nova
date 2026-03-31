@@ -1,11 +1,21 @@
-import { ArrowLeft, Camera, ChevronUp, CircleAlert, ClipboardX, Clock3 } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  ChevronUp,
+  CircleAlert,
+  ClipboardX,
+  Clock3,
+  Mic,
+} from "lucide-react";
 
 type StudentExamRulesPanelProps = {
+  requiresAudioRecording?: boolean;
   rulesOpen: boolean;
   setRulesOpen: (value: boolean) => void;
 };
 
 export default function StudentExamRulesPanel({
+  requiresAudioRecording = false,
   rulesOpen,
   setRulesOpen,
 }: StudentExamRulesPanelProps) {
@@ -63,6 +73,17 @@ export default function StudentExamRulesPanel({
             </div>
             <div className="mt-1 text-xs text-slate-400">Заавал</div>
           </div>
+          {requiresAudioRecording && (
+            <div className="rounded-[18px] border border-[#ffd5d3] bg-[#fff5f5] px-4 py-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <Mic className="h-4 w-4 text-[#ef6d63]" />
+                Микрофон
+              </div>
+              <div className="mt-1 text-xs text-slate-400">
+                Аудио бичлэг шалгалтын турш заавал идэвхтэй байна.
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

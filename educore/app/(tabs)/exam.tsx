@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCameraPermissions } from "expo-camera";
 import { Redirect, useRouter } from "expo-router";
@@ -36,6 +37,7 @@ type ActiveListItem = {
   time: string;
   duration: number;
   status: "active" | "waiting" | "late";
+  badgeText: string;
 };
 
 type HistoryListItem = {
@@ -46,7 +48,7 @@ type HistoryListItem = {
   time: string;
   duration: number;
   score: number | null;
-  status: "graded" | "pending" | "missed";
+  status: "graded" | "missed" | "late";
   sortTime: number;
 };
 
@@ -75,6 +77,14 @@ function parseListDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function isSameCalendarDay(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
 function getExamStartDate(value?: string | null) {
   return parseListDate(value);
 }
@@ -85,18 +95,31 @@ function getExamEndDate(value: string | null | undefined, durationMin: number) {
   return new Date(start.getTime() + durationMin * 60 * 1000);
 }
 
+function getDaysUntilExam(value: string | null | undefined, now: Date) {
+  const start = getExamStartDate(value);
+  if (!start) return null;
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+  const startOfTarget = new Date(
+    start.getFullYear(),
+    start.getMonth(),
+    start.getDate(),
+  );
+
+  return Math.round(
+    (startOfTarget.getTime() - startOfToday.getTime()) / (24 * 60 * 60 * 1000),
+  );
+}
+
 function getActiveExamStatus(
   scheduledAt: string | null | undefined,
-  durationMin: number,
   rawStatus: string | null | undefined,
   now: Date,
 ): ActiveListItem["status"] | null {
   const start = getExamStartDate(scheduledAt);
-  const end = getExamEndDate(scheduledAt, durationMin);
-
-  if (end && now.getTime() >= end.getTime()) {
-    return null;
-  }
 
   if (!start) {
     return rawStatus === "active" ? "active" : "waiting";
@@ -132,50 +155,101 @@ function getHistoryDurationMinutes(
   return Math.max(1, Math.round((end - start) / (60 * 1000)));
 }
 
+function wasLateSubmission(
+  scheduledAt?: string | null,
+  startedAt?: string | null,
+) {
+  const scheduled = parseListDate(scheduledAt);
+  const started = parseListDate(startedAt);
+
+  if (!scheduled || !started) return false;
+
+  return started.getTime() >= scheduled.getTime() + 5 * 60 * 1000;
+}
+
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Exam list screen (tab = "active" | "history") Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function ExamListScreen() {
   const { history, upcomingExams } = useStudentApp();
   const [activeTab, setActiveTab] = useState<TabKey>("active");
   const [search, setSearch] = useState("");
-  const now = new Date();
+  const [now, setNow] = useState(() => new Date());
   const attemptedExamIds = new Set(history.map((item) => item.examId));
 
-  const activeItems: ActiveListItem[] =
-    upcomingExams.length > 0
-      ? upcomingExams.flatMap((exam) => {
-          const scheduledAt = exam.scheduledAt ?? exam.startedAt;
-          const status = getActiveExamStatus(
-            scheduledAt,
-            exam.durationMin,
-            exam.status,
-            now,
-          );
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 30000);
 
-          if (!status) {
-            return [];
-          }
+    return () => clearInterval(timer);
+  }, []);
 
-          return [
-            {
-              id: exam.examId,
-              title: exam.title,
-              date: formatListDate(scheduledAt),
-              time: formatListTime(scheduledAt),
-              duration: exam.durationMin,
-              status,
-            },
-          ];
-        })
-      : [];
+  const activeItemsFromBackend: ActiveListItem[] = upcomingExams.flatMap(
+    (exam) => {
+      const scheduledAt = exam.scheduledAt ?? exam.startedAt;
+      const scheduledDate = parseListDate(scheduledAt);
+      const end = getExamEndDate(scheduledAt, exam.durationMin);
+      const status =
+        getActiveExamStatus(scheduledAt, exam.status, now) ?? "waiting";
+      const daysUntilExam = getDaysUntilExam(scheduledAt, now);
 
-  const realHistoryItems: HistoryListItem[] = history
-    .filter((item) => item.status === "graded" || item.status === "submitted")
-    .map((item) => {
-      const completedAt = item.submittedAt ?? item.startedAt;
-      const completedDate = parseListDate(completedAt);
+      if (status === "late" || !scheduledDate) {
+        return [];
+      }
 
-      return {
+      if (end && now.getTime() >= end.getTime()) {
+        return [];
+      }
+
+      return [
+        {
+          id: exam.examId,
+          title: exam.title,
+          date: formatListDate(scheduledAt),
+          time: formatListTime(scheduledAt),
+          duration: exam.durationMin,
+          status,
+          badgeText:
+            status === "active"
+              ? "Өнөөдөр"
+              : daysUntilExam === null
+                ? "Товлогдсон"
+                : daysUntilExam <= 0
+                  ? "Өнөөдөр"
+                  : `${daysUntilExam} хоног`,
+        },
+      ];
+    },
+  );
+
+  const activeItems = activeItemsFromBackend;
+
+  const realHistoryItems: HistoryListItem[] = history.flatMap((item) => {
+    const scheduledDate = parseListDate(item.scheduledAt ?? item.startedAt);
+    const completedAt = item.submittedAt ?? item.startedAt ?? item.scheduledAt;
+    const completedDate = parseListDate(completedAt);
+    const isPastDay =
+      scheduledDate !== null &&
+      scheduledDate.getTime() < now.getTime() &&
+      !isSameCalendarDay(scheduledDate, now);
+
+    if (item.status !== "graded" && item.status !== "submitted" && !isPastDay) {
+      return [];
+    }
+
+    const derivedStatus: HistoryListItem["status"] = wasLateSubmission(
+      item.scheduledAt,
+      item.startedAt,
+    )
+      ? "late"
+      : item.status === "graded" || item.status === "submitted"
+        ? "graded"
+        : item.status === "late"
+          ? "late"
+          : "missed";
+
+    return [
+      {
         id: item.sessionId,
         examId: item.examId,
         title: item.title,
@@ -183,10 +257,41 @@ function ExamListScreen() {
         time: formatListTime(completedAt),
         duration: getHistoryDurationMinutes(item.startedAt, item.submittedAt),
         score: item.score,
-        status: item.status === "graded" ? "graded" : "pending",
+        status: derivedStatus,
         sortTime: completedDate?.getTime() ?? 0,
-      };
-    });
+      },
+    ];
+  });
+
+  const lateHistoryItems: HistoryListItem[] = upcomingExams.flatMap((exam) => {
+    if (attemptedExamIds.has(exam.examId)) {
+      return [];
+    }
+
+    const scheduledAt = exam.scheduledAt ?? exam.startedAt;
+    const status = getActiveExamStatus(scheduledAt, exam.status, now);
+    const end = getExamEndDate(scheduledAt, exam.durationMin);
+
+    if (status !== "late" || (end && now.getTime() >= end.getTime())) {
+      return [];
+    }
+
+    const sortBase = parseListDate(scheduledAt)?.getTime() ?? now.getTime();
+
+    return [
+      {
+        id: `late:${exam.examId}`,
+        examId: exam.examId,
+        title: exam.title,
+        date: formatListDate(scheduledAt),
+        time: formatListTime(scheduledAt),
+        duration: exam.durationMin,
+        score: null,
+        status: "late",
+        sortTime: sortBase,
+      },
+    ];
+  });
 
   const missedHistoryItems: HistoryListItem[] = upcomingExams.flatMap(
     (exam) => {
@@ -218,8 +323,10 @@ function ExamListScreen() {
   );
 
   const historyItems: HistoryListItem[] =
-    realHistoryItems.length > 0 || missedHistoryItems.length > 0
-      ? [...missedHistoryItems, ...realHistoryItems].sort(
+    realHistoryItems.length > 0 ||
+    lateHistoryItems.length > 0 ||
+    missedHistoryItems.length > 0
+      ? [...lateHistoryItems, ...missedHistoryItems, ...realHistoryItems].sort(
           (left, right) => right.sortTime - left.sortTime,
         )
       : [];
@@ -264,7 +371,7 @@ function ExamListScreen() {
 
       {/* Search bar */}
       <View style={styles.searchBar}>
-        <Text style={styles.searchIcon}>Ã°Å¸â€Â</Text>
+        <Ionicons name="search-outline" size={18} color="#98A2B3" />
         <TextInput
           style={styles.searchInput}
           placeholder="Шалгалт хайх..."
@@ -284,64 +391,6 @@ function ExamListScreen() {
   );
 }
 
-// Mock data Ã¢â‚¬â€ swap these with context data
-const MOCK_ACTIVE = [
-  {
-    id: "1",
-    title:
-      "ÃÅ“ÃÂ°Ã‘â€šÃÂµÃÂ¼ÃÂ°Ã‘â€šÃÂ¸ÃÂº ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
-    date: "2026/03/30",
-    time: "11:00",
-    duration: 40,
-    status: "active" as const,
-  },
-  {
-    id: "2",
-    title:
-      "ÃÅ“ÃÂ¾ÃÂ½ÃÂ³ÃÂ¾ÃÂ» Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
-    date: "2026/03/30",
-    time: "11:00",
-    duration: 40,
-    status: "waiting" as const,
-  },
-  {
-    id: "3",
-    title:
-      "ÃÅ“ÃÂ¾ÃÂ½ÃÂ³ÃÂ¾ÃÂ» Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
-    date: "2026/03/30",
-    time: "11:00",
-    duration: 40,
-    status: "late" as const,
-  },
-];
-
-const MOCK_HISTORY = [
-  {
-    id: "h1",
-    examId: "mock-h1",
-    title:
-      "ÃÅ“ÃÂ°Ã‘â€šÃÂµÃÂ¼ÃÂ°Ã‘â€šÃÂ¸ÃÂº ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
-    date: "2026/03/30",
-    time: "11:38",
-    duration: 40,
-    score: 91,
-    status: "graded" as const,
-    sortTime: new Date("2026-03-30T11:38:00").getTime(),
-  },
-  {
-    id: "h2",
-    examId: "mock-h2",
-    title:
-      "ÃÂÃÂ½ÃÂ³ÃÂ»ÃÂ¸ Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
-    date: "2026/03/30",
-    time: "11:00",
-    duration: 40,
-    score: null,
-    status: "missed" as const,
-    sortTime: new Date("2026-03-30T11:00:00").getTime(),
-  },
-];
-
 function ActiveExamList({
   search,
   items,
@@ -357,14 +406,10 @@ function ActiveExamList({
   if (filtered.length === 0) {
     return (
       <View style={styles.emptyCard}>
-        <Text style={styles.emptyEmoji}>Ã°Å¸â€œÂ­</Text>
-        <Text style={styles.emptyTitle}>
-          ÃËœÃÂ´Ã‘ÂÃÂ²Ã‘â€¦Ã‘â€šÃ‘ÂÃÂ¹ Ã‘Ë†ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š
-          ÃÂ±ÃÂ°ÃÂ¹Ã‘â€¦ÃÂ³Ã’Â¯ÃÂ¹
-        </Text>
+        <Text style={styles.emptyEmoji}>📭</Text>
+        <Text style={styles.emptyTitle}>Товлогдсон шалгалт алга</Text>
         <Text style={styles.emptyText}>
-          Ãâ€˜ÃÂ°ÃÂ³Ã‘Ë† Ã‘Ë†ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š ÃÂ½Ã‘ÂÃ‘ÂÃ‘â€¦Ã‘ÂÃÂ´ room
-          code-ÃÂ¾ÃÂ¾Ã‘â‚¬ ÃÂ½Ã‘ÂÃÂ³ÃÂ´Ã‘ÂÃÂ½Ã‘Â Ã’Â¯Ã’Â¯.
+          Багшийн товлосон бүх шалгалт энд харагдана.
         </Text>
       </View>
     );
@@ -385,44 +430,36 @@ function ActiveExamList({
             : exam.status === "waiting"
               ? [styles.statusPillText, styles.statusPillTextWarning]
               : [styles.statusPillText, styles.statusPillTextDanger];
-        const pillLabel =
-          exam.status === "active"
-            ? "ÃËœÃÂ´Ã‘ÂÃÂ²Ã‘â€¦Ã‘â€šÃ‘ÂÃÂ¹"
-            : exam.status === "waiting"
-              ? "ÃÂ¥Ã’Â¯ÃÂ»Ã‘ÂÃ‘ÂÃÂ³ÃÂ´Ã‘ÂÃÂ¶ ÃÂ±ÃÂ°ÃÂ¹ÃÂ½ÃÂ°"
-              : "ÃÂ¥ÃÂ¾Ã‘â€ ÃÂ¾Ã‘â‚¬Ã‘ÂÃÂ¾ÃÂ½";
 
         return (
           <View key={exam.id} style={styles.upcomingCard}>
             <View style={styles.listCardRow}>
               <Text style={styles.upcomingCardTitle}>{exam.title}</Text>
               <View style={pillStyle}>
-                <Text style={pillTextStyle}>{pillLabel}</Text>
+                <Text style={pillTextStyle}>{exam.badgeText}</Text>
               </View>
             </View>
             <View style={styles.upcomingMetaGroup}>
               <View style={styles.upcomingMetaRow}>
-                <Text style={styles.upcomingMetaLabel}>Ó¨Ð´Ó©Ñ€:</Text>
+                <Text style={styles.upcomingMetaLabel}>Өдөр:</Text>
                 <Text style={styles.upcomingMetaValue}>{exam.date}</Text>
               </View>
               <View style={styles.upcomingMetaRow}>
-                <Text style={styles.upcomingMetaLabel}>
-                  Ð­Ñ…ÑÐ»ÑÑÐ½ Ñ†Ð°Ð³:
-                </Text>
+                <Text style={styles.upcomingMetaLabel}>Эхэлсэн цаг:</Text>
                 <Text style={styles.upcomingMetaValue}>{exam.time}</Text>
               </View>
               <View style={styles.upcomingMetaRow}>
                 <Text style={styles.upcomingMetaLabel}>
-                  Ò®Ñ€Ð³ÑÐ»Ð¶Ð¸Ð»ÑÑÐ½ Ñ…ÑƒÐ³Ð°Ñ†Ð°Ð°:
+                  Үргэлжилсэн хугацаа:
                 </Text>
                 <Text style={styles.upcomingMetaValue}>
-                  {exam.duration} Ð¼Ð¸Ð½ÑƒÑ‚
+                  {exam.duration} минут
                 </Text>
               </View>
             </View>
             {exam.status === "active" ? (
               <TouchableOpacity
-                style={[styles.primaryBtn, { marginTop: 6 }]}
+                style={styles.upcomingPrimaryButton}
                 onPress={() => router.push("/exam")}
               >
                 <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
@@ -431,10 +468,8 @@ function ActiveExamList({
               <>
                 <View style={styles.upcomingDivider} />
                 <TouchableOpacity style={styles.upcomingDetailRow}>
-                  <Text style={styles.upcomingDetailText}>
-                    Ð”ÑÐ»Ð³ÑÑ€ÑÐ½Ð³Ò¯Ð¹
-                  </Text>
-                  <Text style={styles.upcomingDetailArrow}>â€º</Text>
+                  <Text style={styles.upcomingDetailText}>Дэлгэрэнгүй</Text>
+                  <Ionicons name="chevron-forward" size={20} color="#111827" />
                 </TouchableOpacity>
               </>
             )}
@@ -477,8 +512,8 @@ function HistoryList({
                 styles.statusPill,
                 exam.status === "missed"
                   ? styles.statusPillDanger
-                  : exam.status === "pending"
-                    ? styles.statusPillWarning
+                  : exam.status === "late"
+                    ? styles.statusPillDanger
                     : undefined,
               ]}
             >
@@ -487,15 +522,15 @@ function HistoryList({
                   styles.statusPillText,
                   exam.status === "missed"
                     ? styles.statusPillTextDanger
-                    : exam.status === "pending"
-                      ? styles.statusPillTextWarning
+                    : exam.status === "late"
+                      ? styles.statusPillTextDanger
                       : undefined,
                 ]}
               >
                 {exam.status === "missed"
                   ? "Өгөөгүй"
-                  : exam.status === "pending"
-                    ? "Шалгаж байна"
+                  : exam.status === "late"
+                    ? "Хоцорсон"
                     : "Өгсөн"}
               </Text>
             </View>

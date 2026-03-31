@@ -173,6 +173,7 @@ export type StudentExamHistoryItem = {
   score: number | null;
   earnedPoints: number | null;
   totalPoints: number | null;
+  scheduledAt: string | null;
   startedAt: string | null;
   submittedAt: string | null;
 };
