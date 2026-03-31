@@ -39,8 +39,7 @@ describe("TeacherPageContent", () => {
       <TeacherPageContent
         activeTab="Хуваарь"
         setActiveTab={() => {}}
-        showScheduleForm={false}
-        setShowScheduleForm={() => {}}
+        onOpenScheduleForm={() => {}}
         data={{ loading: true } as never}
         management={{} as never}
         examStatsState={{} as never}
@@ -58,8 +57,7 @@ describe("TeacherPageContent", () => {
       <TeacherPageContent
         activeTab="Шалгалтын сан"
         setActiveTab={() => {}}
-        showScheduleForm={false}
-        setShowScheduleForm={() => {}}
+        onOpenScheduleForm={() => {}}
         data={{
           loading: false,
           exams: [

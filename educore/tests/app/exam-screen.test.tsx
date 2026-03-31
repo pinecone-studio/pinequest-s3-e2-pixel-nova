@@ -209,9 +209,11 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("Native build required")).toBeTruthy();
     expect(
-      screen.getByText(/does not capture or upload snapshots/),
+      screen.getByText(/This build does not capture or upload snapshots/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/background and screen-blur integrity events/),
     ).toBeTruthy();
     screen.unmount();
   });

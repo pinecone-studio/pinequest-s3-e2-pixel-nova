@@ -27,17 +27,26 @@ export function useStudentExamWarnings(sessionId: string | null) {
 
     setViolations((prev) => ({
       ...prev,
-      eventCount: prev.eventCount + 1,
-      log: [{ type, timestamp: new Date().toISOString(), source }, ...prev.log].slice(0, 50),
+      eventCount: (prev.eventCount ?? 0) + 1,
+      log: [
+        { type, timestamp: new Date().toISOString(), source },
+        ...prev.log,
+      ].slice(0, 50),
       tabSwitch: type === "TAB_SWITCH" ? prev.tabSwitch + 1 : prev.tabSwitch,
       windowBlur: type === "WINDOW_BLUR" ? prev.windowBlur + 1 : prev.windowBlur,
       copyAttempt: type === "COPY_ATTEMPT" ? prev.copyAttempt + 1 : prev.copyAttempt,
       pasteAttempt: type === "PASTE_ATTEMPT" ? prev.pasteAttempt + 1 : prev.pasteAttempt,
       fullscreenExit: type === "FULLSCREEN_EXIT" ? prev.fullscreenExit + 1 : prev.fullscreenExit,
-      idleTooLong: type === "NO_MOUSE_MOVEMENT" ? prev.idleTooLong + 1 : prev.idleTooLong,
-      rightClick: type === "RIGHT_CLICK" ? prev.rightClick + 1 : prev.rightClick,
+      idleTooLong:
+        type === "NO_MOUSE_MOVEMENT"
+          ? (prev.idleTooLong ?? 0) + 1
+          : prev.idleTooLong,
+      rightClick:
+        type === "RIGHT_CLICK" ? (prev.rightClick ?? 0) + 1 : prev.rightClick,
       suspiciousResize:
-        type === "SUSPICIOUS_RESIZE" ? prev.suspiciousResize + 1 : prev.suspiciousResize,
+        type === "SUSPICIOUS_RESIZE"
+          ? (prev.suspiciousResize ?? 0) + 1
+          : prev.suspiciousResize,
       keyboardShortcut:
         type === "KEYBOARD_SHORTCUT"
           ? prev.keyboardShortcut + 1

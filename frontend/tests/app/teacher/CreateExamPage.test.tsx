@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import CreateExamPage from "@/app/teacher/createExam/page";
+import type { PendingCreateExamDraft } from "@/app/teacher/create-exam-dialog-state";
 
 type MockAuthUser = {
   id: string;
@@ -8,7 +9,10 @@ type MockAuthUser = {
 };
 
 const push = jest.fn();
-const consumePendingCreateExamDraft = jest.fn(() => null);
+const consumePendingCreateExamDraft = jest.fn<
+  PendingCreateExamDraft | null,
+  []
+>(() => null);
 const setExamTitle = jest.fn();
 const setQuestions = jest.fn();
 const acceptDraft = jest
