@@ -5,7 +5,9 @@ import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
 import {
   getStudentResults,
+  getStudentProgressLeaderboard,
   getStudentTermRank,
+  type StudentProgressLeaderboardEntry,
   type StudentTermRankOverview,
 } from "@/lib/backend-auth";
 import {
@@ -28,6 +30,9 @@ export const useStudentProgress = (currentUser: User | null) => {
     totalStudents: 0,
     termExamCount: 0,
   });
+  const [progressLeaderboard, setProgressLeaderboard] = useState<
+    StudentProgressLeaderboardEntry[]
+  >([]);
   const [studentProgress, setStudentProgress] = useState({
     xp: 0,
     level: 1,
@@ -89,6 +94,12 @@ export const useStudentProgress = (currentUser: User | null) => {
           termExamCount: 0,
         });
       }
+
+      try {
+        setProgressLeaderboard(await getStudentProgressLeaderboard(currentUser));
+      } catch {
+        setProgressLeaderboard([]);
+      }
     };
     void load();
   }, [currentUser]);
@@ -112,6 +123,7 @@ export const useStudentProgress = (currentUser: User | null) => {
     xpActivities,
     rankOverview,
     termRankOverview,
+    progressLeaderboard,
     studentProgress,
     levelInfo,
     nextLevel,
