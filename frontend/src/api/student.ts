@@ -63,6 +63,17 @@ export type StudentProgressLeaderboardEntry = {
   examCount: number;
 };
 
+export type StudentImprovementLeaderboardEntry = {
+  id: string;
+  fullName: string;
+  level: number;
+  rank: number;
+  xp: number;
+  examCount: number;
+  improvementCount: number;
+  missedCount: number;
+};
+
 export const getStudentExams = (user?: User | null) =>
   apiRequest<StudentExamSummary[]>("/api/student/exams", { user });
 
@@ -81,6 +92,12 @@ export const getStudentTermRank = (user?: User | null) =>
 export const getStudentProgressLeaderboard = (user?: User | null) =>
   apiRequest<StudentProgressLeaderboardEntry[]>(
     "/api/student/progress-leaderboard",
+    { user },
+  );
+
+export const getStudentImprovementLeaderboard = (user?: User | null) =>
+  apiRequest<StudentImprovementLeaderboardEntry[]>(
+    "/api/student/improvement-leaderboard",
     { user },
   );
 

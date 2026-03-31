@@ -1,9 +1,12 @@
 import {
+  buildImprovementEntries,
+  buildMockImprovementEntries,
   buildProgressLeaderboardEntries,
   formatAverageScore,
   getPodiumEntries,
   type LeaderboardEntry,
 } from "@/app/student/components/student-leaderboard-helpers";
+import type { StudentImprovementLeaderboardEntry } from "@/lib/backend-auth";
 
 const makeEntry = (overrides: Partial<LeaderboardEntry>): LeaderboardEntry => ({
   id: "student-1",
@@ -12,6 +15,20 @@ const makeEntry = (overrides: Partial<LeaderboardEntry>): LeaderboardEntry => ({
   rank: 1,
   averageScore: 92,
   examCount: 4,
+  ...overrides,
+});
+
+const makeImprovementEntry = (
+  overrides: Partial<StudentImprovementLeaderboardEntry>,
+): StudentImprovementLeaderboardEntry => ({
+  id: "student-1",
+  fullName: "Saran T.",
+  level: 1,
+  rank: 1,
+  xp: 20,
+  examCount: 3,
+  improvementCount: 2,
+  missedCount: 0,
   ...overrides,
 });
 
@@ -48,5 +65,47 @@ describe("student leaderboard helpers", () => {
     const podium = getPodiumEntries(entries);
 
     expect(podium.map((entry) => entry.rank)).toEqual([2, 1, 3]);
+  });
+
+  it("builds improvement leaderboard entries from separate growth XP", () => {
+    const entries = buildImprovementEntries([
+      makeImprovementEntry({ id: "b", rank: 2, xp: 10 }),
+      makeImprovementEntry({ id: "a", rank: 1, xp: 25 }),
+      makeImprovementEntry({ id: "c", rank: 3, xp: -10, missedCount: 1, improvementCount: 0 }),
+    ]);
+
+    expect(entries.map((entry) => entry.rank)).toEqual([1, 2, 3]);
+    expect(entries[0]?.xp).toBe(25);
+    expect(entries[2]?.metricPercent).toBeGreaterThanOrEqual(55);
+  });
+
+  it("fills the improvement leaderboard with mock entries up to top 10", () => {
+    const entries = buildMockImprovementEntries({
+      entries: [
+        makeImprovementEntry({
+          id: "student-2",
+          fullName: "Bataa B.",
+          rank: 1,
+          xp: 18,
+          improvementCount: 1,
+        }),
+      ],
+      currentUserId: "current-student",
+      currentUserName: "Anu Bold",
+    });
+
+    expect(entries).toHaveLength(10);
+    expect(entries.map((entry) => entry.rank)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ]);
+    expect(entries.some((entry) => entry.id === "current-student")).toBe(true);
+    expect(
+      entries.some((entry) => entry.id.startsWith("mock-improvement-")),
+    ).toBe(true);
+    expect(entries[0]?.xp).toBeGreaterThanOrEqual(entries[1]?.xp ?? 0);
+    entries.forEach((entry) => {
+      expect(entry.metricPercent).toBeGreaterThanOrEqual(55);
+      expect(entry.metricPercent).toBeLessThanOrEqual(99);
+    });
   });
 });

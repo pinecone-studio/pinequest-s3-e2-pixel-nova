@@ -4,17 +4,23 @@ import {
   getAvatar,
   getFirstName,
   type DisplayEntry,
+  type ImprovementDisplayEntry,
   type XpDisplayEntry,
 } from "./student-leaderboard-helpers";
 
 type StudentLeaderboardListItemProps = {
-  entry: DisplayEntry | XpDisplayEntry;
+  entry: DisplayEntry | XpDisplayEntry | ImprovementDisplayEntry;
   isCurrentUser: boolean;
   showFocusLabel?: boolean;
 };
 
-const isXpEntry = (entry: DisplayEntry | XpDisplayEntry): entry is XpDisplayEntry =>
-  "xp" in entry;
+const isAverageEntry = (
+  entry: DisplayEntry | XpDisplayEntry | ImprovementDisplayEntry,
+): entry is DisplayEntry => "averageScore" in entry;
+
+const isImprovementEntry = (
+  entry: DisplayEntry | XpDisplayEntry | ImprovementDisplayEntry,
+): entry is ImprovementDisplayEntry => "improvementCount" in entry;
 
 export default function StudentLeaderboardListItem({
   entry,
@@ -61,11 +67,19 @@ export default function StudentLeaderboardListItem({
       <div className="shrink-0 text-right">
         <div className="flex items-center justify-end gap-1 text-base font-semibold text-[#d69424]">
           <Zap className="h-4 w-4" />
-          {isXpEntry(entry) ? `${entry.xp.toLocaleString()} XP` : `${formatAverageScore(entry.averageScore)}%`}
+          {isAverageEntry(entry)
+            ? `${formatAverageScore(entry.averageScore)}%`
+            : `${entry.xp.toLocaleString()} XP`}
         </div>
         <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fff5de] px-2.5 py-1 text-xs font-semibold text-[#d69424]">
           <Sparkles className="h-3.5 w-3.5" />
-          {isXpEntry(entry) ? `Rank #${entry.rank}` : `${entry.examCount} шалгалт`}
+          {isAverageEntry(entry)
+            ? `${entry.examCount} шалгалт`
+            : isImprovementEntry(entry)
+              ? entry.missedCount > 0
+                ? `${entry.improvementCount} ахиц · ${entry.missedCount} таслалт`
+                : `${entry.improvementCount} ахиц`
+              : `Rank #${entry.rank}`}
         </div>
       </div>
     </div>

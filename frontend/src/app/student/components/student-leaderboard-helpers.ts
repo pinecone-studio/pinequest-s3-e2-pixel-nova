@@ -1,5 +1,8 @@
 import type { XpLeaderboardEntry } from "@/api/xp";
-import type { StudentProgressLeaderboardEntry } from "@/lib/backend-auth";
+import type {
+  StudentImprovementLeaderboardEntry,
+  StudentProgressLeaderboardEntry,
+} from "@/lib/backend-auth";
 
 export type LeaderboardEntry = StudentProgressLeaderboardEntry;
 
@@ -11,7 +14,29 @@ export type XpDisplayEntry = XpLeaderboardEntry & {
   metricPercent: number;
 };
 
+export type ImprovementDisplayEntry = StudentImprovementLeaderboardEntry & {
+  metricPercent: number;
+};
+
+type ImprovementMockOptions = {
+  entries: StudentImprovementLeaderboardEntry[];
+  currentUserId: string | null;
+  currentUserName: string;
+};
+
 export const avatarPool = ["🧑‍🎓", "👨‍🎓", "👩‍🎓", "👦", "👧", "🧠"];
+const improvementMockNamePool = [
+  "Тэмүүлэн",
+  "Саруул",
+  "Анударь",
+  "Билгүүн",
+  "Номин",
+  "Мишээл",
+  "Төгөлдөр",
+  "Энэрэл",
+  "Содбилэг",
+  "Марал",
+];
 
 export const podiumStyles = {
   1: {
@@ -88,6 +113,102 @@ export const buildClassEntries = (entries: XpLeaderboardEntry[]) => {
     ...entry,
     metricPercent: getBoundedPercent(entry.xp, maxXp),
   }));
+};
+
+export const buildImprovementEntries = (
+  entries: StudentImprovementLeaderboardEntry[],
+) => {
+  const sortedEntries = [...entries].sort((left, right) => left.rank - right.rank);
+  const maxXp = Math.max(...sortedEntries.map((entry) => Math.max(entry.xp, 0)), 1);
+
+  return sortedEntries.map((entry) => ({
+    ...entry,
+    metricPercent: getBoundedPercent(Math.max(entry.xp, 0), maxXp),
+  }));
+};
+
+const MOCK_IMPROVEMENT_ROW_COUNT = 10;
+
+const getMockImprovementXp = (rank: number) =>
+  Math.max(6, 46 - (rank - 1) * 4);
+
+const getMockImprovementLevel = (xp: number) =>
+  Math.max(1, Math.floor(Math.max(xp, 0) / 20) + 1);
+
+const getMockImprovementCount = (rank: number) =>
+  Math.max(1, 4 - Math.floor((rank - 1) / 3));
+
+export const buildMockImprovementEntries = ({
+  entries,
+  currentUserId,
+  currentUserName,
+}: ImprovementMockOptions) => {
+  const realEntries = [...entries]
+    .sort((left, right) => left.rank - right.rank)
+    .slice(0, MOCK_IMPROVEMENT_ROW_COUNT);
+
+  const usedIds = new Set(realEntries.map((entry) => entry.id));
+  const filledEntries = [...realEntries];
+  const currentUserExists = Boolean(
+    currentUserId && realEntries.some((entry) => entry.id === currentUserId),
+  );
+
+  if (currentUserId && !currentUserExists) {
+    usedIds.add(currentUserId);
+    filledEntries.push({
+      id: currentUserId,
+      fullName: currentUserName,
+      rank: Math.min(4, MOCK_IMPROVEMENT_ROW_COUNT),
+      xp: getMockImprovementXp(4),
+      level: getMockImprovementLevel(getMockImprovementXp(4)),
+      examCount: 3,
+      improvementCount: 2,
+      missedCount: 0,
+    });
+  }
+
+  let mockIndex = 0;
+  while (filledEntries.length < MOCK_IMPROVEMENT_ROW_COUNT) {
+    const rank = filledEntries.length + 1;
+    const xp = getMockImprovementXp(rank);
+    const id = `mock-improvement-${rank}`;
+
+    if (usedIds.has(id)) {
+      mockIndex += 1;
+      continue;
+    }
+
+    filledEntries.push({
+      id,
+      fullName: improvementMockNamePool[mockIndex % improvementMockNamePool.length] ?? "Сурагч",
+      rank,
+      xp,
+      level: getMockImprovementLevel(xp),
+      examCount: Math.max(2, 5 - Math.floor((rank - 1) / 2)),
+      improvementCount: getMockImprovementCount(rank),
+      missedCount: rank >= 8 ? 1 : 0,
+    });
+    usedIds.add(id);
+    mockIndex += 1;
+  }
+
+  const rankedEntries = filledEntries
+    .slice(0, MOCK_IMPROVEMENT_ROW_COUNT)
+    .sort((left, right) => {
+      if (right.xp !== left.xp) {
+        return right.xp - left.xp;
+      }
+      if (right.improvementCount !== left.improvementCount) {
+        return right.improvementCount - left.improvementCount;
+      }
+      return left.fullName.localeCompare(right.fullName);
+    })
+    .map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+    }));
+
+  return buildImprovementEntries(rankedEntries);
 };
 
 export const getPodiumEntries = (entries: DisplayEntry[]) => {

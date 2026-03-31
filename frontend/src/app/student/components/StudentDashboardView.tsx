@@ -1,6 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
 import RoleNavbar from "@/components/RoleNavbar";
-import type { AuthUser } from "@/lib/backend-auth";
+import type {
+  AuthUser,
+  StudentImprovementLeaderboardEntry,
+  StudentTermRankOverview,
+} from "@/lib/backend-auth";
 import type { XpLeaderboardEntry } from "@/api/xp";
 import type { RoleKey } from "@/lib/role-session";
 import StudentHeader from "./StudentHeader";
@@ -12,7 +16,6 @@ import StudentPreferencesTab from "./StudentPreferencesTab";
 import StudentProgressTab from "./StudentProgressTab";
 import StudentSettingsTab from "./StudentSettingsTab";
 import type { Exam, Grade, NotificationItem, StudentTab } from "../types";
-import type { StudentTermRankOverview } from "@/lib/backend-auth";
 
 type StudentHistoryItem = {
   examId: string;
@@ -65,6 +68,7 @@ type StudentProgressState = {
   progressSegments: number;
   termRankOverview: StudentTermRankOverview;
   leaderboardEntries: XpLeaderboardEntry[];
+  improvementLeaderboard: StudentImprovementLeaderboardEntry[];
 };
 
 type StudentDashboardViewProps = {
@@ -196,6 +200,7 @@ export default function StudentDashboardView({
             currentLevel={progress.levelInfo.level}
             termRankOverview={progress.termRankOverview}
             leaderboardEntries={progress.leaderboardEntries}
+            improvementLeaderboard={progress.improvementLeaderboard}
           />
         )}
 
