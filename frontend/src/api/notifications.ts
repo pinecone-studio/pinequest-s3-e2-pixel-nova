@@ -1,4 +1,4 @@
-import { apiFetch, unwrapApi } from "@/lib/api-client";
+import { apiRequest } from "./client";
 import type { NotificationItem } from "@/lib/notifications";
 
 type NotificationsPayload = {
@@ -10,11 +10,10 @@ export const fetchNotifications = async (
   role: "teacher" | "student",
   userId?: string | null,
 ): Promise<NotificationsPayload> => {
-  const data = await apiFetch<
-    { data?: NotificationsPayload } | NotificationsPayload
-  >("/api/notifications", {}, role, userId ?? undefined);
-
-  return unwrapApi(data);
+  return apiRequest<NotificationsPayload>("/api/notifications", {
+    roleOverride: role,
+    userIdOverride: userId ?? undefined,
+  });
 };
 
 export const markNotificationRead = async (
@@ -22,36 +21,28 @@ export const markNotificationRead = async (
   role: "teacher" | "student",
   userId?: string | null,
 ) => {
-  const data = await apiFetch<
-    { data?: { id: string; unreadCount: number } } | { id: string; unreadCount: number }
-  >(
+  return apiRequest<{ id: string; unreadCount: number }>(
     `/api/notifications/${notificationId}/read`,
     {
       method: "POST",
       body: JSON.stringify({}),
+      roleOverride: role,
+      userIdOverride: userId ?? undefined,
     },
-    role,
-    userId ?? undefined,
   );
-
-  return unwrapApi(data);
 };
 
 export const markAllNotificationsRead = async (
   role: "teacher" | "student",
   userId?: string | null,
 ) => {
-  const data = await apiFetch<
-    { data?: { unreadCount: number } } | { unreadCount: number }
-  >(
+  return apiRequest<{ unreadCount: number }>(
     "/api/notifications/read-all",
     {
       method: "POST",
       body: JSON.stringify({}),
+      roleOverride: role,
+      userIdOverride: userId ?? undefined,
     },
-    role,
-    userId ?? undefined,
   );
-
-  return unwrapApi(data);
 };

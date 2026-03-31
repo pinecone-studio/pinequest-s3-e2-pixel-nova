@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiFetch, unwrapApi } from "@/lib/api-client";
+import { apiRequest } from "@/api/client";
 import type { Exam, Question, Submission } from "../types";
 import { mapResultToReport } from "./student-exam-session-helpers";
 
@@ -50,8 +50,7 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
       }
 
       try {
-        const resultPayload = await apiFetch(`/api/sessions/${sessionId}/result`);
-        const result = unwrapApi(resultPayload as never) as {
+        const result = await apiRequest<{
           answers: {
             questionText: string;
             selectedAnswer: string | null;
@@ -62,7 +61,7 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
           }[];
           score: number;
           totalPoints: number;
-        };
+        }>(`/api/sessions/${sessionId}/result`);
         setAnswerReport(mapResultToReport(result));
         setLastSubmission((prev) =>
           prev

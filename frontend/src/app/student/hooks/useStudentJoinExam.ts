@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { apiFetch, unwrapApi } from "@/lib/api-client";
+import { apiRequest } from "@/api/client";
 import type { Exam } from "../types";
 
 export const useStudentJoinExam = () => {
@@ -73,6 +73,7 @@ export const useStudentJoinExam = () => {
       const joinWithLocation = (
         location?: { latitude: number; longitude: number; accuracy?: number },
       ) =>
+<<<<<<< 195-enhacement
         apiFetch<
         | {
             data?: {
@@ -93,6 +94,9 @@ export const useStudentJoinExam = () => {
               };
             };
           }
+=======
+        apiRequest<
+>>>>>>> main
         | {
             sessionId: string;
             status: string;
@@ -136,7 +140,7 @@ export const useStudentJoinExam = () => {
           throw err;
         }
       }
-      const data = unwrapApi(payload);
+      const data = payload;
       setSessionId(data.sessionId);
       setSelectedExam({
         id: data.exam.id,
