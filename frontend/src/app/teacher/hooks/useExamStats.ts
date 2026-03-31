@@ -83,10 +83,10 @@ export const useExamStats = (params: {
   const cheatStudents = useMemo(
     () =>
       buildCheatStudents({
-        submissions,
+        submissions: activeSubmissions.length > 0 ? activeSubmissions : submissions,
         exams,
       }),
-    [submissions, exams],
+    [activeSubmissions, submissions, exams],
   );
 
   const examStats = useMemo(

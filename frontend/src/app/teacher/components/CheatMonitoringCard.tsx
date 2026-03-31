@@ -5,6 +5,13 @@ type CheatMonitoringCardProps = {
   students: CheatStudent[];
 };
 
+const toneClassByRisk: Record<string, string> = {
+  critical: "bg-red-100 text-red-700",
+  high: "bg-red-100 text-red-700",
+  medium: "bg-amber-100 text-amber-700",
+  low: "bg-emerald-100 text-emerald-700",
+};
+
 export default function CheatMonitoringCard({ students }: CheatMonitoringCardProps) {
   return (
     <div className={cardClass}>
@@ -21,45 +28,53 @@ export default function CheatMonitoringCard({ students }: CheatMonitoringCardPro
           <path d="M12 3l8 4v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z" />
           <path d="M9 12l2 2 4-4" />
         </svg>
-        Хууран мэхлэлт хяналт
+        Cheat monitoring
       </h2>
       <div className="mt-4 space-y-3 text-sm">
         {students.length === 0 && (
           <div className="rounded-2xl border border-[#dce5ef] bg-[#f8fafc] px-3 py-3 text-xs text-slate-500">
-            Одоогоор сэжигтэй үйлдэл илрээгүй.
+            No suspicious activity has been recorded yet.
           </div>
         )}
         {students.map((student, idx) => (
           <div
             key={`${student.studentId ?? student.id ?? student.name}-${student.examTitle ?? "exam"}-${idx}`}
-            className="flex items-center justify-between rounded-2xl border border-[#dce5ef] bg-[#fbfdff] px-4 py-3"
+            className="rounded-2xl border border-[#dce5ef] bg-[#fbfdff] px-4 py-3"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="font-medium">{student.name}</div>
                 <div className="text-xs text-muted-foreground">
-                  {student.examTitle} · {student.events} event
+                  {student.examTitle} · {student.events ?? 0} events
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  Гол шалтгаан: {student.reason}
+                  Latest reason: {student.reason ?? student.latestEventLabel ?? "Unknown"}
                 </div>
+                {student.lastViolationAt && (
+                  <div className="mt-1 text-xs text-slate-400">
+                    Last flagged {new Date(student.lastViolationAt).toLocaleString()}
+                  </div>
+                )}
               </div>
               <span
                 className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                  student.cheat === "Өндөр"
-                    ? "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300"
-                    : student.cheat === "Дунд"
-                      ? "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300"
-                      : "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300"
+                  toneClassByRisk[student.riskLevel ?? "low"] ?? toneClassByRisk.low
                 }`}
               >
-                {student.cheat}
+                {student.riskLevel ?? student.cheat}
               </span>
             </div>
-            <div className="mt-3 rounded-xl border border-[#dce5ef] bg-white px-3 py-2 text-xs text-slate-500">
-              <div className="text-xs text-slate-500">
-                Оноо: {student.score}% · Зөрчил: {student.events ?? 0}
-              </div>
+
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+              <span className="rounded-xl border border-[#dce5ef] bg-white px-3 py-2">
+                Score: {student.score}%
+              </span>
+              <span className="rounded-xl border border-[#dce5ef] bg-white px-3 py-2">
+                Violation score: {student.violationScore ?? 0}
+              </span>
+              <span className="rounded-xl border border-[#dce5ef] bg-white px-3 py-2">
+                Flags: {student.flagCount ?? 0}
+              </span>
             </div>
           </div>
         ))}

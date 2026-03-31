@@ -58,6 +58,21 @@ export type Submission = {
     keyboardShortcut: number;
   }>;
   submittedAt: string;
+  isFlagged?: boolean;
+  flagCount?: number;
+  violationScore?: number;
+  riskLevel?: "low" | "medium" | "high" | "critical";
+  lastViolationAt?: string | null;
+  topViolationType?: string | null;
+  eventCount?: number;
+  latestEvent?: {
+    createdAt: string;
+    eventSource: string | null;
+    eventType: string;
+    label: string;
+    severity: string;
+  } | null;
+  countByType?: Record<string, number>;
 };
 
 export type QuestionInsight = {
@@ -104,6 +119,7 @@ export type NotificationItem = AppNotificationItem;
 
 export type CheatStudent = {
   studentId?: string;
+  sessionId?: string;
   id?: string;
   name: string;
   score: number;
@@ -112,6 +128,12 @@ export type CheatStudent = {
   reason?: string;
   events?: number;
   flagCount?: number;
+  violationScore?: number;
+  riskLevel?: "low" | "medium" | "high" | "critical";
+  lastViolationAt?: string | null;
+  topViolationType?: string | null;
+  latestEventLabel?: string | null;
+  countByType?: Record<string, number>;
 };
 
 export type XpLeaderboardEntry = {
@@ -140,6 +162,19 @@ export type ExamRosterParticipant = {
   startedAt: string | null;
   flagCount: number;
   isFlagged: boolean;
+  violationScore: number;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  lastViolationAt: string | null;
+  topViolationType: string | null;
+  eventCount: number;
+  latestEvent: {
+    createdAt: string;
+    eventSource: string | null;
+    eventType: string;
+    label: string;
+    severity: string;
+  } | null;
+  countByType: Record<string, number>;
   score: number | null;
 };
 
