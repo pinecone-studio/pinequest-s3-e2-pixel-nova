@@ -12,11 +12,21 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-jest.mock("@/components/RoleNavbar", () => () => <div>Role navbar</div>);
+jest.mock("@/components/RoleNavbar", () => {
+  function MockRoleNavbar() {
+    return <div>Role navbar</div>;
+  }
 
-jest.mock("@/app/teacher/components/TeacherHeader", () => () => (
-  <div>Teacher header</div>
-));
+  return MockRoleNavbar;
+});
+
+jest.mock("@/app/teacher/components/TeacherHeader", () => {
+  function MockTeacherHeader() {
+    return <div>Teacher header</div>;
+  }
+
+  return MockTeacherHeader;
+});
 
 jest.mock("@/app/teacher/components/ExamScheduleCard", () => ({
   __esModule: true,
