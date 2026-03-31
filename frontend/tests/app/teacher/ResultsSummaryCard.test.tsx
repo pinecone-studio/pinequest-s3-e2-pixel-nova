@@ -92,15 +92,13 @@ describe("ResultsSummaryCard", () => {
 
     expect(screen.getByText("Товч дүгнэлт")).toBeInTheDocument();
     expect(screen.getByText(/Анги нийтээрээ/i)).toBeInTheDocument();
-    expect(screen.getByText("Багшийн гол анхаарах зүйл:")).toBeInTheDocument();
+    expect(screen.getByText("Гол анхаарах зүйл:")).toBeInTheDocument();
     expect(screen.getByText("Тэнцсэн сурагч")).toBeInTheDocument();
     expect(screen.getByText("Анхаарах асуулт")).toBeInTheDocument();
     expect(screen.getByText("9/12")).toBeInTheDocument();
     expect(
-      screen.getByText(/12 сурагчийн илгээлт орсон, ангийн дундаж 68%/i),
+      screen.getByText(/12 сурагчийн дүн дээр үндэслэн энэ шалгалтын ерөнхий зургийг нэгтгэлээ\./i),
     ).toBeInTheDocument();
-    expect(screen.getByText("Дахин тайлбарлах асуулт")).toBeInTheDocument();
-    expect(screen.getByText("Хамгийн ойлгомжтой асуулт")).toBeInTheDocument();
     expect(
       screen.getByText(/"Which answer is correct\?" асуултаас эхэлж тайлбарлавал хамгийн үр дүнтэй\./i),
     ).toBeInTheDocument();
