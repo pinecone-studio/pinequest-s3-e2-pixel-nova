@@ -20,7 +20,7 @@ import StudentLoadingScreen from "./components/StudentLoadingScreen";
 import { useStudentData } from "./hooks/useStudentData";
 import { useStudentProgress } from "./hooks/useStudentProgress";
 import { useStudentExamState } from "./hooks/useStudentExamState";
-import { useExamCheatDetection } from "./hooks/useExamCheatDetection";
+import { useExamIntegrityMonitor } from "./hooks/useExamIntegrityMonitor";
 import { useExamTimer } from "./hooks/useExamTimer";
 
 const getInitials = (value: string) =>
@@ -50,12 +50,10 @@ export default function StudentPage() {
   });
   const progress = useStudentProgress(data.currentUser);
 
-  useExamCheatDetection({
+  useExamIntegrityMonitor({
     view: exam.view,
-    violations: exam.violations,
     logViolation: exam.logViolation,
     showWarning: exam.showWarning,
-    terminateExam: exam.terminateExam,
   });
 
   useExamTimer({

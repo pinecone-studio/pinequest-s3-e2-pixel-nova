@@ -48,6 +48,11 @@ export type Violations = {
   suspiciousSpeed: number;
   fullscreenExit: number;
   keyboardShortcut: number;
+  idleTooLong?: number;
+  rightClick?: number;
+  suspiciousResize?: number;
+  eventCount?: number;
+  riskLevel?: "low" | "medium" | "high" | "critical";
   log: ViolationLog[];
 };
 
@@ -114,6 +119,11 @@ export const defaultViolations = (): Violations => ({
   suspiciousSpeed: 0,
   fullscreenExit: 0,
   keyboardShortcut: 0,
+  idleTooLong: 0,
+  rightClick: 0,
+  suspiciousResize: 0,
+  eventCount: 0,
+  riskLevel: "low",
   log: [],
 });
 

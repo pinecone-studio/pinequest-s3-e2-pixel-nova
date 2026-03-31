@@ -204,6 +204,9 @@ export default function StudentExamView({
         </div>
         <div className="flex gap-2 text-xs">
           <span className="rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
+            Эрсдэл: {violations.riskLevel ?? "low"}
+          </span>
+          <span className="rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
             Таб: {violations.tabSwitch}
           </span>
           <span className="rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">

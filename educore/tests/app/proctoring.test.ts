@@ -14,16 +14,14 @@ describe('proctoring utilities', () => {
       platform: 'android',
       faceCount: 0,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
     const secondPass = evaluateProctorObservation(firstPass.state, {
-      timestamp: 1_999,
+      timestamp: 2_999,
       platform: 'android',
       faceCount: 0,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
@@ -38,16 +36,14 @@ describe('proctoring utilities', () => {
       platform: 'ios',
       faceCount: 2,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
     const thresholdPass = evaluateProctorObservation(firstPass.state, {
-      timestamp: 1_000,
+      timestamp: 2_000,
       platform: 'ios',
       faceCount: 2,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
@@ -59,7 +55,6 @@ describe('proctoring utilities', () => {
       platform: 'ios',
       faceCount: 2,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
@@ -74,7 +69,6 @@ describe('proctoring utilities', () => {
       platform: 'android',
       faceCount: 0,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
@@ -83,7 +77,6 @@ describe('proctoring utilities', () => {
       platform: 'android',
       faceCount: 1,
       yaw: 0,
-      pitch: 0,
       cameraPosition: 'front',
     });
 
@@ -92,7 +85,6 @@ describe('proctoring utilities', () => {
       platform: 'android',
       faceCount: 0,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
@@ -106,15 +98,13 @@ describe('proctoring utilities', () => {
       platform: 'android',
       faceCount: 2,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
     const triggeredState = evaluateProctorObservation(activeState.state, {
-      timestamp: 1_000,
+      timestamp: 2_000,
       platform: 'android',
       faceCount: 2,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
@@ -124,7 +114,6 @@ describe('proctoring utilities', () => {
       platform: 'android',
       faceCount: 2,
       yaw: null,
-      pitch: null,
       cameraPosition: 'front',
     });
 
@@ -139,21 +128,47 @@ describe('proctoring utilities', () => {
         platform: 'android',
         faceCount: 0,
         yaw: null,
-        pitch: null,
         cameraPosition: 'front',
       },
-      2_000
+      3_000
     );
 
     expect(JSON.parse(metadata)).toEqual({
-      source: 'mobile_camera',
+      source: 'mobile_camera_local',
       platform: 'android',
       faceCount: 0,
       yaw: null,
-      pitch: null,
-      durationMs: 2_000,
-      threshold: 2_000,
+      brightness: null,
+      durationMs: 3_000,
+      threshold: 3_000,
+      cameraPosition: 'front',
+      reason: null,
+    });
+  });
+
+  it('detects camera_blocked when low brightness persists', () => {
+    const initialState = createInitialProctorState();
+
+    const firstPass = evaluateProctorObservation(initialState, {
+      timestamp: 0,
+      platform: 'android',
+      faceCount: 1,
+      yaw: 0,
+      brightness: 12,
+      blockedReason: 'low_brightness',
       cameraPosition: 'front',
     });
+
+    const thresholdPass = evaluateProctorObservation(firstPass.state, {
+      timestamp: 3_000,
+      platform: 'android',
+      faceCount: 1,
+      yaw: 0,
+      brightness: 12,
+      blockedReason: 'low_brightness',
+      cameraPosition: 'front',
+    });
+
+    expect(thresholdPass.events[0]?.eventType).toBe('camera_blocked');
   });
 });

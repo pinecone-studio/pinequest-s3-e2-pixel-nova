@@ -3,6 +3,13 @@ import { apiFetch } from "@/lib/api-client";
 import type { Violations } from "../types";
 import { EMPTY_VIOLATIONS, EVENT_TYPE_MAP } from "./student-exam-session-helpers";
 
+type ViolationInput = {
+  confidence?: number;
+  details?: Record<string, string | number | boolean | null>;
+  source?: string;
+  type: string;
+};
+
 export function useStudentExamWarnings(sessionId: string | null) {
   const [violations, setViolations] = useState<Violations>({
     ...EMPTY_VIOLATIONS,
@@ -14,15 +21,23 @@ export function useStudentExamWarnings(sessionId: string | null) {
     setTimeout(() => setWarning(null), 3000);
   };
 
-  const logViolation = (type: string) => {
+  const logViolation = (input: string | ViolationInput) => {
+    const { confidence, details, source = "browser", type } =
+      typeof input === "string" ? { type: input } : input;
+
     setViolations((prev) => ({
       ...prev,
-      log: [{ type, timestamp: new Date().toISOString() }, ...prev.log].slice(0, 50),
+      eventCount: prev.eventCount + 1,
+      log: [{ type, timestamp: new Date().toISOString(), source }, ...prev.log].slice(0, 50),
       tabSwitch: type === "TAB_SWITCH" ? prev.tabSwitch + 1 : prev.tabSwitch,
       windowBlur: type === "WINDOW_BLUR" ? prev.windowBlur + 1 : prev.windowBlur,
       copyAttempt: type === "COPY_ATTEMPT" ? prev.copyAttempt + 1 : prev.copyAttempt,
       pasteAttempt: type === "PASTE_ATTEMPT" ? prev.pasteAttempt + 1 : prev.pasteAttempt,
       fullscreenExit: type === "FULLSCREEN_EXIT" ? prev.fullscreenExit + 1 : prev.fullscreenExit,
+      idleTooLong: type === "NO_MOUSE_MOVEMENT" ? prev.idleTooLong + 1 : prev.idleTooLong,
+      rightClick: type === "RIGHT_CLICK" ? prev.rightClick + 1 : prev.rightClick,
+      suspiciousResize:
+        type === "SUSPICIOUS_RESIZE" ? prev.suspiciousResize + 1 : prev.suspiciousResize,
       keyboardShortcut:
         type === "KEYBOARD_SHORTCUT"
           ? prev.keyboardShortcut + 1
@@ -31,10 +46,39 @@ export function useStudentExamWarnings(sessionId: string | null) {
     if (!sessionId) return;
 
     const eventType = EVENT_TYPE_MAP[type] ?? "suspicious_resize";
-    void apiFetch("/api/cheat/event", {
+    void apiFetch<{
+      data?: { deduped?: boolean; riskLevel?: Violations["riskLevel"] };
+      deduped?: boolean;
+      riskLevel?: Violations["riskLevel"];
+    }>("/api/cheat/event", {
       method: "POST",
-      body: JSON.stringify({ sessionId, eventType, metadata: type }),
-    });
+      body: JSON.stringify({
+        sessionId,
+        eventType,
+        source,
+        confidence,
+        details: {
+          originalType: type,
+          ...(details ?? {}),
+        },
+        metadata: JSON.stringify({
+          source,
+          confidence,
+          ...(details ?? {}),
+          originalType: type,
+        }),
+      }),
+    })
+      .then((response) => {
+        const payload = response?.data ?? response;
+        if (payload?.riskLevel) {
+          setViolations((prev) => ({
+            ...prev,
+            riskLevel: payload.riskLevel ?? prev.riskLevel,
+          }));
+        }
+      })
+      .catch(() => null);
   };
 
   return { violations, setViolations, warning, showWarning, logViolation };

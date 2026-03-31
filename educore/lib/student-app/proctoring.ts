@@ -1,51 +1,30 @@
 import type { CheatEventType } from '@/types/student-app';
 
 export type MobileCameraPlatform = 'android' | 'ios' | 'web' | 'unknown';
-export type SnapshotLookingDirection =
-  | 'forward'
-  | 'left'
-  | 'right'
-  | 'down'
-  | 'up'
-  | 'unclear';
 
-export type ProctorEventType = Extract<
+export type LocalProctorEventType = Extract<
   CheatEventType,
-  'face_missing' | 'multiple_faces' | 'looking_away' | 'looking_down'
+  'face_missing' | 'multiple_faces' | 'looking_away' | 'camera_blocked'
 >;
 
 export type ProctorObservation = {
+  blockedReason?: 'low_brightness' | 'sudden_landmark_loss' | null;
+  brightness?: number | null;
   cameraPosition: 'front';
   faceCount: number;
-  pitch: number | null;
   platform: MobileCameraPlatform;
   timestamp: number;
   yaw: number | null;
 };
 
 export type ProctorEvent = {
-  eventType: ProctorEventType;
+  eventType: LocalProctorEventType;
   localMessage: string;
   metadata: string;
 };
 
-export type SnapshotSuspiciousEvent = {
-  eventType: ProctorEventType;
-  confidence: number;
-  reason: string;
-};
-
-export type SnapshotAnalysisResult = {
-  confidence: number;
-  faceCount: number;
-  lookingDirection: SnapshotLookingDirection;
-  source: 'mobile_camera_ai';
-  summary: string;
-  suspiciousEvents: SnapshotSuspiciousEvent[];
-};
-
-type ActiveSinceMap = Partial<Record<ProctorEventType, number>>;
-type CooldownMap = Partial<Record<ProctorEventType, number>>;
+type ActiveSinceMap = Partial<Record<LocalProctorEventType, number>>;
+type CooldownMap = Partial<Record<LocalProctorEventType, number>>;
 
 export type ProctorState = {
   activeSince: ActiveSinceMap;
@@ -58,52 +37,50 @@ type RuleDefinition = {
   threshold: number;
 };
 
-export const CAMERA_SNAPSHOT_INTERVAL_MS = 15_000;
-export const SNAPSHOT_EVENT_COOLDOWN_MS = 45_000;
-
 const COOLDOWN_MS = 15_000;
 
-const RULES: Record<ProctorEventType, RuleDefinition> = {
+const RULES: Record<LocalProctorEventType, RuleDefinition> = {
   face_missing: {
+    threshold: 3_000,
+    localMessage:
+      'No face is visible for too long. Return to the camera view.',
+    predicate: (observation) =>
+      observation.faceCount === 0 && observation.blockedReason == null,
+  },
+  multiple_faces: {
     threshold: 2_000,
-    localMessage: 'Камер танд нүүр харахгүй байна. Камерын өмнө эргэж сууна уу.',
-    predicate: (observation) => observation.faceCount === 0,
+    localMessage:
+      'More than one face is visible. Only one student should stay in frame.',
+    predicate: (observation) => observation.faceCount > 1,
   },
   looking_away: {
-    threshold: 1_500,
-    localMessage: 'Та хэт удаан хажуу тийш харж байна. Анхаарлаа дэлгэц дээр төвлөрүүлнэ үү.',
+    threshold: 4_000,
+    localMessage:
+      'The student has been looking away for too long. Refocus on the exam screen.',
     predicate: (observation) =>
       observation.faceCount === 1 &&
       observation.yaw !== null &&
-      Math.abs(observation.yaw) >= 25,
+      Math.abs(observation.yaw) > 25,
   },
-  looking_down: {
-    threshold: 1_500,
-    localMessage: 'Та хэт удаан доош харж байна. Толгойгоо дэлгэц рүү чиглүүлнэ үү.',
+  camera_blocked: {
+    threshold: 3_000,
+    localMessage:
+      'The camera appears blocked or too dark. Clear the lens and keep the face visible.',
     predicate: (observation) =>
-      observation.faceCount === 1 &&
-      observation.pitch !== null &&
-      observation.pitch >= 20,
-  },
-  multiple_faces: {
-    threshold: 1_000,
-    localMessage: 'Камерт нэгээс олон хүн илэрлээ. Зөвхөн ганцаараа кадрт байна уу.',
-    predicate: (observation) => observation.faceCount > 1,
+      observation.blockedReason != null ||
+      (observation.brightness != null && observation.brightness < 28),
   },
 };
 
-const EVENT_ORDER: ProctorEventType[] = [
+const EVENT_ORDER: LocalProctorEventType[] = [
+  'camera_blocked',
   'face_missing',
   'multiple_faces',
   'looking_away',
-  'looking_down',
 ];
 
-const roundMetric = (value: number | null) =>
-  value === null ? null : Math.round(value * 100) / 100;
-
-const clampConfidence = (value: number) =>
-  Math.max(0, Math.min(1, Math.round(value * 100) / 100));
+const roundMetric = (value: number | null | undefined) =>
+  value == null ? null : Math.round(value * 100) / 100;
 
 export const createInitialProctorState = (): ProctorState => ({
   activeSince: {},
@@ -111,19 +88,20 @@ export const createInitialProctorState = (): ProctorState => ({
 });
 
 export const buildProctorMetadata = (
-  eventType: ProctorEventType,
+  eventType: LocalProctorEventType,
   observation: ProctorObservation,
   durationMs: number
 ) =>
   JSON.stringify({
-    source: 'mobile_camera',
+    source: 'mobile_camera_local',
     platform: observation.platform,
     faceCount: observation.faceCount,
     yaw: eventType === 'face_missing' ? null : roundMetric(observation.yaw),
-    pitch: eventType === 'face_missing' ? null : roundMetric(observation.pitch),
+    brightness: roundMetric(observation.brightness),
     durationMs,
     threshold: RULES[eventType].threshold,
     cameraPosition: observation.cameraPosition,
+    reason: observation.blockedReason ?? null,
   });
 
 export const evaluateProctorObservation = (
@@ -181,50 +159,5 @@ export const resetProctorActiveTimers = (
   lastTriggeredAt: { ...currentState.lastTriggeredAt },
 });
 
-export const getProctorLocalMessage = (eventType: ProctorEventType) =>
+export const getProctorLocalMessage = (eventType: LocalProctorEventType) =>
   RULES[eventType].localMessage;
-
-export const buildAiSnapshotMetadata = ({
-  analysis,
-  capturedAt,
-  event,
-  intervalMs,
-  objectKey,
-  platform,
-  snapshotUrl,
-}: {
-  analysis: SnapshotAnalysisResult;
-  capturedAt: string;
-  event: SnapshotSuspiciousEvent;
-  intervalMs: number;
-  objectKey?: string;
-  platform: MobileCameraPlatform;
-  snapshotUrl?: string;
-}) =>
-  JSON.stringify({
-    source: analysis.source,
-    platform,
-    faceCount: analysis.faceCount,
-    yaw: null,
-    pitch: null,
-    durationMs: intervalMs,
-    threshold: intervalMs,
-    cameraPosition: 'front',
-    capturedAt,
-    lookingDirection: analysis.lookingDirection,
-    analysisConfidence: clampConfidence(analysis.confidence),
-    eventConfidence: clampConfidence(event.confidence),
-    reason: event.reason,
-    summary: analysis.summary,
-    snapshotKey: objectKey ?? null,
-    snapshotUrl: snapshotUrl ?? null,
-  });
-
-export const getProctorDebugLabel = (observation: {
-  faceCount: number;
-  pitch: number | null;
-  yaw: number | null;
-}) =>
-  `Faces: ${observation.faceCount} | yaw: ${
-    observation.yaw === null ? 'n/a' : observation.yaw.toFixed(1)
-  } | pitch: ${observation.pitch === null ? 'n/a' : observation.pitch.toFixed(1)}`;

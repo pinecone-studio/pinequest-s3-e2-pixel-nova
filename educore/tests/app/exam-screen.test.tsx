@@ -44,7 +44,7 @@ jest.mock("@/components/student-app/MobileProctorCamera", () => ({
       ? require("react").createElement(
           "Text",
           null,
-          permissionGranted ? "camera-preview-active" : "camera-preview-blocked",
+          permissionGranted ? "Native build required" : "camera-preview-blocked",
         )
       : null,
 }));
@@ -210,10 +210,10 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("camera-preview-active")).toBeTruthy();
+    expect(screen.getByText("Native build required")).toBeTruthy();
     expect(
       screen.getByText(
-        /ойролцоогоор 15 сек тутам snapshot авч шууд R2 storage руу upload хийгээд backend AI-аар шинжилнэ/,
+        /does not capture or upload snapshots/,
       ),
     ).toBeTruthy();
     screen.unmount();
