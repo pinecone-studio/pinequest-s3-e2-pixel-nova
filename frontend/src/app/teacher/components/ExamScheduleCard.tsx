@@ -54,7 +54,7 @@ export default function ExamScheduleCard({
   const selectableExams = useMemo(
     () =>
       exams
-        .filter((exam) => (exam.questionCount ?? exam.questions.length) > 0)
+        .filter((exam) => Boolean(exam.id) && Boolean(exam.title?.trim()))
         .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
     [exams],
   );
