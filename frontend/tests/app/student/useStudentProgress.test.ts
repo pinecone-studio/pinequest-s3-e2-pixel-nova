@@ -17,7 +17,8 @@ jest.mock("@/lib/backend-auth", () => ({
 jest.mock("@/lib/examGuard", () => ({
   getLevel: jest.fn((xp: number) => {
     if (xp >= 500) return { level: 3, name: "Дайчин", minXP: 500, icon: "⚔️" };
-    if (xp >= 200) return { level: 2, name: "Суралцагч", minXP: 200, icon: "📖" };
+    if (xp >= 200)
+      return { level: 2, name: "Суралцагч", minXP: 200, icon: "📖" };
     return { level: 1, name: "Анхдагч", minXP: 0, icon: "🌱" };
   }),
   LEVELS: [
@@ -88,7 +89,11 @@ describe("useStudentProgress", () => {
   it("returns default values when no user", () => {
     const { result } = renderHook(() => useStudentProgress(null));
 
-    expect(result.current.studentProgress).toEqual({ xp: 0, level: 1, history: [] });
+    expect(result.current.studentProgress).toEqual({
+      xp: 0,
+      level: 1,
+      history: [],
+    });
     expect(result.current.studentHistory).toEqual([]);
     expect(result.current.termLeaderboardEntries).toEqual([]);
   });
@@ -175,5 +180,4 @@ describe("useStudentProgress", () => {
 
     expect(result.current.studentHistory).toEqual([]);
   });
-
 });

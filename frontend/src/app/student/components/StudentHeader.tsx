@@ -50,7 +50,8 @@ const closeOnBlur =
 
 const formatCompactXp = (value: number) => {
   if (value >= 1000) {
-    const compact = value >= 10000 ? Math.round(value / 1000) : Math.round(value / 100) / 10;
+    const compact =
+      value >= 10000 ? Math.round(value / 1000) : Math.round(value / 100) / 10;
     return `${compact.toString().replace(/\.0$/, "")}k XP`;
   }
 

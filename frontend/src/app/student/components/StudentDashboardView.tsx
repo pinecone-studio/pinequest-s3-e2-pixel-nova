@@ -202,13 +202,13 @@ export default function StudentDashboardView({
         )}
 
         {exam.activeTab === "Progress" && (
-            <StudentProgressTab
-              levelInfo={progress.levelInfo}
-              studentProgress={progress.studentProgress}
-              nextLevel={resolvedNextLevel}
-              progressSegments={progress.progressSegments}
-              studentHistory={studentHistory}
-            />
+          <StudentProgressTab
+            levelInfo={progress.levelInfo}
+            studentProgress={progress.studentProgress}
+            nextLevel={resolvedNextLevel}
+            progressSegments={progress.progressSegments}
+            studentHistory={studentHistory}
+          />
         )}
 
         {exam.activeTab === "Profile" && currentUser && (

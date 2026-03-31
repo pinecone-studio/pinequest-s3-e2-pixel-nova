@@ -31,6 +31,8 @@ type ExamTabProps = {
   setScheduleSubjectName: (value: string) => void;
   scheduleDescription: string;
   setScheduleDescription: (value: string) => void;
+  scheduleExpectedStudentsCount: number;
+  setScheduleExpectedStudentsCount: (value: number) => void;
   scheduleLocationPolicy: "anywhere" | "school_only";
   setScheduleLocationPolicy: (value: "anywhere" | "school_only") => void;
   scheduleLocationLabel: string;
@@ -144,6 +146,8 @@ export default function ExamTab(props: ExamTabProps) {
           setScheduleSubjectName={props.setScheduleSubjectName}
           scheduleDescription={props.scheduleDescription}
           setScheduleDescription={props.setScheduleDescription}
+          scheduleExpectedStudentsCount={props.scheduleExpectedStudentsCount}
+          setScheduleExpectedStudentsCount={props.setScheduleExpectedStudentsCount}
           scheduleLocationPolicy={props.scheduleLocationPolicy}
           setScheduleLocationPolicy={props.setScheduleLocationPolicy}
           scheduleLocationLabel={props.scheduleLocationLabel}

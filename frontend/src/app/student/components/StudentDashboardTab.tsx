@@ -7,9 +7,9 @@ import { subjectFromExam, formatClock } from "./student-exams-helpers";
 
 type StudentDashboardTabProps = {
   loading: boolean;
-  currentUserId: string | null;
+  currentUserId?: string | null;
   currentUserName: string;
-  exams: Exam[];
+  exams?: Exam[];
   selectedExam: Exam | null;
   levelInfo: { level: number; minXP: number };
   studentProgress: { xp: number };
@@ -25,7 +25,7 @@ type StudentDashboardTabProps = {
     grade?: "A" | "B" | "C" | "D" | "F";
     date: string;
   }[];
-  termLeaderboardEntries: XpLeaderboardEntry[];
+  termLeaderboardEntries?: XpLeaderboardEntry[];
   teacherName?: string | null;
   onOpenExamDetail: (exam: Exam) => void;
   onCloseExamDetail: () => void;
@@ -122,9 +122,9 @@ const getDisplayName = (value: string) => value.trim().split(/\s+/)[0] || value;
 
 export default function StudentDashboardTab({
   loading,
-  currentUserId,
+  currentUserId = null,
   currentUserName,
-  exams,
+  exams = [],
   selectedExam,
   levelInfo,
   studentProgress,
@@ -132,7 +132,7 @@ export default function StudentDashboardTab({
   currentRank,
   studentCount,
   studentHistory,
-  termLeaderboardEntries,
+  termLeaderboardEntries = [],
   teacherName,
   onOpenExamDetail,
   onCloseExamDetail,
@@ -585,7 +585,7 @@ export default function StudentDashboardTab({
                       </div>
                       {isCurrentUser && (
                         <span className="rounded-full bg-[#5f70ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
-                          you
+                          би
                         </span>
                       )}
                     </div>
@@ -613,7 +613,7 @@ export default function StudentDashboardTab({
 
             {xpRows.length === 0 && (
               <div className="rounded-[20px] border border-dashed border-[#dfe5fb] bg-[#fbfcff] px-4 py-5 text-sm text-slate-400">
-                XP leaderboard удахгүй харагдана.
+                XP жагсаалт удахгүй харагдана.
               </div>
             )}
           </div>

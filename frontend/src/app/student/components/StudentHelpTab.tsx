@@ -22,7 +22,7 @@ export default function StudentHelpTab() {
       <div className={cardClass}>
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <HelpCircle className="w-4 h-4" />
-          Тусламж & Зөвлөмж
+          Тусламж ба зөвлөмж
         </h2>
         <div className="mt-4 space-y-3 text-sm text-muted-foreground">
           {tips.map((item) => (

@@ -97,7 +97,7 @@ describe("StudentDashboardTab", () => {
     expect(screen.getByText("Англи хэл")).toBeInTheDocument();
     expect(screen.getByText("Монгол хэл")).toBeInTheDocument();
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
-    expect(screen.getByText("you")).toBeInTheDocument();
+    expect(screen.getByText("би")).toBeInTheDocument();
     expect(screen.getByText("#4 / 20")).toBeInTheDocument();
   });
 
