@@ -6,6 +6,7 @@ import {
   Settings,
   User2,
 } from "lucide-react";
+import Image from "next/image";
 import { useState, type FocusEvent, type ReactNode } from "react";
 import type { NotificationItem, StudentTab } from "../types";
 
@@ -82,12 +83,13 @@ export default function StudentHeader({
       <div className="flex flex-wrap items-center gap-4 xl:flex-nowrap xl:justify-between">
         <div className="flex min-w-[220px] items-center gap-3 py-2">
           <div className="overflow-hidden rounded-xl">
-            <img
+            <Image
               src="/group-web.svg"
               alt="Pinecone"
               width={32}
               height={32}
               className="h-8 w-8"
+              priority
             />
           </div>
           <span className="text-[15px] font-bold text-slate-900">Pinecone</span>

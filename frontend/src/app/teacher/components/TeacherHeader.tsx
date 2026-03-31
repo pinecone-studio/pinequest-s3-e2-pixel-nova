@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { useMemo, useState, type ReactNode } from "react";
-import type { NotificationItem } from "@/lib/notifications";
 import { Bell } from "lucide-react";
+import type { NotificationItem } from "@/lib/notifications";
 
 export type TeacherNavTab = string;
 
@@ -32,26 +32,13 @@ export default function TeacherHeader({
 }: TeacherHeaderProps) {
   const [open, setOpen] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
+
   const visibleNotifications = useMemo(
     () => (showAllNotifications ? notifications : notifications.slice(0, 3)),
     [notifications, showAllNotifications],
   );
 
   return (
-    <header className="relative z-40 flex items-center justify-between gap-4 border-b border-[#dce5ef] bg-white/95 px-4 py-2 backdrop-blur sm:px-6 lg:px-8">
-      <div className="flex shrink-0 items-center gap-3 py-2">
-        <div className="overflow-hidden rounded-xl">
-          <Image
-            src="/group-web.svg"
-            alt="Pinecone"
-            width={32}
-            height={32}
-            className="h-8 w-8"
-            priority
-          />
-        </div>
-        <span className="text-[15px] font-bold text-slate-900">Pinecone</span>
-      </div>
     <header
       className={`sticky top-0 z-40 border-b border-[#dde5ee] bg-white/90 backdrop-blur ${outerPaddingClass}`}
     >
@@ -62,15 +49,14 @@ export default function TeacherHeader({
           <div className="overflow-hidden rounded-xl">
             <Image
               src="/group-web.svg"
-              alt="PineQuest"
+              alt="Pinecone"
               width={32}
               height={32}
               className="h-8 w-8"
               priority
-              unoptimized
             />
           </div>
-          <span className="text-[15px] font-bold text-slate-900">Educore</span>
+          <span className="text-[15px] font-bold text-slate-900">Pinecone</span>
         </div>
 
         <div className="flex min-w-0 flex-1 justify-center px-2">
@@ -82,7 +68,7 @@ export default function TeacherHeader({
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`relative min-w-[110px] whitespace-nowrap px-4 py-2.5 text-[14px] font-semibold tracking-[-0.01em] transition cursor-pointer ${
+                  className={`relative min-w-[110px] cursor-pointer whitespace-nowrap px-4 py-2.5 text-[14px] font-semibold tracking-[-0.01em] transition ${
                     isActive
                       ? "text-slate-900"
                       : "text-slate-400 hover:text-slate-700"
@@ -102,7 +88,8 @@ export default function TeacherHeader({
           <div
             className="relative z-50"
             tabIndex={0}
-            onBlur={() => setOpen(false)}>
+            onBlur={() => setOpen(false)}
+          >
             <button
               className="relative grid h-9 w-9 place-items-center rounded-xl border border-[#dde5ee] bg-white text-slate-500 transition hover:bg-[#f8fafc]"
               onClick={() => {
@@ -113,7 +100,8 @@ export default function TeacherHeader({
                 });
               }}
               type="button"
-              aria-label="Notifications">
+              aria-label="Notifications"
+            >
               <Bell className="h-4 w-4" />
               {unreadCount > 0 && (
                 <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#2563eb] px-1 text-[9px] font-semibold text-white">
@@ -121,30 +109,35 @@ export default function TeacherHeader({
                 </span>
               )}
             </button>
+
             <div
               className={`absolute right-0 z-[80] mt-3 w-[320px] origin-top-right rounded-[24px] border border-[#dde5ee] bg-white p-3 shadow-[0_24px_52px_-34px_rgba(15,23,42,0.3)] transition ${
                 open
                   ? "translate-y-0 opacity-100"
                   : "pointer-events-none translate-y-1 opacity-0"
-              }`}>
+              }`}
+            >
               <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Мэдэгдлийн төв
               </div>
+
               {notifications.length > 0 && unreadCount > 0 && (
                 <button
                   type="button"
                   className="mb-2 rounded-xl border border-[#dde5ee] bg-[#f8fafc] px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
-                  onClick={() => onMarkAllRead?.()}>
+                  onClick={() => onMarkAllRead?.()}
+                >
                   Бүгдийг уншсан болгох
                 </button>
               )}
+
               {notifications.length === 0 && (
                 <div className="rounded-2xl border border-[#dde5ee] bg-[#f8fafc] px-4 py-3 text-sm text-slate-500">
                   Одоогоор мэдэгдэл алга.
                 </div>
               )}
-              <div
-                className={`${showAllNotifications ? "max-h-[420px] overflow-y-auto pr-1" : ""}`}>
+
+              <div className={showAllNotifications ? "max-h-[420px] overflow-y-auto pr-1" : ""}>
                 {visibleNotifications.map((item) => (
                   <button
                     key={item.id}
@@ -154,7 +147,8 @@ export default function TeacherHeader({
                         : "border-[#d9e4f0] bg-[#f5f9fd] text-slate-800"
                     }`}
                     onClick={() => onMarkRead?.(item.id)}
-                    type="button">
+                    type="button"
+                  >
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold">{item.title}</div>
                       <span
@@ -166,7 +160,8 @@ export default function TeacherHeader({
                               : item.severity === "success"
                                 ? "bg-[#f6faf7] text-[#557565]"
                                 : "bg-[#f4f8fc] text-[#5b718b]"
-                        }`}>
+                        }`}
+                      >
                         {item.severity}
                       </span>
                     </div>
@@ -182,11 +177,13 @@ export default function TeacherHeader({
                   </button>
                 ))}
               </div>
+
               {notifications.length > 3 && (
                 <button
                   type="button"
                   className="mt-3 w-full rounded-2xl border border-[#dde5ee] bg-[#f8fafc] px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-white"
-                  onClick={() => setShowAllNotifications((prev) => !prev)}>
+                  onClick={() => setShowAllNotifications((prev) => !prev)}
+                >
                   {showAllNotifications
                     ? "Хураах"
                     : `Бүгдийг харах (${notifications.length})`}
