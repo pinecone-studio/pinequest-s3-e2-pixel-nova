@@ -10,6 +10,7 @@ import type {
   StudentExamHistoryItem,
   StudentProfile,
   StudentProgressSummary,
+  StudentUpcomingExam,
 } from '@/types/student-app';
 
 export type StudentAppState = {
@@ -19,6 +20,7 @@ export type StudentAppState = {
   student: AuthUser | null;
   profile: StudentProfile | null;
   activeSession: ActiveExamSession | null;
+  upcomingExams: StudentUpcomingExam[];
   submittedResult: SessionResultResponse | null;
   history: StudentExamHistoryItem[];
   progressSummary: StudentProgressSummary;
@@ -37,6 +39,7 @@ export const initialStudentAppState: StudentAppState = {
   student: null,
   profile: null,
   activeSession: null,
+  upcomingExams: [],
   submittedResult: null,
   history: [],
   progressSummary: emptyProgressSummary,

@@ -132,6 +132,7 @@ const baseContext = {
     latestScore: null,
     latestCompletedAt: null,
   },
+  upcomingExams: [],
   recoverActiveSession: jest.fn(),
   refreshDashboard: jest.fn(),
   refreshProfile: jest.fn(),
@@ -170,8 +171,8 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("Идэвхтэй шалгалт байхгүй")).toBeTruthy();
-    expect(screen.getByText("Шалгалтанд нэгдэх")).toBeTruthy();
+    expect(screen.getByText("Шалгалтуудад")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Шалгалт хайх...")).toBeTruthy();
     screen.unmount();
   });
 

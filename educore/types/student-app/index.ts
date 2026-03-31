@@ -176,6 +176,20 @@ export type StudentExamHistoryItem = {
   submittedAt: string | null;
 };
 
+export type StudentUpcomingExam = {
+  examId: string;
+  title: string;
+  description?: string | null;
+  status: string | null;
+  className?: string | null;
+  groupName?: string | null;
+  scheduledAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  durationMin: number;
+  roomCode: string | null;
+};
+
 export type StudentProgressSummary = {
   totalSessions: number;
   gradedSessions: number;
