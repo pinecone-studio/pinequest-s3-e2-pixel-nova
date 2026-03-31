@@ -4,8 +4,10 @@ import type { StudentProgress } from "../types";
 import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
 import {
+  getStudentImprovementLeaderboard,
   getStudentResults,
   getStudentProgressLeaderboard,
+  type StudentImprovementLeaderboardEntry,
   getStudentTermRank,
   type StudentProgressLeaderboardEntry,
   type StudentTermRankOverview,
@@ -35,6 +37,9 @@ export const useStudentProgress = (currentUser: User | null) => {
   });
   const [progressLeaderboard, setProgressLeaderboard] = useState<
     StudentProgressLeaderboardEntry[]
+  >([]);
+  const [improvementLeaderboard, setImprovementLeaderboard] = useState<
+    StudentImprovementLeaderboardEntry[]
   >([]);
   const [studentProgress, setStudentProgress] = useState({
     xp: 0,
@@ -109,6 +114,14 @@ export const useStudentProgress = (currentUser: User | null) => {
       } catch {
         setProgressLeaderboard([]);
       }
+
+      try {
+        setImprovementLeaderboard(
+          await getStudentImprovementLeaderboard(currentUser),
+        );
+      } catch {
+        setImprovementLeaderboard([]);
+      }
     };
     void load();
   }, [currentUser]);
@@ -134,6 +147,7 @@ export const useStudentProgress = (currentUser: User | null) => {
     rankOverview,
     termRankOverview,
     progressLeaderboard,
+    improvementLeaderboard,
     studentProgress,
     levelInfo,
     nextLevel,
