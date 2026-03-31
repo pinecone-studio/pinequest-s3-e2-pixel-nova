@@ -84,6 +84,53 @@
   --font-geist-mono: "SFMono-Regular", "JetBrains Mono", "Menlo", monospace;
 }
 
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes loading-orbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-core-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.loading-ring {
+  position: relative;
+}
+
+.loading-ring::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  border-top-color: rgba(96, 165, 250, 0.95);
+  border-right-color: rgba(129, 140, 248, 0.65);
+  animation: loading-orbit 1.05s linear infinite;
+}
+
+.loading-core {
+  animation: loading-core-pulse 1.35s ease-in-out infinite;
+}
+
 @keyframes pageFadeSlide {
   from {
     opacity: 0;

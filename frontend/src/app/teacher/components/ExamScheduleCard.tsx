@@ -54,14 +54,14 @@ export default function ExamScheduleCard({
   const selectableExams = useMemo(
     () =>
       exams
-        .filter((exam) => (exam.questionCount ?? exam.questions.length) > 0)
+        .filter((exam) => Boolean(exam.id) && Boolean(exam.title?.trim()))
         .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
     [exams],
   );
 
   return (
     <div
-      className={`${cardClass} max-h-[calc(100vh-32px)] w-full max-w-101 overflow-auto p-5 font-sans sm:p-6`}
+      className={`${cardClass} max-h-[min(88vh,980px)] w-125 overflow-auto p-6 font-sans sm:p-7 no-scrollbar`}
     >
       <div className="grid gap-6">
         <div className="flex items-center justify-between">

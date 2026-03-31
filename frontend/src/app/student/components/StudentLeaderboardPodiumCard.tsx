@@ -4,7 +4,7 @@ import {
   getFirstName,
   podiumStyles,
   type DisplayEntry,
-  formatCompactXp,
+  formatAverageScore,
 } from "./student-leaderboard-helpers";
 
 type StudentLeaderboardPodiumCardProps = {
@@ -52,7 +52,7 @@ export default function StudentLeaderboardPodiumCard({
           {getFirstName(entry.fullName)}
         </div>
         <div className="mt-1 text-xs font-medium text-slate-500">
-          {formatCompactXp(entry.metricValue)} XP
+          {formatAverageScore(entry.averageScore)}% дундаж
         </div>
       </div>
     </div>

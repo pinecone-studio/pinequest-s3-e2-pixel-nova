@@ -1,6 +1,5 @@
 import { useState } from "react";
 import ExamListCard from "./ExamListCard";
-import ExamScheduleCard from "./ExamScheduleCard";
 import ExamCreateCard from "./ExamCreateCard";
 import ResultsTab from "./ResultsTab";
 import TeacherStudentsTab from "./TeacherStudentsTab";
@@ -22,8 +21,7 @@ export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Гү�
 type TeacherPageContentProps = {
   activeTab: TeacherTab;
   setActiveTab: (tab: TeacherTab) => void;
-  showScheduleForm: boolean;
-  setShowScheduleForm: (value: boolean | ((prev: boolean) => boolean)) => void;
+  onOpenScheduleForm: () => void;
   data: ReturnType<typeof useTeacherData>;
   management: ReturnType<typeof useExamManagement>;
   examStatsState: ReturnType<typeof useExamStats>;
@@ -35,52 +33,6 @@ type TeacherPageContentProps = {
     : unknown;
   profileLoading: boolean;
 };
-
-function TeacherScheduleModal({
-  show,
-  onClose,
-  data,
-  management,
-}: {
-  show: boolean;
-  onClose: () => void;
-  data: ReturnType<typeof useTeacherData>;
-  management: ReturnType<typeof useExamManagement>;
-}) {
-  if (!show) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/22 px-4 py-6 backdrop-blur-sm transition-all duration-300 sm:px-6 sm:py-8"
-      onClick={onClose}>
-      <div
-        className="w-full max-w-lg transition-all duration-500 ease-out motion-safe:translate-y-0"
-        onClick={(e) => e.stopPropagation()}>
-        <ExamScheduleCard
-          exams={data.exams}
-          selectedScheduleExamId={management.selectedScheduleExamId}
-          setSelectedScheduleExamId={management.setSelectedScheduleExamId}
-          scheduleDate={management.scheduleDate}
-          setScheduleDate={management.setScheduleDate}
-          scheduleExamType={management.scheduleExamType}
-          setScheduleExamType={management.setScheduleExamType}
-          scheduleClassName={management.scheduleClassName}
-          setScheduleClassName={management.setScheduleClassName}
-          scheduleGroupName={management.scheduleGroupName}
-          setScheduleGroupName={management.setScheduleGroupName}
-          scheduleSubjectName={management.scheduleSubjectName}
-          setScheduleSubjectName={management.setScheduleSubjectName}
-          scheduleDescription={management.scheduleDescription}
-          setScheduleDescription={management.setScheduleDescription}
-          durationMinutes={management.durationMinutes}
-          setDurationMinutes={management.setDurationMinutes}
-          onSchedule={management.handleSchedule}
-          onClose={onClose}
-        />
-      </div>
-    </div>
-  );
-}
 
 function TeacherCreateExamModal({
   show,
@@ -113,8 +65,7 @@ function TeacherCreateExamModal({
 export default function TeacherPageContent({
   activeTab,
   setActiveTab,
-  showScheduleForm,
-  setShowScheduleForm,
+  onOpenScheduleForm,
   data,
   management,
   examStatsState,
@@ -181,15 +132,9 @@ export default function TeacherPageContent({
       <TeacherStudentsTab
         exams={data.exams}
         loading={data.loading}
-        onAddSchedule={() => setShowScheduleForm((prev) => !prev)}
+        onAddSchedule={onOpenScheduleForm}
         currentUserId={data.currentUser?.id ?? null}
         onCopyCode={management.copyCode}
-      />
-      <TeacherScheduleModal
-        show={showScheduleForm}
-        onClose={() => setShowScheduleForm(false)}
-        data={data}
-        management={management}
       />
     </div>
   );

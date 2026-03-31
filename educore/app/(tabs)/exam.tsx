@@ -25,6 +25,240 @@ import {
 } from "@/lib/student-app/utils";
 import { examStyles as styles } from "@/styles/screens/exam";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type TabKey = "active" | "history";
+
+// ─── Exam list screen (tab = "active" | "history") ────────────────────────────
+
+function ExamListScreen() {
+  const [activeTab, setActiveTab] = useState<TabKey>("active");
+  const [search, setSearch] = useState("");
+
+  return (
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}>
+      <Text style={styles.pageTitle}>Шалгалтуудад</Text>
+
+      {/* Tab switcher */}
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "active" && styles.tabActive]}
+          onPress={() => setActiveTab("active")}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "active" && styles.tabTextActive,
+            ]}>
+            Шалгалтуудад
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "history" && styles.tabActive]}
+          onPress={() => setActiveTab("history")}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "history" && styles.tabTextActive,
+            ]}>
+            Шалгалтын түүх
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Search bar */}
+      <View style={styles.searchBar}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Шалгалт хайх..."
+          placeholderTextColor="#AAB0C0"
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      {/* List — replace with real data from context when ready */}
+      {activeTab === "active" ? (
+        <ActiveExamList search={search} />
+      ) : (
+        <HistoryList search={search} />
+      )}
+    </ScrollView>
+  );
+}
+
+// Mock data — swap these with context data
+const MOCK_ACTIVE = [
+  {
+    id: "1",
+    title: "Математик Яцын Шалгалт",
+    date: "2026/03/30",
+    time: "11:00",
+    duration: 40,
+    status: "active" as const,
+  },
+  {
+    id: "2",
+    title: "Монгол хэл Яцын Шалгалт",
+    date: "2026/03/30",
+    time: "11:00",
+    duration: 40,
+    status: "waiting" as const,
+  },
+  {
+    id: "3",
+    title: "Монгол хэл Яцын Шалгалт",
+    date: "2026/03/30",
+    time: "11:00",
+    duration: 40,
+    status: "late" as const,
+  },
+];
+
+const MOCK_HISTORY = [
+  {
+    id: "h1",
+    title: "Математик Яцын Шалгалт",
+    date: "2026/03/30",
+    time: "11:38",
+    duration: 40,
+    score: 91,
+  },
+  {
+    id: "h2",
+    title: "Англи хэл Яцын Шалгалт",
+    date: "2026/03/30",
+    time: "11:00",
+    duration: 40,
+    score: 0,
+  },
+];
+
+function ActiveExamList({ search }: { search: string }) {
+  const router = useRouter();
+  const filtered = MOCK_ACTIVE.filter((e) =>
+    e.title.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  if (filtered.length === 0) {
+    return (
+      <View style={styles.emptyCard}>
+        <Text style={styles.emptyEmoji}>📭</Text>
+        <Text style={styles.emptyTitle}>Идэвхтэй шалгалт байхгүй</Text>
+        <Text style={styles.emptyText}>
+          Багш шалгалт нээхэд room code-оор нэгдэнэ үү.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      {filtered.map((exam) => {
+        const pillStyle =
+          exam.status === "active"
+            ? styles.statusPill
+            : exam.status === "waiting"
+              ? [styles.statusPill, styles.statusPillWarning]
+              : [styles.statusPill, styles.statusPillDanger];
+        const pillTextStyle =
+          exam.status === "active"
+            ? styles.statusPillText
+            : exam.status === "waiting"
+              ? [styles.statusPillText, styles.statusPillTextWarning]
+              : [styles.statusPillText, styles.statusPillTextDanger];
+        const pillLabel =
+          exam.status === "active"
+            ? "Идэвхтэй"
+            : exam.status === "waiting"
+              ? "Хүлээгдэж байна"
+              : "Хоцорсон";
+
+        return (
+          <View key={exam.id} style={styles.listCard}>
+            <View style={styles.listCardRow}>
+              <Text style={styles.listCardTitle}>{exam.title}</Text>
+              <View style={pillStyle}>
+                <Text style={pillTextStyle}>{pillLabel}</Text>
+              </View>
+            </View>
+            <Text style={styles.listCardMeta}>
+              Огноо: {exam.date}
+              {"\n"}
+              Эхэлсэн цаг: {exam.time}
+              {"\n"}
+              Үргэлжлэх хугацаа: {exam.duration} мин
+            </Text>
+            {exam.status === "active" ? (
+              <TouchableOpacity
+                style={[styles.primaryBtn, { marginTop: 6 }]}
+                onPress={() => router.push("/exam")}>
+                <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={styles.detailLink}>Дэлгэрэнгүй ›</Text>
+            )}
+          </View>
+        );
+      })}
+    </>
+  );
+}
+
+function HistoryList({ search }: { search: string }) {
+  const filtered = MOCK_HISTORY.filter((e) =>
+    e.title.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  if (filtered.length === 0) {
+    return (
+      <View style={styles.emptyCard}>
+        <Text style={styles.emptyEmoji}>📋</Text>
+        <Text style={styles.emptyTitle}>Түүх байхгүй</Text>
+        <Text style={styles.emptyText}>Дууссан шалгалтууд энд харагдана.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      {filtered.map((exam) => (
+        <View key={exam.id} style={styles.listCard}>
+          <View style={styles.listCardRow}>
+            <Text style={styles.listCardTitle}>{exam.title}</Text>
+            <View
+              style={[
+                styles.statusPill,
+                exam.score >= 60 ? undefined : styles.statusPillWarning,
+              ]}>
+              <Text
+                style={[
+                  styles.statusPillText,
+                  exam.score >= 60 ? undefined : styles.statusPillTextWarning,
+                ]}>
+                {exam.score}%
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.listCardMeta}>
+            Огноо: {exam.date}
+            {"\n"}
+            Дууссан цаг: {exam.time}
+            {"\n"}
+            Үргэлжлэх хугацаа: {exam.duration} мин
+          </Text>
+          <Text style={styles.detailLink}>Дэлгэрэнгүй ›</Text>
+        </View>
+      ))}
+    </>
+  );
+}
+
+// ─── Active exam screen ────────────────────────────────────────────────────────
+
 export default function ExamScreen() {
   const router = useRouter();
   const {
@@ -194,6 +428,7 @@ export default function ExamScreen() {
 
   if (!student) return <Redirect href="/" />;
 
+  // No active session → show exam list with tabs
   if (!hydrated) {
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -215,9 +450,7 @@ export default function ExamScreen() {
         <Text style={styles.pageTitle}>Шалгалт</Text>
         <View style={styles.emptyCard}>
           <Text style={styles.emptyEmoji}>📭</Text>
-          <Text style={styles.emptyTitle}>
-            Өнөөдөр товлогдсон шалгалт байхгүй байна
-          </Text>
+          <Text style={styles.emptyTitle}>Идэвхтэй шалгалт байхгүй</Text>
           <Text style={styles.emptyText}>
             Багш шалгалт нээхэд room code-оор нэгдэнэ үү.
           </Text>
@@ -236,19 +469,19 @@ export default function ExamScreen() {
     );
   }
 
+  // ── Active / joined session ────────────────────────────────────────────────
+
   const handleStart = async () => {
     try {
       const permissionResult = cameraPermission?.granted
         ? cameraPermission
         : await requestCameraPermission();
-
       if (!permissionResult?.granted) {
         setSyncError(
           "Камерын зөвшөөрөл шаардлагатай. Expo Go build дээр шалгалт эхлэхээс өмнө front camera access зөвшөөрөөд дахин оролдоно уу.",
         );
         return;
       }
-
       await startExam();
       setRemainingSeconds(computeRemainingSeconds(activeSession.timerEndsAt));
     } catch (error) {

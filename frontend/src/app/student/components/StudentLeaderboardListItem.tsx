@@ -1,21 +1,30 @@
 import { Sparkles, Zap } from "lucide-react";
 import {
+  formatAverageScore,
   getAvatar,
   getFirstName,
-  formatCompactXp,
   type DisplayEntry,
+  type ImprovementDisplayEntry,
+  type XpDisplayEntry,
 } from "./student-leaderboard-helpers";
 
 type StudentLeaderboardListItemProps = {
-  entry: DisplayEntry;
+  entry: DisplayEntry | XpDisplayEntry | ImprovementDisplayEntry;
   isCurrentUser: boolean;
-  showFocusLabel: boolean;
+  showFocusLabel?: boolean;
 };
+
+const isAverageEntry = (
+  entry: DisplayEntry | XpDisplayEntry | ImprovementDisplayEntry,
+): entry is DisplayEntry => "averageScore" in entry;
+
+const isImprovementEntry = (
+  entry: DisplayEntry | XpDisplayEntry | ImprovementDisplayEntry,
+): entry is ImprovementDisplayEntry => "improvementCount" in entry;
 
 export default function StudentLeaderboardListItem({
   entry,
   isCurrentUser,
-  showFocusLabel,
 }: StudentLeaderboardListItemProps) {
   return (
     <div
@@ -51,21 +60,26 @@ export default function StudentLeaderboardListItem({
               </span>
             )}
           </div>
-          <div className="mt-1 text-sm text-slate-400">
-            Lvl {entry.level}
-            {showFocusLabel ? ` • ${entry.focusLabel}` : ""}
-          </div>
+          <div className="mt-1 text-sm text-slate-400">Lvl {entry.level}</div>
         </div>
       </div>
 
       <div className="shrink-0 text-right">
         <div className="flex items-center justify-end gap-1 text-base font-semibold text-[#d69424]">
           <Zap className="h-4 w-4" />
-          {formatCompactXp(entry.metricValue)}
+          {isAverageEntry(entry)
+            ? `${formatAverageScore(entry.averageScore)}%`
+            : `${entry.xp.toLocaleString()} XP`}
         </div>
         <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fff5de] px-2.5 py-1 text-xs font-semibold text-[#d69424]">
           <Sparkles className="h-3.5 w-3.5" />
-          {entry.metricPercent}%
+          {isAverageEntry(entry)
+            ? `${entry.examCount} шалгалт`
+            : isImprovementEntry(entry)
+              ? entry.missedCount > 0
+                ? `${entry.improvementCount} ахиц · ${entry.missedCount} таслалт`
+                : `${entry.improvementCount} ахиц`
+              : `Rank #${entry.rank}`}
         </div>
       </div>
     </div>

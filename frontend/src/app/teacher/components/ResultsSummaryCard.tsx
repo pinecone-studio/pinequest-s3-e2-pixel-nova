@@ -3,9 +3,9 @@ import {
   cardClass,
   sectionDescriptionClass,
   sectionTitleClass,
-  selectClass,
 } from "../styles";
 import type { Exam, ExamStatsSummary } from "../types";
+import TeacherSelect from "./TeacherSelect";
 
 type ResultsSummaryCardProps = {
   examOptions: Exam[];
@@ -30,20 +30,17 @@ export default function ResultsSummaryCard({
             Дундаж оноо, pass rate, хамгийн их алдсан болон зөв гүйцэтгэсэн асуултууд.
           </p>
         </div>
-        <select
-          className={`${selectClass} max-w-xs`}
-          value={activeExamId ?? ""}
-          onChange={(event) => onSelectExam(event.target.value)}
-        >
-          {examOptions.length === 0 && (
-            <option value="">Шалгалт байхгүй</option>
-          )}
-          {examOptions.map((exam) => (
-            <option key={exam.id} value={exam.id}>
-              {exam.title}
-            </option>
-          ))}
-        </select>
+        <div className="w-full max-w-xs">
+          <TeacherSelect
+            value={activeExamId ?? ""}
+            onChange={(event) => onSelectExam(event.target.value)}
+            options={
+              examOptions.length === 0
+                ? [{ value: "", label: "Шалгалт байхгүй", disabled: true }]
+                : examOptions.map((exam) => ({ value: exam.id, label: exam.title }))
+            }
+          />
+        </div>
       </div>
 
       {!examStats && (

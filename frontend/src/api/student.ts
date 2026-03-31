@@ -54,6 +54,26 @@ export type StudentTermRankOverview = {
   termExamCount: number;
 };
 
+export type StudentProgressLeaderboardEntry = {
+  id: string;
+  fullName: string;
+  level: number;
+  rank: number;
+  averageScore: number;
+  examCount: number;
+};
+
+export type StudentImprovementLeaderboardEntry = {
+  id: string;
+  fullName: string;
+  level: number;
+  rank: number;
+  xp: number;
+  examCount: number;
+  improvementCount: number;
+  missedCount: number;
+};
+
 export const getStudentExams = (user?: User | null) =>
   apiRequest<StudentExamSummary[]>("/api/student/exams", { user });
 
@@ -68,6 +88,18 @@ export const getStudentProfile = (user?: User | null) =>
 
 export const getStudentTermRank = (user?: User | null) =>
   apiRequest<StudentTermRankOverview>("/api/student/term-rank", { user });
+
+export const getStudentProgressLeaderboard = (user?: User | null) =>
+  apiRequest<StudentProgressLeaderboardEntry[]>(
+    "/api/student/progress-leaderboard",
+    { user },
+  );
+
+export const getStudentImprovementLeaderboard = (user?: User | null) =>
+  apiRequest<StudentImprovementLeaderboardEntry[]>(
+    "/api/student/improvement-leaderboard",
+    { user },
+  );
 
 export const updateStudentProfile = (
   payload: StudentProfile,

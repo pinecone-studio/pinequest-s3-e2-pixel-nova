@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, BookOpen, CalendarDays, Clock3 } from "lucide-react";
 
 type UpcomingItem = {
@@ -47,8 +48,17 @@ export default function StudentUpcomingExamsPanel({
           ? Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className="h-[104px] animate-pulse rounded-[24px] border border-[#eceaf7] bg-[#f8f9ff]"
-              />
+                className="rounded-[24px] border border-[#eceaf7] bg-[#fbfdff] p-4 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.12)]"
+              >
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-14 w-14 rounded-[20px]" />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton className="h-4 w-1/3 rounded-full" />
+                    <Skeleton className="h-3 w-2/3 rounded-full" />
+                    <Skeleton className="h-3 w-1/2 rounded-full" />
+                  </div>
+                </div>
+              </div>
             ))
           : overview.length > 0
             ? overview.map((item, index) => (

@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { Info, Play } from "lucide-react";
 import { formatDate, gradeFromPercentage } from "../utils";
 
@@ -101,8 +102,10 @@ export default function StudentJoinExamPanel({
             Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className="h-[92px] animate-pulse rounded-[24px] border border-[#e8edf9] bg-[#f8faff]"
-              />
+                className="rounded-[24px] border border-[#e8edf9] bg-[#fbfdff] p-4 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.12)]"
+              >
+                <Skeleton className="h-[92px] rounded-[18px]" />
+              </div>
             ))}
 
           {!loading && studentHistory.length === 0 && (

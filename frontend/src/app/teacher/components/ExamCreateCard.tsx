@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useMemo, useState } from "react";
 import { cardClass } from "../styles";
 import type { Question } from "../types";
@@ -12,8 +13,8 @@ type ExamCreateCardProps = {
   setExamTitle: (value: string) => void;
   questionText: string;
   setQuestionText: (value: string) => void;
-  questionType: "text" | "open" | "mcq";
-  setQuestionType: (value: "text" | "open" | "mcq") => void;
+  questionType: "open" | "mcq";
+  setQuestionType: (value: "open" | "mcq") => void;
   mcqOptions: string[];
   setMcqOptions: (value: string[]) => void;
   questionAnswer: string;
@@ -44,8 +45,6 @@ type ExamCreateCardProps = {
   setAnswerKeyPage: (value: number | "last") => void;
   importMcqCount: number;
   setImportMcqCount: (value: number) => void;
-  importTextCount: number;
-  setImportTextCount: (value: number) => void;
   importOpenCount: number;
   setImportOpenCount: (value: number) => void;
   shuffleImportedQuestions: boolean;
@@ -94,8 +93,6 @@ export default function ExamCreateCard({
   setAnswerKeyPage,
   importMcqCount,
   setImportMcqCount,
-  importTextCount,
-  setImportTextCount,
   importOpenCount,
   setImportOpenCount,
   shuffleImportedQuestions,
@@ -158,8 +155,6 @@ export default function ExamCreateCard({
           setAnswerKeyPage={setAnswerKeyPage}
           importMcqCount={importMcqCount}
           setImportMcqCount={setImportMcqCount}
-          importTextCount={importTextCount}
-          setImportTextCount={setImportTextCount}
           importOpenCount={importOpenCount}
           setImportOpenCount={setImportOpenCount}
           shuffleImportedQuestions={shuffleImportedQuestions}
@@ -222,11 +217,11 @@ export default function ExamCreateCard({
       )}
 
       {saving && (
-        <div className="mt-4 grid gap-3 rounded-2xl border border-[#e8edf9] bg-[#f8faff] p-4">
-          <div className="h-4 w-40 animate-pulse rounded-full bg-[#e6ecfb]" />
+        <div className="mt-4 grid gap-3 rounded-[24px] border border-[#e8edf9] bg-[#f8fbff] p-4 shadow-[0_18px_34px_-28px_rgba(15,23,42,0.14)]">
+          <Skeleton className="h-4 w-40 rounded-full" />
           <div className="grid gap-2 sm:grid-cols-2">
-            <div className="h-20 animate-pulse rounded-2xl bg-white/80" />
-            <div className="h-20 animate-pulse rounded-2xl bg-white/80" />
+            <Skeleton className="h-20 rounded-2xl" />
+            <Skeleton className="h-20 rounded-2xl" />
           </div>
         </div>
       )}

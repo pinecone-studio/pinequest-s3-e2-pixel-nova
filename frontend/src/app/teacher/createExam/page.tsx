@@ -117,8 +117,7 @@ export default function CreateExamPage() {
     if (pending.mode === "pdf") {
       management.setExamTitle(pending.examTitle);
       imports.setImportMcqCount(pending.importMcqCount);
-      imports.setImportTextCount(pending.importTextCount);
-      imports.setImportOpenCount(pending.importOpenCount);
+      imports.setImportOpenCount(pending.importOpenCount + (pending.importTextCount ?? 0));
       data.showToast("PDF импортын тохиргоо бэлэн боллоо. Файлаа оруулаад үргэлжлүүлнэ үү.");
       return;
     }
@@ -195,8 +194,6 @@ export default function CreateExamPage() {
             setAnswerKeyPage={imports.setAnswerKeyPage}
             importMcqCount={imports.importMcqCount}
             setImportMcqCount={imports.setImportMcqCount}
-            importTextCount={imports.importTextCount}
-            setImportTextCount={imports.setImportTextCount}
             importOpenCount={imports.importOpenCount}
             setImportOpenCount={imports.setImportOpenCount}
             shuffleImportedQuestions={imports.shuffleImportedQuestions}

@@ -1,3 +1,5 @@
+import LoadingScreen from "@/components/ui/loading-screen";
+
 type StudentLoadingScreenProps = {
   usersLoading: boolean;
   onReload: () => void;
@@ -8,26 +10,23 @@ export default function StudentLoadingScreen({
   onReload,
 }: StudentLoadingScreenProps) {
   return (
-    <div className="min-h-screen bg-background text-foreground grid place-items-center px-6 text-sm text-muted-foreground">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
-        <div className="text-base font-semibold text-foreground">
-          Өгөгдөл ачаалж байна...
-        </div>
-        <div className="mt-2 text-xs text-muted-foreground">
-          Хэрэв удаан үргэлжилбэл backend ажиллаж байгаа эсэхийг шалгана уу.
-        </div>
-        {!usersLoading && (
-          <div className="mt-4 text-xs text-muted-foreground">
-            Хэрэглэгчийн мэдээлэл авч чадсангүй.
-          </div>
-        )}
-        <button
-          className="mt-4 rounded-xl border border-border bg-muted px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/70"
-          onClick={onReload}
-        >
-          Дахин ачаалах
-        </button>
-      </div>
-    </div>
+    <LoadingScreen
+      fullScreen
+      title={usersLoading ? "Сурагчийн орчныг бэлдэж байна" : "Өгөгдөл ачаалж чадсангүй"}
+      subtitle={
+        usersLoading
+          ? "Шалгалт, XP, мэдэгдлийн мэдээллийг синк хийж байна. Түр хүлээнэ үү."
+          : "Backend холболтоо шалгаад дахин ачаалж үзнэ үү."
+      }
+      className="after:pointer-events-none after:absolute after:inset-0 after:bg-[linear-gradient(180deg,transparent,rgba(5,8,22,0.38))]"
+    >
+      <button
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 rounded-2xl border border-white/12 bg-white/6 px-4 py-2 text-sm font-semibold text-white/80 backdrop-blur transition hover:bg-white/10"
+        onClick={onReload}
+        type="button"
+      >
+        Дахин ачаалах
+      </button>
+    </LoadingScreen>
   );
 }

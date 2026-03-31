@@ -15,7 +15,7 @@ export type PendingCreateExamDraft =
       mode: "pdf";
       examTitle: string;
       importMcqCount: number;
-      importTextCount: number;
+      importTextCount?: number;
       importOpenCount: number;
     };
 

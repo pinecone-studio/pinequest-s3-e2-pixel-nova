@@ -24,6 +24,7 @@ import TeacherHeader from "./components/TeacherHeader";
 import TeacherPageContent, {
   type TeacherTab,
 } from "./components/TeacherPageContent";
+import ExamScheduleCard from "./components/ExamScheduleCard";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamStats } from "./hooks/useExamStats";
@@ -31,6 +32,56 @@ import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { pageShellClass } from "./styles";
 
 const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
+
+function TeacherScheduleModal({
+  show,
+  onClose,
+  data,
+  management,
+}: {
+  show: boolean;
+  onClose: () => void;
+  data: ReturnType<typeof useTeacherData>;
+  management: ReturnType<typeof useExamManagement>;
+}) {
+  if (!show) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
+      onClick={onClose}
+    >
+      <div className="mx-auto flex min-h-screen w-full max-w-[46rem] items-center justify-end py-4 sm:py-8">
+        <div
+          className="w-full transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <ExamScheduleCard
+            exams={data.exams}
+            selectedScheduleExamId={management.selectedScheduleExamId}
+            setSelectedScheduleExamId={management.setSelectedScheduleExamId}
+            scheduleDate={management.scheduleDate}
+            setScheduleDate={management.setScheduleDate}
+            scheduleExamType={management.scheduleExamType}
+            setScheduleExamType={management.setScheduleExamType}
+            scheduleClassName={management.scheduleClassName}
+            setScheduleClassName={management.setScheduleClassName}
+            scheduleGroupName={management.scheduleGroupName}
+            setScheduleGroupName={management.setScheduleGroupName}
+            scheduleSubjectName={management.scheduleSubjectName}
+            setScheduleSubjectName={management.setScheduleSubjectName}
+            scheduleDescription={management.scheduleDescription}
+            setScheduleDescription={management.setScheduleDescription}
+            durationMinutes={management.durationMinutes}
+            setDurationMinutes={management.setDurationMinutes}
+            onSchedule={management.handleSchedule}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
   ensureDemoAccounts();
@@ -166,7 +217,7 @@ export default function TeacherPage() {
     <div className={pageShellClass}>
       {data.toast && (
         <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
-          {data.toast}  
+          {data.toast}
         </div>
       )}
       <TeacherHeader
@@ -197,14 +248,14 @@ export default function TeacherPage() {
           />
         }
       />
-      <main className="mx-auto w-full space-y-6">
+      <main className="mx-auto w-full max-w-[1380px] space-y-5 px-4 py-4 sm:px-6 lg:px-8">
         <div
-          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-3 scale-[0.985] opacity-0"}`}>
+          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}
+        >
           <TeacherPageContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            showScheduleForm={showScheduleForm}
-            setShowScheduleForm={setShowScheduleForm}
+            onOpenScheduleForm={() => setShowScheduleForm(true)}
             data={data}
             management={management}
             examStatsState={examStatsState}
@@ -214,6 +265,12 @@ export default function TeacherPage() {
           />
         </div>
       </main>
+      <TeacherScheduleModal
+        show={showScheduleForm}
+        onClose={() => setShowScheduleForm(false)}
+        data={data}
+        management={management}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { mutedCardClass } from "../styles";
 import type { TeacherStat } from "../types";
 
@@ -32,8 +33,12 @@ export default function ExamStatsCards({ loading, stats }: ExamStatsCardsProps) 
         ? Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
-              className="h-24 animate-pulse rounded-2xl border border-border bg-muted"
-            />
+              className="rounded-2xl border border-[#e6edf8] bg-white/95 p-4 shadow-[0_16px_30px_-24px_rgba(15,23,42,0.12)]"
+            >
+              <Skeleton className="h-3 w-24 rounded-full" />
+              <Skeleton className="mt-3 h-8 w-20 rounded-full" />
+              <Skeleton className="mt-4 h-3 w-32 rounded-full" />
+            </div>
           ))
         : stats.map((stat) => (
             <div

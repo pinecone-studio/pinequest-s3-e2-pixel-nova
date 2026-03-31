@@ -14,6 +14,7 @@ import type { Exam, ExamRosterDetail, ExamRosterParticipant } from "../types";
 import { sectionTitleClass } from "../styles";
 import { formatDateTime } from "../utils";
 import TeacherEmptyState from "./TeacherEmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function getParticipantMeta(participant: ExamRosterParticipant) {
   if (
@@ -59,7 +60,7 @@ function formatParticipantEvidence(participant: ExamRosterParticipant) {
       ? "camera"
       : participant.latestEvent.eventSource === "browser"
         ? "browser"
-        : participant.latestEvent.eventSource ?? "unknown";
+        : (participant.latestEvent.eventSource ?? "unknown");
 
   return `${participant.latestEvent.label} via ${sourceLabel} · ${participant.eventCount} events`;
 }
@@ -87,7 +88,8 @@ function SummaryStatCard({
   return (
     <div className="rounded-[28px] border border-[#eadcdc] bg-white px-5 py-5 shadow-[0_18px_35px_-30px_rgba(15,23,42,0.22)]">
       <div className="flex items-center justify-between gap-3">
-        <div className={`flex items-center gap-2 text-[15px] font-medium ${styles}`}>
+        <div
+          className={`flex items-center gap-2 text-[15px] font-medium ${styles}`}>
           <span className="grid size-6 place-items-center">{icon}</span>
           {label}
         </div>
@@ -100,11 +102,7 @@ function SummaryStatCard({
   );
 }
 
-function AttendanceDonut({
-  progress,
-}: {
-  progress: number;
-}) {
+function AttendanceDonut({ progress }: { progress: number }) {
   const gradientId = useId();
   const safeProgress = Math.min(100, Math.max(0, progress));
   const radius = 33;
@@ -114,8 +112,7 @@ function AttendanceDonut({
   return (
     <div
       className="relative flex h-[96px] w-[96px] items-center justify-center"
-      aria-label={`Attendance ${safeProgress}%`}
-    >
+      aria-label={`Attendance ${safeProgress}%`}>
       <svg width="96" height="96" className="rotate-[-48deg]">
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -179,7 +176,9 @@ function useExamCountdown(exam: Exam, roster: ExamRosterDetail | null) {
       const minutes = Math.floor((diff % 3_600_000) / 60_000);
       const seconds = Math.floor((diff % 60_000) / 1000);
       setCountdown(
-        [hours, minutes, seconds].map((v) => String(v).padStart(2, "0")).join(":"),
+        [hours, minutes, seconds]
+          .map((v) => String(v).padStart(2, "0"))
+          .join(":"),
       );
     };
 
@@ -220,9 +219,14 @@ export default function TeacherScheduleDetailPanel({
       participant.isFlagged ||
       participant.flagCount > 0,
   ).length;
-  const normalCount = Math.max(participants.length - attendanceSubmitted - flaggedCount, 0);
+  const normalCount = Math.max(
+    participants.length - attendanceSubmitted - flaggedCount,
+    0,
+  );
   const attendanceRate =
-    expectedCount > 0 ? Math.round((attendanceJoined / expectedCount) * 100) : 0;
+    expectedCount > 0
+      ? Math.round((attendanceJoined / expectedCount) * 100)
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -231,15 +235,15 @@ export default function TeacherScheduleDetailPanel({
           <button
             type="button"
             onClick={onBack}
-            className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-[#d7e0ee] bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-[#f8fafc]"
-          >
+            className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-[#d7e0ee] bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-[#f8fafc]">
             <ChevronLeft className="size-4" />
             Back to schedule
           </button>
           <h2 className={sectionTitleClass}>Exam Monitoring</h2>
           <p className="mt-2 max-w-4xl text-[15px] leading-7 text-slate-500">
-            Live roster status now includes risk level, last suspicious reason, and
-            recent evidence so disqualification decisions stay manual but informed.
+            Live roster status now includes risk level, last suspicious reason,
+            and recent evidence so disqualification decisions stay manual but
+            informed.
           </p>
         </div>
       </div>
@@ -295,12 +299,11 @@ export default function TeacherScheduleDetailPanel({
               Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_0.9fr] gap-4 px-6 py-5"
-                >
+                  className="grid grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_0.9fr] gap-4 px-6 py-5">
                   {Array.from({ length: 6 }).map((__, cellIndex) => (
-                    <div
+                    <Skeleton
                       key={cellIndex}
-                      className="h-6 animate-pulse rounded-full bg-[#f3f4f7]"
+                      className="h-6 rounded-full border border-[#edf2fb]"
                     />
                   ))}
                 </div>
@@ -319,22 +322,25 @@ export default function TeacherScheduleDetailPanel({
                 return (
                   <div
                     key={participant.sessionId}
-                    className="grid grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_0.9fr] gap-4 px-6 py-5 text-[15px] text-slate-800"
-                  >
+                    className="grid grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_0.9fr] gap-4 px-6 py-5 text-[15px] text-slate-800">
                     <div>
-                      <div className="font-medium">{participant.studentName}</div>
+                      <div className="font-medium">
+                        {participant.studentName}
+                      </div>
                       <div className="mt-1 text-xs text-slate-500">
                         {formatParticipantEvidence(participant)}
                       </div>
                       {participant.lastViolationAt && (
                         <div className="mt-1 text-xs text-slate-400">
-                          Last flagged {formatDateTime(participant.lastViolationAt)}
+                          Last flagged{" "}
+                          {formatDateTime(participant.lastViolationAt)}
                         </div>
                       )}
                     </div>
                     <div>{participant.studentCode || "--"}</div>
                     <div>
-                      {participant.score !== null && participant.score !== undefined
+                      {participant.score !== null &&
+                      participant.score !== undefined
                         ? `${participant.score}/${participant.totalQuestions || "--"}`
                         : "Not submitted"}
                     </div>
@@ -356,12 +362,12 @@ export default function TeacherScheduleDetailPanel({
                     </div>
                     <div className="space-y-2">
                       <span
-                        className={`inline-flex rounded-full border px-3 py-1 text-sm font-medium ${meta.tone}`}
-                      >
+                        className={`inline-flex rounded-full border px-3 py-1 text-sm font-medium ${meta.tone}`}>
                         {meta.label}
                       </span>
                       <div className="text-xs text-slate-500">
-                        Risk {participant.riskLevel} · Score {participant.violationScore}
+                        Risk {participant.riskLevel} · Score{" "}
+                        {participant.violationScore}
                       </div>
                     </div>
                   </div>

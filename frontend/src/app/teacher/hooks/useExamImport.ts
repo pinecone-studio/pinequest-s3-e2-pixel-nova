@@ -34,20 +34,19 @@ export const useExamImport = (params: {
   const [importLoading, setImportLoading] = useState(false);
   const [importLoadingLabel, setImportLoadingLabel] = useState<string | null>(null);
   const [importMcqCount, setImportMcqCount] = useState(0);
-  const [importTextCount, setImportTextCount] = useState(5);
   const [importOpenCount, setImportOpenCount] = useState(0);
   const [shuffleImportedQuestions, setShuffleImportedQuestions] = useState(true);
 
   const importQuestionPlan = {
     mcqCount: importMcqCount,
-    textCount: importTextCount,
+    textCount: 0,
     openCount: importOpenCount,
     shuffleQuestions: shuffleImportedQuestions,
   } as const;
   const plannedQuestionCount = getImportQuestionPlanTotal(importQuestionPlan);
   const generationCounts = {
     mcq: importMcqCount,
-    text: importTextCount,
+    text: 0,
     open: importOpenCount,
   } as const;
 
@@ -274,8 +273,6 @@ export const useExamImport = (params: {
     importLoadingLabel,
     importMcqCount,
     setImportMcqCount,
-    importTextCount,
-    setImportTextCount,
     importOpenCount,
     setImportOpenCount,
     shuffleImportedQuestions,

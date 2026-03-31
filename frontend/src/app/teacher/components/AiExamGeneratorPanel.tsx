@@ -1,5 +1,6 @@
-import { buttonGhost, buttonPrimary, inputClass, labelClass, selectClass } from "../styles";
+import { buttonGhost, buttonPrimary, inputClass, labelClass } from "../styles";
 import type { AiExamGeneratorInput, AiGeneratedDraft } from "../types";
+import TeacherSelect from "./TeacherSelect";
 
 type AiExamGeneratorPanelProps = {
   input: AiExamGeneratorInput;
@@ -81,8 +82,7 @@ export default function AiExamGeneratorPanel({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2">
             <span className={labelClass}>Төвшин</span>
-            <select
-              className={selectClass}
+            <TeacherSelect
               value={input.difficulty}
               onChange={(event) =>
                 onChange(
@@ -90,11 +90,12 @@ export default function AiExamGeneratorPanel({
                   event.target.value as AiExamGeneratorInput["difficulty"],
                 )
               }
-            >
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
+              options={[
+                { value: "easy", label: "Easy" },
+                { value: "medium", label: "Medium" },
+                { value: "hard", label: "Hard" },
+              ]}
+            />
           </label>
           <label className="grid gap-2">
             <span className={labelClass}>Асуултын тоо</span>

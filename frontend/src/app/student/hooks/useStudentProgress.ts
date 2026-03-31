@@ -4,14 +4,20 @@ import type { StudentProgress } from "../types";
 import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
 import {
+  getStudentImprovementLeaderboard,
   getStudentResults,
+  getStudentProgressLeaderboard,
+  type StudentImprovementLeaderboardEntry,
   getStudentTermRank,
+  type StudentProgressLeaderboardEntry,
   type StudentTermRankOverview,
 } from "@/lib/backend-auth";
 import {
   getXpHistory,
+  getXpLeaderboard,
   getXpProfile,
   type XpActivity,
+  type XpLeaderboardEntry,
 } from "@/api/xp";
 
 export const useStudentProgress = (currentUser: User | null) => {
@@ -19,6 +25,7 @@ export const useStudentProgress = (currentUser: User | null) => {
     StudentProgress[string]["history"]
   >([]);
   const [xpActivities, setXpActivities] = useState<XpActivity[]>([]);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<XpLeaderboardEntry[]>([]);
   const [rankOverview, setRankOverview] = useState({
     rank: null as number | null,
     totalStudents: 0,
@@ -28,6 +35,12 @@ export const useStudentProgress = (currentUser: User | null) => {
     totalStudents: 0,
     termExamCount: 0,
   });
+  const [progressLeaderboard, setProgressLeaderboard] = useState<
+    StudentProgressLeaderboardEntry[]
+  >([]);
+  const [improvementLeaderboard, setImprovementLeaderboard] = useState<
+    StudentImprovementLeaderboardEntry[]
+  >([]);
   const [studentProgress, setStudentProgress] = useState({
     xp: 0,
     level: 1,
@@ -60,6 +73,12 @@ export const useStudentProgress = (currentUser: User | null) => {
       }
 
       try {
+        setLeaderboardEntries(await getXpLeaderboard(currentUser));
+      } catch {
+        setLeaderboardEntries([]);
+      }
+
+      try {
         const results = await getStudentResults(currentUser);
         const history = results.map((item) => {
           const percentage = item.score ?? 0;
@@ -89,6 +108,20 @@ export const useStudentProgress = (currentUser: User | null) => {
           termExamCount: 0,
         });
       }
+
+      try {
+        setProgressLeaderboard(await getStudentProgressLeaderboard(currentUser));
+      } catch {
+        setProgressLeaderboard([]);
+      }
+
+      try {
+        setImprovementLeaderboard(
+          await getStudentImprovementLeaderboard(currentUser),
+        );
+      } catch {
+        setImprovementLeaderboard([]);
+      }
     };
     void load();
   }, [currentUser]);
@@ -110,8 +143,11 @@ export const useStudentProgress = (currentUser: User | null) => {
   return {
     studentHistory,
     xpActivities,
+    leaderboardEntries,
     rankOverview,
     termRankOverview,
+    progressLeaderboard,
+    improvementLeaderboard,
     studentProgress,
     levelInfo,
     nextLevel,

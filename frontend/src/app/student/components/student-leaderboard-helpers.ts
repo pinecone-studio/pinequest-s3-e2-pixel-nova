@@ -1,25 +1,42 @@
-export type LeaderboardEntry = {
-  id: string;
-  fullName: string;
-  xp: number;
-  level: number;
-  rank: number;
-};
+import type { XpLeaderboardEntry } from "@/api/xp";
+import type {
+  StudentImprovementLeaderboardEntry,
+  StudentProgressLeaderboardEntry,
+} from "@/lib/backend-auth";
+
+export type LeaderboardEntry = StudentProgressLeaderboardEntry;
 
 export type DisplayEntry = LeaderboardEntry & {
-  metricValue: number;
   metricPercent: number;
-  focusLabel: string;
 };
 
-type DemoLeaderboardOptions = {
+export type XpDisplayEntry = XpLeaderboardEntry & {
+  metricPercent: number;
+};
+
+export type ImprovementDisplayEntry = StudentImprovementLeaderboardEntry & {
+  metricPercent: number;
+};
+
+type ImprovementMockOptions = {
+  entries: StudentImprovementLeaderboardEntry[];
+  currentUserId: string | null;
   currentUserName: string;
-  currentRank: number | null;
-  currentLevel: number;
 };
 
 export const avatarPool = ["🧑‍🎓", "👨‍🎓", "👩‍🎓", "👦", "👧", "🧠"];
-export const subjectPool = ["Математик", "Англи хэл", "Физик", "Хими", "Түүх", "Биологи"];
+const improvementMockNamePool = [
+  "Тэмүүлэн",
+  "Саруул",
+  "Анударь",
+  "Билгүүн",
+  "Номин",
+  "Мишээл",
+  "Төгөлдөр",
+  "Энэрэл",
+  "Содбилэг",
+  "Марал",
+];
 
 export const podiumStyles = {
   1: {
@@ -50,113 +67,148 @@ export const podiumStyles = {
 
 export type PodiumIconKey = (typeof podiumStyles)[1]["icon"];
 
-export const getAvatarSeed = (entry: LeaderboardEntry) =>
+export const getAvatarSeed = (entry: { id: string; rank: number }) =>
   entry.id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
 
-export const getAvatar = (entry: LeaderboardEntry) =>
+export const getAvatar = (entry: { id: string; rank: number }) =>
   avatarPool[(getAvatarSeed(entry) + entry.rank) % avatarPool.length];
 
 export const getFirstName = (value: string) =>
   value.trim().split(/\s+/)[0] || value;
 
-export const formatCompactXp = (value: number) => {
-  if (value >= 1000) {
-    const compact = (value / 1000).toFixed(1);
-    return `${compact.endsWith(".0") ? compact.slice(0, -2) : compact}k`;
-  }
-
-  return `${value}`;
+export const formatAverageScore = (value: number) => {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
 };
-
-const sortEntries = (entries: LeaderboardEntry[]) =>
-  [...entries].sort((left, right) => left.rank - right.rank);
 
 const MIN_PERCENT = 55;
 const MAX_PERCENT = 99;
 
-const getScorePercent = (value: number, maxXp: number) =>
+const getBoundedPercent = (value: number, maxValue: number) =>
   Math.max(
     MIN_PERCENT,
-    Math.min(MAX_PERCENT, Math.round((value / Math.max(maxXp, 1)) * 100)),
+    Math.min(MAX_PERCENT, Math.round((value / Math.max(maxValue, 1)) * 100)),
   );
 
-const withMetricPercent = (entries: Omit<DisplayEntry, "metricPercent">[]) => {
-  const maxMetric = Math.max(...entries.map((entry) => entry.metricValue), 1);
-  return entries.map((entry) => ({
+export const buildProgressLeaderboardEntries = (
+  entries: StudentProgressLeaderboardEntry[],
+) => {
+  const sortedEntries = [...entries].sort((left, right) => left.rank - right.rank);
+  const maxAverageScore = Math.max(
+    ...sortedEntries.map((entry) => entry.averageScore),
+    1,
+  );
+
+  return sortedEntries.map((entry) => ({
     ...entry,
-    metricPercent: getScorePercent(entry.metricValue, maxMetric),
+    metricPercent: getBoundedPercent(entry.averageScore, maxAverageScore),
   }));
 };
 
-export const buildClassEntries = (entries: LeaderboardEntry[]) =>
-  withMetricPercent(
-    sortEntries(entries).map((entry) => ({
-      ...entry,
-      metricValue: entry.xp,
-      focusLabel: "10-р анги",
-    })),
-  );
+export const buildClassEntries = (entries: XpLeaderboardEntry[]) => {
+  const sortedEntries = [...entries].sort((left, right) => left.rank - right.rank);
+  const maxXp = Math.max(...sortedEntries.map((entry) => entry.xp), 1);
 
-export const buildSubjectEntries = (entries: LeaderboardEntry[]) =>
-  withMetricPercent(
-    sortEntries(entries)
-      .map((entry) => {
-        const seed = getAvatarSeed(entry);
-        const multiplier = 0.72 + ((seed % 26) + 8) / 100;
+  return sortedEntries.map((entry) => ({
+    ...entry,
+    metricPercent: getBoundedPercent(entry.xp, maxXp),
+  }));
+};
 
-        return {
-          ...entry,
-          metricValue: Math.round(entry.xp * multiplier),
-          focusLabel: subjectPool[seed % subjectPool.length],
-        };
-      })
-      .sort((left, right) => {
-        const metricDiff = right.metricValue - left.metricValue;
-        if (metricDiff !== 0) return metricDiff;
-        return left.fullName.localeCompare(right.fullName);
-      })
-      .map((entry, index) => ({
-        ...entry,
-        rank: index + 1,
-      })),
-  );
+export const buildImprovementEntries = (
+  entries: StudentImprovementLeaderboardEntry[],
+) => {
+  const sortedEntries = [...entries].sort((left, right) => left.rank - right.rank);
+  const maxXp = Math.max(...sortedEntries.map((entry) => Math.max(entry.xp, 0)), 1);
 
-const DEMO_ROW_COUNT = 10;
+  return sortedEntries.map((entry) => ({
+    ...entry,
+    metricPercent: getBoundedPercent(Math.max(entry.xp, 0), maxXp),
+  }));
+};
 
-const getDemoMetricValue = (rank: number) =>
-  Math.max(1600, 8400 - (rank - 1) * 650);
+const MOCK_IMPROVEMENT_ROW_COUNT = 10;
 
-const getDemoLevel = (rank: number) =>
-  Math.max(1, 12 - Math.floor((rank - 1) / 2));
+const getMockImprovementXp = (rank: number) =>
+  Math.max(6, 46 - (rank - 1) * 4);
 
-export const buildDemoLeaderboardEntries = ({
+const getMockImprovementLevel = (xp: number) =>
+  Math.max(1, Math.floor(Math.max(xp, 0) / 20) + 1);
+
+const getMockImprovementCount = (rank: number) =>
+  Math.max(1, 4 - Math.floor((rank - 1) / 3));
+
+export const buildMockImprovementEntries = ({
+  entries,
+  currentUserId,
   currentUserName,
-  currentRank,
-  currentLevel,
-}: DemoLeaderboardOptions) => {
-  const resolvedRank =
-    typeof currentRank === "number" && currentRank > 0 ? currentRank : 4;
-  const visibleRanks =
-    resolvedRank <= DEMO_ROW_COUNT
-      ? Array.from({ length: DEMO_ROW_COUNT }, (_, index) => index + 1)
-      : [
-          ...Array.from({ length: DEMO_ROW_COUNT - 1 }, (_, index) => index + 1),
-          resolvedRank,
-        ];
+}: ImprovementMockOptions) => {
+  const realEntries = [...entries]
+    .sort((left, right) => left.rank - right.rank)
+    .slice(0, MOCK_IMPROVEMENT_ROW_COUNT);
 
-  return buildClassEntries(
-    visibleRanks.map((rank) => {
-      const isCurrentUser = rank === resolvedRank;
-
-      return {
-        id: isCurrentUser ? "current-student" : `demo-student-${rank}`,
-        fullName: isCurrentUser ? currentUserName : "Сурагч",
-        xp: getDemoMetricValue(rank),
-        level: isCurrentUser ? currentLevel : getDemoLevel(rank),
-        rank,
-      };
-    }),
+  const usedIds = new Set(realEntries.map((entry) => entry.id));
+  const filledEntries = [...realEntries];
+  const currentUserExists = Boolean(
+    currentUserId && realEntries.some((entry) => entry.id === currentUserId),
   );
+
+  if (currentUserId && !currentUserExists) {
+    usedIds.add(currentUserId);
+    filledEntries.push({
+      id: currentUserId,
+      fullName: currentUserName,
+      rank: Math.min(4, MOCK_IMPROVEMENT_ROW_COUNT),
+      xp: getMockImprovementXp(4),
+      level: getMockImprovementLevel(getMockImprovementXp(4)),
+      examCount: 3,
+      improvementCount: 2,
+      missedCount: 0,
+    });
+  }
+
+  let mockIndex = 0;
+  while (filledEntries.length < MOCK_IMPROVEMENT_ROW_COUNT) {
+    const rank = filledEntries.length + 1;
+    const xp = getMockImprovementXp(rank);
+    const id = `mock-improvement-${rank}`;
+
+    if (usedIds.has(id)) {
+      mockIndex += 1;
+      continue;
+    }
+
+    filledEntries.push({
+      id,
+      fullName: improvementMockNamePool[mockIndex % improvementMockNamePool.length] ?? "Сурагч",
+      rank,
+      xp,
+      level: getMockImprovementLevel(xp),
+      examCount: Math.max(2, 5 - Math.floor((rank - 1) / 2)),
+      improvementCount: getMockImprovementCount(rank),
+      missedCount: rank >= 8 ? 1 : 0,
+    });
+    usedIds.add(id);
+    mockIndex += 1;
+  }
+
+  const rankedEntries = filledEntries
+    .slice(0, MOCK_IMPROVEMENT_ROW_COUNT)
+    .sort((left, right) => {
+      if (right.xp !== left.xp) {
+        return right.xp - left.xp;
+      }
+      if (right.improvementCount !== left.improvementCount) {
+        return right.improvementCount - left.improvementCount;
+      }
+      return left.fullName.localeCompare(right.fullName);
+    })
+    .map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+    }));
+
+  return buildImprovementEntries(rankedEntries);
 };
 
 export const getPodiumEntries = (entries: DisplayEntry[]) => {

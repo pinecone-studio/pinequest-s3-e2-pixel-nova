@@ -2,14 +2,92 @@ import { Hono } from "hono";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { getDb, examSessions, exams, studentAnswers, questions, options } from "../db";
+import {
+  getDb,
+  examSessions,
+  exams,
+  studentAnswers,
+  questions,
+  options,
+  students,
+} from "../db";
 import type { AppEnv } from "../types";
 import { success, notFound } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
-import { students } from "../db";
 
 const studentRoutes = new Hono<AppEnv>();
+
+type RankedStudentStats = {
+  studentId: string;
+  fullName: string;
+  level: number;
+  examCount: number;
+  averageScore: number;
+};
+
+const roundAverageScore = (value: number) =>
+  Math.round(value * 10) / 10;
+
+const buildRankedStudentsByExamType = async (
+  db: ReturnType<typeof getDb>,
+  examType: "progress" | "term",
+) => {
+  const gradedSessions = await db
+    .select({
+      studentId: examSessions.studentId,
+      fullName: students.fullName,
+      level: students.level,
+      score: examSessions.score,
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .innerJoin(students, eq(examSessions.studentId, students.id))
+    .where(
+      and(
+        eq(examSessions.status, "graded"),
+        eq(exams.examType, examType),
+      ),
+    );
+
+  const statsByStudent = new Map<
+    string,
+    { fullName: string; level: number; totalScore: number; examCount: number }
+  >();
+
+  for (const session of gradedSessions) {
+    if (typeof session.score !== "number") continue;
+
+    const current = statsByStudent.get(session.studentId) ?? {
+      fullName: session.fullName,
+      level: session.level ?? 1,
+      totalScore: 0,
+      examCount: 0,
+    };
+
+    current.totalScore += session.score;
+    current.examCount += 1;
+    statsByStudent.set(session.studentId, current);
+  }
+
+  return [...statsByStudent.entries()]
+    .map(([studentId, stats]): RankedStudentStats => ({
+      studentId,
+      fullName: stats.fullName,
+      level: stats.level,
+      examCount: stats.examCount,
+      averageScore: stats.examCount > 0 ? stats.totalScore / stats.examCount : 0,
+    }))
+    .sort((left, right) => {
+      if (right.averageScore !== left.averageScore) {
+        return right.averageScore - left.averageScore;
+      }
+      if (right.examCount !== left.examCount) {
+        return right.examCount - left.examCount;
+      }
+      return left.studentId.localeCompare(right.studentId);
+    });
+};
 
 // Apply auth + student role globally
 studentRoutes.use("*", authMiddleware, requireRole("student"));
@@ -63,50 +141,11 @@ studentRoutes.get("/results", async (c) => {
   return success(c, results);
 });
 
-// GET /term-rank — current student's rank among students with graded sessions
+// GET /term-rank — current student's rank among students with graded term exams
 studentRoutes.get("/term-rank", async (c) => {
   const user = c.get("user");
   const db = getDb(c.env.educore);
-
-  const gradedSessions = await db
-    .select({
-      studentId: examSessions.studentId,
-      score: examSessions.score,
-    })
-    .from(examSessions)
-    .where(eq(examSessions.status, "graded"));
-
-  const statsByStudent = new Map<
-    string,
-    { totalScore: number; examCount: number }
-  >();
-
-  for (const session of gradedSessions) {
-    if (typeof session.score !== "number") continue;
-    const current = statsByStudent.get(session.studentId) ?? {
-      totalScore: 0,
-      examCount: 0,
-    };
-    current.totalScore += session.score;
-    current.examCount += 1;
-    statsByStudent.set(session.studentId, current);
-  }
-
-  const rankedStudents = [...statsByStudent.entries()]
-    .map(([studentId, stats]) => ({
-      studentId,
-      examCount: stats.examCount,
-      averageScore: stats.examCount > 0 ? stats.totalScore / stats.examCount : 0,
-    }))
-    .sort((left, right) => {
-      if (right.averageScore !== left.averageScore) {
-        return right.averageScore - left.averageScore;
-      }
-      if (right.examCount !== left.examCount) {
-        return right.examCount - left.examCount;
-      }
-      return left.studentId.localeCompare(right.studentId);
-    });
+  const rankedStudents = await buildRankedStudentsByExamType(db, "term");
 
   const currentIndex = rankedStudents.findIndex(
     (entry) => entry.studentId === user.id,
@@ -118,6 +157,24 @@ studentRoutes.get("/term-rank", async (c) => {
     termExamCount:
       currentIndex >= 0 ? rankedStudents[currentIndex]?.examCount ?? 0 : 0,
   });
+});
+
+// GET /progress-leaderboard — top students ranked by graded progress exams
+studentRoutes.get("/progress-leaderboard", async (c) => {
+  const db = getDb(c.env.educore);
+  const rankedStudents = await buildRankedStudentsByExamType(db, "progress");
+
+  return success(
+    c,
+    rankedStudents.slice(0, 10).map((entry, index) => ({
+      id: entry.studentId,
+      fullName: entry.fullName,
+      level: entry.level,
+      rank: index + 1,
+      averageScore: roundAverageScore(entry.averageScore),
+      examCount: entry.examCount,
+    })),
+  );
 });
 
 // GET /results/:sessionId — Detailed result

@@ -92,7 +92,7 @@ export default function QuestionPreviewPanel({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6 overflow-auto">
       <div
         className={`w-full max-w-4xl rounded-[30px] border bg-white p-6 shadow-[0_36px_90px_-50px_rgba(15,23,42,0.45)] ${missingCorrect ? "border-amber-300" : "border-[#dce5ef]"}`}
       >
@@ -194,7 +194,9 @@ export default function QuestionPreviewPanel({
                   className="relative mt-1"
                   tabIndex={0}
                   onBlur={(event) => {
-                    if (event.currentTarget.contains(event.relatedTarget as Node)) {
+                    if (
+                      event.currentTarget.contains(event.relatedTarget as Node)
+                    ) {
                       return;
                     }
                     setEditCorrectOpen(false);
@@ -233,7 +235,7 @@ export default function QuestionPreviewPanel({
                     </svg>
                   </button>
                   <div
-                    className={`absolute z-20 mt-2 w-full rounded-xl border border-border bg-card p-2 text-sm shadow-xl transition ${
+                    className={`absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-card p-2 text-sm shadow-xl transition ${
                       editCorrectOpen
                         ? "translate-y-0 opacity-100"
                         : "pointer-events-none -translate-y-1 opacity-0"
@@ -247,6 +249,7 @@ export default function QuestionPreviewPanel({
                             ? "bg-primary text-primary-foreground"
                             : "hover:bg-muted"
                         }`}
+                        title={`${optionLabels[idx] ?? idx + 1}. ${option}`}
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           updateQuestion(activeQuestion.id, {
@@ -256,8 +259,10 @@ export default function QuestionPreviewPanel({
                         }}
                         type="button"
                       >
-                        {(optionLabels[idx] ?? idx + 1) + ". "}
-                        {option}
+                        <span className="block truncate">
+                          {(optionLabels[idx] ?? idx + 1) + ". "}
+                          {option}
+                        </span>
                       </button>
                     ))}
                   </div>

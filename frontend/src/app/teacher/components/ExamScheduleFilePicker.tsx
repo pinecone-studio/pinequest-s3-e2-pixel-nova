@@ -23,8 +23,8 @@ export default function ExamScheduleFilePicker({
       {selectableExams.length === 0 ? (
         <TeacherEmptyState
           icon={<FileSearch className="h-5 w-5" />}
-          title="Хуваарьлах шалгалт алга"
-          description="Эхлээд асуулттай шалгалт үүсгээд эсвэл draft төлөвтэй шалгалтаа сонгоно уу."
+          title="Сонгох материал алга"
+          description="Эхлээд асуулттай шалгалт үүсгэ. Нэг материалыг хэдэн ч удаа шинэ хуваарьт ашиглаж болно."
         />
       ) : (
         <div className="grid gap-3">
@@ -67,7 +67,7 @@ export default function ExamScheduleFilePicker({
                   {selectedExam.title}
                 </div>
                 <div className="mt-1 truncate text-xs text-slate-500">
-                  {selectedExam.questionCount ?? selectedExam.questions.length} асуулт
+                  {(selectedExam.questionCount ?? selectedExam.questions.length ?? 0)} асуулт
                   {selectedExam.description
                     ? ` · ${selectedExam.description}`
                     : ""}

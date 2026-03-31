@@ -59,6 +59,7 @@ const tableExports = {
     "subjectId",
     "title",
     "description",
+    "examType",
     "status",
     "scheduledAt",
     "startedAt",

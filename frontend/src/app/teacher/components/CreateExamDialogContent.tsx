@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import TeacherSelect from "./TeacherSelect";
 import { Input } from "@/components/ui/input";
 import {
   ChevronDown,
@@ -208,7 +209,8 @@ function AiTabPanel({
             <span className="text-[14px] font-medium text-[#111827]">
               Түвшин
             </span>
-            <select
+            <TeacherSelect
+              compact
               value={input.difficulty}
               onChange={(event) =>
                 onChange(
@@ -216,12 +218,12 @@ function AiTabPanel({
                   event.target.value as AiExamGeneratorInput["difficulty"],
                 )
               }
-              className="h-9 w-full rounded-2xl border border-[#d9dde6] bg-white px-4 text-[14px] text-[#111827] outline-none"
-            >
-              <option value="easy">Анхан шат</option>
-              <option value="medium">Дунд шат</option>
-              <option value="hard">Ахисан шат</option>
-            </select>
+              options={[
+                { value: "easy", label: "Анхан шат" },
+                { value: "medium", label: "Дунд шат" },
+                { value: "hard", label: "Ахисан шат" },
+              ]}
+            />
           </label>
 
           <label className="block space-y-2">
@@ -283,17 +285,16 @@ function PdfTabPanel({
   onExamTitleChange: (value: string) => void;
   counts: {
     mcq: number;
-    text: number;
     open: number;
   };
-  onCountChange: (key: "mcq" | "text" | "open", value: number) => void;
+  onCountChange: (key: "mcq" | "open", value: number) => void;
   selectedFileName: string | null;
   onPickFile: () => void;
   onContinue: () => void;
 }) {
   const total = useMemo(
-    () => counts.mcq + counts.text + counts.open,
-    [counts.mcq, counts.open, counts.text],
+    () => counts.mcq + counts.open,
+    [counts.mcq, counts.open],
   );
 
   return (
@@ -316,11 +317,10 @@ function PdfTabPanel({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             {[
-              { key: "mcq" as const, label: "Сонгох тест", value: counts.mcq },
-              { key: "text" as const, label: "Холбох тест", value: counts.text },
-              { key: "open" as const, label: "Задгай текст", value: counts.open },
+              { key: "mcq" as const, label: "Сонголттой", value: counts.mcq },
+              { key: "open" as const, label: "Задгай даалгавар", value: counts.open },
             ].map((item) => (
               <div
                 key={item.label}
@@ -411,7 +411,6 @@ export default function CreateExamDialogContent() {
   const [pdfExamTitle, setPdfExamTitle] = useState("");
   const [pdfCounts, setPdfCounts] = useState({
     mcq: 0,
-    text: 0,
     open: 0,
   });
   const [selectedPdfFileName, setSelectedPdfFileName] = useState<string | null>(
@@ -426,7 +425,7 @@ export default function CreateExamDialogContent() {
   };
 
   const handlePdfCountChange = (
-    key: "mcq" | "text" | "open",
+    key: "mcq" | "open",
     value: number,
   ) => {
     setPdfCounts((current) => ({ ...current, [key]: value }));
@@ -452,7 +451,6 @@ export default function CreateExamDialogContent() {
         mode: "pdf",
         examTitle: pdfExamTitle.trim(),
         importMcqCount: pdfCounts.mcq,
-        importTextCount: pdfCounts.text,
         importOpenCount: pdfCounts.open,
       });
     }

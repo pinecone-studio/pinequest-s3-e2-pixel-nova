@@ -6,6 +6,7 @@ import {
   type StudentProfile,
 } from "@/lib/backend-auth";
 import { cardClass } from "../styles";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Settings, User } from "lucide-react";
 
 type StudentSettingsTabProps = {
@@ -131,8 +132,12 @@ export default function StudentSettingsTab({
         </h2>
         <div className="mt-4 grid gap-3 text-sm">
           {loading && (
-            <div className="rounded-xl border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-              Профайл ачаалж байна...
+            <div className="rounded-2xl border border-[#e7edf5] bg-[#fbfdff] p-4">
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-32 rounded-full" />
+                <Skeleton className="h-11 w-full rounded-xl" />
+                <Skeleton className="h-11 w-full rounded-xl" />
+              </div>
             </div>
           )}
           {error && (

@@ -1,16 +1,24 @@
 const mockGetXpProfile = jest.fn();
 const mockGetXpHistory = jest.fn();
+const mockGetXpLeaderboard = jest.fn();
 const mockGetStudentResults = jest.fn();
 const mockGetStudentTermRank = jest.fn();
+const mockGetStudentProgressLeaderboard = jest.fn();
+const mockGetStudentImprovementLeaderboard = jest.fn();
 
 jest.mock("@/api/xp", () => ({
   getXpProfile: (...args: unknown[]) => mockGetXpProfile(...args),
   getXpHistory: (...args: unknown[]) => mockGetXpHistory(...args),
+  getXpLeaderboard: (...args: unknown[]) => mockGetXpLeaderboard(...args),
 }));
 
 jest.mock("@/lib/backend-auth", () => ({
   getStudentResults: (...args: unknown[]) => mockGetStudentResults(...args),
   getStudentTermRank: (...args: unknown[]) => mockGetStudentTermRank(...args),
+  getStudentProgressLeaderboard: (...args: unknown[]) =>
+    mockGetStudentProgressLeaderboard(...args),
+  getStudentImprovementLeaderboard: (...args: unknown[]) =>
+    mockGetStudentImprovementLeaderboard(...args),
 }));
 
 jest.mock("@/lib/examGuard", () => ({
@@ -59,12 +67,38 @@ describe("useStudentProgress", () => {
       totalStudents: 12,
     });
     mockGetXpHistory.mockResolvedValue([]);
+    mockGetXpLeaderboard.mockResolvedValue([
+      { rank: 1, id: "s9", fullName: "Сурагч 1", xp: 500, level: 3 },
+      { rank: 2, id: "s1", fullName: "Бат", xp: 250, level: 2 },
+    ]);
     mockGetStudentResults.mockResolvedValue(mockResults);
     mockGetStudentTermRank.mockResolvedValue({
       rank: 2,
       totalStudents: 5,
       termExamCount: 2,
     });
+    mockGetStudentProgressLeaderboard.mockResolvedValue([
+      {
+        id: "s2",
+        fullName: "Сараа",
+        level: 4,
+        rank: 1,
+        averageScore: 93.5,
+        examCount: 4,
+      },
+    ]);
+    mockGetStudentImprovementLeaderboard.mockResolvedValue([
+      {
+        id: "s3",
+        fullName: "Тэмүүжин",
+        level: 1,
+        rank: 1,
+        xp: 20,
+        examCount: 3,
+        improvementCount: 2,
+        missedCount: 0,
+      },
+    ]);
   });
 
   afterEach(() => {
@@ -81,6 +115,8 @@ describe("useStudentProgress", () => {
       totalStudents: 0,
       termExamCount: 0,
     });
+    expect(result.current.progressLeaderboard).toEqual([]);
+    expect(result.current.improvementLeaderboard).toEqual([]);
   });
 
   it("loads XP profile, student results, and term rank", async () => {
@@ -98,6 +134,29 @@ describe("useStudentProgress", () => {
       totalStudents: 5,
       termExamCount: 2,
     });
+    expect(result.current.leaderboardEntries).toHaveLength(2);
+    expect(result.current.progressLeaderboard).toEqual([
+      {
+        id: "s2",
+        fullName: "Сараа",
+        level: 4,
+        rank: 1,
+        averageScore: 93.5,
+        examCount: 4,
+      },
+    ]);
+    expect(result.current.improvementLeaderboard).toEqual([
+      {
+        id: "s3",
+        fullName: "Тэмүүжин",
+        level: 1,
+        rank: 1,
+        xp: 20,
+        examCount: 3,
+        improvementCount: 2,
+        missedCount: 0,
+      },
+    ]);
     expect(result.current.studentHistory).toHaveLength(2);
   });
 
@@ -150,6 +209,16 @@ describe("useStudentProgress", () => {
     });
   });
 
+  it("handles leaderboard API error gracefully", async () => {
+    mockGetXpLeaderboard.mockRejectedValue(new Error("fail"));
+
+    const { result } = renderHook(() => useStudentProgress(mockUser));
+
+    await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
+
+    expect(result.current.leaderboardEntries).toEqual([]);
+  });
+
   it("handles results API error gracefully", async () => {
     mockGetStudentResults.mockRejectedValue(new Error("fail"));
 
@@ -172,5 +241,25 @@ describe("useStudentProgress", () => {
       totalStudents: 0,
       termExamCount: 0,
     });
+  });
+
+  it("handles progress leaderboard API error gracefully", async () => {
+    mockGetStudentProgressLeaderboard.mockRejectedValue(new Error("fail"));
+
+    const { result } = renderHook(() => useStudentProgress(mockUser));
+
+    await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
+
+    expect(result.current.progressLeaderboard).toEqual([]);
+  });
+
+  it("handles improvement leaderboard API error gracefully", async () => {
+    mockGetStudentImprovementLeaderboard.mockRejectedValue(new Error("fail"));
+
+    const { result } = renderHook(() => useStudentProgress(mockUser));
+
+    await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
+
+    expect(result.current.improvementLeaderboard).toEqual([]);
   });
 });

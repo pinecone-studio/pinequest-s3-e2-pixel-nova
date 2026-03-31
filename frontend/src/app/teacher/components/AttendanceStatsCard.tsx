@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ExamAttendanceStats } from "../types";
 
 const getTone = (rate: number) => {
@@ -51,7 +52,7 @@ export default function AttendanceStatsCard({
         </div>
         <div className="flex h-[74px] w-[74px] items-center justify-center">
           {loading ? (
-            <div className="h-[64px] w-[64px] animate-pulse rounded-full bg-slate-100" />
+            <Skeleton className="h-[64px] w-[64px] rounded-full border border-[#edf2fb]" />
           ) : (
             <svg width="74" height="74" className="rotate-[-90deg]">
               <circle

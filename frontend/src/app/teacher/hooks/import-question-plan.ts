@@ -2,7 +2,7 @@ import type { Question } from "../types";
 
 export type ImportQuestionPlan = {
   mcqCount: number;
-  textCount: number;
+  textCount?: number;
   openCount: number;
   shuffleQuestions: boolean;
 };
@@ -59,14 +59,14 @@ const buildRoundRobin = (groups: Question[][]) => {
 };
 
 export const getImportQuestionPlanTotal = (plan: ImportQuestionPlan) =>
-  clampCount(plan.mcqCount) + clampCount(plan.textCount) + clampCount(plan.openCount);
+  clampCount(plan.mcqCount) + clampCount(plan.textCount ?? 0) + clampCount(plan.openCount);
 
 export const applyImportQuestionPlan = (
   sourceQuestions: Question[],
   plan: ImportQuestionPlan,
 ) => {
   const desiredMcq = clampCount(plan.mcqCount);
-  const desiredText = clampCount(plan.textCount);
+  const desiredText = clampCount(plan.textCount ?? 0);
   const desiredOpen = clampCount(plan.openCount);
 
   const totalRequested = desiredMcq + desiredText + desiredOpen;
