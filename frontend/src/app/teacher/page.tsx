@@ -129,6 +129,10 @@ export default function TeacherPage() {
     teacherId: sessionUser?.id ?? null,
   });
   const attendance = useExamAttendanceStats(examStatsState.activeExamId);
+  const mainClassName =
+    activeTab === "Шалгалтын сан"
+      ? "w-full"
+      : "mx-auto w-full max-w-[1380px] space-y-5 px-4 py-4 sm:px-6 lg:px-8";
 
   useEffect(() => {
     document.body.style.overflow = showScheduleForm ? "hidden" : "";
@@ -248,7 +252,7 @@ export default function TeacherPage() {
           />
         }
       />
-      <main className="mx-auto w-full max-w-[1380px] space-y-5 px-4 py-4 sm:px-6 lg:px-8">
+      <main className={mainClassName}>
         <div
           className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}
         >

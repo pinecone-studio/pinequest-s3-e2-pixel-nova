@@ -9,6 +9,35 @@ const highlights = [
   "AI-ийн хууль бус шалгалтын илрүүлэлт",
   "Бодит цагийн аналитик",
 ];
+
+function LogoMark({
+  boxClassName,
+  imageClassName,
+  size,
+  imageSize,
+}: {
+  boxClassName: string;
+  imageClassName?: string;
+  size: number;
+  imageSize: number;
+}) {
+  return (
+    <span
+      className={`grid shrink-0 place-items-center overflow-hidden bg-white ${boxClassName}`}
+      style={{ width: size, height: size }}
+    >
+      <Image
+        src="/group-web.svg"
+        alt="EduCore logo"
+        width={imageSize}
+        height={imageSize}
+        className={`object-contain ${imageClassName ?? ""}`}
+        priority
+      />
+    </span>
+  );
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden relative">
@@ -46,21 +75,6 @@ export default function Home() {
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs text-muted-foreground shadow-sm hover:shadow-md transition-shadow duration-300 animate-slide-in"
               style={{ animationDelay: "0.1s" }}
             >
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-primary">
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 7l9-4 9 4-9 4-9-4Z" />
-                  <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
-                  <path d="M4 12v4" />
-                </svg>
-              </span>
               AI-ээр ажилладаг LMS
             </div>
             <div className="space-y-2">
@@ -68,21 +82,11 @@ export default function Home() {
                 className="flex items-center gap-3 text-4xl lg:text-5xl font-bold tracking-tight bg-linear-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-slide-in"
                 style={{ animationDelay: "0.2s" }}
               >
-                <span className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-card text-primary shadow-sm">
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M3 7l9-4 9 4-9 4-9-4Z" />
-                    <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
-                    <path d="M4 12v4" />
-                  </svg>
-                </span>
+                <LogoMark
+                  boxClassName="rounded-[20px] border border-[#dce5ef]"
+                  size={40}
+                  imageSize={28}
+                />
                 EduCore LMS
               </h1>
               <p
@@ -134,22 +138,7 @@ export default function Home() {
           >
             <div className="space-y-5 rounded-3xl border border-border bg-card/80 backdrop-blur-sm p-6 lg:p-7 shadow-[0_20px_50px_rgba(15,23,42,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_25px_60px_rgba(15,23,42,0.15)] dark:hover:shadow-[0_25px_60px_rgba(0,0,0,0.6)] transition-all duration-300 animate-fade-in">
               <div className="flex items-center justify-between">
-                <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-                  <span className="grid h-8 w-8 place-items-center rounded-xl border border-border bg-card text-primary">
-                    <svg
-                      className="h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 7l9-4 9 4-9 4-9-4Z" />
-                      <path d="M7 10v4c0 2.5 4 4 5 4s5-1.5 5-4v-4" />
-                      <path d="M4 12v4" />
-                    </svg>
-                  </span>
+                <h2 className="text-lg font-bold text-foreground">
                   EduCore нэвтрэх
                 </h2>
               </div>
