@@ -1,17 +1,17 @@
 export const pageShellClass =
-  "min-h-screen bg-white text-foreground";
+  "min-h-screen bg-[radial-gradient(circle_at_top_right,_rgba(148,184,216,0.12),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(214,224,235,0.24),_transparent_32%),linear-gradient(180deg,#f7f9fc_0%,#f1f5f9_100%)] text-foreground";
 
 export const contentCanvasClass =
-  "rounded-[32px] border border-[#d9e2ec] bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] sm:p-6 lg:p-8";
+  "rounded-[34px] border border-[#dde5ee] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_30px_70px_-48px_rgba(15,23,42,0.22)] sm:p-6 lg:p-8";
 
 export const cardClass =
-  "rounded-[28px] border border-[#dce5ef] bg-white p-5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.2)]";
+  "rounded-[26px] border border-[#e0e7ef] bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-5 shadow-[0_22px_44px_-36px_rgba(15,23,42,0.18)]";
 
 export const mutedCardClass =
-  "rounded-[24px] border border-[#dce5ef] bg-[#f8fbff] p-4 shadow-[0_16px_32px_-30px_rgba(15,23,42,0.18)]";
+  "rounded-[24px] border border-[#e0e7ef] bg-[#f7fafd] p-4 shadow-[0_14px_28px_-28px_rgba(15,23,42,0.16)]";
 
 export const insetCardClass =
-  "rounded-2xl border border-[#dce5ef] bg-[#f8fafc] px-4 py-3";
+  "rounded-2xl border border-[#e0e7ef] bg-[#f8fafc] px-4 py-3";
 
 export const sectionTitleClass =
   "text-[1.65rem] font-semibold tracking-[-0.02em] text-slate-900";
@@ -37,7 +37,10 @@ export const buttonGhost =
   "inline-flex items-center justify-center rounded-2xl border border-[#d5dfeb] bg-[#f8fafc] px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900";
 
 export const badgeClass =
-  "inline-flex items-center rounded-full border border-[#dbe4f0] bg-[#f8fafc] px-3 py-1 text-[11px] font-semibold text-slate-600";
+  "inline-flex items-center rounded-full border border-[#dde5ee] bg-[#f8fafc] px-3 py-1 text-[11px] font-semibold text-slate-600";
+
+export const emptyStateClass =
+  "rounded-[20px] border border-dashed border-[#d7e0ea] bg-[#f8fafc] px-4 py-10 text-center text-sm text-slate-400";
 
 export const figmaFieldClass =
   "w-full rounded-[8px] border border-[#dfdfdf] bg-white px-3 py-[10px] text-[12px] font-normal tracking-[-0.072px] text-[#3f4145] outline-none transition placeholder:text-[rgba(63,65,69,0.6)] focus:border-[#2563eb] focus:ring-2 focus:ring-[#dbeafe]";

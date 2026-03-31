@@ -1,18 +1,8 @@
-import { useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { cardClass } from "../styles";
-import type { ExamStatsSummary, QuestionInsight } from "../types";
+import { badgeClass, cardClass } from "../styles";
+import type { ExamStatsSummary, ScoreBand } from "../types";
 
 type ResultsChartsProps = {
-  examStats: ExamStatsSummary | null;
+	examStats: ExamStatsSummary | null;
 };
 
 type ViewMode = "graphic" | "text";
@@ -59,87 +49,95 @@ function QuestionInsightList({
           text: "text-emerald-600 dark:text-emerald-300",
           bar: "bg-linear-to-r from-emerald-500 to-teal-400",
         };
+const BAND_TONE: Record<string, { bar: string; bg: string; text: string }> = {
+	high: { bar: "bg-[#8fb7a0]", bg: "bg-[#f6faf7]", text: "text-[#557565]" },
+	mid: { bar: "bg-[#9bb5d1]", bg: "bg-[#f7fafd]", text: "text-[#5b718b]" },
+	low: { bar: "bg-[#d5bf93]", bg: "bg-[#fbf8f2]", text: "text-[#8a7654]" },
+};
 
-  return (
-    <div className={`${cardClass} ${toneClasses.wrapper}`}>
-      <h3 className={`text-sm font-semibold ${toneClasses.text}`}>{title}</h3>
-      <div className="mt-4 space-y-3">
-        {items.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-border bg-background/80 px-4 py-6 text-sm text-muted-foreground">
-            Өгөгдөл алга.
-          </div>
-        )}
-        {items.map((item, index) => (
-          <div key={item.id} className="rounded-2xl border border-border bg-background/80 px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-xs text-muted-foreground">#{index + 1}</div>
-                <div className="mt-1 text-sm font-medium">{item.text}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-semibold">{item.correctRate}%</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {item.correctCount}/{item.total}
-                </div>
-              </div>
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className={`h-full rounded-full ${toneClasses.bar}`}
-                style={{ width: `${item.correctRate}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+const getBandTone = (label: string) => {
+	if (label.startsWith("90") || label.startsWith("75")) return BAND_TONE.high;
+	if (label.startsWith("60")) return BAND_TONE.mid;
+	return BAND_TONE.low;
+};
+
+const getBandStart = (label: string) => {
+	const match = label.match(/^(\d+)/);
+	return match ? Number(match[1]) : 0;
+};
+
+const BandRow = ({ band, total }: { band: ScoreBand; total: number }) => {
+	const pct = total > 0 ? Math.round((band.count / total) * 100) : 0;
+	const tone = getBandTone(band.label);
+	const bandStart = getBandStart(band.label);
+	const bandMessage =
+		pct >= 40 ? "Ихэнх нь энд байна" : bandStart < 60 && band.count > 0 ? "Анхаарах бүлэг" : "Хэвийн";
+	return (
+		<div className="rounded-[18px] border border-[#e7edf5] bg-white px-4 py-4">
+			<div className="flex flex-wrap items-start justify-between gap-3">
+				<span
+					className={`whitespace-nowrap rounded-lg px-2 py-0.5 text-xs font-semibold ${tone.bg} ${tone.text}`}
+				>
+					{band.label}
+				</span>
+				<div className="min-w-[120px] text-left sm:text-right">
+					<div className="text-sm font-semibold text-slate-900">{band.count} сурагч</div>
+					<div className="text-[11px] text-slate-400">{pct}% · {bandMessage}</div>
+				</div>
+			</div>
+			<div className="mt-3 h-2 overflow-hidden rounded-full bg-[#edf1f6]">
+				<div
+					className={`h-full rounded-full ${tone.bar} transition-all duration-500`}
+					style={{ width: `${pct}%`, backgroundColor: band.color }}
+				/>
+			</div>
+		</div>
+	);
+};
 
 export default function ResultsCharts({ examStats }: ResultsChartsProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>("graphic");
+	const totalAnswers = examStats
+		? examStats.correctTotal + examStats.incorrectTotal
+		: 0;
+	const correctRate =
+		totalAnswers > 0 && examStats
+			? Math.round((examStats.correctTotal / totalAnswers) * 100)
+			: 0;
+	const incorrectRate = totalAnswers > 0 ? 100 - correctRate : 0;
+	const dominantBand = examStats?.performanceBands.reduce<ScoreBand | null>(
+		(current, band) => (!current || band.count > current.count ? band : current),
+		null,
+	);
+	const supportBandCount = examStats
+		? examStats.performanceBands
+				.filter((band) => getBandStart(band.label) < 60)
+				.reduce((sum, band) => sum + band.count, 0)
+		: 0;
+	const answerInsight =
+		correctRate >= 75
+			? "Анги нийтээрээ гол ойлголтыг тогтвортой эзэмшиж байна."
+			: correctRate >= 60
+				? "Суурь ойлголт байгаа ч зарим асуулт дээр нэмэлт тайлбар хэрэгтэй."
+				: "Зөв хариултын хувь сул байгаа тул асуулт, тайлбараа дахин нягтлах хэрэгтэй.";
 
-  if (!examStats) return null;
-
-  const mostMissedQuestions = examStats.mostMissed
-    .filter((question) => Number(question.missCount ?? 0) > 0)
-    .slice(0, 2);
-  const mostCorrectQuestions = examStats.mostCorrect
-    .filter((question) => Number(question.correctCount ?? 0) > 0)
-    .slice(0, 2);
-  const questionRateCards = examStats.questionStats.map((question, index) => ({
-    ...question,
-    label: `А${index + 1}`,
-  }));
-
-  return (
-    <section className="grid gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold">Дүнгийн харагдац</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            График эсвэл текстэн задлан харах горимоо сонгоно
-          </p>
-        </div>
-        <div className="inline-flex rounded-full border border-border bg-muted p-1 text-xs">
-          <button
-            className={`rounded-full px-3 py-1.5 transition ${
-              viewMode === "graphic" ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"
-            }`}
-            onClick={() => setViewMode("graphic")}
-          >
-            График
-          </button>
-          <button
-            className={`rounded-full px-3 py-1.5 transition ${
-              viewMode === "text" ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"
-            }`}
-            onClick={() => setViewMode("text")}
-          >
-            Текст
-          </button>
-        </div>
-      </div>
+	return (
+		<section className={cardClass}>
+			<div className="flex flex-wrap items-start justify-between gap-3">
+				<div>
+					<span className={badgeClass}>2. Ангийн ерөнхий зураг</span>
+					<h3 className="mt-3 text-xl font-semibold text-slate-900">
+						Оноо болон хариултын төлөв
+					</h3>
+					<p className="mt-1 text-sm text-slate-400">
+						Аль онооны бүсэд төвлөрч байгааг болон зөв, буруу хариултын ерөнхий балансыг харуулна.
+					</p>
+				</div>
+				{dominantBand && (
+					<div className="rounded-full border border-[#e3e8ef] bg-[#fbfcfe] px-3 py-1.5 text-xs font-semibold text-slate-600">
+						Ихэнх нь {dominantBand.label} бүсэд байна
+					</div>
+				)}
+			</div>
 
       {viewMode === "graphic" ? (
         <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
@@ -194,69 +192,85 @@ export default function ResultsCharts({ examStats }: ResultsChartsProps) {
               </ResponsiveContainer>
             </div>
           </div>
+			{!examStats ? (
+				<div className="mt-6 rounded-[20px] border border-dashed border-[#d5dfeb] bg-[#f8fafc] px-4 py-10 text-center text-sm text-slate-400">
+					Шалгалт сонгоход энд онооны тархалт болон хариултын ерөнхий байдал харагдана.
+				</div>
+			) : (
+				<div className="mt-6 grid gap-4">
+					<div className="rounded-[22px] border border-[#e3e8ef] bg-[#fcfdff] px-5 py-5">
+						<div className="flex flex-wrap items-start justify-between gap-3">
+							<div>
+								<div className="text-sm font-semibold text-slate-800">Онооны тархалт</div>
+								<div className="mt-0.5 text-xs text-slate-400">
+									Сурагчид аль онооны бүсэд байгааг бүлгээр нь харууллаа
+								</div>
+							</div>
+							<span className="rounded-full border border-[#e3e8ef] bg-white px-3 py-1 text-xs font-semibold text-slate-500">
+								{examStats.submissionCount} илгээлт
+							</span>
+						</div>
+						<div className="mt-5 space-y-3">
+							{examStats.performanceBands.length > 0 ? (
+								examStats.performanceBands.map((band) => (
+									<BandRow key={band.label} band={band} total={examStats.submissionCount} />
+								))
+							) : (
+								<div className="rounded-[16px] border border-dashed border-[#d5dfeb] px-4 py-6 text-center text-sm text-slate-400">
+									Онооны тархалтын өгөгдөл байхгүй.
+								</div>
+							)}
+						</div>
+					</div>
 
-          <div className={`${cardClass} border border-[#d9e6fb] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)]`}>
-            <h3 className="text-sm font-semibold text-slate-900">Асуулт тус бүрийн зөв хариулсан хувь</h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Сурагчдын хэдэн хувь нь тухайн асуултыг зөв хийснийг харуулна.
-            </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {questionRateCards.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-[#dce8f8] bg-white/85 px-4 py-8 text-center text-sm text-slate-500 sm:col-span-2">
-                  Асуултын гүйцэтгэлийн өгөгдөл алга.
-                </div>
-              )}
-              {questionRateCards.map((question) => (
-                <div
-                  key={question.id}
-                  className="rounded-[22px] border border-[#dce8f8] bg-white/90 px-4 py-4 shadow-[0_14px_30px_-26px_rgba(20,184,166,0.35)]"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1 pr-2">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        {question.label}
-                      </div>
-                      <div
-                        className="mt-1 break-words text-sm font-semibold leading-7 text-slate-900 line-clamp-3"
-                        title={question.text}
-                      >
-                        {question.text}
-                      </div>
-                    </div>
-                    <div
-                      className="grid h-20 w-20 shrink-0 place-items-center rounded-full sm:h-24 sm:w-24"
-                      style={{
-                        background: `conic-gradient(#14b8a6 ${question.correctRate * 3.6}deg, #d9f3ef 0deg)`,
-                      }}
-                    >
-                      <div className="grid h-14 w-14 place-items-center rounded-full border border-[#dce8f8] bg-white text-sm font-semibold text-slate-900 sm:h-16 sm:w-16">
-                        {question.correctRate}%
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-500">
-                    <span>{question.correctCount}/{question.total} сурагч зөв хийсэн</span>
-                    <span>{question.missCount} алдсан</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          <QuestionInsightList
-            items={mostMissedQuestions}
-            title="Хамгийн их алдсан асуултууд"
-            tone="red"
-          />
-          <QuestionInsightList
-            items={mostCorrectQuestions}
-            title="Хамгийн их зөв хийсэн асуултууд"
-            tone="green"
-          />
-        </div>
-      )}
-    </section>
-  );
+					<div className="rounded-[22px] border border-[#e3e8ef] bg-[#fcfdff] px-5 py-5">
+						<div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+							Хариултын баланс
+						</div>
+						<div className="mt-2 text-sm leading-6 text-slate-600">
+							{answerInsight}
+						</div>
+						<div className="mt-4 h-2 overflow-hidden rounded-full bg-[#e8eef6]">
+							<div className="flex h-full w-full">
+								<div className="h-full bg-[#8fb7a0]" style={{ width: `${correctRate}%` }} />
+								<div
+									className="h-full bg-[#c7d1dc]"
+									style={{ width: `${incorrectRate}%` }}
+								/>
+							</div>
+						</div>
+						<div className="mt-4 grid gap-3">
+							<div className="rounded-[18px] border border-[#e7edf5] bg-white px-4 py-3">
+								<div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+									Гол зураг
+								</div>
+								<div className="mt-2 text-sm font-semibold text-slate-900">
+									{dominantBand ? `${dominantBand.label} бүсэд ихэнх нь байна` : "Тархалт хараахан бүрдээгүй"}
+								</div>
+								<div className="mt-1 text-xs leading-6 text-slate-500">
+									{dominantBand
+										? `${dominantBand.count} сурагч энэ бүсэд байна. Доод бүсэд ${supportBandCount} сурагч байна.`
+										: "Илгээлт цугларсны дараа илүү тодорхой болно."}
+								</div>
+							</div>
+							<div className="grid grid-cols-2 gap-3">
+								<div className="rounded-[18px] border border-[#d7e6dd] bg-[#f6faf7] px-4 py-3">
+									<div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#557565]">
+										Зөв
+									</div>
+									<div className="mt-2 text-xl font-bold text-slate-900">{correctRate}%</div>
+								</div>
+								<div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+									<div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+										Буруу
+									</div>
+									<div className="mt-2 text-xl font-bold text-slate-900">{incorrectRate}%</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+		</section>
+	);
 }

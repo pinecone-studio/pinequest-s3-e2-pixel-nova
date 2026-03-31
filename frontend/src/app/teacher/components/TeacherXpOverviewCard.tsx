@@ -1,115 +1,110 @@
 import { badgeClass, cardClass, sectionDescriptionClass, sectionTitleClass } from "../styles";
-import { formatDateTime } from "../utils";
 import type { XpLeaderboardEntry } from "../types";
+import { ZapIcon } from "lucide-react";
 
 type TeacherXpOverviewCardProps = {
-  students: XpLeaderboardEntry[];
+	students: XpLeaderboardEntry[];
 };
 
-export default function TeacherXpOverviewCard({
-  students,
-}: TeacherXpOverviewCardProps) {
-  const topStudents = students.slice(0, 5);
-  const totalXp = students.reduce((sum, student) => sum + student.xp, 0);
-  const averageLevel =
-    students.length > 0
-      ? (students.reduce((sum, student) => sum + student.level, 0) / students.length).toFixed(1)
-      : "0.0";
+const LEADERBOARD_LIMIT = 6;
 
-  return (
-    <div className={`${cardClass} overflow-hidden`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <span className={badgeClass}>Student Progress</span>
-          <h2 className={`mt-3 ${sectionTitleClass}`}>XP ба ахиц</h2>
-          <p className={`mt-2 ${sectionDescriptionClass}`}>
-            Сурагчдын идэвх, түвшин, хамгийн сүүлд хийсэн шалгалтын явцыг харуулна.
-          </p>
-        </div>
-        <div className="rounded-full border border-[#bfdbfe] bg-[#eff6ff] px-3 py-1 text-[11px] font-semibold text-[#1d4ed8]">
-          {students.length} сурагч идэвхтэй
-        </div>
-      </div>
+export default function TeacherXpOverviewCard({ students }: TeacherXpOverviewCardProps) {
+	const topStudent = students[0] ?? null;
+	const leaderboard = students.slice(0, LEADERBOARD_LIMIT);
+	const totalXp = students.reduce((sum, s) => sum + s.xp, 0);
+	const avgXp = students.length > 0 ? Math.round(totalXp / students.length) : 0;
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-[24px] border border-[#bfdbfe] bg-[#eff6ff] px-4 py-3">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-[#1d4ed8]">
-            Total XP
-          </div>
-          <div className="mt-2 text-2xl font-semibold">{totalXp}</div>
-        </div>
-        <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
-            Average Level
-          </div>
-          <div className="mt-2 text-2xl font-semibold">{averageLevel}</div>
-        </div>
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-3">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-300">
-            Top Progress
-          </div>
-          <div className="mt-2 text-2xl font-semibold">
-            {topStudents[0] ? `Lv.${topStudents[0].level}` : "Lv.0"}
-          </div>
-        </div>
-      </div>
+	return (
+		<div className={`${cardClass} overflow-hidden`}>
+			<div>
+				<span className={badgeClass}>Сурагчийн ахиц</span>
+				<h2 className={`mt-3 ${sectionTitleClass}`}>XP эрэмбэ</h2>
+				<p className={`mt-2 ${sectionDescriptionClass}`}>
+					Хамгийн идэвхтэй сурагчид болон дундаж XP үзүүлэлт.
+				</p>
+			</div>
 
-      <div className="mt-4 space-y-3">
-        {topStudents.length === 0 && (
-          <div className="rounded-[24px] border border-dashed border-[#d5dfeb] bg-[#f8fafc] px-4 py-6 text-sm text-slate-500">
-            XP өгөгдөл хараахан алга. Сурагчид шалгалт өгч эхэлмэгц progression энд гарч ирнэ.
-          </div>
-        )}
+			<div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+				{[
+					{ label: "Нийт XP", value: totalXp },
+					{ label: "Дундаж XP", value: avgXp },
+					{ label: "Сурагч", value: students.length },
+				].map((item) => (
+					<div key={item.label} className="rounded-[18px] border border-[#e2e9f0] bg-[#f8fafc] px-4 py-3">
+						<div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+							{item.label}
+						</div>
+						<div className="mt-2 text-2xl font-semibold text-slate-900">{item.value}</div>
+					</div>
+				))}
+			</div>
 
-        {topStudents.map((student, index) => (
-          <div
-            key={student.studentId}
-            className="rounded-[24px] border border-[#dce5ef] bg-[#fbfdff] px-4 py-4"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-2xl border border-primary/15 bg-background text-sm font-semibold shadow-sm">
-                  <span>{student.icon}</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{student.name}</span>
-                    <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
-                      #{index + 1}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Level {student.level} · {student.levelName} · {student.examsTaken} шалгалт
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-semibold">{student.xp} XP</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {student.nextLevelXp === 0
-                    ? "Дээд түвшинд хүрсэн"
-                    : `${student.nextLevelXp} XP дараагийн level`}
-                </div>
-              </div>
-            </div>
+			{students.length === 0 ? (
+				<div className="mt-6 rounded-[22px] border border-dashed border-[#d7e0ea] bg-[#f8fafc] px-4 py-10 text-center text-sm text-slate-400">
+					Сурагчид шалгалт өгч эхэлмэгц эрэмбэ энд гарч ирнэ.
+				</div>
+			) : (
+				<>
+					{topStudent && (
+						<div className="mt-6 rounded-[24px] border border-[#d9e4f0] bg-[linear-gradient(180deg,#f5f9fd_0%,#ffffff_100%)] px-5 py-5">
+							<div className="flex items-start gap-4">
+								<div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-[#d9e4f0] bg-white text-2xl">
+									{topStudent.icon}
+								</div>
+								<div className="min-w-0 flex-1">
+									<div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+										Тэргүүлж буй сурагч
+									</div>
+									<div className="mt-2 truncate text-lg font-semibold text-slate-900">
+										{topStudent.name}
+									</div>
+									<div className="mt-1 text-sm text-slate-500">
+										{topStudent.xp} XP · Түвшин {topStudent.level}
+									</div>
+									<div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e8eef6]">
+										<div
+											className="h-full rounded-full bg-[#9bb5d1]"
+											style={{ width: `${topStudent.progressPercent}%` }}
+										/>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
 
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-background">
-              <div
-                className="h-full rounded-full bg-linear-to-r from-primary via-sky-500 to-emerald-400"
-                style={{ width: `${student.progressPercent}%` }}
-              />
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-              <span>Прогресс: {student.progressPercent}%</span>
-              <span>
-                Сүүлд идэвхтэй:{" "}
-                {student.lastActivity ? formatDateTime(student.lastActivity) : "—"}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+					<div className="mt-6">
+						<div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+							<ZapIcon className="size-3.5" />
+							Тэргүүлэх жагсаалт
+						</div>
+						<div className="mt-3 space-y-2">
+							{leaderboard.map((student, index) => (
+								<div
+									key={student.studentId}
+									className="flex items-center gap-3 rounded-[18px] border border-[#e2e9f0] bg-white px-4 py-3"
+								>
+									<div className="w-6 shrink-0 text-center text-sm font-semibold text-slate-400">
+										{index + 1}
+									</div>
+									<div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#e2e9f0] bg-[#f8fafc] text-lg">
+										{student.icon}
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="truncate text-sm font-semibold text-slate-900">{student.name}</div>
+										<div className="mt-1 text-xs text-slate-500">
+											Түвшин {student.level} · {student.examsTaken} шалгалт
+										</div>
+									</div>
+									<div className="shrink-0 text-right">
+										<div className="text-sm font-semibold text-slate-900">{student.xp} XP</div>
+										<div className="text-[11px] text-slate-400">{student.progressPercent}%</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				</>
+			)}
+		</div>
+	);
 }
