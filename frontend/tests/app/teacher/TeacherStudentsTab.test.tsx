@@ -45,6 +45,7 @@ describe("TeacherStudentsTab", () => {
       />,
     );
 
+    fireEvent.click(screen.getByLabelText("Card view"));
     fireEvent.click(screen.getByLabelText("Өрөөний код хуулах"));
 
     await waitFor(() => expect(onCopyCode).toHaveBeenCalledWith("ROOM42"));
