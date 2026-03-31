@@ -218,4 +218,24 @@ describe("ExamScreen", () => {
     ).toBeTruthy();
     screen.unmount();
   });
+
+  it("does not render mock active exam CTAs when there is no real exam data", () => {
+    mockUseStudentApp.mockReturnValue(baseContext);
+
+    const screen = render(<ExamScreen />);
+
+    expect(screen.queryByText("Ð¨Ð°Ð»Ð³Ð°Ð»Ñ‚Ð°Ð½Ð´ Ð¾Ñ€Ð¾Ñ…")).toBeNull();
+    screen.unmount();
+  });
+
+  it("does not render mock history scores when there is no real history data", () => {
+    mockUseStudentApp.mockReturnValue(baseContext);
+
+    const screen = render(<ExamScreen />);
+
+    fireEvent.press(screen.getByText("Шалгалтын түүх"));
+
+    expect(screen.queryByText("91")).toBeNull();
+    screen.unmount();
+  });
 });

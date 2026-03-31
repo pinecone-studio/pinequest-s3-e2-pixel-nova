@@ -7,7 +7,7 @@ import {
   fetchXpLeaderboard,
 } from "./teacher-api";
 
-const DASHBOARD_POLL_MS = 15000;
+const DASHBOARD_POLL_MS = 30_000;
 
 export const useTeacherData = (overrideUser?: User | null) => {
   const overrideUserId = overrideUser?.id ?? null;

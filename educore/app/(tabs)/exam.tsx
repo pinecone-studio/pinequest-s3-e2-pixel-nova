@@ -167,7 +167,7 @@ function ExamListScreen() {
             },
           ];
         })
-      : MOCK_ACTIVE;
+      : [];
 
   const realHistoryItems: HistoryListItem[] = history
     .filter((item) => item.status === "graded" || item.status === "submitted")
@@ -222,7 +222,7 @@ function ExamListScreen() {
       ? [...missedHistoryItems, ...realHistoryItems].sort(
           (left, right) => right.sortTime - left.sortTime,
         )
-      : MOCK_HISTORY;
+      : [];
 
   return (
     <ScrollView

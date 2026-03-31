@@ -515,6 +515,121 @@ examRoutes.post(
 );
 
 // ──────────────────────────────────────────────
+// POST /:examId/questions/batch — Create multiple questions at once
+// ──────────────────────────────────────────────
+examRoutes.post(
+  "/:examId/questions/batch",
+  zValidator(
+    "json",
+    z.object({
+      questions: z.array(
+        z.object({
+          type: z.string(),
+          questionText: z.string(),
+          topic: z.string().optional(),
+          difficulty: z.string().optional(),
+          imageUrl: z.string().optional(),
+          audioUrl: z.string().optional(),
+          explanation: z.string().optional(),
+          correctAnswerText: z.string().optional(),
+          points: z.number().optional(),
+          options: z
+            .array(
+              z.object({
+                label: z.string(),
+                text: z.string(),
+                imageUrl: z.string().optional(),
+                isCorrect: z.boolean(),
+              }),
+            )
+            .optional(),
+        }),
+      ),
+    }),
+  ),
+  async (c) => {
+    try {
+      const examId = c.req.param("examId");
+      const teacherId = c.get("user").id;
+      const { questions: questionList } = c.req.valid("json");
+      const db = getDb(c.env.educore);
+
+      const [exam] = await db
+        .select()
+        .from(exams)
+        .where(and(eq(exams.id, examId), eq(exams.teacherId, teacherId)))
+        .limit(1);
+
+      if (!exam) {
+        return notFound(c, "Exam");
+      }
+
+      const existingQuestions = await db
+        .select()
+        .from(questions)
+        .where(eq(questions.examId, examId));
+
+      const now = new Date().toISOString();
+      const startingOrderIndex = existingQuestions.length;
+      const createdQuestions = questionList.map((q, index) => ({
+        questionId: newId(),
+        orderIndex: startingOrderIndex + index,
+        payload: q,
+      }));
+
+      await db.insert(questions).values(
+        createdQuestions.map(({ questionId, orderIndex, payload }) => ({
+          id: questionId,
+          examId,
+          type: payload.type,
+          questionText: payload.questionText,
+          topic: payload.topic,
+          difficulty: payload.difficulty ?? "medium",
+          imageUrl: payload.imageUrl,
+          audioUrl: payload.audioUrl,
+          explanation: payload.explanation,
+          correctAnswerText: payload.correctAnswerText,
+          points: payload.points ?? 1,
+          orderIndex,
+          createdAt: now,
+          updatedAt: now,
+        })),
+      );
+
+      const optionValues = createdQuestions.flatMap(({ questionId, payload }) =>
+        (payload.options ?? []).map((opt, idx) => ({
+          id: newId(),
+          questionId,
+          label: opt.label,
+          text: opt.text,
+          imageUrl: opt.imageUrl,
+          isCorrect: opt.isCorrect,
+          orderIndex: idx,
+        })),
+      );
+
+      if (optionValues.length > 0) {
+        await db.insert(options).values(optionValues);
+      }
+
+      return success(
+        c,
+        {
+          created: createdQuestions.length,
+          questions: createdQuestions.map(({ questionId, orderIndex }) => ({
+            questionId,
+            orderIndex,
+          })),
+        },
+        201,
+      );
+    } catch (err) {
+      return error(c, "INTERNAL_ERROR", "Failed to batch create questions", 500);
+    }
+  },
+);
+
+// ──────────────────────────────────────────────
 // PUT /:examId/questions/:questionId — Update question
 // ──────────────────────────────────────────────
 examRoutes.put(
