@@ -8,6 +8,7 @@ import type {
   SessionResultResponse,
   StudentExamHistoryItem,
   StudentProfile,
+  StudentUpcomingExam,
 } from "@/types/student-app";
 import { getApiBaseUrl } from "../core/utils";
 
@@ -156,6 +157,9 @@ export const getStudentExamHistory = async (student: AuthUser) => {
       return rightTime - leftTime;
     });
 };
+
+export const getStudentUpcomingExams = async (student: AuthUser) =>
+  apiRequest<StudentUpcomingExam[]>("/api/student/upcoming-exams", { student });
 
 export const joinSession = async (student: AuthUser, roomCode: string) =>
   apiRequest<JoinSessionResponse>("/api/sessions/join", {

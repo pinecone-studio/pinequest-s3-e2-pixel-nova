@@ -4,6 +4,7 @@ import type { AuthUser, StudentProfile } from '@/types/student-app';
 import {
   getStudentExamHistory,
   getStudentProfile,
+  getStudentUpcomingExams,
   updateStudentProfile as updateProfileRequest,
 } from '../services/api';
 import { buildFallbackProfile } from '../core/context-helpers';
@@ -24,15 +25,19 @@ export const useStudentDashboard = (
     }));
 
     try {
-      const [remoteProfile, nextHistory] = await Promise.all([
+      const [remoteProfile, nextHistory, nextUpcomingExams] = await Promise.all([
         getStudentProfile(student),
         getStudentExamHistory(student),
+        // Home should keep working even if the optional upcoming-exams route
+        // is not available on the current backend deployment yet.
+        getStudentUpcomingExams(student).catch(() => []),
       ]);
 
       setState((current) => ({
         ...current,
         profile: remoteProfile,
         history: nextHistory,
+        upcomingExams: nextUpcomingExams,
         progressSummary: buildProgressSummary(nextHistory),
       }));
     } catch (error) {

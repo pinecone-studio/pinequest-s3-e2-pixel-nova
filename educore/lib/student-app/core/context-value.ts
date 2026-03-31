@@ -9,6 +9,7 @@ import type {
   StudentExamHistoryItem,
   StudentProfile,
   StudentProgressSummary,
+  StudentUpcomingExam,
 } from '@/types/student-app';
 
 export type StudentAppContextValue = {
@@ -18,6 +19,7 @@ export type StudentAppContextValue = {
   availableUsers: AuthUser[];
   profile: StudentProfile | null;
   activeSession: ActiveExamSession | null;
+  upcomingExams: StudentUpcomingExam[];
   submittedResult: SessionResultResponse | null;
   history: StudentExamHistoryItem[];
   progressSummary: StudentProgressSummary;
