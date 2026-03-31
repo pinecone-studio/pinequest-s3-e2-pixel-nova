@@ -70,51 +70,27 @@ export const useStudentJoinExam = () => {
     }
     setJoinLoading(true);
     try {
-      const joinWithLocation = (
-        location?: { latitude: number; longitude: number; accuracy?: number },
-      ) =>
-<<<<<<< 195-enhacement
-        apiFetch<
-        | {
-            data?: {
-              sessionId: string;
-              status: string;
-              sessionStatus?: string;
-              entryStatus?: "on_time" | "late";
-              scheduledAt?: string | null;
-              startedAt?: string | null;
-              exam: {
-                id: string;
-                title: string;
-                teacherName?: string | null;
-                durationMin: number;
-                questionCount: number;
-                requiresAudioRecording?: boolean;
-                enabledCheatDetections?: string[];
-              };
-            };
-          }
-=======
-        apiRequest<
->>>>>>> main
-        | {
-            sessionId: string;
-            status: string;
-            sessionStatus?: string;
-            entryStatus?: "on_time" | "late";
-            scheduledAt?: string | null;
-            startedAt?: string | null;
-            exam: {
-              id: string;
-              title: string;
-              teacherName?: string | null;
-              durationMin: number;
-              questionCount: number;
-              requiresAudioRecording?: boolean;
-              enabledCheatDetections?: string[];
-            };
-          }
-        >("/api/sessions/join", {
+      const joinWithLocation = (location?: {
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+      }) =>
+        apiRequest<{
+          sessionId: string;
+          status: string;
+          sessionStatus?: string;
+          entryStatus?: "on_time" | "late";
+          scheduledAt?: string | null;
+          startedAt?: string | null;
+          exam: {
+            id: string;
+            title: string;
+            durationMin: number;
+            questionCount: number;
+            requiresAudioRecording?: boolean;
+            enabledCheatDetections?: string[];
+          };
+        }>("/api/sessions/join", {
           method: "POST",
           body: JSON.stringify({ roomCode: code, location }),
         });
@@ -126,7 +102,9 @@ export const useStudentJoinExam = () => {
         let parsedCode: string | null = null;
         if (err instanceof Error && err.message) {
           try {
-            const parsed = JSON.parse(err.message) as { error?: { code?: string } };
+            const parsed = JSON.parse(err.message) as {
+              error?: { code?: string };
+            };
             parsedCode = parsed.error?.code ?? null;
           } catch {
             parsedCode = null;
@@ -145,7 +123,6 @@ export const useStudentJoinExam = () => {
       setSelectedExam({
         id: data.exam.id,
         title: data.exam.title,
-        teacherName: data.exam.teacherName ?? null,
         description: null,
         status: data.status ?? null,
         sessionStatus: data.sessionStatus ?? null,
