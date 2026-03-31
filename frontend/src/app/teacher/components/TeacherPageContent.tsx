@@ -105,7 +105,6 @@ export default function TeacherPageContent({
     return (
       <section className={contentCanvasClass}>
         <div className="space-y-6">
-          <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
           <ResultsTab
             loading={data.loading}
             examOptions={examStatsState.examOptions}
@@ -122,6 +121,7 @@ export default function TeacherPageContent({
             studentProfile={studentProfile as never}
             profileLoading={profileLoading}
           />
+          <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
         </div>
       </section>
     );

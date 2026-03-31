@@ -36,6 +36,12 @@ type SessionQuestion = {
   options?: { id: string; label: string; text: string }[];
 };
 
+type SessionSavedAnswer = {
+  questionId: string;
+  selectedOptionId?: string | null;
+  textAnswer?: string | null;
+};
+
 type SessionExam = {
   id: string;
   title: string;
@@ -49,6 +55,7 @@ type SessionExam = {
 
 type SessionPayload = {
   exam: SessionExam;
+  answers?: SessionSavedAnswer[];
   questions: SessionQuestion[];
 };
 
@@ -79,6 +86,35 @@ export const mapSessionToExam = (
     duration: examData.durationMin,
     createdAt: new Date().toISOString(),
   };
+};
+
+export const mapSessionAnswers = (sessionData: SessionPayload) => {
+  const answerMap: Record<string, string> = {};
+  const answers = sessionData.answers ?? [];
+  const questionMap = new Map(
+    sessionData.questions.map((question) => [question.id, question] as const),
+  );
+
+  answers.forEach((answer) => {
+    const question = questionMap.get(answer.questionId);
+    if (!question) return;
+
+    if (typeof answer.textAnswer === "string" && answer.textAnswer.trim()) {
+      answerMap[answer.questionId] = answer.textAnswer;
+      return;
+    }
+
+    if (answer.selectedOptionId && question.options?.length) {
+      const matchedOption = question.options.find(
+        (option) => option.id === answer.selectedOptionId,
+      );
+      if (matchedOption?.text) {
+        answerMap[answer.questionId] = matchedOption.text;
+      }
+    }
+  });
+
+  return answerMap;
 };
 
 type ResultAnswer = {

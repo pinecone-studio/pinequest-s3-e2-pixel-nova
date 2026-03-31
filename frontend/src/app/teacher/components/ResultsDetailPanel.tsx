@@ -18,6 +18,21 @@ type ResultsDetailPanelProps = {
   profileLoading: boolean;
 };
 
+function getDisplayScore(score: number, totalPoints: number, percentage: number) {
+  if (totalPoints <= 0) {
+    return score;
+  }
+
+  if (score <= totalPoints) {
+    return score;
+  }
+
+  return Math.max(
+    0,
+    Math.min(totalPoints, Math.round((percentage / 100) * totalPoints)),
+  );
+}
+
 export default function ResultsDetailPanel({
   selectedSubmission,
   selectedExam,
@@ -28,6 +43,7 @@ export default function ResultsDetailPanel({
   profileLoading,
 }: ResultsDetailPanelProps) {
   const [countdown, setCountdown] = useState("00:00:00");
+  const [nowTs, setNowTs] = useState(() => Date.now());
 
   const violationEntries = selectedSubmission?.violations
     ? [
@@ -52,10 +68,24 @@ export default function ResultsDetailPanel({
     return null;
   }, [selectedExam]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const derivedFinished = useMemo(() => {
+    if (!selectedExam) return false;
+    if (selectedExam.status === "finished" || Boolean(selectedExam.finishedAt)) {
+      return true;
+    }
+    if (!finishAt) return false;
+    const finishTime = new Date(finishAt).getTime();
+    return !Number.isNaN(finishTime) && nowTs >= finishTime;
+  }, [finishAt, nowTs, selectedExam]);
+
   const resultsLocked = Boolean(
     selectedExam &&
-      selectedExam.status !== "finished" &&
-      !selectedExam.finishedAt,
+      !derivedFinished,
   );
 
   useEffect(() => {
@@ -118,7 +148,11 @@ export default function ResultsDetailPanel({
             </div>
             <div className="mt-2 text-lg font-semibold">{selectedSubmission.studentName}</div>
             <div className="mt-1 text-sm text-slate-500">
-              {selectedSubmission.percentage}% · {selectedSubmission.score}/
+              {selectedSubmission.percentage}% · {getDisplayScore(
+                selectedSubmission.score,
+                selectedSubmission.totalPoints,
+                selectedSubmission.percentage,
+              )}/
               {selectedSubmission.totalPoints} оноо
             </div>
           </div>
@@ -197,6 +231,14 @@ export default function ResultsDetailPanel({
                   Дуусах хүртэл: {countdown}
                 </div>
               )}
+            </div>
+          )}
+          {!resultsLocked && selectedExam && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-xs text-emerald-800">
+              <div className="text-sm font-semibold">Шалгалт дууссан байна</div>
+              <div className="mt-1">
+                Энэ шалгалтын дүн, хариулт, тайлан бүгд эцэслэгдэн харагдаж байна.
+              </div>
             </div>
           )}
           {selectedExam && selectedSubmission.answers && !resultsLocked && (

@@ -20,11 +20,20 @@ export default function ResultsSummaryCard({
   onSelectExam,
   examStats,
 }: ResultsSummaryCardProps) {
+  const mostMissedQuestions =
+    examStats?.mostMissed
+      .filter((question) => Number(question.missCount ?? 0) > 0)
+      .slice(0, 2) ?? [];
+  const mostCorrectQuestions =
+    examStats?.mostCorrect
+      .filter((question) => Number(question.correctCount ?? 0) > 0)
+      .slice(0, 2) ?? [];
+
   return (
     <div className={`${cardClass} overflow-hidden`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <span className={badgeClass}>Results Overview</span>
+          <span className={badgeClass}>Дүнгийн тойм</span>
           <h2 className={`mt-3 ${sectionTitleClass}`}>Дүнгийн хураангуй</h2>
           <p className={`mt-2 ${sectionDescriptionClass}`}>
             Дундаж оноо, pass rate, хамгийн их алдсан болон зөв гүйцэтгэсэн асуултууд.
@@ -54,7 +63,7 @@ export default function ResultsSummaryCard({
           <div className="mt-6 grid gap-4 xl:grid-cols-[280px_1fr]">
             <div className="rounded-[28px] border border-[#bfdbfe] bg-[linear-gradient(180deg,#eff6ff_0%,#ffffff_100%)] p-5">
               <div className="text-[11px] uppercase tracking-[0.24em] text-[#1d4ed8]">
-                Class Average
+                Ангийн дундаж
               </div>
               <div className="mt-4 flex items-center justify-center">
                 <div
@@ -76,7 +85,7 @@ export default function ResultsSummaryCard({
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-[24px] border border-[#bfdbfe] bg-[#eff6ff] px-4 py-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-[#1d4ed8]">
-                  Pass Rate
+                  Тэнцсэн хувь
                 </div>
                 <div className="mt-2 text-3xl font-semibold">{examStats.passRate}%</div>
                 <div className="mt-1 text-xs text-slate-500">
@@ -85,7 +94,7 @@ export default function ResultsSummaryCard({
               </div>
               <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
-                  Submissions
+                  Илгээлт
                 </div>
                 <div className="mt-2 text-3xl font-semibold">{examStats.submissionCount}</div>
                 <div className="mt-1 text-xs text-slate-500">
@@ -94,7 +103,7 @@ export default function ResultsSummaryCard({
               </div>
               <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
                 <div className="text-[11px] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-300">
-                  Question Load
+                  Асуултын тоо
                 </div>
                 <div className="mt-2 text-3xl font-semibold">{examStats.totalPoints}</div>
                 <div className="mt-1 text-xs text-slate-500">
@@ -107,28 +116,60 @@ export default function ResultsSummaryCard({
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             <div className="rounded-[24px] border border-red-200 bg-red-50 px-4 py-4">
               <div className="text-[11px] uppercase tracking-[0.2em] text-red-600 dark:text-red-300">
-                Most Missed
+                Хамгийн их алдсан асуултууд
               </div>
-              <div className="mt-2 text-sm font-semibold">
-                {examStats.mostMissed[0]?.text ?? "—"}
-              </div>
-              <div className="mt-1 text-xs text-slate-500">
-                {examStats.mostMissed[0]
-                  ? `${examStats.mostMissed[0].missCount} сурагч алдсан`
-                  : "Алдагдсан асуулт алга"}
+              <div className="mt-3 space-y-3">
+                {mostMissedQuestions.length > 0 ? (
+                  mostMissedQuestions.map((question, index) => (
+                    <div
+                      key={question.id}
+                      className="rounded-[18px] border border-red-100 bg-white/80 px-3 py-3"
+                    >
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-red-500">
+                        #{index + 1}
+                      </div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">
+                        {question.text}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {question.missCount} сурагч алдсан • {question.correctRate}% зөв
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-slate-500">
+                    Алдаа төвлөрсөн асуултын өгөгдөл алга
+                  </div>
+                )}
               </div>
             </div>
             <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4">
               <div className="text-[11px] uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
-                Most Correct
+                Хамгийн их зөв хийсэн асуултууд
               </div>
-              <div className="mt-2 text-sm font-semibold">
-                {examStats.mostCorrect[0]?.text ?? "—"}
-              </div>
-              <div className="mt-1 text-xs text-slate-500">
-                {examStats.mostCorrect[0]
-                  ? `${examStats.mostCorrect[0].correctCount} сурагч зөв хийсэн`
-                  : "Зөв хариултын өгөгдөл алга"}
+              <div className="mt-3 space-y-3">
+                {mostCorrectQuestions.length > 0 ? (
+                  mostCorrectQuestions.map((question, index) => (
+                    <div
+                      key={question.id}
+                      className="rounded-[18px] border border-emerald-100 bg-white/80 px-3 py-3"
+                    >
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-500">
+                        #{index + 1}
+                      </div>
+                      <div className="mt-1 text-sm font-semibold text-slate-900">
+                        {question.text}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {question.correctCount} сурагч зөв хийсэн • {question.correctRate}% зөв
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-slate-500">
+                    Онцгой сайн хийгдсэн асуултын өгөгдөл алга
+                  </div>
+                )}
               </div>
             </div>
           </div>

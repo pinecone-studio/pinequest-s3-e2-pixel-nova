@@ -1,5 +1,5 @@
 export const pageShellClass =
-  "min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.08),_transparent_32%),linear-gradient(180deg,#f8fbff_0%,#f4f7fb_100%)] text-foreground";
+  "min-h-screen bg-white text-foreground";
 
 export const contentCanvasClass =
   "rounded-[32px] border border-[#d9e2ec] bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.25)] sm:p-6 lg:p-8";

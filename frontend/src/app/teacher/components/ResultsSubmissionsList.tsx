@@ -2,6 +2,25 @@ import { cardClass, sectionDescriptionClass } from "../styles";
 import { formatDateTime } from "../utils";
 import type { Submission } from "../types";
 
+function getDisplayScore(submission: Submission) {
+  const totalPoints = Number(submission.totalPoints ?? 0);
+  const rawScore = Number(submission.score ?? 0);
+  const percentage = Number(submission.percentage ?? 0);
+
+  if (totalPoints <= 0) {
+    return rawScore;
+  }
+
+  if (rawScore <= totalPoints) {
+    return rawScore;
+  }
+
+  return Math.max(
+    0,
+    Math.min(totalPoints, Math.round((percentage / 100) * totalPoints)),
+  );
+}
+
 type ResultsSubmissionsListProps = {
   submissions: Submission[];
   onSelect: (id: string) => void;
@@ -51,7 +70,7 @@ export default function ResultsSubmissionsList({
               </div>
               <div className="text-right">
                 <div className="text-lg font-semibold">
-                  {submission.score}/{submission.totalPoints}
+                  {getDisplayScore(submission)}/{submission.totalPoints}
                 </div>
                 <div className="text-[11px] text-slate-500">автомат үнэлгээ</div>
               </div>

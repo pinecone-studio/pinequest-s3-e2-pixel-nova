@@ -214,7 +214,7 @@ const buildTeacherCopy = {
   }),
   studentFlagged: (name: string, reason: string) => ({
     title: "Зөрчил илэрлээ",
-    message: `${name}-ийн session дээр ${reason} бүртгэгдлээ.`,
+    message: `${name}-ийн шалгалтын үеэр ${reason} бүртгэгдлээ.`,
   }),
   examEndingSoon: (title: string, minutes: number) => ({
     title: "Шалгалт дуусах дөхлөө",

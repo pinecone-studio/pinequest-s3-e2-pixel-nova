@@ -97,7 +97,7 @@ export const useStudentProgress = (currentUser: User | null) => {
             percentage,
             xp: 0,
             date: item.submittedAt ?? new Date().toISOString(),
-            score: item.score ?? 0,
+            score: item.earnedPoints ?? 0,
             totalPoints: item.totalPoints ?? 0,
             grade: gradeFromPercentage(percentage),
           };

@@ -71,6 +71,14 @@ describe("session routes", () => {
           orderIndex: 0,
         },
       ],
+      [
+        {
+          questionId: "question-1",
+          selectedOptionId: "option-1",
+          textAnswer: null,
+          answeredAt: "2026-03-31T09:00:00.000Z",
+        },
+      ],
     );
 
     const response = await app.request(
@@ -97,6 +105,14 @@ describe("session routes", () => {
           description: "Practice",
           durationMin: 45,
         },
+        answers: [
+          {
+            questionId: "question-1",
+            selectedOptionId: "option-1",
+            textAnswer: null,
+            answeredAt: "2026-03-31T09:00:00.000Z",
+          },
+        ],
         questions: [
           {
             id: "question-1",
