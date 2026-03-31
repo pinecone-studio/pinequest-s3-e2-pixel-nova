@@ -195,6 +195,9 @@ const getExamRosterDetail = async (
       score: examSessions.score,
       topViolationType: examSessions.topViolationType,
       violationScore: examSessions.violationScore,
+      joinLocationStatus: examSessions.joinLocationStatus,
+      joinDistanceMeters: examSessions.joinDistanceMeters,
+      joinLocationCheckedAt: examSessions.joinLocationCheckedAt,
     })
     .from(examSessions)
     .innerJoin(students, eq(examSessions.studentId, students.id))
@@ -262,6 +265,9 @@ const getExamRosterDetail = async (
         latestEvent: cheatSummary?.latestEvent ?? null,
         countByType: cheatSummary?.countByType ?? {},
         score: session.score,
+        joinLocationStatus: session.joinLocationStatus,
+        joinDistanceMeters: session.joinDistanceMeters,
+        joinLocationCheckedAt: session.joinLocationCheckedAt,
       };
     }),
   };
@@ -494,6 +500,11 @@ teacherRoutes.get("/exams/summary", async (c) => {
       finishedAt: exams.finishedAt,
       roomCode: exams.roomCode,
       durationMin: exams.durationMin,
+      locationPolicy: exams.locationPolicy,
+      locationLabel: exams.locationLabel,
+      locationLatitude: exams.locationLatitude,
+      locationLongitude: exams.locationLongitude,
+      allowedRadiusMeters: exams.allowedRadiusMeters,
       status: exams.status,
       expectedStudentsCount: exams.expectedStudentsCount,
       createdAt: exams.createdAt,

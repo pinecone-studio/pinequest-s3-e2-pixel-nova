@@ -79,6 +79,16 @@ function TeacherScheduleModal({
             setScheduleSubjectName={management.setScheduleSubjectName}
             scheduleDescription={management.scheduleDescription}
             setScheduleDescription={management.setScheduleDescription}
+            scheduleLocationPolicy={management.scheduleLocationPolicy}
+            setScheduleLocationPolicy={management.setScheduleLocationPolicy}
+            scheduleLocationLabel={management.scheduleLocationLabel}
+            setScheduleLocationLabel={management.setScheduleLocationLabel}
+            scheduleLocationLatitude={management.scheduleLocationLatitude}
+            setScheduleLocationLatitude={management.setScheduleLocationLatitude}
+            scheduleLocationLongitude={management.scheduleLocationLongitude}
+            setScheduleLocationLongitude={management.setScheduleLocationLongitude}
+            scheduleAllowedRadiusMeters={management.scheduleAllowedRadiusMeters}
+            setScheduleAllowedRadiusMeters={management.setScheduleAllowedRadiusMeters}
             durationMinutes={management.durationMinutes}
             setDurationMinutes={management.setDurationMinutes}
             onSchedule={onSchedule}

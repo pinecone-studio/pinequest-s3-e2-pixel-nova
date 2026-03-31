@@ -74,6 +74,11 @@ export const exams = sqliteTable("exams", {
   roomCode: text("room_code").unique(),
   passScore: integer("pass_score").default(50),
   shuffleQuestions: integer("shuffle_questions", { mode: "boolean" }).notNull().default(false),
+  locationPolicy: text("location_policy").notNull().default("anywhere"), // anywhere | school_only
+  locationLabel: text("location_label"),
+  locationLatitude: real("location_latitude"),
+  locationLongitude: real("location_longitude"),
+  allowedRadiusMeters: integer("allowed_radius_meters").notNull().default(3000),
   enabledCheatDetections: text("enabled_cheat_detections")
     .notNull()
     .default(serializeEnabledCheatDetections()),
@@ -192,6 +197,11 @@ export const examSessions = sqliteTable("exam_sessions", {
   riskLevel: text("risk_level").notNull().default("low"),
   lastViolationAt: text("last_violation_at"),
   topViolationType: text("top_violation_type"),
+  joinLocationStatus: text("join_location_status").notNull().default("not_checked"), // not_checked | inside | near_edge | outside | not_required
+  joinDistanceMeters: real("join_distance_meters"),
+  joinLatitude: real("join_latitude"),
+  joinLongitude: real("join_longitude"),
+  joinLocationCheckedAt: text("join_location_checked_at"),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
 }, (table) => [
   uniqueIndex("exam_sessions_exam_student_unique").on(table.examId, table.studentId),

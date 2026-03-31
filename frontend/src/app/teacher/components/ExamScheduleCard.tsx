@@ -23,6 +23,16 @@ type ExamScheduleCardProps = {
   setScheduleSubjectName: (value: string) => void;
   scheduleDescription: string;
   setScheduleDescription: (value: string) => void;
+  scheduleLocationPolicy: "anywhere" | "school_only";
+  setScheduleLocationPolicy: (value: "anywhere" | "school_only") => void;
+  scheduleLocationLabel: string;
+  setScheduleLocationLabel: (value: string) => void;
+  scheduleLocationLatitude: string;
+  setScheduleLocationLatitude: (value: string) => void;
+  scheduleLocationLongitude: string;
+  setScheduleLocationLongitude: (value: string) => void;
+  scheduleAllowedRadiusMeters: number;
+  setScheduleAllowedRadiusMeters: (value: number) => void;
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
   onSchedule: () => void;
@@ -45,6 +55,16 @@ export default function ExamScheduleCard({
   setScheduleSubjectName,
   scheduleDescription,
   setScheduleDescription,
+  scheduleLocationPolicy,
+  setScheduleLocationPolicy,
+  scheduleLocationLabel,
+  setScheduleLocationLabel,
+  scheduleLocationLatitude,
+  setScheduleLocationLatitude,
+  scheduleLocationLongitude,
+  setScheduleLocationLongitude,
+  scheduleAllowedRadiusMeters,
+  setScheduleAllowedRadiusMeters,
   durationMinutes,
   setDurationMinutes,
   onSchedule,
@@ -104,6 +124,16 @@ export default function ExamScheduleCard({
             setScheduleDescription={setScheduleDescription}
             scheduleSubjectName={scheduleSubjectName}
             setScheduleSubjectName={setScheduleSubjectName}
+            scheduleLocationPolicy={scheduleLocationPolicy}
+            setScheduleLocationPolicy={setScheduleLocationPolicy}
+            scheduleLocationLabel={scheduleLocationLabel}
+            setScheduleLocationLabel={setScheduleLocationLabel}
+            scheduleLocationLatitude={scheduleLocationLatitude}
+            setScheduleLocationLatitude={setScheduleLocationLatitude}
+            scheduleLocationLongitude={scheduleLocationLongitude}
+            setScheduleLocationLongitude={setScheduleLocationLongitude}
+            scheduleAllowedRadiusMeters={scheduleAllowedRadiusMeters}
+            setScheduleAllowedRadiusMeters={setScheduleAllowedRadiusMeters}
           />
           <ExamScheduleFilePicker
             selectableExams={selectableExams}

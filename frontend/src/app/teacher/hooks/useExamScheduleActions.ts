@@ -16,6 +16,11 @@ type UseExamScheduleActionsParams = {
   scheduleClassName: string;
   scheduleGroupName: string;
   scheduleDescription: string;
+  scheduleLocationPolicy: "anywhere" | "school_only";
+  scheduleLocationLabel: string;
+  scheduleLocationLatitude: string;
+  scheduleLocationLongitude: string;
+  scheduleAllowedRadiusMeters: number;
   selectedScheduleExamId: string;
   expectedStudentsCount: number;
   durationMinutes: number;
@@ -27,6 +32,11 @@ type UseExamScheduleActionsParams = {
   setScheduleGroupName: (value: string) => void;
   setScheduleSubjectName: (value: string) => void;
   setScheduleDescription: (value: string) => void;
+  setScheduleLocationPolicy: (value: "anywhere" | "school_only") => void;
+  setScheduleLocationLabel: (value: string) => void;
+  setScheduleLocationLatitude: (value: string) => void;
+  setScheduleLocationLongitude: (value: string) => void;
+  setScheduleAllowedRadiusMeters: (value: number) => void;
   setSelectedScheduleExamId: (value: string) => void;
   setRoomCode: (value: string | null) => void;
 };
@@ -42,6 +52,11 @@ export const useExamScheduleActions = ({
   scheduleClassName,
   scheduleGroupName,
   scheduleDescription,
+  scheduleLocationPolicy,
+  scheduleLocationLabel,
+  scheduleLocationLatitude,
+  scheduleLocationLongitude,
+  scheduleAllowedRadiusMeters,
   selectedScheduleExamId,
   expectedStudentsCount,
   durationMinutes,
@@ -53,6 +68,11 @@ export const useExamScheduleActions = ({
   setScheduleGroupName,
   setScheduleSubjectName,
   setScheduleDescription,
+  setScheduleLocationPolicy,
+  setScheduleLocationLabel,
+  setScheduleLocationLatitude,
+  setScheduleLocationLongitude,
+  setScheduleAllowedRadiusMeters,
   setSelectedScheduleExamId,
   setRoomCode,
 }: UseExamScheduleActionsParams) => {
@@ -75,7 +95,7 @@ export const useExamScheduleActions = ({
       return null;
     }
 
-    let sourceExam = selectedScheduleExam;
+    let sourceExam: Exam | null = selectedScheduleExam ?? null;
 
     if (sourceExam && sourceExam.questions.length === 0) {
       try {
@@ -104,6 +124,32 @@ export const useExamScheduleActions = ({
       return null;
     }
 
+    const normalizedLatitude = scheduleLocationLatitude.trim()
+      ? Number(scheduleLocationLatitude)
+      : null;
+    const normalizedLongitude = scheduleLocationLongitude.trim()
+      ? Number(scheduleLocationLongitude)
+      : null;
+
+    if (
+      scheduleLocationPolicy === "school_only" &&
+      (normalizedLatitude === null ||
+        normalizedLongitude === null ||
+        Number.isNaN(normalizedLatitude) ||
+        Number.isNaN(normalizedLongitude))
+    ) {
+      showToast("Сургуулийн байршлын өргөрөг, уртрагийг зөв оруулна уу.");
+      return null;
+    }
+
+    const locationConfig = {
+      locationPolicy: scheduleLocationPolicy,
+      locationLabel: scheduleLocationPolicy === "school_only" ? scheduleLocationLabel.trim() || "Сургууль" : null,
+      locationLatitude: scheduleLocationPolicy === "school_only" ? normalizedLatitude : null,
+      locationLongitude: scheduleLocationPolicy === "school_only" ? normalizedLongitude : null,
+      allowedRadiusMeters: scheduleLocationPolicy === "school_only" ? scheduleAllowedRadiusMeters : 3000,
+    } as const;
+
     let newExam = buildLocalExam({
       title: sourceExam?.title ?? scheduleTitle,
       description: scheduleDescription,
@@ -114,6 +160,11 @@ export const useExamScheduleActions = ({
       expectedStudentsCount,
       questions: sourceExam?.questions ?? questions,
       durationMinutes,
+      locationPolicy: locationConfig.locationPolicy,
+      locationLabel: locationConfig.locationLabel,
+      locationLatitude: locationConfig.locationLatitude,
+      locationLongitude: locationConfig.locationLongitude,
+      allowedRadiusMeters: locationConfig.allowedRadiusMeters,
       remote: null,
     });
 
@@ -127,6 +178,7 @@ export const useExamScheduleActions = ({
         duration: durationMinutes,
         scheduledAt: scheduleDate,
         expectedStudentsCount,
+        location: locationConfig,
         questions: toSyncQuestions(sourceExam?.questions ?? questions),
       });
 
@@ -140,6 +192,11 @@ export const useExamScheduleActions = ({
         expectedStudentsCount,
         questions: sourceExam?.questions ?? questions,
         durationMinutes,
+        locationPolicy: locationConfig.locationPolicy,
+        locationLabel: locationConfig.locationLabel,
+        locationLatitude: locationConfig.locationLatitude,
+        locationLongitude: locationConfig.locationLongitude,
+        allowedRadiusMeters: locationConfig.allowedRadiusMeters,
         remote: syncedExam,
       });
       showToast("Шалгалтын материалыг хуулж шинэ хуваарь үүслээ.");
@@ -169,6 +226,11 @@ export const useExamScheduleActions = ({
     setScheduleGroupName("");
     setScheduleSubjectName("");
     setScheduleDescription("");
+    setScheduleLocationPolicy("anywhere");
+    setScheduleLocationLabel("Сургууль");
+    setScheduleLocationLatitude("");
+    setScheduleLocationLongitude("");
+    setScheduleAllowedRadiusMeters(3000);
     setSelectedScheduleExamId("");
     setRoomCode(newExam.roomCode);
     return newExam;
@@ -183,7 +245,12 @@ export const useExamScheduleActions = ({
     scheduleDescription,
     scheduleExamType,
     scheduleGroupName,
+    scheduleLocationLabel,
+    scheduleLocationLatitude,
+    scheduleLocationLongitude,
+    scheduleLocationPolicy,
     scheduleTitle,
+    scheduleAllowedRadiusMeters,
     selectedScheduleExamId,
     setExams,
     setRoomCode,
@@ -192,8 +259,13 @@ export const useExamScheduleActions = ({
     setScheduleDescription,
     setScheduleExamType,
     setScheduleGroupName,
+    setScheduleLocationLabel,
+    setScheduleLocationLatitude,
+    setScheduleLocationLongitude,
+    setScheduleLocationPolicy,
     setScheduleSubjectName,
     setScheduleTitle,
+    setScheduleAllowedRadiusMeters,
     setSelectedScheduleExamId,
     showToast,
   ]);

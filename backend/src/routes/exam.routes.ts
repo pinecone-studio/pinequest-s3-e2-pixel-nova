@@ -851,6 +851,11 @@ examRoutes.post(
     "json",
     z.object({
       scheduledAt: z.string(),
+      locationPolicy: z.enum(["anywhere", "school_only"]).optional(),
+      locationLabel: z.string().trim().optional().nullable(),
+      locationLatitude: z.number().min(-90).max(90).optional().nullable(),
+      locationLongitude: z.number().min(-180).max(180).optional().nullable(),
+      allowedRadiusMeters: z.number().int().min(100).max(10000).optional(),
     }),
   ),
   async (c) => {
@@ -894,10 +899,39 @@ examRoutes.post(
       }
 
       const roomCode = exam.roomCode ?? generateRoomCode();
+      const locationPolicy = body.locationPolicy ?? exam.locationPolicy ?? "anywhere";
+      const locationLatitude =
+        locationPolicy === "school_only"
+          ? body.locationLatitude ?? exam.locationLatitude ?? null
+          : null;
+      const locationLongitude =
+        locationPolicy === "school_only"
+          ? body.locationLongitude ?? exam.locationLongitude ?? null
+          : null;
+      const allowedRadiusMeters =
+        locationPolicy === "school_only"
+          ? body.allowedRadiusMeters ?? exam.allowedRadiusMeters ?? 3000
+          : 3000;
+      const locationLabel =
+        locationPolicy === "school_only"
+          ? body.locationLabel?.trim() || exam.locationLabel || "Сургуулийн бүс"
+          : null;
 
       const normalizedScheduledAt = normalizeExamDate(body.scheduledAt);
       if (!normalizedScheduledAt) {
         return error(c, "BAD_REQUEST", "Invalid scheduled date", 400);
+      }
+
+      if (
+        locationPolicy === "school_only" &&
+        (typeof locationLatitude !== "number" || typeof locationLongitude !== "number")
+      ) {
+        return error(
+          c,
+          "BAD_REQUEST",
+          "School-only exams require a valid school location.",
+          400,
+        );
       }
 
       await db
@@ -906,6 +940,11 @@ examRoutes.post(
           status: "scheduled",
           scheduledAt: normalizedScheduledAt,
           roomCode,
+          locationPolicy,
+          locationLabel,
+          locationLatitude,
+          locationLongitude,
+          allowedRadiusMeters,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(exams.id, examId));

@@ -33,13 +33,14 @@ describe("useStudentExamWarnings", () => {
     expect(mockApiFetch).not.toHaveBeenCalled();
   });
 
-  it("logs and reports enabled detections", () => {
+  it("logs and reports enabled detections", async () => {
     const { result } = renderHook(() =>
       useStudentExamWarnings("session-1", ["copy_paste"]),
     );
 
-    act(() => {
+    await act(async () => {
       result.current.logViolation("COPY_ATTEMPT");
+      await Promise.resolve();
     });
 
     expect(result.current.violations.eventCount).toBe(1);
@@ -50,5 +51,18 @@ describe("useStudentExamWarnings", () => {
         method: "POST",
       }),
     );
+  });
+
+  it("applies returned risk level without act warnings", async () => {
+    const { result } = renderHook(() =>
+      useStudentExamWarnings("session-1", ["copy_paste"]),
+    );
+
+    await act(async () => {
+      result.current.logViolation("COPY_ATTEMPT");
+      await Promise.resolve();
+    });
+
+    expect(result.current.violations.riskLevel).toBe("low");
   });
 });

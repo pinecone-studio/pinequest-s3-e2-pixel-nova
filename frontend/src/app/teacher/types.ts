@@ -28,6 +28,11 @@ export type Exam = {
   enabledCheatDetections?: string[];
   questions: Question[];
   duration?: number;
+  locationPolicy?: "anywhere" | "school_only";
+  locationLabel?: string | null;
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  allowedRadiusMeters?: number | null;
   createdAt: string;
   notified?: boolean;
 };
@@ -177,6 +182,9 @@ export type ExamRosterParticipant = {
   } | null;
   countByType: Record<string, number>;
   score: number | null;
+  joinLocationStatus?: string | null;
+  joinDistanceMeters?: number | null;
+  joinLocationCheckedAt?: string | null;
 };
 
 export type ExamRosterDetail = {

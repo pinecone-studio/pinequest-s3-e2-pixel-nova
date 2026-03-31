@@ -210,7 +210,7 @@ export default function ExamListCard({
                       <button
                         type="button"
                         onClick={() => onOpenExam?.(exam.id)}
-                        className="truncate text-left text-[16px] font-semibold leading-6 text-[#1d1d1d] transition hover:text-[#1d1d1d]"
+                        className="truncate text-left text-[17px] font-semibold leading-6 text-[#1d1d1d] transition hover:text-[#1d1d1d]"
                       >
                         {exam.title}
                       </button>

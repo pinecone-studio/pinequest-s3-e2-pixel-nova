@@ -50,6 +50,98 @@ describe("session routes", () => {
     });
   });
 
+  it("requires location before joining a school-only exam", async () => {
+    queueDbResults(
+      [{ id: "student-1", fullName: "Nora Student" }],
+      [
+        {
+          id: "exam-1",
+          title: "Algebra Final",
+          durationMin: 45,
+          status: "active",
+          locationPolicy: "school_only",
+          locationLabel: "PineQuest сургууль",
+          locationLatitude: 47.918873,
+          locationLongitude: 106.917701,
+          allowedRadiusMeters: 3000,
+        },
+      ],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/sessions/join",
+      jsonRequest({ roomCode: "ROOM01" }, studentHeaders()),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      success: false,
+      error: {
+        code: "LOCATION_REQUIRED",
+        message: "PineQuest сургууль-ээс шалгалт өгөх тул байршлаа зөвшөөрнө үү.",
+      },
+    });
+  });
+
+  it("allows a student inside the allowed school radius to join", async () => {
+    queueDbResults(
+      [{ id: "student-1", fullName: "Nora Student" }],
+      [
+        {
+          id: "exam-1",
+          title: "Algebra Final",
+          durationMin: 45,
+          status: "active",
+          locationPolicy: "school_only",
+          locationLabel: "PineQuest сургууль",
+          locationLatitude: 47.918873,
+          locationLongitude: 106.917701,
+          allowedRadiusMeters: 3000,
+        },
+      ],
+      [{ count: 3 }],
+      [],
+      undefined,
+      [{ teacherId: "teacher-1", title: "Algebra Final" }],
+      [{ fullName: "Nora Student" }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/sessions/join",
+      jsonRequest(
+        {
+          roomCode: "ROOM01",
+          location: {
+            latitude: 47.918873,
+            longitude: 106.917701,
+            accuracy: 20,
+          },
+        },
+        studentHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      success: true,
+      data: {
+        sessionId: "test-id",
+        status: "active",
+        sessionStatus: "joined",
+        entryStatus: "on_time",
+        exam: {
+          id: "exam-1",
+          title: "Algebra Final",
+          durationMin: 45,
+          questionCount: 3,
+          enabledCheatDetections: expect.any(Array),
+        },
+      },
+    });
+  });
+
   it("hides correctness fields when a student fetches a session", async () => {
     queueDbResults(
       [{ id: "student-1", fullName: "Nora Student" }],

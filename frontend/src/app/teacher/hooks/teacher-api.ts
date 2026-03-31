@@ -63,6 +63,11 @@ type TeacherExamSummary = {
   submissionCount?: number | null;
   startedAt?: string | null;
   finishedAt?: string | null;
+  locationPolicy?: "anywhere" | "school_only" | null;
+  locationLabel?: string | null;
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  allowedRadiusMeters?: number | null;
   enabledCheatDetections?: string[];
 };
 
@@ -107,6 +112,11 @@ export const fetchTeacherExams = async (
     expectedStudentsCount: exam.expectedStudentsCount ?? 0,
     questionCount: Number(exam.questionCount ?? 0),
     submissionCount: Number(exam.submissionCount ?? 0),
+    locationPolicy: exam.locationPolicy ?? "anywhere",
+    locationLabel: exam.locationLabel ?? null,
+    locationLatitude: exam.locationLatitude ?? null,
+    locationLongitude: exam.locationLongitude ?? null,
+    allowedRadiusMeters: exam.allowedRadiusMeters ?? 3000,
     enabledCheatDetections: exam.enabledCheatDetections ?? undefined,
     questions: [],
     duration: exam.durationMin ?? 60,
@@ -154,6 +164,11 @@ export const fetchTeacherExamDetail = async (
     roomCode: exam.roomCode ?? "",
     expectedStudentsCount: exam.expectedStudentsCount ?? 0,
     questionCount: mappedQuestions.length,
+    locationPolicy: exam.locationPolicy ?? "anywhere",
+    locationLabel: exam.locationLabel ?? null,
+    locationLatitude: exam.locationLatitude ?? null,
+    locationLongitude: exam.locationLongitude ?? null,
+    allowedRadiusMeters: exam.allowedRadiusMeters ?? 3000,
     enabledCheatDetections: exam.enabledCheatDetections ?? undefined,
     questions: mappedQuestions,
     duration: exam.durationMin ?? 60,
