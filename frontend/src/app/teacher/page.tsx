@@ -159,8 +159,9 @@ export default function TeacherPage() {
     teacherId: sessionUser?.id ?? null,
   });
   const attendance = useExamAttendanceStats(examStatsState.activeExamId);
+  const isExamLibraryTab = activeTab === "Шалгалтын сан";
   const mainClassName =
-    activeTab === "Шалгалтын сан"
+    isExamLibraryTab
       ? "w-full"
       : "mx-auto w-full max-w-[1380px] space-y-5 px-4 py-4 sm:px-6 lg:px-8";
 
@@ -327,7 +328,7 @@ export default function TeacherPage() {
   if (!data.currentUser) return null;
 
   return (
-    <div className={pageShellClass}>
+    <div className={isExamLibraryTab ? "min-h-screen bg-white text-foreground" : pageShellClass}>
       {data.toast && (
         <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
           {data.toast}
@@ -341,6 +342,8 @@ export default function TeacherPage() {
         activeTab={activeTab}
         setActiveTab={(tab) => setActiveTab(tab as TeacherTab)}
         tabs={teacherTabs}
+        contentWidthClass="max-w-[1260px]"
+        outerPaddingClass="px-4 py-2 sm:px-6 lg:px-8"
         roleControl={
           <RoleNavbar
             activeRole={role}

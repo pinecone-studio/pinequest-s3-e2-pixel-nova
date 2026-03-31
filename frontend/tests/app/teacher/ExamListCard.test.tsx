@@ -45,6 +45,7 @@ describe("ExamListCard", () => {
   it("calls create and open actions from the figma-style list", () => {
     const onCreateExam = jest.fn();
     const onOpenExam = jest.fn();
+    const onDownloadExam = jest.fn();
 
     render(
       <ExamListCard
@@ -52,6 +53,7 @@ describe("ExamListCard", () => {
         onCopyCode={jest.fn()}
         onCreateExam={onCreateExam}
         onOpenExam={onOpenExam}
+        onDownloadExam={onDownloadExam}
       />,
     );
 
@@ -59,8 +61,12 @@ describe("ExamListCard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "9-р ангийн явцын шалгалт харах" }),
     );
+    fireEvent.click(
+      screen.getByRole("button", { name: "9-р ангийн явцын шалгалт татах" }),
+    );
 
     expect(onCreateExam).toHaveBeenCalledTimes(1);
     expect(onOpenExam).toHaveBeenCalledWith("exam-1");
+    expect(onDownloadExam).toHaveBeenCalledWith("exam-1");
   });
 });
