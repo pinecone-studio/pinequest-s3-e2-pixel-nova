@@ -11,7 +11,10 @@ import StudentPreferencesTab from "./StudentPreferencesTab";
 import StudentProgressTab from "./StudentProgressTab";
 import StudentSettingsTab from "./StudentSettingsTab";
 import type { Exam, Grade, NotificationItem, StudentTab } from "../types";
-import type { StudentTermRankOverview } from "@/lib/backend-auth";
+import type {
+  StudentProgressLeaderboardEntry,
+  StudentTermRankOverview,
+} from "@/lib/backend-auth";
 
 type StudentHistoryItem = {
   examId: string;
@@ -63,6 +66,7 @@ type StudentProgressState = {
   nextLevel: { level: number; name: string; minXP: number } | null;
   progressSegments: number;
   termRankOverview: StudentTermRankOverview;
+  progressLeaderboard: StudentProgressLeaderboardEntry[];
 };
 
 type StudentDashboardViewProps = {
@@ -189,9 +193,9 @@ export default function StudentDashboardView({
 
         {exam.activeTab === "Leaderboard" && (
           <StudentLeaderboardTab
-            currentUserName={currentUserName}
-            currentLevel={progress.levelInfo.level}
+            currentUserId={currentUser?.id ?? ""}
             termRankOverview={progress.termRankOverview}
+            progressLeaderboard={progress.progressLeaderboard}
           />
         )}
 

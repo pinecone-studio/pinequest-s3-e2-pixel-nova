@@ -1,26 +1,26 @@
 import { Trophy } from "lucide-react";
-import type { StudentTermRankOverview } from "@/lib/backend-auth";
+import type {
+  StudentProgressLeaderboardEntry,
+  StudentTermRankOverview,
+} from "@/lib/backend-auth";
 import StudentLeaderboardListItem from "./StudentLeaderboardListItem";
-import { buildDemoLeaderboardEntries } from "./student-leaderboard-helpers";
+import { buildProgressLeaderboardEntries } from "./student-leaderboard-helpers";
 
 type StudentLeaderboardTabProps = {
-  currentUserName: string;
-  currentLevel: number;
+  currentUserId: string;
   termRankOverview: StudentTermRankOverview;
+  progressLeaderboard: StudentProgressLeaderboardEntry[];
 };
 
 export default function StudentLeaderboardTab({
-  currentUserName,
-  currentLevel,
+  currentUserId,
   termRankOverview,
+  progressLeaderboard,
 }: StudentLeaderboardTabProps) {
   const hasRank =
     typeof termRankOverview.rank === "number" && termRankOverview.termExamCount > 0;
-  const displayEntries = buildDemoLeaderboardEntries({
-    currentUserName,
-    currentRank: termRankOverview.rank,
-    currentLevel,
-  });
+  const displayEntries = buildProgressLeaderboardEntries(progressLeaderboard);
+  const hasProgressLeaderboard = displayEntries.length > 0;
 
   return (
     <section className="space-y-6">
@@ -31,9 +31,9 @@ export default function StudentLeaderboardTab({
               Тэргүүлэгчид
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              {hasRank
-                ? "Улирлын шалгалтын дүнгээр зөвхөн өөрийн байрлалаа харна."
-                : "Улирлын шалгалтын дүн хараахан бүртгэгдээгүй байна."}
+              {hasProgressLeaderboard
+                ? "Цэнхэр блок нь улирлын шалгалтаар, доорх Top 10 нь явцын шалгалтын дундаж оноогоор эрэмбэлэгдэнэ."
+                : "Явцын шалгалтын Top 10 хараахан бүрдээгүй байна."}
             </p>
           </div>
 
@@ -66,14 +66,19 @@ export default function StudentLeaderboardTab({
       </div>
 
       <div className="space-y-3">
-        {displayEntries.map((entry) => (
-          <StudentLeaderboardListItem
-            key={entry.id}
-            entry={entry}
-            isCurrentUser={entry.id === "current-student"}
-            showFocusLabel={false}
-          />
-        ))}
+        {hasProgressLeaderboard ? (
+          displayEntries.map((entry) => (
+            <StudentLeaderboardListItem
+              key={entry.id}
+              entry={entry}
+              isCurrentUser={entry.id === currentUserId}
+            />
+          ))
+        ) : (
+          <div className="rounded-[24px] border border-dashed border-[#d9e2fb] bg-white px-5 py-6 text-sm text-slate-500 shadow-[0_10px_22px_rgba(77,92,148,0.05)]">
+            Явцын шалгалтын дүн орж ирмэгц энэ хэсэгт топ 10 жагсаалт харагдана.
+          </div>
+        )}
       </div>
     </section>
   );

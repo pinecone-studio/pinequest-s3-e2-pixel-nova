@@ -1,25 +1,12 @@
-export type LeaderboardEntry = {
-  id: string;
-  fullName: string;
-  xp: number;
-  level: number;
-  rank: number;
-};
+import type { StudentProgressLeaderboardEntry } from "@/lib/backend-auth";
+
+export type LeaderboardEntry = StudentProgressLeaderboardEntry;
 
 export type DisplayEntry = LeaderboardEntry & {
-  metricValue: number;
   metricPercent: number;
-  focusLabel: string;
-};
-
-type DemoLeaderboardOptions = {
-  currentUserName: string;
-  currentRank: number | null;
-  currentLevel: number;
 };
 
 export const avatarPool = ["🧑‍🎓", "👨‍🎓", "👩‍🎓", "👦", "👧", "🧠"];
-export const subjectPool = ["Математик", "Англи хэл", "Физик", "Хими", "Түүх", "Биологи"];
 
 export const podiumStyles = {
   1: {
@@ -59,104 +46,33 @@ export const getAvatar = (entry: LeaderboardEntry) =>
 export const getFirstName = (value: string) =>
   value.trim().split(/\s+/)[0] || value;
 
-export const formatCompactXp = (value: number) => {
-  if (value >= 1000) {
-    const compact = (value / 1000).toFixed(1);
-    return `${compact.endsWith(".0") ? compact.slice(0, -2) : compact}k`;
-  }
-
-  return `${value}`;
+export const formatAverageScore = (value: number) => {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
 };
-
-const sortEntries = (entries: LeaderboardEntry[]) =>
-  [...entries].sort((left, right) => left.rank - right.rank);
 
 const MIN_PERCENT = 55;
 const MAX_PERCENT = 99;
 
-const getScorePercent = (value: number, maxXp: number) =>
+const getScorePercent = (value: number, maxScore: number) =>
   Math.max(
     MIN_PERCENT,
-    Math.min(MAX_PERCENT, Math.round((value / Math.max(maxXp, 1)) * 100)),
+    Math.min(MAX_PERCENT, Math.round((value / Math.max(maxScore, 1)) * 100)),
   );
 
-const withMetricPercent = (entries: Omit<DisplayEntry, "metricPercent">[]) => {
-  const maxMetric = Math.max(...entries.map((entry) => entry.metricValue), 1);
-  return entries.map((entry) => ({
+export const buildProgressLeaderboardEntries = (
+  entries: StudentProgressLeaderboardEntry[],
+) => {
+  const sortedEntries = [...entries].sort((left, right) => left.rank - right.rank);
+  const maxAverageScore = Math.max(
+    ...sortedEntries.map((entry) => entry.averageScore),
+    1,
+  );
+
+  return sortedEntries.map((entry) => ({
     ...entry,
-    metricPercent: getScorePercent(entry.metricValue, maxMetric),
+    metricPercent: getScorePercent(entry.averageScore, maxAverageScore),
   }));
-};
-
-export const buildClassEntries = (entries: LeaderboardEntry[]) =>
-  withMetricPercent(
-    sortEntries(entries).map((entry) => ({
-      ...entry,
-      metricValue: entry.xp,
-      focusLabel: "10-р анги",
-    })),
-  );
-
-export const buildSubjectEntries = (entries: LeaderboardEntry[]) =>
-  withMetricPercent(
-    sortEntries(entries)
-      .map((entry) => {
-        const seed = getAvatarSeed(entry);
-        const multiplier = 0.72 + ((seed % 26) + 8) / 100;
-
-        return {
-          ...entry,
-          metricValue: Math.round(entry.xp * multiplier),
-          focusLabel: subjectPool[seed % subjectPool.length],
-        };
-      })
-      .sort((left, right) => {
-        const metricDiff = right.metricValue - left.metricValue;
-        if (metricDiff !== 0) return metricDiff;
-        return left.fullName.localeCompare(right.fullName);
-      })
-      .map((entry, index) => ({
-        ...entry,
-        rank: index + 1,
-      })),
-  );
-
-const DEMO_ROW_COUNT = 10;
-
-const getDemoMetricValue = (rank: number) =>
-  Math.max(1600, 8400 - (rank - 1) * 650);
-
-const getDemoLevel = (rank: number) =>
-  Math.max(1, 12 - Math.floor((rank - 1) / 2));
-
-export const buildDemoLeaderboardEntries = ({
-  currentUserName,
-  currentRank,
-  currentLevel,
-}: DemoLeaderboardOptions) => {
-  const resolvedRank =
-    typeof currentRank === "number" && currentRank > 0 ? currentRank : 4;
-  const visibleRanks =
-    resolvedRank <= DEMO_ROW_COUNT
-      ? Array.from({ length: DEMO_ROW_COUNT }, (_, index) => index + 1)
-      : [
-          ...Array.from({ length: DEMO_ROW_COUNT - 1 }, (_, index) => index + 1),
-          resolvedRank,
-        ];
-
-  return buildClassEntries(
-    visibleRanks.map((rank) => {
-      const isCurrentUser = rank === resolvedRank;
-
-      return {
-        id: isCurrentUser ? "current-student" : `demo-student-${rank}`,
-        fullName: isCurrentUser ? currentUserName : "Сурагч",
-        xp: getDemoMetricValue(rank),
-        level: isCurrentUser ? currentLevel : getDemoLevel(rank),
-        rank,
-      };
-    }),
-  );
 };
 
 export const getPodiumEntries = (entries: DisplayEntry[]) => {
