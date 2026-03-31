@@ -3,6 +3,7 @@ import RoleNavbar from "@/components/RoleNavbar";
 import type {
   AuthUser,
   StudentImprovementLeaderboardEntry,
+  StudentProgressRankOverview,
   StudentTermRankOverview,
 } from "@/lib/backend-auth";
 import type { XpLeaderboardEntry } from "@/api/xp";
@@ -67,7 +68,8 @@ type StudentProgressState = {
   nextLevel: { level: number; name: string; minXP: number } | null;
   progressSegments: number;
   termRankOverview: StudentTermRankOverview;
-  leaderboardEntries: XpLeaderboardEntry[];
+  progressRankOverview: StudentProgressRankOverview;
+  termLeaderboardEntries: XpLeaderboardEntry[];
   improvementLeaderboard: StudentImprovementLeaderboardEntry[];
 };
 
@@ -197,9 +199,9 @@ export default function StudentDashboardView({
           <StudentLeaderboardTab
             currentUserId={data.currentUser?.id ?? null}
             currentUserName={currentUserName}
-            currentLevel={progress.levelInfo.level}
             termRankOverview={progress.termRankOverview}
-            leaderboardEntries={progress.leaderboardEntries}
+            progressRankOverview={progress.progressRankOverview}
+            termLeaderboardEntries={progress.termLeaderboardEntries}
             improvementLeaderboard={progress.improvementLeaderboard}
           />
         )}

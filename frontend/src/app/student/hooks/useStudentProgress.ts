@@ -6,15 +6,15 @@ import { gradeFromPercentage } from "../utils";
 import {
   getStudentImprovementLeaderboard,
   getStudentResults,
-  getStudentProgressLeaderboard,
+  getStudentProgressRank,
+  getStudentTermLeaderboard,
   type StudentImprovementLeaderboardEntry,
+  type StudentProgressRankOverview,
   getStudentTermRank,
-  type StudentProgressLeaderboardEntry,
   type StudentTermRankOverview,
 } from "@/lib/backend-auth";
 import {
   getXpHistory,
-  getXpLeaderboard,
   getXpProfile,
   type XpActivity,
   type XpLeaderboardEntry,
@@ -25,7 +25,9 @@ export const useStudentProgress = (currentUser: User | null) => {
     StudentProgress[string]["history"]
   >([]);
   const [xpActivities, setXpActivities] = useState<XpActivity[]>([]);
-  const [leaderboardEntries, setLeaderboardEntries] = useState<XpLeaderboardEntry[]>([]);
+  const [termLeaderboardEntries, setTermLeaderboardEntries] = useState<
+    XpLeaderboardEntry[]
+  >([]);
   const [rankOverview, setRankOverview] = useState({
     rank: null as number | null,
     totalStudents: 0,
@@ -34,10 +36,18 @@ export const useStudentProgress = (currentUser: User | null) => {
     rank: null,
     totalStudents: 0,
     termExamCount: 0,
+    xp: 0,
+    level: 1,
   });
-  const [progressLeaderboard, setProgressLeaderboard] = useState<
-    StudentProgressLeaderboardEntry[]
-  >([]);
+  const [progressRankOverview, setProgressRankOverview] =
+    useState<StudentProgressRankOverview>({
+      rank: null,
+      totalStudents: 0,
+      progressExamCount: 0,
+      xp: 0,
+      level: 1,
+      isPrivate: true,
+    });
   const [improvementLeaderboard, setImprovementLeaderboard] = useState<
     StudentImprovementLeaderboardEntry[]
   >([]);
@@ -73,9 +83,9 @@ export const useStudentProgress = (currentUser: User | null) => {
       }
 
       try {
-        setLeaderboardEntries(await getXpLeaderboard(currentUser));
+        setTermLeaderboardEntries(await getStudentTermLeaderboard(currentUser));
       } catch {
-        setLeaderboardEntries([]);
+        setTermLeaderboardEntries([]);
       }
 
       try {
@@ -106,13 +116,22 @@ export const useStudentProgress = (currentUser: User | null) => {
           rank: null,
           totalStudents: 0,
           termExamCount: 0,
+          xp: 0,
+          level: 1,
         });
       }
 
       try {
-        setProgressLeaderboard(await getStudentProgressLeaderboard(currentUser));
+        setProgressRankOverview(await getStudentProgressRank(currentUser));
       } catch {
-        setProgressLeaderboard([]);
+        setProgressRankOverview({
+          rank: null,
+          totalStudents: 0,
+          progressExamCount: 0,
+          xp: 0,
+          level: 1,
+          isPrivate: true,
+        });
       }
 
       try {
@@ -143,10 +162,10 @@ export const useStudentProgress = (currentUser: User | null) => {
   return {
     studentHistory,
     xpActivities,
-    leaderboardEntries,
+    termLeaderboardEntries,
     rankOverview,
     termRankOverview,
-    progressLeaderboard,
+    progressRankOverview,
     improvementLeaderboard,
     studentProgress,
     levelInfo,

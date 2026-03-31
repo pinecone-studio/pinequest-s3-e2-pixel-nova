@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Trophy, TrendingUp } from "lucide-react";
+import { EyeOff, Sparkles, TrendingUp } from "lucide-react";
 import type { XpLeaderboardEntry } from "@/api/xp";
 import type {
   StudentImprovementLeaderboardEntry,
+  StudentProgressRankOverview,
   StudentTermRankOverview,
 } from "@/lib/backend-auth";
 import StudentLeaderboardListItem from "./StudentLeaderboardListItem";
@@ -16,13 +17,13 @@ import {
 type StudentLeaderboardTabProps = {
   currentUserId: string | null;
   currentUserName: string;
-  currentLevel: number;
   termRankOverview: StudentTermRankOverview;
-  leaderboardEntries: XpLeaderboardEntry[];
+  progressRankOverview: StudentProgressRankOverview;
+  termLeaderboardEntries?: XpLeaderboardEntry[];
   improvementLeaderboard?: StudentImprovementLeaderboardEntry[];
 };
 
-type LeaderboardView = "xp" | "improvement";
+type LeaderboardView = "term" | "improvement";
 
 const leaderboardTabs: Array<{
   key: LeaderboardView;
@@ -30,9 +31,9 @@ const leaderboardTabs: Array<{
   hint: string;
 }> = [
   {
-    key: "xp",
-    label: "Нийт XP",
-    hint: "Level + XP",
+    key: "term",
+    label: "Улирлын XP",
+    hint: "Нээлттэй самбар",
   },
   {
     key: "improvement",
@@ -44,21 +45,38 @@ const leaderboardTabs: Array<{
 export default function StudentLeaderboardTab({
   currentUserId,
   currentUserName,
-  currentLevel,
   termRankOverview,
-  leaderboardEntries,
+  progressRankOverview,
+  termLeaderboardEntries = [],
   improvementLeaderboard = [],
 }: StudentLeaderboardTabProps) {
-  const [activeView, setActiveView] = useState<LeaderboardView>("xp");
+  const [activeView, setActiveView] = useState<LeaderboardView>("term");
+  const safeTermRankOverview = {
+    rank: termRankOverview?.rank ?? null,
+    totalStudents: termRankOverview?.totalStudents ?? 0,
+    termExamCount: termRankOverview?.termExamCount ?? 0,
+    xp: termRankOverview?.xp ?? 0,
+    level: termRankOverview?.level ?? 1,
+  };
+  const safeProgressRankOverview = {
+    rank: progressRankOverview?.rank ?? null,
+    totalStudents: progressRankOverview?.totalStudents ?? 0,
+    progressExamCount: progressRankOverview?.progressExamCount ?? 0,
+    xp: progressRankOverview?.xp ?? 0,
+    level: progressRankOverview?.level ?? 1,
+    isPrivate: progressRankOverview?.isPrivate ?? true,
+  };
 
-  const hasRank =
-    typeof termRankOverview.rank === "number" && termRankOverview.termExamCount > 0;
-  const displayEntries = buildClassEntries(
-    leaderboardEntries.map((entry) => ({
+  const showingImprovement = activeView === "improvement";
+  const termEntries = buildClassEntries(
+    termLeaderboardEntries.map((entry) => ({
       ...entry,
       fullName:
         currentUserId && entry.id === currentUserId ? currentUserName : entry.fullName,
-      level: currentUserId && entry.id === currentUserId ? currentLevel : entry.level,
+      level:
+        currentUserId && entry.id === currentUserId
+          ? safeTermRankOverview.level
+          : entry.level,
     })),
   );
   const improvementEntries = buildMockImprovementEntries({
@@ -70,8 +88,9 @@ export default function StudentLeaderboardTab({
     currentUserId,
     currentUserName,
   });
-  const hasLeaderboard = displayEntries.length > 0;
-  const showingImprovement = activeView === "improvement";
+  const hasProgressRank =
+    typeof safeProgressRankOverview.rank === "number" &&
+    safeProgressRankOverview.progressExamCount > 0;
 
   return (
     <section className="space-y-6">
@@ -82,9 +101,8 @@ export default function StudentLeaderboardTab({
               Тэргүүлэгчид
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              {hasLeaderboard
-                ? "Цэнхэр блок нь улирлын шалгалтаар, доорх самбар нь сонгосон XP төрлөөр эрэмбэлэгдэнэ."
-                : "XP leaderboard хараахан бүрдээгүй байна."}
+              Цэнхэр блок дээр зөвхөн явцын нууц rank харагдана. Доорх хэсэг
+              нь XP leaderboard-оо тусдаа сольж харуулна.
             </p>
           </div>
 
@@ -92,25 +110,47 @@ export default function StudentLeaderboardTab({
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/14">
-                  <Trophy className="h-5 w-5" />
+                  <EyeOff className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold">Чиний эрэмбэ</div>
+                  <div className="text-sm font-semibold">Нууц явцын эрэмбэ</div>
                   <div className="text-sm text-white/80">
-                    {hasRank
-                      ? `Чи ${termRankOverview.rank}-т явж байна.`
-                      : "Эрэмбэ удахгүй харагдана."}
+                    {hasProgressRank
+                      ? `Чи ${safeProgressRankOverview.rank}-т явж байна.`
+                      : "Явцын XP хараахан бүрдээгүй байна."}
                   </div>
                 </div>
               </div>
               <div className="text-[2rem] font-semibold leading-none">
-                {hasRank ? `#${termRankOverview.rank}` : "—"}
+                {hasProgressRank ? `#${safeProgressRankOverview.rank}` : "—"}
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between text-xs text-white/80">
-              <span>Улирлын шалгалтын дүнгээр</span>
-              <span>{termRankOverview.termExamCount} шалгалт</span>
+            <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-white/80">
+              <div className="rounded-2xl bg-white/10 px-3 py-2">
+                <div className="text-[11px] uppercase tracking-[0.12em] text-white/60">
+                  XP
+                </div>
+                <div className="mt-1 text-sm font-semibold text-white">
+                  {safeProgressRankOverview.xp.toLocaleString()}
+                </div>
+              </div>
+              <div className="rounded-2xl bg-white/10 px-3 py-2">
+                <div className="text-[11px] uppercase tracking-[0.12em] text-white/60">
+                  Level
+                </div>
+                <div className="mt-1 text-sm font-semibold text-white">
+                  Lv.{safeProgressRankOverview.level}
+                </div>
+              </div>
+              <div className="rounded-2xl bg-white/10 px-3 py-2">
+                <div className="text-[11px] uppercase tracking-[0.12em] text-white/60">
+                  Шалгалт
+                </div>
+                <div className="mt-1 text-sm font-semibold text-white">
+                  {safeProgressRankOverview.progressExamCount}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -133,17 +173,17 @@ export default function StudentLeaderboardTab({
               )}
               {showingImprovement
                 ? "Ахиц дэвшлийн тэргүүлэгчид"
-                : "Нийт XP тэргүүлэгчид"}
+                : "Улирлын XP тэргүүлэгчид"}
             </div>
 
             <h3 className="mt-3 text-[1.6rem] font-semibold tracking-[-0.04em] text-slate-900">
-              {showingImprovement ? "Ахицын XP Leaderboard" : "Нийт XP Leaderboard"}
+              {showingImprovement ? "Ахицын XP Leaderboard" : "Улирлын XP Leaderboard"}
             </h3>
 
             <p className="mt-2 text-sm text-slate-400">
               {showingImprovement
                 ? "Өмнөх явцын шалгалтаасаа ахисан хувьтай тэнцэх growth XP авна. 100 → 100 бол +10 XP, тасалбал -10 XP хасагдана."
-                : "Энэ самбар нь сурагчдыг нийт XP болон level-ээр нь эрэмбэлж харуулна."}
+                : "Улирлын шалгалт өгөх бүрт XP зөвхөн энэ нээлттэй самбар дээр нэмэгдэнэ."}
             </p>
           </div>
 
@@ -187,14 +227,14 @@ export default function StudentLeaderboardTab({
               ))}
             </div>
           ) : (
-            <div data-testid="xp-leaderboard" className="space-y-3">
-              {displayEntries.length === 0 && (
+            <div data-testid="term-leaderboard" className="space-y-3">
+              {termEntries.length === 0 && (
                 <div className="rounded-[24px] border border-dashed border-[#e8ecfb] bg-white px-5 py-8 text-sm text-slate-400">
-                  Одоогоор XP leaderboard хоосон байна.
+                  Одоогоор улирлын XP leaderboard хоосон байна.
                 </div>
               )}
 
-              {displayEntries.map((entry) => (
+              {termEntries.map((entry) => (
                 <StudentLeaderboardListItem
                   key={entry.id}
                   entry={entry}
