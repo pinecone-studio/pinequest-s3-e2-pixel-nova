@@ -1,15 +1,20 @@
 import { Sparkles, Zap } from "lucide-react";
 import {
+  formatAverageScore,
   getAvatar,
   getFirstName,
-  formatAverageScore,
   type DisplayEntry,
+  type XpDisplayEntry,
 } from "./student-leaderboard-helpers";
 
 type StudentLeaderboardListItemProps = {
-  entry: DisplayEntry;
+  entry: DisplayEntry | XpDisplayEntry;
   isCurrentUser: boolean;
+  showFocusLabel?: boolean;
 };
+
+const isXpEntry = (entry: DisplayEntry | XpDisplayEntry): entry is XpDisplayEntry =>
+  "xp" in entry;
 
 export default function StudentLeaderboardListItem({
   entry,
@@ -56,11 +61,11 @@ export default function StudentLeaderboardListItem({
       <div className="shrink-0 text-right">
         <div className="flex items-center justify-end gap-1 text-base font-semibold text-[#d69424]">
           <Zap className="h-4 w-4" />
-          {formatAverageScore(entry.averageScore)}%
+          {isXpEntry(entry) ? `${entry.xp.toLocaleString()} XP` : `${formatAverageScore(entry.averageScore)}%`}
         </div>
         <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#fff5de] px-2.5 py-1 text-xs font-semibold text-[#d69424]">
           <Sparkles className="h-3.5 w-3.5" />
-          {entry.examCount} шалгалт
+          {isXpEntry(entry) ? `Rank #${entry.rank}` : `${entry.examCount} шалгалт`}
         </div>
       </div>
     </div>

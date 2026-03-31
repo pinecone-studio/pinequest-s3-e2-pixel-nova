@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { scheduleExistingExamInBackend, syncExamToBackend } from "@/lib/backend-exams";
+import { syncExamToBackend } from "@/lib/backend-exams";
 import type { User } from "@/lib/examGuard";
 import type { Exam, Question } from "../types";
 import { buildLocalExam, toSyncQuestions } from "./exam-management-helpers";
@@ -84,11 +84,6 @@ export const useExamScheduleActions = ({
       }
     }
 
-    const selectedStatus = selectedScheduleExam?.status ?? "draft";
-    const canReuseExistingSchedule =
-      Boolean(selectedScheduleExam) &&
-      (selectedStatus === "draft" || selectedStatus === "scheduled");
-
     if (!selectedScheduleExam && questions.length === 0) {
       showToast("Хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.");
       return;
@@ -108,32 +103,18 @@ export const useExamScheduleActions = ({
     });
 
     try {
-      const syncedExam = canReuseExistingSchedule && selectedScheduleExam
-        ? await scheduleExistingExamInBackend(currentUser, {
-            examId: selectedScheduleExam.id,
-            title: selectedScheduleExam.title,
-            description: scheduleDescription,
-            examType: scheduleExamType,
-            className: scheduleClassName,
-            groupName: scheduleGroupName,
-            duration: durationMinutes,
-            scheduledAt: scheduleDate,
-            expectedStudentsCount,
-          })
-        : await syncExamToBackend(currentUser, {
-            title: selectedScheduleExam?.title ?? scheduleTitle,
-            description:
-              scheduleDescription || selectedScheduleExam?.description || "",
-            examType: scheduleExamType || selectedScheduleExam?.examType || "",
-            className: scheduleClassName,
-            groupName: scheduleGroupName,
-            duration: durationMinutes,
-            scheduledAt: scheduleDate,
-            expectedStudentsCount,
-            questions: toSyncQuestions(
-              selectedScheduleExam?.questions ?? questions,
-            ),
-          });
+      const syncedExam = await syncExamToBackend(currentUser, {
+        title: selectedScheduleExam?.title ?? scheduleTitle,
+        description:
+          scheduleDescription || selectedScheduleExam?.description || "",
+        examType: scheduleExamType || selectedScheduleExam?.examType || "",
+        className: scheduleClassName,
+        groupName: scheduleGroupName,
+        duration: durationMinutes,
+        scheduledAt: scheduleDate,
+        expectedStudentsCount,
+        questions: toSyncQuestions(selectedScheduleExam?.questions ?? questions),
+      });
 
       newExam = buildLocalExam({
         title: selectedScheduleExam?.title ?? scheduleTitle,
@@ -148,11 +129,7 @@ export const useExamScheduleActions = ({
         durationMinutes,
         remote: syncedExam,
       });
-      showToast(
-        canReuseExistingSchedule
-          ? "Шалгалтын хуваарь шинэчлэгдлээ."
-          : "Шалгалтын сангаас хуулж шинэ хуваарь үүслээ.",
-      );
+      showToast("Шалгалтын сангаас хуулж шинэ хуваарь үүслээ.");
     } catch (err) {
       let message = "Хуваарьлах үед алдаа гарлаа. Дахин оролдоно уу.";
       if (err instanceof Error && err.message) {
@@ -170,11 +147,7 @@ export const useExamScheduleActions = ({
       return;
     }
 
-    setExams(
-      canReuseExistingSchedule
-        ? exams.map((exam) => (exam.id === newExam.id ? newExam : exam))
-        : [newExam, ...exams],
-    );
+    setExams([newExam, ...exams]);
     setScheduleTitle("");
     setScheduleDate("");
     setScheduleExamType("progress");

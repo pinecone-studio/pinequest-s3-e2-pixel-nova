@@ -7,8 +7,6 @@ type ExamImportPanelProps = {
   setAnswerKeyPage: (value: number | "last") => void;
   importMcqCount: number;
   setImportMcqCount: (value: number) => void;
-  importTextCount: number;
-  setImportTextCount: (value: number) => void;
   importOpenCount: number;
   setImportOpenCount: (value: number) => void;
   shuffleImportedQuestions: boolean;
@@ -31,8 +29,6 @@ export default function ExamImportPanel({
   importLoadingLabel,
   importMcqCount,
   setImportMcqCount,
-  importTextCount,
-  setImportTextCount,
   importOpenCount,
   setImportOpenCount,
   shuffleImportedQuestions,
@@ -50,13 +46,6 @@ export default function ExamImportPanel({
       value: importMcqCount,
       setValue: setImportMcqCount,
       tone: "from-[#eff6ff] to-[#dbeafe] text-[#1d4ed8]",
-    },
-    {
-      label: "Текст",
-      hint: "Short",
-      value: importTextCount,
-      setValue: setImportTextCount,
-      tone: "from-[#f5f3ff] to-[#ede9fe] text-[#6d28d9]",
     },
     {
       label: "Задгай",

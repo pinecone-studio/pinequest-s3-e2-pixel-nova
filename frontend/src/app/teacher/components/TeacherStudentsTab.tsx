@@ -176,18 +176,18 @@ export default function TeacherStudentsTab({
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-6">
+      <div className="flex flex-wrap items-start justify-between gap-5 rounded-[28px] border border-[#e7edf5] bg-white/80 px-6 py-5 shadow-[0_18px_34px_-30px_rgba(15,23,42,0.16)] backdrop-blur">
         <div>
-          <h2 className={sectionTitleClass}>Шалгалтын хуваарь</h2>
-          <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+          <h2 className={`${sectionTitleClass} text-[40px] leading-[0.95] tracking-[-0.04em]`}>Шалгалтын хуваарь</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-[15px] text-slate-500">
             <div className="flex items-center gap-2"><LegendDot category="required" /><span>Заавал судлах</span></div>
             <div className="flex items-center gap-2"><LegendDot category="elective" /><span>Сонгон судлал</span></div>
           </div>
         </div>
 
-        <div className="ml-auto flex flex-col items-end gap-3">
+        <div className="ml-auto flex flex-col items-end gap-2.5">
           <button
-            className="inline-flex min-w-[204px] items-center justify-center gap-2 rounded-[18px] bg-[#355cde] px-5 py-4 text-[15px] font-semibold text-white shadow-[0_22px_40px_-28px_rgba(53,92,222,0.95)] transition hover:bg-[#2d52cf]"
+            className="inline-flex min-w-[196px] items-center justify-center gap-2 rounded-[18px] bg-[#355cde] px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_22px_40px_-28px_rgba(53,92,222,0.95)] transition hover:bg-[#2d52cf]"
             onClick={onAddSchedule}
             type="button"
           >
@@ -239,7 +239,7 @@ export default function TeacherStudentsTab({
           )}
         </div>
       ) : (
-        <div className="w-full rounded-[34px] border border-[#dce5ef] bg-white p-4 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.2)]">
+        <div className="w-full rounded-[34px] border border-[#dce5ef] bg-white p-5 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.2)]">
           <div className="overflow-hidden rounded-[28px] bg-[#f8fbff]">
             <div className="flex">
               <div className="shrink-0 border-r border-[#dce5ef] bg-white/70" style={{ width: `${TIME_COLUMN_WIDTH}px` }}>

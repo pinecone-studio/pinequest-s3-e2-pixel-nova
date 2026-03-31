@@ -1,8 +1,13 @@
+import type { XpLeaderboardEntry } from "@/api/xp";
 import type { StudentProgressLeaderboardEntry } from "@/lib/backend-auth";
 
 export type LeaderboardEntry = StudentProgressLeaderboardEntry;
 
 export type DisplayEntry = LeaderboardEntry & {
+  metricPercent: number;
+};
+
+export type XpDisplayEntry = XpLeaderboardEntry & {
   metricPercent: number;
 };
 
@@ -37,10 +42,10 @@ export const podiumStyles = {
 
 export type PodiumIconKey = (typeof podiumStyles)[1]["icon"];
 
-export const getAvatarSeed = (entry: LeaderboardEntry) =>
+export const getAvatarSeed = (entry: { id: string; rank: number }) =>
   entry.id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
 
-export const getAvatar = (entry: LeaderboardEntry) =>
+export const getAvatar = (entry: { id: string; rank: number }) =>
   avatarPool[(getAvatarSeed(entry) + entry.rank) % avatarPool.length];
 
 export const getFirstName = (value: string) =>
@@ -54,10 +59,10 @@ export const formatAverageScore = (value: number) => {
 const MIN_PERCENT = 55;
 const MAX_PERCENT = 99;
 
-const getScorePercent = (value: number, maxScore: number) =>
+const getBoundedPercent = (value: number, maxValue: number) =>
   Math.max(
     MIN_PERCENT,
-    Math.min(MAX_PERCENT, Math.round((value / Math.max(maxScore, 1)) * 100)),
+    Math.min(MAX_PERCENT, Math.round((value / Math.max(maxValue, 1)) * 100)),
   );
 
 export const buildProgressLeaderboardEntries = (
@@ -71,7 +76,17 @@ export const buildProgressLeaderboardEntries = (
 
   return sortedEntries.map((entry) => ({
     ...entry,
-    metricPercent: getScorePercent(entry.averageScore, maxAverageScore),
+    metricPercent: getBoundedPercent(entry.averageScore, maxAverageScore),
+  }));
+};
+
+export const buildClassEntries = (entries: XpLeaderboardEntry[]) => {
+  const sortedEntries = [...entries].sort((left, right) => left.rank - right.rank);
+  const maxXp = Math.max(...sortedEntries.map((entry) => entry.xp), 1);
+
+  return sortedEntries.map((entry) => ({
+    ...entry,
+    metricPercent: getBoundedPercent(entry.xp, maxXp),
   }));
 };
 

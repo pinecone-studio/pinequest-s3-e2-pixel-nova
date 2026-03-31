@@ -42,8 +42,8 @@ type ExamTabProps = {
   setExamTitle: (value: string) => void;
   questionText: string;
   setQuestionText: (value: string) => void;
-  questionType: "text" | "open" | "mcq";
-  setQuestionType: (value: "text" | "open" | "mcq") => void;
+  questionType: "open" | "mcq";
+  setQuestionType: (value: "open" | "mcq") => void;
   mcqOptions: string[];
   setMcqOptions: (value: string[]) => void;
   questionAnswer: string;
@@ -74,8 +74,6 @@ type ExamTabProps = {
   setAnswerKeyPage: (value: number | "last") => void;
   importMcqCount: number;
   setImportMcqCount: (value: number) => void;
-  importTextCount: number;
-  setImportTextCount: (value: number) => void;
   importOpenCount: number;
   setImportOpenCount: (value: number) => void;
   shuffleImportedQuestions: boolean;
@@ -173,8 +171,6 @@ export default function ExamTab(props: ExamTabProps) {
           setAnswerKeyPage={props.setAnswerKeyPage}
           importMcqCount={props.importMcqCount}
           setImportMcqCount={props.setImportMcqCount}
-          importTextCount={props.importTextCount}
-          setImportTextCount={props.setImportTextCount}
           importOpenCount={props.importOpenCount}
           setImportOpenCount={props.setImportOpenCount}
           shuffleImportedQuestions={props.shuffleImportedQuestions}

@@ -1,8 +1,7 @@
 import Image from "next/image";
 import { useMemo, useState, type ReactNode } from "react";
 import type { NotificationItem } from "@/lib/notifications";
-import { Activity, Bell, BookCopy, CalendarDays } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bell } from "lucide-react";
 
 export type TeacherNavTab = string;
 
@@ -29,19 +28,14 @@ export default function TeacherHeader({
 }: TeacherHeaderProps) {
   const [open, setOpen] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
-  const tabIcons: Record<string, ReactNode> = {
-    Хуваарь: <CalendarDays className="h-4 w-4" />,
-    "Шалгалтын сан": <BookCopy className="h-4 w-4" />,
-    Гүйцэтгэл: <Activity className="h-4 w-4" />,
-  };
   const visibleNotifications = useMemo(
     () => (showAllNotifications ? notifications : notifications.slice(0, 3)),
     [notifications, showAllNotifications],
   );
 
   return (
-    <header className="relative z-40 flex items-center justify-between gap-4 border-b border-[#dce5ef] bg-white/95 px-6 py-0 backdrop-blur">
-      <div className="flex shrink-0 items-center gap-2 py-3">
+    <header className="relative z-40 flex items-center justify-between gap-4 border-b border-[#dce5ef] bg-white/95 px-4 py-2 backdrop-blur sm:px-6 lg:px-8">
+      <div className="flex shrink-0 items-center gap-3 py-2">
         <div className="overflow-hidden rounded-xl">
           <Image
             src="/group-web.svg"
@@ -52,28 +46,30 @@ export default function TeacherHeader({
             priority
           />
         </div>
-        <span className="text-sm font-bold text-slate-900">Educore</span>
+        <span className="text-[15px] font-bold text-slate-900">Educore</span>
       </div>
 
-      <nav className="flex items-center gap-2 overflow-x-auto rounded-2xl bg-[#fbfcff] px-2 py-2">
+      <nav className="flex items-center gap-2 overflow-x-auto rounded-[20px] border border-[#e7edf5] bg-[#fbfcff] px-1.5 py-1.5 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)]">
         {tabs.map((tab) => {
           const isActive = activeTab === tab;
           return (
-            <Button
+            <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              variant={`ghost`}
-              className={`relative flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-500 ease-out hover:-translate-y-0.5 ${
-                isActive && "text-primary"
-              }`}>
-              {tab}
-            </Button>
+              className={`relative whitespace-nowrap rounded-[14px] px-5 py-2.5 text-sm font-medium transition cursor-pointer ${
+                isActive
+                  ? "bg-[#f5f4ff] text-slate-900 shadow-[inset_0_-2px_0_0_#5c6cff,0_10px_18px_-16px_rgba(92,108,255,0.65)]"
+                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+              }`}
+            >
+              <span>{tab}</span>
+            </button>
           );
         })}
       </nav>
 
-      <div className="flex shrink-0 items-center gap-2 py-3">
+      <div className="flex shrink-0 items-center gap-3 py-2">
         <div
           className="relative z-50"
           tabIndex={0}

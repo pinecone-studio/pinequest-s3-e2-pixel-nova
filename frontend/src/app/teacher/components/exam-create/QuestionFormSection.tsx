@@ -7,12 +7,13 @@ import {
   labelClass,
   selectClass,
 } from "../../styles";
+import QuestionTypeDropdown from "./QuestionTypeDropdown";
 
 type QuestionFormSectionProps = {
   questionText: string;
   setQuestionText: (value: string) => void;
-  questionType: "text" | "open" | "mcq";
-  setQuestionType: (value: "text" | "open" | "mcq") => void;
+  questionType: "open" | "mcq";
+  setQuestionType: (value: "open" | "mcq") => void;
   mcqOptions: string[];
   setMcqOptions: (value: string[]) => void;
   questionAnswer: string;
@@ -91,17 +92,10 @@ export default function QuestionFormSection({
           <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
             Асуултын төрөл
           </span>
-          <select
-            className={`${selectClass} h-[52px] rounded-[18px] border-[#d8e0ea] bg-white text-sm font-semibold shadow-[0_10px_24px_-22px_rgba(15,23,42,0.28)]`}
+          <QuestionTypeDropdown
             value={questionType}
-            onChange={(event) =>
-              setQuestionType(event.target.value as "text" | "open" | "mcq")
-            }
-          >
-            <option value="open">Задгай даалгавар</option>
-            <option value="mcq">Сонголттой</option>
-            <option value="text">Текстэн хариулт</option>
-          </select>
+            onChange={setQuestionType}
+          />
         </div>
       </div>
 
@@ -209,7 +203,7 @@ export default function QuestionFormSection({
                     </svg>
                   </button>
                   <div
-                    className={`absolute z-20 mt-2 w-full rounded-2xl border border-[#e7edf5] bg-white p-2 shadow-xl transition ${
+                    className={`absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-[#e7edf5] bg-white p-2 shadow-xl transition ${
                       correctOpen
                         ? "translate-y-0 opacity-100"
                         : "pointer-events-none -translate-y-1 opacity-0"
@@ -223,6 +217,7 @@ export default function QuestionFormSection({
                             ? "bg-[#2563eb] text-white"
                             : "hover:bg-[#f8fbff]"
                         }`}
+                        title={`${label}. ${mcqOptions[index]}`}
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => {
                           setQuestionCorrectIndex(index);
@@ -230,7 +225,9 @@ export default function QuestionFormSection({
                         }}
                         type="button"
                       >
-                        {label}. {mcqOptions[index]}
+                        <span className="block truncate">
+                          {label}. {mcqOptions[index]}
+                        </span>
                       </button>
                     ))}
                   </div>

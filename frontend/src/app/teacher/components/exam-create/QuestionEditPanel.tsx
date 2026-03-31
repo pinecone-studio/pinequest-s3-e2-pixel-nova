@@ -1,7 +1,8 @@
 import type { RefObject } from "react";
-import { buttonGhost, inputClass, selectClass } from "../../styles";
+import { buttonGhost, inputClass } from "../../styles";
 import type { Question } from "../../types";
 import { optionLabels } from "./question-preview-helpers";
+import QuestionTypeDropdown from "./QuestionTypeDropdown";
 
 type QuestionEditPanelProps = {
   activeQuestion: Question;
@@ -91,11 +92,9 @@ export default function QuestionEditPanel({
       />
 
       <div className="grid gap-2 md:grid-cols-[140px_minmax(0,1fr)]">
-        <select
-          className={selectClass}
-          value={activeQuestion.type}
-          onChange={(event) => {
-            const nextType = event.target.value as "text" | "open" | "mcq";
+        <QuestionTypeDropdown
+          value={activeQuestion.type === "text" ? "open" : activeQuestion.type}
+          onChange={(nextType) => {
             updateQuestion(activeQuestion.id, {
               type: nextType,
               options:
@@ -106,11 +105,7 @@ export default function QuestionEditPanel({
                   : undefined,
             });
           }}
-        >
-          <option value="open">Нөхөх / задгай</option>
-          <option value="mcq">Сонголт</option>
-          <option value="text">Текст</option>
-        </select>
+        />
         <input
           type="number"
           min={1}

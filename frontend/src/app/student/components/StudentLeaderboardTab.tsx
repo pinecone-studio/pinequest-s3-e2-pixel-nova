@@ -1,26 +1,35 @@
 import { Trophy } from "lucide-react";
-import type {
-  StudentProgressLeaderboardEntry,
-  StudentTermRankOverview,
-} from "@/lib/backend-auth";
+import type { XpLeaderboardEntry } from "@/api/xp";
+import type { StudentTermRankOverview } from "@/lib/backend-auth";
 import StudentLeaderboardListItem from "./StudentLeaderboardListItem";
-import { buildProgressLeaderboardEntries } from "./student-leaderboard-helpers";
+import { buildClassEntries } from "./student-leaderboard-helpers";
 
 type StudentLeaderboardTabProps = {
-  currentUserId: string;
+  currentUserId: string | null;
+  currentUserName: string;
+  currentLevel: number;
   termRankOverview: StudentTermRankOverview;
-  progressLeaderboard: StudentProgressLeaderboardEntry[];
+  leaderboardEntries: XpLeaderboardEntry[];
 };
 
 export default function StudentLeaderboardTab({
   currentUserId,
+  currentUserName,
+  currentLevel,
   termRankOverview,
-  progressLeaderboard,
+  leaderboardEntries,
 }: StudentLeaderboardTabProps) {
   const hasRank =
     typeof termRankOverview.rank === "number" && termRankOverview.termExamCount > 0;
-  const displayEntries = buildProgressLeaderboardEntries(progressLeaderboard);
-  const hasProgressLeaderboard = displayEntries.length > 0;
+  const displayEntries = buildClassEntries(
+    leaderboardEntries.map((entry) => ({
+      ...entry,
+      fullName:
+        currentUserId && entry.id === currentUserId ? currentUserName : entry.fullName,
+      level: currentUserId && entry.id === currentUserId ? currentLevel : entry.level,
+    })),
+  );
+  const hasLeaderboard = displayEntries.length > 0;
 
   return (
     <section className="space-y-6">
@@ -31,9 +40,9 @@ export default function StudentLeaderboardTab({
               Тэргүүлэгчид
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              {hasProgressLeaderboard
-                ? "Цэнхэр блок нь улирлын шалгалтаар, доорх Top 10 нь явцын шалгалтын дундаж оноогоор эрэмбэлэгдэнэ."
-                : "Явцын шалгалтын Top 10 хараахан бүрдээгүй байна."}
+              {hasLeaderboard
+                ? "Цэнхэр блок нь улирлын шалгалтаар, доорх Top 10 нь жинхэнэ XP leaderboard-оор эрэмбэлэгдэнэ."
+                : "XP leaderboard хараахан бүрдээгүй байна."}
             </p>
           </div>
 
@@ -66,19 +75,20 @@ export default function StudentLeaderboardTab({
       </div>
 
       <div className="space-y-3">
-        {hasProgressLeaderboard ? (
-          displayEntries.map((entry) => (
-            <StudentLeaderboardListItem
-              key={entry.id}
-              entry={entry}
-              isCurrentUser={entry.id === currentUserId}
-            />
-          ))
-        ) : (
-          <div className="rounded-[24px] border border-dashed border-[#d9e2fb] bg-white px-5 py-6 text-sm text-slate-500 shadow-[0_10px_22px_rgba(77,92,148,0.05)]">
-            Явцын шалгалтын дүн орж ирмэгц энэ хэсэгт топ 10 жагсаалт харагдана.
+        {displayEntries.length === 0 && (
+          <div className="rounded-[24px] border border-dashed border-[#e8ecfb] bg-white px-5 py-8 text-sm text-slate-400">
+            Одоогоор XP leaderboard хоосон байна.
           </div>
         )}
+
+        {displayEntries.map((entry) => (
+          <StudentLeaderboardListItem
+            key={entry.id}
+            entry={entry}
+            isCurrentUser={Boolean(currentUserId && entry.id === currentUserId)}
+            showFocusLabel={false}
+          />
+        ))}
       </div>
     </section>
   );
