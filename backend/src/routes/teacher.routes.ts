@@ -4,6 +4,7 @@ import {
   students,
   exams,
   examSessions,
+  cheatEvents,
   questions,
   studentAnswers,
   options,
@@ -80,6 +81,88 @@ const getExamAttendanceStats = async (
   };
 };
 
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  tab_switch: "Tab switch",
+  tab_hidden: "Fullscreen exit",
+  window_blur: "Window blur",
+  copy_paste: "Copy or paste",
+  right_click: "Context menu",
+  screen_capture: "Screen capture",
+  devtools_open: "Devtools shortcut",
+  multiple_monitors: "Multiple monitors",
+  suspicious_resize: "Suspicious resize",
+  rapid_answers: "Rapid answers",
+  idle_too_long: "Idle too long",
+  face_missing: "Face missing",
+  multiple_faces: "Multiple faces",
+  looking_away: "Looking away",
+  looking_down: "Looking down",
+  camera_blocked: "Camera blocked",
+  disqualification: "Disqualification",
+};
+
+type SessionCheatSummary = {
+  countByType: Record<string, number>;
+  eventCount: number;
+  latestEvent: {
+    createdAt: string;
+    eventSource: string | null;
+    eventType: string;
+    label: string;
+    severity: string;
+  } | null;
+};
+
+const getSessionCheatSummaries = async (
+  sessionIds: string[],
+  d1: D1Database,
+) => {
+  const db = getDb(d1);
+  const events =
+    sessionIds.length > 0
+      ? await db
+          .select({
+            createdAt: cheatEvents.createdAt,
+            eventSource: cheatEvents.eventSource,
+            eventType: cheatEvents.eventType,
+            severity: cheatEvents.severity,
+            sessionId: cheatEvents.sessionId,
+          })
+          .from(cheatEvents)
+          .where(
+            sql`${cheatEvents.sessionId} IN (${sql.join(
+              sessionIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})`,
+          )
+          .orderBy(sql`${cheatEvents.createdAt} DESC`)
+      : [];
+
+  const bySession = new Map<string, SessionCheatSummary>();
+  for (const event of events) {
+    const summary = bySession.get(event.sessionId) ?? {
+      countByType: {},
+      eventCount: 0,
+      latestEvent: null,
+    };
+    summary.eventCount += 1;
+    summary.countByType[event.eventType] =
+      (summary.countByType[event.eventType] ?? 0) + 1;
+    if (!summary.latestEvent) {
+      summary.latestEvent = {
+        createdAt: event.createdAt,
+        eventSource: event.eventSource,
+        eventType: event.eventType,
+        label: EVENT_TYPE_LABELS[event.eventType] ?? event.eventType,
+        severity: event.severity,
+      };
+    }
+    bySession.set(event.sessionId, summary);
+  }
+
+  return bySession;
+};
+
 const getExamRosterDetail = async (
   exam: Awaited<ReturnType<typeof getOwnedExam>>,
   d1: D1Database,
@@ -107,7 +190,11 @@ const getExamRosterDetail = async (
       startedAt: examSessions.startedAt,
       isFlagged: examSessions.isFlagged,
       flagCount: examSessions.flagCount,
+      lastViolationAt: examSessions.lastViolationAt,
+      riskLevel: examSessions.riskLevel,
       score: examSessions.score,
+      topViolationType: examSessions.topViolationType,
+      violationScore: examSessions.violationScore,
     })
     .from(examSessions)
     .innerJoin(students, eq(examSessions.studentId, students.id))
@@ -135,6 +222,7 @@ const getExamRosterDetail = async (
   const countBySession = new Map(
     answerCounts.map((row) => [row.sessionId, Number(row.count ?? 0)]),
   );
+  const cheatSummaryBySession = await getSessionCheatSummaries(sessionIds, d1);
 
   return {
     examId: exam.id,
@@ -147,6 +235,7 @@ const getExamRosterDetail = async (
     finishedAt: exam.finishedAt,
     participants: sessions.map((session) => {
       const answeredCount = countBySession.get(session.sessionId) ?? 0;
+      const cheatSummary = cheatSummaryBySession.get(session.sessionId);
       const progressPercent =
         totalQuestions > 0
           ? Math.min(100, Math.round((answeredCount / totalQuestions) * 100))
@@ -165,6 +254,13 @@ const getExamRosterDetail = async (
         startedAt: session.startedAt,
         isFlagged: Boolean(session.isFlagged),
         flagCount: Number(session.flagCount ?? 0),
+        violationScore: Number(session.violationScore ?? 0),
+        riskLevel: session.riskLevel ?? "low",
+        lastViolationAt: session.lastViolationAt,
+        topViolationType: session.topViolationType,
+        eventCount: cheatSummary?.eventCount ?? 0,
+        latestEvent: cheatSummary?.latestEvent ?? null,
+        countByType: cheatSummary?.countByType ?? {},
         score: session.score,
       };
     }),
@@ -254,6 +350,10 @@ teacherRoutes.get("/exams/:examId/submissions", async (c) => {
       submittedAt: examSessions.submittedAt,
       isFlagged: examSessions.isFlagged,
       flagCount: examSessions.flagCount,
+      lastViolationAt: examSessions.lastViolationAt,
+      riskLevel: examSessions.riskLevel,
+      topViolationType: examSessions.topViolationType,
+      violationScore: examSessions.violationScore,
     })
     .from(examSessions)
     .innerJoin(students, eq(examSessions.studentId, students.id))
@@ -262,7 +362,23 @@ teacherRoutes.get("/exams/:examId/submissions", async (c) => {
     )
     .orderBy(examSessions.submittedAt);
 
-  return success(c, submissions);
+  const cheatSummaryBySession = await getSessionCheatSummaries(
+    submissions.map((submission) => submission.id),
+    c.env.educore,
+  );
+
+  return success(
+    c,
+    submissions.map((submission) => {
+      const cheatSummary = cheatSummaryBySession.get(submission.id);
+      return {
+        ...submission,
+        eventCount: cheatSummary?.eventCount ?? 0,
+        latestEvent: cheatSummary?.latestEvent ?? null,
+        countByType: cheatSummary?.countByType ?? {},
+      };
+    }),
+  );
 });
 
 teacherRoutes.get("/exams/:examId/roster", async (c) => {
