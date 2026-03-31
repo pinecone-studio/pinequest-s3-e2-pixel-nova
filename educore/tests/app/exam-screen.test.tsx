@@ -1,14 +1,14 @@
-import React from 'react';
+import React from "react";
 import {
   cleanup,
   fireEvent,
   render,
   waitFor,
-} from '@testing-library/react-native';
+} from "@testing-library/react-native";
 
-import ExamScreen from '@/app/(tabs)/exam';
-import { useStudentApp } from '@/lib/student-app/context';
-import type { ActiveExamSession } from '@/types/student-app';
+import ExamScreen from "@/app/(tabs)/exam";
+import { useStudentApp } from "@/lib/student-app/context";
+import type { ActiveExamSession } from "@/types/student-app";
 
 jest.mock("@react-navigation/native", () => ({
   useFocusEffect: jest.fn(),
@@ -44,7 +44,9 @@ jest.mock("@/components/student-app/MobileProctorCamera", () => ({
       ? require("react").createElement(
           "Text",
           null,
-          permissionGranted ? "camera-preview-active" : "camera-preview-blocked",
+          permissionGranted
+            ? "camera-preview-active"
+            : "camera-preview-blocked",
         )
       : null,
 }));
@@ -167,9 +169,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(
-      screen.getByText("Өнөөдөр товлогдсон шалгалт байхгүй байна"),
-    ).toBeTruthy();
+    expect(screen.getByText("Идэвхтэй шалгалт байхгүй")).toBeTruthy();
     expect(screen.getByText("Шалгалтанд нэгдэх")).toBeTruthy();
     screen.unmount();
   });
@@ -193,9 +193,7 @@ describe("ExamScreen", () => {
     fireEvent.press(screen.getByText("Шалгалт эхлүүлэх"));
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/Камерын зөвшөөрөл шаардлагатай/),
-      ).toBeTruthy();
+      expect(screen.getByText(/Камерын зөвшөөрөл шаардлагатай/)).toBeTruthy();
     });
     expect(startExam).not.toHaveBeenCalled();
     screen.unmount();

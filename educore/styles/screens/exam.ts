@@ -1,7 +1,6 @@
 import { StyleSheet } from "react-native";
 
 export const examStyles = StyleSheet.create({
-  // Document 10-ийн бүх styles-ийг энд хуулна
   screen: { flex: 1, backgroundColor: "#F2F4F7" },
   content: { padding: 20, paddingBottom: 40, gap: 16 },
   pageTitle: {
@@ -10,6 +9,61 @@ export const examStyles = StyleSheet.create({
     color: "#111",
     marginBottom: 4,
   },
+
+  // ── Tab switcher (Шалгалтуудад / Шалгалтын түүх) ──
+  tabRow: {
+    flexDirection: "row",
+    backgroundColor: "#ECEDF2",
+    borderRadius: 14,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 9,
+    alignItems: "center",
+    borderRadius: 11,
+  },
+  tabActive: {
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#888",
+  },
+  tabTextActive: {
+    color: "#111",
+  },
+
+  // ── Search bar ──
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#111",
+  },
+  searchIcon: {
+    fontSize: 16,
+    color: "#AAB0C0",
+  },
+
+  // ── Empty state ──
   emptyCard: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -34,6 +88,8 @@ export const examStyles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+
+  // ── Exam detail card (active exam header) ──
   examCard: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -57,15 +113,57 @@ export const examStyles = StyleSheet.create({
   avatarText: { color: "#fff", fontSize: 18, fontWeight: "800" },
   examTitle: { fontSize: 15, fontWeight: "700", color: "#111" },
   examMeta: { fontSize: 12, color: "#888", marginTop: 2 },
+
+  // ── List card (шалгалтын жагсаалтын card) ──
+  listCard: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 16,
+    gap: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  listCardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  listCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111",
+    flex: 1,
+    marginRight: 8,
+  },
+  listCardMeta: {
+    fontSize: 12,
+    color: "#888",
+    lineHeight: 19,
+  },
+  detailLink: {
+    fontSize: 13,
+    color: "#5B67F8",
+    fontWeight: "600",
+    marginTop: 4,
+    alignSelf: "flex-end",
+  },
+
+  // ── Status pills ──
   statusPill: {
-    backgroundColor: "#E8F5E9",
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    backgroundColor: "#E8F5E9",
   },
   statusPillWarning: { backgroundColor: "#FEF3C7" },
+  statusPillDanger: { backgroundColor: "#FEE2E2" },
   statusPillText: { color: "#2E7D32", fontSize: 11, fontWeight: "700" },
   statusPillTextWarning: { color: "#B45309" },
+  statusPillTextDanger: { color: "#DC2626" },
+
+  // ── Meta chips (remaining time / progress) ──
   metaRow: { flexDirection: "row", gap: 10 },
   metaChip: {
     flex: 1,
@@ -76,25 +174,20 @@ export const examStyles = StyleSheet.create({
   },
   metaChipLabel: { fontSize: 11, color: "#888", marginBottom: 4 },
   metaChipValue: { fontSize: 18, fontWeight: "800", color: "#111" },
-  infoBox: {
-    backgroundColor: "#EEF4FF",
-    borderRadius: 12,
-    padding: 10,
-  },
-  infoText: {
-    color: "#3657B0",
-    fontSize: 13,
-    lineHeight: 19,
-  },
+
+  // ── Info / warning / error boxes ──
+  infoBox: { backgroundColor: "#EEF4FF", borderRadius: 12, padding: 10 },
+  infoText: { color: "#3657B0", fontSize: 13, lineHeight: 19 },
   warningBox: { backgroundColor: "#FEF3C7", borderRadius: 12, padding: 10 },
   warningText: { color: "#B45309", fontSize: 13 },
   errorText: { color: "#DC2626", fontSize: 13, textAlign: "center" },
+
+  // ── Buttons ──
   primaryBtn: {
     backgroundColor: "#5B67F8",
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
-    width: 200,
   },
   primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   secondaryBtn: {
@@ -102,13 +195,10 @@ export const examStyles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 13,
     alignItems: "center",
-    width: 200,
   },
-  secondaryBtnText: {
-    color: "#5B67F8",
-    fontWeight: "600",
-    fontSize: 15,
-  },
+  secondaryBtnText: { color: "#5B67F8", fontWeight: "600", fontSize: 15 },
+
+  // ── Question card ──
   questionCard: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -154,6 +244,8 @@ export const examStyles = StyleSheet.create({
     fontSize: 15,
     color: "#111",
   },
+
+  // ── Footer navigation ──
   footerActions: { gap: 10, paddingBottom: 8 },
   navBtn: {
     backgroundColor: "#F2F4F7",
