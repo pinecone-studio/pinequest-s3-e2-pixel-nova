@@ -44,6 +44,7 @@ export const buildLocalExam = (params: {
     locationLatitude?: number | null;
     locationLongitude?: number | null;
     allowedRadiusMeters?: number | null;
+    requiresAudioRecording?: boolean;
     enabledCheatDetections?: string[];
     createdAt?: string;
   } | null;
@@ -63,14 +64,19 @@ export const buildLocalExam = (params: {
     roomCode: remote?.roomCode ?? generateRoomCode(),
     expectedStudentsCount:
       remote?.expectedStudentsCount ?? payload.expectedStudentsCount,
+    requiresAudioRecording: remote?.requiresAudioRecording ?? false,
     enabledCheatDetections: remote?.enabledCheatDetections,
     questions: payload.questions,
     duration: remote?.durationMin ?? durationMinutes,
-    locationPolicy: remote?.locationPolicy ?? payload.locationPolicy ?? "anywhere",
+    locationPolicy:
+      remote?.locationPolicy ?? payload.locationPolicy ?? "anywhere",
     locationLabel: remote?.locationLabel ?? payload.locationLabel ?? null,
-    locationLatitude: remote?.locationLatitude ?? payload.locationLatitude ?? null,
-    locationLongitude: remote?.locationLongitude ?? payload.locationLongitude ?? null,
-    allowedRadiusMeters: remote?.allowedRadiusMeters ?? payload.allowedRadiusMeters ?? 3000,
+    locationLatitude:
+      remote?.locationLatitude ?? payload.locationLatitude ?? null,
+    locationLongitude:
+      remote?.locationLongitude ?? payload.locationLongitude ?? null,
+    allowedRadiusMeters:
+      remote?.allowedRadiusMeters ?? payload.allowedRadiusMeters ?? 3000,
     createdAt: remote?.createdAt ?? new Date().toISOString(),
   };
 };

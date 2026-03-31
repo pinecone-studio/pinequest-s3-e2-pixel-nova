@@ -113,6 +113,7 @@ export default function StudentExamsTab({
         joinLoading={joinLoading}
         joinError={joinError}
         onLookup={onLookup}
+        selectedExam={selectedExam}
         studentHistory={studentHistory}
       />
     );
@@ -141,6 +142,7 @@ export default function StudentExamsTab({
       />
 
       <StudentExamRulesPanel
+        requiresAudioRecording={selectedExam.requiresAudioRecording}
         rulesOpen={rulesOpen}
         setRulesOpen={setRulesOpen}
       />

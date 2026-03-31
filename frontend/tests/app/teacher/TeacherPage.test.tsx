@@ -183,8 +183,8 @@ describe("TeacherPage", () => {
       }),
     ).toBeInTheDocument();
     const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes).toHaveLength(16);
-    expect(checkboxes[0]).toBeChecked();
+    expect(checkboxes).toHaveLength(17);
+    expect(checkboxes[1]).toBeChecked();
     expect(screen.getByText("Камер хаагдах")).toBeInTheDocument();
   });
 

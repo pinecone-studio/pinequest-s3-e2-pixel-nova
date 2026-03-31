@@ -155,6 +155,25 @@ const requestDesktopCameraPermission = async () => {
   stream.getTracks().forEach((track) => track.stop());
 };
 
+const requestDesktopMicrophonePermission = async () => {
+  if (
+    typeof window === "undefined" ||
+    !window.isSecureContext ||
+    !navigator.mediaDevices?.getUserMedia
+  ) {
+    throw new Error(
+      "Desktop microphone recording requires a secure browser environment.",
+    );
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: true,
+    video: false,
+  });
+
+  stream.getTracks().forEach((track) => track.stop());
+};
+
 export const useStudentExamSession = ({
   currentUser,
   roomCodeInput,
@@ -247,18 +266,28 @@ export const useStudentExamSession = ({
     }
 
     const run = async () => {
+      let requiresAudioRecording = false;
       try {
-        await requestDesktopCameraPermission();
         const sessionPayload = await apiFetch<SessionData | { data?: SessionData }>(`/api/sessions/${sessionId}`);
         const sessionData = unwrapApi(sessionPayload);
         const mappedExam: Exam = mapSessionToExam(sessionData, roomCodeInput);
+        requiresAudioRecording = Boolean(mappedExam.requiresAudioRecording);
+        await requestDesktopCameraPermission();
+        if (requiresAudioRecording) {
+          await requestDesktopMicrophonePermission();
+        }
         const restoredServerAnswers = mapSessionAnswers(sessionData);
         const restoredDraftAnswers = readDraftAnswers(sessionId);
         const restoredAnswers = {
           ...restoredServerAnswers,
           ...restoredDraftAnswers,
         };
-        const startPayload = await apiFetch<{ startedAt?: string; status?: string } | { data?: { startedAt?: string; status?: string } }>(`/api/sessions/${sessionId}/start`, { method: "POST" });
+        const startPayload = await apiFetch<{ startedAt?: string; status?: string } | { data?: { startedAt?: string; status?: string } }>(`/api/sessions/${sessionId}/start`, {
+          method: "POST",
+          body: JSON.stringify({
+            audioReady: requiresAudioRecording ? true : undefined,
+          }),
+        });
         const startData = unwrapApi(startPayload);
         const nextExam = {
           ...mappedExam,
@@ -279,6 +308,20 @@ export const useStudentExamSession = ({
         setView("exam");
       } catch (error) {
         const message = parseErrorMessage(error, "Шалгалт эхлүүлэхэд алдаа гарлаа.");
+        if (requiresAudioRecording) {
+          void apiFetch(`/api/cheat/event`, {
+            method: "POST",
+            body: JSON.stringify({
+              sessionId,
+              eventType: "microphone_permission_denied",
+              source: "browser_audio",
+              confidence: 0.99,
+              details: {
+                message,
+              },
+            }),
+          }).catch(() => null);
+        }
         setJoinError?.(message);
         showWarning(message);
       }

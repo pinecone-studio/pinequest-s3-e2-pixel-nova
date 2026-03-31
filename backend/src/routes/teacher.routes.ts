@@ -39,7 +39,13 @@ const getExamAttendanceStats = async (
   d1: D1Database,
 ) => {
   const db = getDb(d1);
-  const joinedStatuses = ["joined", "late", "in_progress", "submitted", "graded"];
+  const joinedStatuses = [
+    "joined",
+    "late",
+    "in_progress",
+    "submitted",
+    "graded",
+  ];
   const submittedStatuses = ["submitted", "graded"];
 
   const [joinedRow] = await db
@@ -77,7 +83,8 @@ const getExamAttendanceStats = async (
     joined,
     submitted,
     attendance_rate: expected > 0 ? Math.round((joined / expected) * 100) : 0,
-    submission_rate: expected > 0 ? Math.round((submitted / expected) * 100) : 0,
+    submission_rate:
+      expected > 0 ? Math.round((submitted / expected) * 100) : 0,
   };
 };
 
@@ -426,7 +433,9 @@ teacherRoutes.get("/exams/:examId/live", async (c) => {
 
       const sendEvent = (event: string, payload: unknown) => {
         controller.enqueue(
-          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`),
+          encoder.encode(
+            `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`,
+          ),
         );
       };
 
@@ -505,13 +514,12 @@ teacherRoutes.get("/exams/summary", async (c) => {
       locationLatitude: exams.locationLatitude,
       locationLongitude: exams.locationLongitude,
       allowedRadiusMeters: exams.allowedRadiusMeters,
+      requiresAudioRecording: exams.requiresAudioRecording,
       status: exams.status,
       expectedStudentsCount: exams.expectedStudentsCount,
       createdAt: exams.createdAt,
-      questionCount:
-        sql<number>`(select count(*) from questions where questions.exam_id = ${exams.id})`,
-      submissionCount:
-        sql<number>`(select count(*) from exam_sessions where exam_sessions.exam_id = ${exams.id} and exam_sessions.status = 'graded')`,
+      questionCount: sql<number>`(select count(*) from questions where questions.exam_id = ${exams.id})`,
+      submissionCount: sql<number>`(select count(*) from exam_sessions where exam_sessions.exam_id = ${exams.id} and exam_sessions.status = 'graded')`,
     })
     .from(exams)
     .where(eq(exams.teacherId, teacherId))
