@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "EduCore LMS",
@@ -22,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="mn">
-      <body className="antialiased">
+      <body className={`${manrope.variable} antialiased`}>
         <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
