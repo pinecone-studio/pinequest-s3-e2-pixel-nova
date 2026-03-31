@@ -244,7 +244,7 @@ function ExamListScreen() {
               activeTab === "active" && styles.tabTextActive,
             ]}
           >
-            Шалгалтуудад
+            Шалгалтууд
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -267,7 +267,7 @@ function ExamListScreen() {
         <Text style={styles.searchIcon}>Ã°Å¸â€Â</Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š Ã‘â€¦ÃÂ°ÃÂ¹Ã‘â€¦..."
+          placeholder="Шалгалт хайх..."
           placeholderTextColor="#AAB0C0"
           value={search}
           onChangeText={setSearch}
@@ -698,30 +698,7 @@ export default function ExamScreen() {
   }
 
   if (!activeSession) {
-    return (
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <Text style={styles.pageTitle}>Шалгалт</Text>
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyEmoji}>📭</Text>
-          <Text style={styles.emptyTitle}>Идэвхтэй шалгалт байхгүй</Text>
-          <Text style={styles.emptyText}>
-            Багш шалгалт нээхэд room code-оор нэгдэнэ үү.
-          </Text>
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => router.push("/join")}
-          >
-            <Text style={styles.primaryBtnText}>Шалгалтанд нэгдэх</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={() => router.push("/home")}
-          >
-            <Text style={styles.secondaryBtnText}>Нүүр хуудас руу буцах</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    );
+    return <ExamListScreen />;
   }
 
   // ── Active / joined session ────────────────────────────────────────────────
