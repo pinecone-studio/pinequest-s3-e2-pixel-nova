@@ -274,15 +274,20 @@ export const buildExamStats = (params: {
   if (!activeExam) return null;
 
   const submissionCount = activeSubmissions.length;
+  const expectedStudentsCount = Number(activeExam.expectedStudentsCount ?? 0);
+  const cohortSize =
+    expectedStudentsCount > 0
+      ? Math.max(expectedStudentsCount, submissionCount)
+      : Math.max(submissionCount, 1);
   const totalPoints =
     activeExam.questions.reduce((sum, question) => sum + (question.points ?? 1), 0) ||
     1;
   const average =
     activeSubmissions.reduce((sum, submission) => sum + submission.percentage, 0) /
-    Math.max(submissionCount, 1);
+    cohortSize;
   const passRate =
     (activeSubmissions.filter((submission) => submission.percentage >= 60).length /
-      Math.max(submissionCount, 1)) *
+      cohortSize) *
     100;
 
   const questionStats = activeExam.questions
@@ -345,6 +350,8 @@ export const buildExamStats = (params: {
     average: Math.round(average),
     passRate: Math.round(passRate),
     submissionCount,
+    cohortSize,
+    absentCount: Math.max(cohortSize - submissionCount, 0),
     totalPoints,
     mostMissed: [...questionStats]
       .sort((left, right) => {

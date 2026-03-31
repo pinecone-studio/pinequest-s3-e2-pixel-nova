@@ -36,7 +36,7 @@ export default function ResultsSummaryCard({
           <span className={badgeClass}>Дүнгийн тойм</span>
           <h2 className={`mt-3 ${sectionTitleClass}`}>Дүнгийн хураангуй</h2>
           <p className={`mt-2 ${sectionDescriptionClass}`}>
-            Дундаж оноо, pass rate, хамгийн их алдсан болон зөв гүйцэтгэсэн асуултууд.
+            Дундаж оноо, тэнцсэн хувь, хамгийн их алдсан болон зөв гүйцэтгэсэн асуултууд.
           </p>
         </div>
         <div className="w-full max-w-xs">
@@ -89,7 +89,7 @@ export default function ResultsSummaryCard({
                 </div>
                 <div className="mt-2 text-3xl font-semibold">{examStats.passRate}%</div>
                 <div className="mt-1 text-xs text-slate-500">
-                  60%-иас дээш өгсөн сурагчид
+                  60%-иас дээш авсан / нийт хүлээгдэж буй сурагч
                 </div>
               </div>
               <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4">
@@ -98,7 +98,7 @@ export default function ResultsSummaryCard({
                 </div>
                 <div className="mt-2 text-3xl font-semibold">{examStats.submissionCount}</div>
                 <div className="mt-1 text-xs text-slate-500">
-                  Автоматаар үнэлэгдсэн оролт
+                  {examStats.cohortSize} сурагчаас {examStats.submissionCount} нь өгсөн
                 </div>
               </div>
               <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4">
@@ -112,6 +112,13 @@ export default function ResultsSummaryCard({
               </div>
             </div>
           </div>
+
+          {examStats.cohortSize > examStats.submissionCount ? (
+            <div className="mt-4 rounded-[20px] border border-[#dbeafe] bg-[#f8fbff] px-4 py-3 text-sm text-slate-600">
+              Ангийн дундажийг {examStats.cohortSize} сурагч дээр тооцож байна.
+              Өгөгдөөгүй {examStats.absentCount} сурагчийг 0% гэж үзэв.
+            </div>
+          ) : null}
 
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             <div className="rounded-[24px] border border-red-200 bg-red-50 px-4 py-4">

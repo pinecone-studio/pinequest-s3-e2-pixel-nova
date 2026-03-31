@@ -9,6 +9,8 @@ export const useExamScheduleState = () => {
   const [scheduleSubjectName, setScheduleSubjectName] = useState("");
   const [scheduleDescription, setScheduleDescription] = useState("");
   const [selectedScheduleExamId, setSelectedScheduleExamId] = useState("");
+  const [scheduleExpectedStudentsCount, setScheduleExpectedStudentsCount] =
+    useState(0);
   const [scheduleLocationPolicy, setScheduleLocationPolicy] = useState<"anywhere" | "school_only">("anywhere");
   const [scheduleLocationLabel, setScheduleLocationLabel] = useState("Сургууль");
   const [scheduleLocationLatitude, setScheduleLocationLatitude] = useState("");
@@ -55,6 +57,8 @@ export const useExamScheduleState = () => {
     setScheduleDescription,
     selectedScheduleExamId,
     setSelectedScheduleExamId,
+    scheduleExpectedStudentsCount,
+    setScheduleExpectedStudentsCount,
     scheduleLocationPolicy,
     setScheduleLocationPolicy,
     scheduleLocationLabel,
