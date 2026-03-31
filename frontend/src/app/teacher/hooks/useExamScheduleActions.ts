@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { syncExamToBackend } from "@/lib/backend-exams";
+import { fetchTeacherExamDetail } from "./teacher-api";
 import type { User } from "@/lib/examGuard";
 import type { Exam, Question } from "../types";
 import { buildLocalExam, toSyncQuestions } from "./exam-management-helpers";
@@ -75,61 +76,70 @@ export const useExamScheduleActions = ({
       return;
     }
 
-    if (selectedScheduleExam) {
-      if (
-        (selectedScheduleExam.questionCount ?? selectedScheduleExam.questions.length) === 0
-      ) {
+    let sourceExam = selectedScheduleExam ?? null;
+
+    if (sourceExam && sourceExam.questions.length === 0) {
+      try {
+        sourceExam = await fetchTeacherExamDetail(sourceExam.id, currentUser.id);
+      } catch {
+        showToast("Шалгалтын материалыг дуудаж чадсангүй. Дахин оролдоно уу.");
+        return;
+      }
+    }
+
+    if (sourceExam) {
+      if ((sourceExam.questionCount ?? sourceExam.questions.length) === 0) {
         showToast("Асуултгүй шалгалтыг хуваарьлах боломжгүй.");
         return;
       }
     }
 
-    if (!selectedScheduleExam && questions.length === 0) {
+    if (!sourceExam && questions.length === 0) {
       showToast("Хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.");
       return;
     }
 
     let newExam = buildLocalExam({
-      title: selectedScheduleExam?.title ?? scheduleTitle,
+      title: sourceExam?.title ?? scheduleTitle,
       description: scheduleDescription,
       examType: scheduleExamType,
       className: scheduleClassName,
       groupName: scheduleGroupName,
       scheduledAt: scheduleDate,
       expectedStudentsCount,
-      questions: selectedScheduleExam?.questions ?? [],
+      questions: sourceExam?.questions ?? questions,
       durationMinutes,
       remote: null,
     });
 
     try {
       const syncedExam = await syncExamToBackend(currentUser, {
-        title: selectedScheduleExam?.title ?? scheduleTitle,
+        title: sourceExam?.title ?? scheduleTitle,
         description:
-          scheduleDescription || selectedScheduleExam?.description || "",
-        examType: scheduleExamType || selectedScheduleExam?.examType || "",
+          scheduleDescription || sourceExam?.description || "",
+        examType: scheduleExamType || sourceExam?.examType || "",
         className: scheduleClassName,
         groupName: scheduleGroupName,
         duration: durationMinutes,
         scheduledAt: scheduleDate,
         expectedStudentsCount,
-        questions: toSyncQuestions(selectedScheduleExam?.questions ?? questions),
+        questions: toSyncQuestions(sourceExam?.questions ?? questions),
       });
 
       newExam = buildLocalExam({
-        title: selectedScheduleExam?.title ?? scheduleTitle,
+        title: sourceExam?.title ?? scheduleTitle,
         description:
-          scheduleDescription || selectedScheduleExam?.description || "",
-        examType: scheduleExamType || selectedScheduleExam?.examType || "",
+          scheduleDescription || sourceExam?.description || "",
+        examType: scheduleExamType || sourceExam?.examType || "",
         className: scheduleClassName,
         groupName: scheduleGroupName,
         scheduledAt: scheduleDate,
         expectedStudentsCount,
-        questions: selectedScheduleExam?.questions ?? questions,
+        questions: sourceExam?.questions ?? questions,
         durationMinutes,
         remote: syncedExam,
       });
-      showToast("Шалгалтын сангаас хуулж шинэ хуваарь үүслээ.");
+      showToast("Шалгалтын материалыг хуулж шинэ хуваарь үүслээ.");
     } catch (err) {
       let message = "Хуваарьлах үед алдаа гарлаа. Дахин оролдоно уу.";
       if (err instanceof Error && err.message) {
