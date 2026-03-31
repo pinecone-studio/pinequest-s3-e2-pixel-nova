@@ -68,9 +68,30 @@ export const useExamStats = (params: {
   }, [activeExamDetail, exams, selectedSubmission]);
 
   const examOptions = useMemo(() => {
+    const isResultsCandidate = (exam: Exam) => {
+      const submissionCount = Number(exam.submissionCount ?? 0);
+      const hasFinishedMarker = Boolean(exam.finishedAt);
+      const status = String(exam.status ?? "").toLowerCase();
+
+      return (
+        submissionCount > 0 ||
+        hasFinishedMarker ||
+        status === "finished" ||
+        status === "active" ||
+        status === "completed" ||
+        status === "graded"
+      );
+    };
+
     return exams
-      .filter((exam) => Number(exam.submissionCount ?? 0) > 0)
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+      .filter(isResultsCandidate)
+      .sort((left, right) => {
+        const rightSortKey =
+          right.finishedAt ?? right.examStartedAt ?? right.scheduledAt ?? right.createdAt;
+        const leftSortKey =
+          left.finishedAt ?? left.examStartedAt ?? left.scheduledAt ?? left.createdAt;
+        return rightSortKey.localeCompare(leftSortKey);
+      });
   }, [exams]);
 
   const activeExamId = selectedExamId ?? examOptions[0]?.id ?? null;

@@ -84,9 +84,30 @@ export function buildScheduleData(exams: Exam[]) {
         new Date(right.scheduledAt ?? "").getTime(),
     );
 
-  const baseDate = startOfDay(new Date());
-  const endDate = startOfDay(new Date(baseDate));
+  const today = startOfDay(new Date());
+  const firstScheduledAt = scheduled[0]?.scheduledAt ?? null;
+  const lastScheduledAt = scheduled[scheduled.length - 1]?.scheduledAt ?? null;
+
+  const earliestScheduledAt = firstScheduledAt
+    ? startOfDay(new Date(firstScheduledAt))
+    : today;
+  const latestScheduledAt = lastScheduledAt
+    ? startOfDay(new Date(lastScheduledAt))
+    : today;
+
+  const baseDate = startOfDay(new Date(today));
+  baseDate.setMonth(baseDate.getMonth() - 1);
+
+  if (earliestScheduledAt.getTime() < baseDate.getTime()) {
+    baseDate.setTime(earliestScheduledAt.getTime());
+  }
+
+  const endDate = startOfDay(new Date(today));
   endDate.setMonth(endDate.getMonth() + 1);
+
+  if (latestScheduledAt.getTime() > endDate.getTime()) {
+    endDate.setTime(latestScheduledAt.getTime());
+  }
 
   const days: Date[] = [];
   for (let cursor = new Date(baseDate); cursor <= endDate; cursor = addDays(cursor, 1)) {

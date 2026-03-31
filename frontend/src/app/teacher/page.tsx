@@ -24,6 +24,7 @@ import TeacherHeader from "./components/TeacherHeader";
 import TeacherPageContent, {
   type TeacherTab,
 } from "./components/TeacherPageContent";
+import ExamScheduleCard from "./components/ExamScheduleCard";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamStats } from "./hooks/useExamStats";
@@ -31,6 +32,54 @@ import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { pageShellClass } from "./styles";
 
 const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
+
+function TeacherScheduleModal({
+  show,
+  onClose,
+  data,
+  management,
+}: {
+  show: boolean;
+  onClose: () => void;
+  data: ReturnType<typeof useTeacherData>;
+  management: ReturnType<typeof useExamManagement>;
+}) {
+  if (!show) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
+      onClick={onClose}>
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-xl items-center justify-center">
+        <div
+          className="w-full rounded-[36px] border border-white/35 bg-white/96 shadow-[0_40px_120px_-40px_rgba(15,23,42,0.48)] ring-1 ring-white/25 transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
+          onClick={(event) => event.stopPropagation()}>
+          <ExamScheduleCard
+            exams={data.exams}
+            selectedScheduleExamId={management.selectedScheduleExamId}
+            setSelectedScheduleExamId={management.setSelectedScheduleExamId}
+            scheduleDate={management.scheduleDate}
+            setScheduleDate={management.setScheduleDate}
+            scheduleExamType={management.scheduleExamType}
+            setScheduleExamType={management.setScheduleExamType}
+            scheduleClassName={management.scheduleClassName}
+            setScheduleClassName={management.setScheduleClassName}
+            scheduleGroupName={management.scheduleGroupName}
+            setScheduleGroupName={management.setScheduleGroupName}
+            scheduleSubjectName={management.scheduleSubjectName}
+            setScheduleSubjectName={management.setScheduleSubjectName}
+            scheduleDescription={management.scheduleDescription}
+            setScheduleDescription={management.setScheduleDescription}
+            durationMinutes={management.durationMinutes}
+            setDurationMinutes={management.setDurationMinutes}
+            onSchedule={management.handleSchedule}
+            onClose={onClose}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const getLocalAuthUsers = (role: RoleKey): AuthUser[] => {
   ensureDemoAccounts();
@@ -203,8 +252,7 @@ export default function TeacherPage() {
           <TeacherPageContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            showScheduleForm={showScheduleForm}
-            setShowScheduleForm={setShowScheduleForm}
+            onOpenScheduleForm={() => setShowScheduleForm(true)}
             data={data}
             management={management}
             examStatsState={examStatsState}
@@ -214,6 +262,12 @@ export default function TeacherPage() {
           />
         </div>
       </main>
+      <TeacherScheduleModal
+        show={showScheduleForm}
+        onClose={() => setShowScheduleForm(false)}
+        data={data}
+        management={management}
+      />
     </div>
   );
 }
