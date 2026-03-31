@@ -115,9 +115,9 @@ export default function StudentDashboardView({
   return (
     <main
       key={`student-${exam.activeTab}`}
-      className="px-4 py-6 sm:px-6 lg:px-8 page-transition"
+      className="page-transition px-4 py-7 sm:px-6 lg:px-8"
     >
-      <div className="mx-auto w-full max-w-[1280px] space-y-5">
+      <div className="mx-auto w-full max-w-[1272px] space-y-6">
         <StudentHeader
           activeTab={exam.activeTab}
           currentUserName={currentUserName}
@@ -147,19 +147,22 @@ export default function StudentDashboardView({
         />
 
         {exam.activeTab === "Home" && (
-            <StudentDashboardTab
-              loading={data.loading}
-              currentUserName={currentUserName}
-              selectedExam={exam.selectedExam}
-              levelInfo={progress.levelInfo}
-              studentProgress={progress.studentProgress}
-              nextLevel={resolvedNextLevel}
-              currentRank={currentRank}
-              studentCount={totalStudents}
-              studentHistory={studentHistory}
-              onOpenExams={() => exam.setActiveTab("Exams")}
-              onOpenProgress={() => exam.setActiveTab("Progress")}
-            />
+          <StudentDashboardTab
+            loading={data.loading}
+            currentUserId={data.currentUser?.id ?? null}
+            currentUserName={currentUserName}
+            exams={data.exams}
+            selectedExam={exam.selectedExam}
+            levelInfo={progress.levelInfo}
+            studentProgress={progress.studentProgress}
+            nextLevel={resolvedNextLevel}
+            currentRank={currentRank}
+            studentCount={totalStudents}
+            studentHistory={studentHistory}
+            termLeaderboardEntries={progress.termLeaderboardEntries}
+            onOpenExams={() => exam.setActiveTab("Exams")}
+            onOpenProgress={() => exam.setActiveTab("Progress")}
+          />
         )}
 
         {exam.activeTab === "Exams" && (

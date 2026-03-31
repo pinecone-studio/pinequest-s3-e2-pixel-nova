@@ -1,8 +1,8 @@
-import Image from "next/image";
 import {
   Bell,
   ChevronDown,
   CircleHelp,
+  GraduationCap,
   MoonIcon,
   Settings,
   User2,
@@ -49,6 +49,15 @@ const closeOnBlur =
     setter(false);
   };
 
+const formatCompactXp = (value: number) => {
+  if (value >= 1000) {
+    const compact = value >= 10000 ? Math.round(value / 1000) : Math.round(value / 100) / 10;
+    return `${compact.toString().replace(/\.0$/, "")}k XP`;
+  }
+
+  return `${value.toLocaleString()} XP`;
+};
+
 export default function StudentHeader({
   activeTab,
   currentUserName,
@@ -69,37 +78,27 @@ export default function StudentHeader({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="rounded-[28px] border border-[#eceaf7] bg-white/95 px-4 py-3 shadow-[0_20px_60px_rgba(55,70,110,0.08)] backdrop-blur sm:px-6">
+    <header className="rounded-[32px] border border-[#e5e9fb]  bg-white px-4 py-4 shadow-[0_18px_44px_rgba(77,93,138,0.08)] sm:px-6">
       <div className="flex flex-wrap items-center gap-4 xl:flex-nowrap xl:justify-between">
         <div className="flex min-w-[220px] items-center gap-3">
-          <div className="overflow-hidden rounded-2xl shadow-[0_14px_30px_rgba(37,99,235,0.22)]">
-            <Image
-              src="/group-web.svg"
-              alt="PineQuest"
-              width={44}
-              height={44}
-              className="h-11 w-11"
-              priority
-            />
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-[#6b6fff] to-[#7f5cff] text-white shadow-[0_14px_28px_rgba(108,104,255,0.28)]">
+            <GraduationCap className="h-5 w-5" />
           </div>
-          <div>
-            <div className="text-lg font-semibold tracking-[-0.02em] text-slate-900">
-              PineQuest
-            </div>
-            <div className="text-xs text-slate-400">Сурагчийн орчин</div>
+          <div className="text-xl font-semibold tracking-[-0.03em] text-slate-800">
+            EduCore LMS
           </div>
         </div>
 
-        <nav className="order-3 flex w-full flex-wrap items-center gap-2 xl:order-2 xl:w-auto xl:justify-center">
+        <nav className="order-3 flex w-full items-center justify-start gap-1.5 xl:order-2 xl:w-auto xl:justify-center">
           {primaryTabs.map((tab) => {
             const selected = activeTab === tab;
             return (
               <button
                 key={tab}
-                className={`relative rounded-xl px-3 py-2 text-sm font-medium transition cursor-pointer sm:px-4 ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition sm:px-5 ${
                   selected
-                    ? "bg-[#f5f4ff] text-slate-900 shadow-[inset_0_-2px_0_0_#5c6cff]"
-                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                    ? "bg-white text-slate-900 shadow-[0_8px_24px_rgba(97,108,149,0.12)] ring-1 ring-[#dce2ff]"
+                    : "text-slate-400 hover:text-slate-700"
                 }`}
                 onClick={() => onTabChange(tab)}
               >
@@ -110,6 +109,21 @@ export default function StudentHeader({
         </nav>
 
         <div className="order-2 ml-auto flex items-center gap-2 xl:order-3">
+          <div className="hidden items-center gap-2 rounded-full bg-[#fff5ec] px-4 py-2 text-sm font-semibold text-[#ef8c46] sm:flex">
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m13 2-7 12h5l-1 8 8-13h-5l0-7Z" />
+            </svg>
+            {formatCompactXp(xp)}
+          </div>
+
           <div
             className="relative"
             tabIndex={0}
@@ -117,19 +131,19 @@ export default function StudentHeader({
           >
             <button
               aria-label="Мэдэгдэл нээх"
-              className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#ebe8f8] bg-white text-slate-500 transition hover:border-[#d7d2ff] hover:text-slate-700"
+              className="relative grid h-11 w-11 place-items-center rounded-full border border-[#e4e8fb] bg-white text-slate-500 transition hover:border-[#cfd8ff] hover:text-slate-700"
               onClick={() => setNotificationsOpen((prev) => !prev)}
             >
               <Bell className="h-4 w-4" />
               {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#ff8a3d] px-1 text-[10px] font-semibold text-white">
+                <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#ff8a3d] px-1 text-[10px] font-semibold text-white">
                   {unreadCount}
                 </span>
               )}
             </button>
 
             <div
-              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-80 rounded-[24px] border border-[#eceaf7] bg-white p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] transition ${
+              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-80 rounded-[28px] border border-[#eceefb] bg-white p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] transition ${
                 notificationsOpen
                   ? "translate-y-0 opacity-100"
                   : "pointer-events-none translate-y-2 opacity-0"
@@ -152,7 +166,7 @@ export default function StudentHeader({
               {notifications.length > 0 && unreadCount > 0 && (
                 <button
                   type="button"
-                  className="mt-3 rounded-xl border border-[#eceaf7] bg-[#fafbff] px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
+                  className="mt-3 rounded-2xl border border-[#eceefb] bg-[#fafbff] px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
                   onClick={onMarkAllNotificationsRead}
                 >
                   Бүгдийг уншсан болгох
@@ -161,7 +175,7 @@ export default function StudentHeader({
 
               <div className="mt-4 space-y-2">
                 {notifications.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-[#e5e7f4] bg-[#fafbff] px-4 py-5 text-sm text-slate-400">
+                  <div className="rounded-[22px] border border-dashed border-[#e5e7f4] bg-[#fafbff] px-4 py-5 text-sm text-slate-400">
                     Шинэ мэдэгдэл алга.
                   </div>
                 )}
@@ -171,7 +185,7 @@ export default function StudentHeader({
                     key={item.id}
                     type="button"
                     onClick={() => onMarkNotificationRead(item.id)}
-                    className={`w-full rounded-2xl border px-4 py-3 text-left ${
+                    className={`w-full rounded-[22px] border px-4 py-3 text-left ${
                       item.status === "read"
                         ? "border-[#efeef8] bg-[#fafbff]"
                         : "border-[#d7d2ff] bg-white"
@@ -212,21 +226,6 @@ export default function StudentHeader({
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-full bg-[#fff4eb] px-4 py-2 text-sm font-semibold text-[#ff8a3d] sm:flex">
-            <svg
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m13 2-7 12h5l-1 8 8-13h-5l0-7Z" />
-            </svg>
-            {xp.toLocaleString()} XP
-          </div>
-
           <div
             className="relative"
             tabIndex={0}
@@ -234,10 +233,10 @@ export default function StudentHeader({
           >
             <button
               aria-label="Дансны цэс нээх"
-              className="flex items-center gap-2 rounded-full border border-[#ebe8f8] bg-white px-2 py-1.5 text-left shadow-sm transition hover:border-[#d7d2ff]"
+              className="flex items-center gap-2 rounded-full border border-[#e4e8fb] bg-white px-2 py-1.5 shadow-sm transition hover:border-[#cfd8ff]"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#6d6bff] to-[#8f6aff] text-sm font-semibold text-white">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#7b67ff] to-[#9a7dff] text-sm font-semibold text-white">
                 {currentUserInitials}
               </span>
               <ChevronDown
@@ -248,13 +247,13 @@ export default function StudentHeader({
             </button>
 
             <div
-              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-[min(26rem,calc(100vw-2rem))] rounded-[24px] border border-[#eceaf7] bg-white p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] transition ${
+              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-[min(26rem,calc(100vw-2rem))] rounded-[28px] border border-[#eceefb] bg-white p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] transition ${
                 menuOpen
                   ? "translate-y-0 opacity-100"
                   : "pointer-events-none translate-y-2 opacity-0"
               }`}
             >
-              <div className="rounded-[20px] bg-gradient-to-r from-[#f2f6ff] via-[#f8f1ff] to-[#fff3f1] p-4">
+              <div className="rounded-[22px] bg-gradient-to-r from-[#f4f6ff] via-[#faf5ff] to-[#fff6f0] p-4">
                 <div className="text-sm text-slate-400">Нэвтэрсэн хэрэглэгч</div>
                 <div className="mt-1 text-base font-semibold text-slate-900">
                   {currentUserName}
@@ -263,7 +262,7 @@ export default function StudentHeader({
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 <button
-                  className="flex items-center gap-2 rounded-2xl border border-[#eceaf7] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
+                  className="flex items-center gap-2 rounded-[20px] border border-[#eceefb] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
                   onClick={() => {
                     onOpenProfile();
                     setMenuOpen(false);
@@ -273,7 +272,7 @@ export default function StudentHeader({
                   Профайл
                 </button>
                 <button
-                  className="flex items-center gap-2 rounded-2xl border border-[#eceaf7] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
+                  className="flex items-center gap-2 rounded-[20px] border border-[#eceefb] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
                   onClick={() => {
                     onOpenSettings();
                     setMenuOpen(false);
@@ -283,7 +282,7 @@ export default function StudentHeader({
                   Тохиргоо
                 </button>
                 <button
-                  className="flex items-center gap-2 rounded-2xl border border-[#eceaf7] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
+                  className="flex items-center gap-2 rounded-[20px] border border-[#eceefb] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
                   onClick={() => {
                     onOpenHelp();
                     setMenuOpen(false);
@@ -293,7 +292,7 @@ export default function StudentHeader({
                   Тусламж
                 </button>
                 <button
-                  className="flex items-center gap-2 rounded-2xl border border-[#eceaf7] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
+                  className="flex items-center gap-2 rounded-[20px] border border-[#eceefb] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
                   onClick={() => {
                     onToggleTheme();
                     setMenuOpen(false);
@@ -305,7 +304,7 @@ export default function StudentHeader({
               </div>
 
               {roleControl && (
-                <div className="mt-4 rounded-[22px] border border-[#eceaf7] bg-[#fafbff] p-3">
+                <div className="mt-4 rounded-[22px] border border-[#eceefb] bg-[#fafbff] p-3">
                   {roleControl}
                 </div>
               )}

@@ -1,6 +1,5 @@
+import { CircleAlert, ClipboardX, Clock3, Play, RefreshCcw, Video } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Info, Play } from "lucide-react";
-import { formatDate, gradeFromPercentage } from "../utils";
 
 type JoinExamPanelProps = {
   loading: boolean;
@@ -20,6 +19,37 @@ type JoinExamPanelProps = {
   }[];
 };
 
+const infoItems = [
+  {
+    title: "Go Back",
+    description: "Cannot return to previous",
+    icon: RefreshCcw,
+    className: "border-[#cfd8ff] bg-white text-[#6670d6]",
+    iconClassName: "text-[#6670d6]",
+  },
+  {
+    title: "Auto Submit",
+    description: "Submits when time ends",
+    icon: Clock3,
+    className: "border-[#cfd8ff] bg-white text-[#6670d6]",
+    iconClassName: "text-[#6670d6]",
+  },
+  {
+    title: "Copy/Paste",
+    description: "Disabled",
+    icon: ClipboardX,
+    className: "border-[#f1c1c1] bg-[#fff9f9] text-[#ef6f67]",
+    iconClassName: "text-[#ef6f67]",
+  },
+  {
+    title: "Camera",
+    description: "Required",
+    icon: Video,
+    className: "border-[#f1c1c1] bg-[#fff9f9] text-[#ef6f67]",
+    iconClassName: "text-[#ef6f67]",
+  },
+] as const;
+
 export default function StudentJoinExamPanel({
   loading,
   roomCodeInput,
@@ -27,122 +57,93 @@ export default function StudentJoinExamPanel({
   joinLoading,
   joinError,
   onLookup,
-  studentHistory,
 }: JoinExamPanelProps) {
   return (
-    <section className="grid gap-5 xl:grid-cols-[minmax(340px,0.9fr)_minmax(0,1.1fr)]">
-      <div className="rounded-[30px] border border-[#e8edf9] bg-white p-6 shadow-[0_22px_55px_rgba(68,84,125,0.08)]">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-          Шалгалтын мэдээлэл
-        </div>
-        <div className="mt-5">
-          <h2 className="text-3xl font-semibold tracking-[-0.04em] text-slate-900">
-            Дараагийн шалгалтад нэвтрэх
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Өрөөний кодоо оруулаад шалгалтын мэдээллээ шалгана уу.
-          </p>
-        </div>
-
-        <div className="mt-8 space-y-3">
-          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-            Өрөөний код
-          </label>
-          <input
-            className="w-full rounded-2xl border border-[#dbe5ff] bg-[#fbfcff] px-4 py-3 text-base font-medium tracking-[0.18em] text-slate-900 uppercase outline-none transition focus:border-[#7aa5ff] focus:bg-white"
-            placeholder="AX7K2P"
-            value={roomCodeInput}
-            onChange={(event) => setRoomCodeInput(event.target.value.toUpperCase())}
-          />
-          <button
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#5c4fe6] to-[#5148df] px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(92,79,230,0.25)] transition hover:brightness-105 ${joinLoading ? "opacity-70" : ""}`}
-            onClick={onLookup}
-            disabled={joinLoading}
-          >
-            {joinLoading ? "Уншиж байна..." : "Шалгалт шалгах"}
-            <Play className="h-4 w-4" />
-          </button>
-          {joinError && (
-            <div className="rounded-2xl border border-[#ffd7d7] bg-[#fff5f5] px-4 py-3 text-sm text-[#e45d5d]">
-              {joinError}
+    <section className="mx-auto w-full max-w-[1088px]">
+      <div className="rounded-[34px] border border-[#e8ecfb] bg-white p-5 shadow-[0_22px_60px_rgba(80,94,133,0.08)] sm:p-6 lg:p-7">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
+          <div className="rounded-[30px] bg-white px-2 py-4 sm:px-3 sm:py-5">
+            <div className="text-sm font-medium text-[#b0bbd6]">
+              Шалгалтын Мэдээлэл
             </div>
-          )}
-        </div>
-
-        <div className="mt-8 rounded-[24px] border border-[#e6ecfb] bg-[#f8fbff] p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Info className="h-4 w-4 text-[#62a9ff]" />
-            Эхлэхийн өмнө
-          </div>
-          <ul className="mt-3 space-y-2 text-sm text-slate-500">
-            <li>Шалгалтын дүрэм, хугацааг урьдчилан шалгаарай.</li>
-            <li>Бүтэн дэлгэц ба хуулалтын эсрэг хамгаалалт автоматаар асна.</li>
-            <li>Шалгалт эхэлмэгц хариултууд автоматаар хадгалагдана.</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="rounded-[30px] border border-[#e8edf9] bg-white p-6 shadow-[0_22px_55px_rgba(68,84,125,0.08)]">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">
-              Өмнөх шалгалтууд
+            <h2 className="mt-1 text-[2rem] font-semibold tracking-[-0.05em] text-[#5c63ce]">
+              Шалгалтад нэвтрэх
             </h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Дүн гарсан шалгалтууд энд харагдана.
-            </p>
-          </div>
-          <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#5c6cff]">
-            {studentHistory.length} шалгалт
-          </span>
-        </div>
 
-        <div className="mt-5 space-y-3">
-          {loading &&
-            Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={index}
-                className="rounded-[24px] border border-[#e8edf9] bg-[#fbfdff] p-4 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.12)]"
-              >
-                <Skeleton className="h-[92px] rounded-[18px]" />
-              </div>
-            ))}
+            <div className="mt-5 max-w-[410px] space-y-4">
+              {loading ? (
+                <>
+                  <Skeleton className="h-12 rounded-[18px]" />
+                  <Skeleton className="ml-auto h-12 w-44 rounded-full" />
+                </>
+              ) : (
+                <>
+                  <input
+                    className="h-12 w-full rounded-[18px] border border-[#e4e9fb] bg-[#fbfcff] px-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-[#adb7cf] focus:border-[#aab7ff] focus:bg-white"
+                    placeholder="Өрөөний код"
+                    value={roomCodeInput}
+                    onChange={(event) =>
+                      setRoomCodeInput(event.target.value.toUpperCase())
+                    }
+                  />
 
-          {!loading && studentHistory.length === 0 && (
-            <div className="rounded-[24px] border border-dashed border-[#dbe3f6] bg-[#fbfcff] px-5 py-8 text-center text-sm text-slate-400">
-              Дүн гарсан шалгалт хараахан алга.
-            </div>
-          )}
-
-          {!loading &&
-            studentHistory.map((exam) => {
-              const grade = exam.grade ?? gradeFromPercentage(exam.percentage);
-
-              return (
-                <div
-                  key={`${exam.examId}-${exam.date}`}
-                  className="rounded-[24px] border border-[#e8edf9] bg-[#fbfcff] px-4 py-4"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="text-base font-semibold text-slate-900">
-                        {exam.title}
-                      </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-400">
-                        <span>{formatDate(exam.date)}</span>
-                        <span>
-                          Оноо {exam.score ?? "—"}/{exam.totalPoints ?? "—"}
-                        </span>
-                        <span>{exam.percentage}%</span>
-                      </div>
-                    </div>
-                    <span className="self-start rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
-                      {grade}
-                    </span>
+                  <div className="flex justify-end">
+                    <button
+                      className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#6758ee] to-[#5d50de] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(96,84,228,0.24)] transition hover:brightness-105 ${
+                        joinLoading ? "opacity-70" : ""
+                      }`}
+                      onClick={onLookup}
+                      disabled={joinLoading}
+                    >
+                      <Play className="h-4 w-4" />
+                      {joinLoading ? "Нэвтэрч байна..." : "Шалгалтад нэвтрэх"}
+                    </button>
                   </div>
+                </>
+              )}
+
+              {joinError && (
+                <div className="rounded-[18px] border border-[#ffd4d4] bg-[#fff7f7] px-4 py-3 text-sm text-[#e45d5d]">
+                  {joinError}
                 </div>
-              );
-            })}
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] bg-[#f6f8ff] px-5 py-5 sm:px-6">
+            <div className="flex items-center gap-2 text-[1.05rem] font-semibold text-[#5f6bcf]">
+              <CircleAlert className="h-4.5 w-4.5" />
+              Шалгалтын дүрэм ба мэдээлэл
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {loading
+                ? Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton
+                      key={index}
+                      className="h-[90px] rounded-[16px]"
+                    />
+                  ))
+                : infoItems.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                      <div
+                        key={item.title}
+                        className={`rounded-[16px] border px-4 py-3.5 ${item.className}`}
+                      >
+                        <div className="flex items-center gap-2 text-sm font-semibold">
+                          <Icon className={`h-4 w-4 ${item.iconClassName}`} />
+                          {item.title}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-400">
+                          {item.description}
+                        </div>
+                      </div>
+                    );
+                  })}
+            </div>
+          </div>
         </div>
       </div>
     </section>
