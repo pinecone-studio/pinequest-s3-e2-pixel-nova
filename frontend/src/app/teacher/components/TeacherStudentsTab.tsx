@@ -170,7 +170,8 @@ export default function TeacherStudentsTab({
   );
 
   const calendarHeight = HOURS.length * ROW_HEIGHT;
-  const calendarViewportHeight = VISIBLE_HOUR_COUNT * ROW_HEIGHT + CALENDAR_VIEWPORT_OFFSET;
+  const calendarViewportHeight =
+    VISIBLE_HOUR_COUNT * ROW_HEIGHT + CALENDAR_VIEWPORT_OFFSET;
   const scheduleMinWidth = TIME_COLUMN_WIDTH + Math.max(days.length, 5) * DAY_COLUMN_WIDTH;
 
   if (selectedExam) {
@@ -228,7 +229,7 @@ export default function TeacherStudentsTab({
             Хуваарь нэмэх
           </button>
 
-          <div className="inline-flex items-center gap-1 rounded-[20px] bg-[#dfe8ff] p-[5px] shadow-[0_12px_24px_-22px_rgba(59,130,246,0.55)] ring-1 ring-[#c9d9ff]">
+          <div className="inline-flex items-center gap-1 rounded-[999px] bg-[#dfe8ff] p-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_26px_-24px_rgba(59,130,246,0.5)]">
             <button
               type="button"
               onClick={() => setViewMode("cards")}
