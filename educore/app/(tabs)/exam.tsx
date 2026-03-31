@@ -188,32 +188,34 @@ function ExamListScreen() {
       };
     });
 
-  const missedHistoryItems: HistoryListItem[] = upcomingExams.flatMap((exam) => {
-    if (attemptedExamIds.has(exam.examId)) {
-      return [];
-    }
+  const missedHistoryItems: HistoryListItem[] = upcomingExams.flatMap(
+    (exam) => {
+      if (attemptedExamIds.has(exam.examId)) {
+        return [];
+      }
 
-    const scheduledAt = exam.scheduledAt ?? exam.startedAt;
-    const end = getExamEndDate(scheduledAt, exam.durationMin);
+      const scheduledAt = exam.scheduledAt ?? exam.startedAt;
+      const end = getExamEndDate(scheduledAt, exam.durationMin);
 
-    if (!end || now.getTime() < end.getTime()) {
-      return [];
-    }
+      if (!end || now.getTime() < end.getTime()) {
+        return [];
+      }
 
-    return [
-      {
-        id: `missed:${exam.examId}`,
-        examId: exam.examId,
-        title: exam.title,
-        date: formatListDate(scheduledAt),
-        time: formatListTime(end.toISOString()),
-        duration: exam.durationMin,
-        score: null,
-        status: "missed",
-        sortTime: end.getTime(),
-      },
-    ];
-  });
+      return [
+        {
+          id: `missed:${exam.examId}`,
+          examId: exam.examId,
+          title: exam.title,
+          date: formatListDate(scheduledAt),
+          time: formatListTime(end.toISOString()),
+          duration: exam.durationMin,
+          score: null,
+          status: "missed",
+          sortTime: end.getTime(),
+        },
+      ];
+    },
+  );
 
   const historyItems: HistoryListItem[] =
     realHistoryItems.length > 0 || missedHistoryItems.length > 0
@@ -226,49 +228,36 @@ function ExamListScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-<<<<<<< Updated upstream
-      showsVerticalScrollIndicator={false}>
-      <Text style={styles.pageTitle}>Шалгалтуудад</Text>
-=======
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.pageTitle}>ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€šÃ‘Æ’Ã‘Æ’ÃÂ´ÃÂ°ÃÂ´</Text>
->>>>>>> Stashed changes
+      <Text style={styles.pageTitle}>Шалгалтуудад</Text>
 
       {/* Tab switcher */}
       <View style={styles.tabRow}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "active" && styles.tabActive]}
-          onPress={() => setActiveTab("active")}>
+          onPress={() => setActiveTab("active")}
+        >
           <Text
             style={[
               styles.tabText,
               activeTab === "active" && styles.tabTextActive,
-<<<<<<< Updated upstream
-            ]}>
-            Шалгалтуудад
-=======
             ]}
           >
-            ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€šÃ‘Æ’Ã‘Æ’ÃÂ´ÃÂ°ÃÂ´
->>>>>>> Stashed changes
+            Шалгалтуудад
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === "history" && styles.tabActive]}
-          onPress={() => setActiveTab("history")}>
+          onPress={() => setActiveTab("history")}
+        >
           <Text
             style={[
               styles.tabText,
               activeTab === "history" && styles.tabTextActive,
-<<<<<<< Updated upstream
-            ]}>
-            Шалгалтын түүх
-=======
             ]}
           >
-            ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€šÃ‘â€¹ÃÂ½ Ã‘â€šÃ’Â¯Ã’Â¯Ã‘â€¦
->>>>>>> Stashed changes
+            Шалгалтын түүх
           </Text>
         </TouchableOpacity>
       </View>
@@ -299,7 +288,8 @@ function ExamListScreen() {
 const MOCK_ACTIVE = [
   {
     id: "1",
-    title: "ÃÅ“ÃÂ°Ã‘â€šÃÂµÃÂ¼ÃÂ°Ã‘â€šÃÂ¸ÃÂº ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
+    title:
+      "ÃÅ“ÃÂ°Ã‘â€šÃÂµÃÂ¼ÃÂ°Ã‘â€šÃÂ¸ÃÂº ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
     date: "2026/03/30",
     time: "11:00",
     duration: 40,
@@ -307,7 +297,8 @@ const MOCK_ACTIVE = [
   },
   {
     id: "2",
-    title: "ÃÅ“ÃÂ¾ÃÂ½ÃÂ³ÃÂ¾ÃÂ» Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
+    title:
+      "ÃÅ“ÃÂ¾ÃÂ½ÃÂ³ÃÂ¾ÃÂ» Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
     date: "2026/03/30",
     time: "11:00",
     duration: 40,
@@ -315,7 +306,8 @@ const MOCK_ACTIVE = [
   },
   {
     id: "3",
-    title: "ÃÅ“ÃÂ¾ÃÂ½ÃÂ³ÃÂ¾ÃÂ» Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
+    title:
+      "ÃÅ“ÃÂ¾ÃÂ½ÃÂ³ÃÂ¾ÃÂ» Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
     date: "2026/03/30",
     time: "11:00",
     duration: 40,
@@ -327,7 +319,8 @@ const MOCK_HISTORY = [
   {
     id: "h1",
     examId: "mock-h1",
-    title: "ÃÅ“ÃÂ°Ã‘â€šÃÂµÃÂ¼ÃÂ°Ã‘â€šÃÂ¸ÃÂº ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
+    title:
+      "ÃÅ“ÃÂ°Ã‘â€šÃÂµÃÂ¼ÃÂ°Ã‘â€šÃÂ¸ÃÂº ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
     date: "2026/03/30",
     time: "11:38",
     duration: 40,
@@ -338,7 +331,8 @@ const MOCK_HISTORY = [
   {
     id: "h2",
     examId: "mock-h2",
-    title: "ÃÂÃÂ½ÃÂ³ÃÂ»ÃÂ¸ Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
+    title:
+      "ÃÂÃÂ½ÃÂ³ÃÂ»ÃÂ¸ Ã‘â€¦Ã‘ÂÃÂ» ÃÂ¯Ã‘â€ Ã‘â€¹ÃÂ½ ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š",
     date: "2026/03/30",
     time: "11:00",
     duration: 40,
@@ -347,8 +341,6 @@ const MOCK_HISTORY = [
     sortTime: new Date("2026-03-30T11:00:00").getTime(),
   },
 ];
-
-
 
 function ActiveExamList({
   search,
@@ -366,9 +358,13 @@ function ActiveExamList({
     return (
       <View style={styles.emptyCard}>
         <Text style={styles.emptyEmoji}>Ã°Å¸â€œÂ­</Text>
-        <Text style={styles.emptyTitle}>ÃËœÃÂ´Ã‘ÂÃÂ²Ã‘â€¦Ã‘â€šÃ‘ÂÃÂ¹ Ã‘Ë†ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š ÃÂ±ÃÂ°ÃÂ¹Ã‘â€¦ÃÂ³Ã’Â¯ÃÂ¹</Text>
+        <Text style={styles.emptyTitle}>
+          ÃËœÃÂ´Ã‘ÂÃÂ²Ã‘â€¦Ã‘â€šÃ‘ÂÃÂ¹ Ã‘Ë†ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š
+          ÃÂ±ÃÂ°ÃÂ¹Ã‘â€¦ÃÂ³Ã’Â¯ÃÂ¹
+        </Text>
         <Text style={styles.emptyText}>
-          Ãâ€˜ÃÂ°ÃÂ³Ã‘Ë† Ã‘Ë†ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š ÃÂ½Ã‘ÂÃ‘ÂÃ‘â€¦Ã‘ÂÃÂ´ room code-ÃÂ¾ÃÂ¾Ã‘â‚¬ ÃÂ½Ã‘ÂÃÂ³ÃÂ´Ã‘ÂÃÂ½Ã‘Â Ã’Â¯Ã’Â¯.
+          Ãâ€˜ÃÂ°ÃÂ³Ã‘Ë† Ã‘Ë†ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€š ÃÂ½Ã‘ÂÃ‘ÂÃ‘â€¦Ã‘ÂÃÂ´ room
+          code-ÃÂ¾ÃÂ¾Ã‘â‚¬ ÃÂ½Ã‘ÂÃÂ³ÃÂ´Ã‘ÂÃÂ½Ã‘Â Ã’Â¯Ã’Â¯.
         </Text>
       </View>
     );
@@ -410,32 +406,34 @@ function ActiveExamList({
                 <Text style={styles.upcomingMetaValue}>{exam.date}</Text>
               </View>
               <View style={styles.upcomingMetaRow}>
-                <Text style={styles.upcomingMetaLabel}>Ð­Ñ…ÑÐ»ÑÑÐ½ Ñ†Ð°Ð³:</Text>
+                <Text style={styles.upcomingMetaLabel}>
+                  Ð­Ñ…ÑÐ»ÑÑÐ½ Ñ†Ð°Ð³:
+                </Text>
                 <Text style={styles.upcomingMetaValue}>{exam.time}</Text>
               </View>
               <View style={styles.upcomingMetaRow}>
-                <Text style={styles.upcomingMetaLabel}>Ò®Ñ€Ð³ÑÐ»Ð¶Ð¸Ð»ÑÑÐ½ Ñ…ÑƒÐ³Ð°Ñ†Ð°Ð°:</Text>
-                <Text style={styles.upcomingMetaValue}>{exam.duration} Ð¼Ð¸Ð½ÑƒÑ‚</Text>
+                <Text style={styles.upcomingMetaLabel}>
+                  Ò®Ñ€Ð³ÑÐ»Ð¶Ð¸Ð»ÑÑÐ½ Ñ…ÑƒÐ³Ð°Ñ†Ð°Ð°:
+                </Text>
+                <Text style={styles.upcomingMetaValue}>
+                  {exam.duration} Ð¼Ð¸Ð½ÑƒÑ‚
+                </Text>
               </View>
             </View>
             {exam.status === "active" ? (
               <TouchableOpacity
-<<<<<<< Updated upstream
                 style={[styles.primaryBtn, { marginTop: 6 }]}
-                onPress={() => router.push("/exam")}>
-                <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
-=======
-                style={styles.upcomingPrimaryButton}
                 onPress={() => router.push("/exam")}
               >
-                <Text style={styles.primaryBtnText}>ÃÂ¨ÃÂ°ÃÂ»ÃÂ³ÃÂ°ÃÂ»Ã‘â€šÃÂ°ÃÂ½ÃÂ´ ÃÂ¾Ã‘â‚¬ÃÂ¾Ã‘â€¦</Text>
->>>>>>> Stashed changes
+                <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
               </TouchableOpacity>
             ) : (
               <>
                 <View style={styles.upcomingDivider} />
                 <TouchableOpacity style={styles.upcomingDetailRow}>
-                  <Text style={styles.upcomingDetailText}>Ð”ÑÐ»Ð³ÑÑ€ÑÐ½Ð³Ò¯Ð¹</Text>
+                  <Text style={styles.upcomingDetailText}>
+                    Ð”ÑÐ»Ð³ÑÑ€ÑÐ½Ð³Ò¯Ð¹
+                  </Text>
                   <Text style={styles.upcomingDetailArrow}>â€º</Text>
                 </TouchableOpacity>
               </>
@@ -447,7 +445,13 @@ function ActiveExamList({
   );
 }
 
-function HistoryList({ search, items }: { search: string; items: HistoryListItem[] }) {
+function HistoryList({
+  search,
+  items,
+}: {
+  search: string;
+  items: HistoryListItem[];
+}) {
   const filtered = items.filter((e) =>
     e.title.toLowerCase().includes(search.toLowerCase()),
   );
@@ -471,16 +475,6 @@ function HistoryList({ search, items }: { search: string; items: HistoryListItem
             <View
               style={[
                 styles.statusPill,
-<<<<<<< Updated upstream
-                exam.score >= 60 ? undefined : styles.statusPillWarning,
-              ]}>
-              <Text
-                style={[
-                  styles.statusPillText,
-                  exam.score >= 60 ? undefined : styles.statusPillTextWarning,
-                ]}>
-                {exam.score}%
-=======
                 exam.status === "missed"
                   ? styles.statusPillDanger
                   : exam.status === "pending"
@@ -503,7 +497,6 @@ function HistoryList({ search, items }: { search: string; items: HistoryListItem
                   : exam.status === "pending"
                     ? "Шалгаж байна"
                     : "Өгсөн"}
->>>>>>> Stashed changes
               </Text>
             </View>
           </View>
@@ -705,7 +698,6 @@ export default function ExamScreen() {
   }
 
   if (!activeSession) {
-<<<<<<< Updated upstream
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
         <Text style={styles.pageTitle}>Шалгалт</Text>
@@ -717,20 +709,19 @@ export default function ExamScreen() {
           </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() => router.push("/join")}>
+            onPress={() => router.push("/join")}
+          >
             <Text style={styles.primaryBtnText}>Шалгалтанд нэгдэх</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.secondaryBtn}
-            onPress={() => router.push("/home")}>
+            onPress={() => router.push("/home")}
+          >
             <Text style={styles.secondaryBtnText}>Нүүр хуудас руу буцах</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     );
-=======
-    return <ExamListScreen />;
->>>>>>> Stashed changes
   }
 
   // ── Active / joined session ────────────────────────────────────────────────
@@ -770,7 +761,8 @@ export default function ExamScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.pageTitle}>Шалгалт</Text>
 
       <View style={styles.examCard}>
@@ -797,13 +789,15 @@ export default function ExamScreen() {
                 styles.statusPill,
                 activeSession.entryStatus === "late" &&
                   styles.statusPillWarning,
-              ]}>
+              ]}
+            >
               <Text
                 style={[
                   styles.statusPillText,
                   activeSession.entryStatus === "late" &&
                     styles.statusPillTextWarning,
-                ]}>
+                ]}
+              >
                 {activeSession.entryStatus === "late"
                   ? "Хоцорсон"
                   : getEntryStatusLabel(activeSession.entryStatus)}
@@ -853,12 +847,14 @@ export default function ExamScreen() {
             <>
               <TouchableOpacity
                 style={styles.primaryBtn}
-                onPress={() => void handleStart()}>
+                onPress={() => void handleStart()}
+              >
                 <Text style={styles.primaryBtnText}>Шалгалт эхлүүлэх</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.secondaryBtn}
-                onPress={() => void recoverActiveSession()}>
+                onPress={() => void recoverActiveSession()}
+              >
                 <Text style={styles.secondaryBtnText}>Шинэчлэх</Text>
               </TouchableOpacity>
             </>
@@ -905,12 +901,14 @@ export default function ExamScreen() {
                     style={[
                       styles.optionButton,
                       selected && styles.optionButtonSelected,
-                    ]}>
+                    ]}
+                  >
                     <Text
                       style={[
                         styles.optionLabel,
                         selected && styles.optionLabelSelected,
-                      ]}>
+                      ]}
+                    >
                       {option.label}. {option.text}
                     </Text>
                   </Pressable>
@@ -942,7 +940,8 @@ export default function ExamScreen() {
                 styles.navBtnDisabled,
             ]}
             disabled={activeSession.currentQuestionIndex === 0 || isSyncBlocked}
-            onPress={() => void moveQuestion(-1)}>
+            onPress={() => void moveQuestion(-1)}
+          >
             <Text style={styles.navBtnText}>← Өмнөх</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -957,13 +956,15 @@ export default function ExamScreen() {
               activeSession.currentQuestionIndex >=
                 activeSession.questions.length - 1 || isSyncBlocked
             }
-            onPress={() => void moveQuestion(1)}>
+            onPress={() => void moveQuestion(1)}
+          >
             <Text style={styles.navBtnText}>Дараах →</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.primaryBtn, isSyncBlocked && styles.navBtnDisabled]}
             disabled={isSyncBlocked}
-            onPress={() => void handleSubmit(false)}>
+            onPress={() => void handleSubmit(false)}
+          >
             <Text style={styles.primaryBtnText}>
               {submitting ? "Илгээж байна..." : "Шалгалт илгээх"}
             </Text>
