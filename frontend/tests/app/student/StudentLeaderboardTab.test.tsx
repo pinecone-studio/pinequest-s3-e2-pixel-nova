@@ -25,28 +25,6 @@ describe("StudentLeaderboardTab", () => {
             level: 3,
           },
         ]}
-        improvementLeaderboard={[
-          {
-            rank: 1,
-            id: "current-student",
-            fullName: "Anu Bold",
-            xp: 25,
-            level: 1,
-            examCount: 3,
-            improvementCount: 2,
-            missedCount: 0,
-          },
-          {
-            rank: 2,
-            id: "s2",
-            fullName: "Saraa T.",
-            xp: 10,
-            level: 1,
-            examCount: 2,
-            improvementCount: 1,
-            missedCount: 0,
-          },
-        ]}
       />,
     );
 
@@ -66,7 +44,9 @@ describe("StudentLeaderboardTab", () => {
     );
     expect(screen.getByText("Нийт XP Leaderboard")).toBeInTheDocument();
     expect(
-      screen.getByText("Энэ самбар нь сурагчдыг нийт XP болон level-ээр нь эрэмбэлж харуулна."),
+      screen.getByText(
+        "Энэ самбар нь сурагчдыг нийт XP болон level-ээр нь эрэмбэлж харуулна.",
+      ),
     ).toBeInTheDocument();
     const xpLeaderboard = screen.getByTestId("xp-leaderboard");
     expect(within(xpLeaderboard).getByText("Anu")).toBeInTheDocument();
@@ -87,10 +67,18 @@ describe("StudentLeaderboardTab", () => {
         "Өмнөх явцын шалгалтаасаа ахисан хувьтай тэнцэх growth XP авна. 100 → 100 бол +10 XP, тасалбал -10 XP хасагдана.",
       ),
     ).toBeInTheDocument();
-    const improvementLeaderboard = screen.getByTestId("improvement-leaderboard");
-    expect(within(improvementLeaderboard).getByText("25 XP")).toBeInTheDocument();
-    expect(within(improvementLeaderboard).getAllByText("2 ахиц").length).toBeGreaterThan(0);
-    expect(within(improvementLeaderboard).getByText("Тэмүүлэн")).toBeInTheDocument();
+    const improvementLeaderboard = screen.getByTestId(
+      "improvement-leaderboard",
+    );
+    expect(
+      within(improvementLeaderboard).getByText("25 XP"),
+    ).toBeInTheDocument();
+    expect(
+      within(improvementLeaderboard).getAllByText("2 ахиц").length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(improvementLeaderboard).getByText("Тэмүүлэн"),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("you")).toHaveLength(1);
     expect(
       within(improvementLeaderboard).getAllByText(/^Lvl \d+$/),
@@ -109,7 +97,6 @@ describe("StudentLeaderboardTab", () => {
           termExamCount: 0,
         }}
         leaderboardEntries={[]}
-        improvementLeaderboard={[]}
       />,
     );
 
@@ -125,10 +112,16 @@ describe("StudentLeaderboardTab", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: /Ахицын XP/i }));
 
-    expect(screen.queryByText("Одоогоор XP leaderboard хоосон байна.")).not.toBeInTheDocument();
-    const improvementLeaderboard = screen.getByTestId("improvement-leaderboard");
+    expect(
+      screen.queryByText("Одоогоор XP leaderboard хоосон байна."),
+    ).not.toBeInTheDocument();
+    const improvementLeaderboard = screen.getByTestId(
+      "improvement-leaderboard",
+    );
     expect(within(improvementLeaderboard).getByText("Anu")).toBeInTheDocument();
-    expect(within(improvementLeaderboard).getAllByText("34 XP").length).toBeGreaterThan(0);
+    expect(
+      within(improvementLeaderboard).getAllByText("34 XP").length,
+    ).toBeGreaterThan(0);
     expect(
       within(improvementLeaderboard).getAllByText(/^Lvl \d+$/),
     ).toHaveLength(10);
