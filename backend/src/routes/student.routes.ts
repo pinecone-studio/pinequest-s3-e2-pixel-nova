@@ -221,6 +221,7 @@ studentRoutes.get("/exams", async (c) => {
       title: exams.title,
       sessionStatus: examSessions.status,
       score: examSessions.score,
+      scheduledAt: exams.scheduledAt,
       startedAt: examSessions.startedAt,
       submittedAt: examSessions.submittedAt,
     })
