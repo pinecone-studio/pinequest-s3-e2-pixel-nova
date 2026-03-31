@@ -2,14 +2,28 @@ import type { User } from "@/lib/examGuard";
 import { apiRequest } from "./client";
 
 export type CheatFlaggedStudent = {
+  sessionId: string;
   studentId: string;
   fullName: string;
   flagCount: number;
   eventCount: number;
+  violationScore: number;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  lastViolationAt?: string | null;
+  topViolationType?: string | null;
+};
+
+export type CheatEventPayload = {
+  sessionId: string;
+  eventType: string;
+  source?: string;
+  confidence?: number;
+  details?: Record<string, string | number | boolean | null>;
+  metadata?: string;
 };
 
 export const reportCheatEvent = (
-  payload: { sessionId: string; eventType: string; metadata?: string },
+  payload: CheatEventPayload,
   user?: User | null,
 ) =>
   apiRequest("/api/cheat/event", {

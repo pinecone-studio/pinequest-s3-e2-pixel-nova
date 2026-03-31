@@ -41,6 +41,7 @@ export type Exam = {
 export type ViolationLog = {
   type: string;
   timestamp: string;
+  source?: string;
 };
 
 export type Violations = {
@@ -50,6 +51,11 @@ export type Violations = {
   pasteAttempt: number;
   fullscreenExit: number;
   keyboardShortcut: number;
+  idleTooLong?: number;
+  rightClick?: number;
+  suspiciousResize?: number;
+  eventCount?: number;
+  riskLevel?: "low" | "medium" | "high" | "critical";
   log: ViolationLog[];
 };
 

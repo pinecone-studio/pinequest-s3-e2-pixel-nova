@@ -145,6 +145,7 @@ export type CheatEventType =
   | 'multiple_faces'
   | 'looking_away'
   | 'looking_down'
+  | 'camera_blocked'
   | 'disqualification';
 
 export type IntegrityCapability = {

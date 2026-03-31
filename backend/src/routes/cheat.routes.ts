@@ -34,6 +34,7 @@ const EVENT_TYPES = [
   "multiple_faces",
   "looking_away",
   "looking_down",
+  "camera_blocked",
   "disqualification",
 ] as const;
 
@@ -63,10 +64,65 @@ const SEVERITY_MAP: Record<EventType, { severity: string; weight: number }> = {
   screen_capture:     { severity: "critical", weight: 8 },
   multiple_monitors:  { severity: "critical", weight: 8 },
   multiple_faces:     { severity: "critical", weight: 8 },
+  camera_blocked:     { severity: "high",     weight: 4 },
   disqualification:   { severity: "critical", weight: 8 },
 };
 
 const FLAG_THRESHOLD = 6;
+const HIGH_RISK_THRESHOLD = 8;
+const CRITICAL_RISK_THRESHOLD = 12;
+
+const EVENT_SOURCES = [
+  "browser",
+  "browser_camera",
+  "mobile_camera",
+  "mobile_camera_ai",
+  "teacher_action",
+  "system",
+  "unknown",
+] as const;
+
+type EventSource = (typeof EVENT_SOURCES)[number];
+type RiskLevel = "low" | "medium" | "high" | "critical";
+
+const EVENT_COOLDOWN_MS: Partial<Record<EventType, number>> = {
+  tab_switch: 5_000,
+  tab_hidden: 5_000,
+  window_blur: 5_000,
+  copy_paste: 3_000,
+  right_click: 3_000,
+  devtools_open: 10_000,
+  multiple_monitors: 15_000,
+  suspicious_resize: 10_000,
+  rapid_answers: 10_000,
+  idle_too_long: 60_000,
+  face_missing: 15_000,
+  multiple_faces: 15_000,
+  looking_away: 15_000,
+  looking_down: 15_000,
+  camera_blocked: 20_000,
+  disqualification: 0,
+};
+
+const EVENT_LABELS: Record<EventType, string> = {
+  tab_switch: "Tab switch",
+  tab_hidden: "Fullscreen exit",
+  window_blur: "Window blur",
+  copy_paste: "Copy or paste",
+  right_click: "Context menu",
+  screen_capture: "Screen capture",
+  devtools_open: "Devtools shortcut",
+  multiple_monitors: "Multiple monitors",
+  suspicious_resize: "Suspicious resize",
+  rapid_answers: "Rapid answers",
+  idle_too_long: "Idle too long",
+  face_missing: "Face missing",
+  multiple_faces: "Multiple faces",
+  looking_away: "Looking away",
+  looking_down: "Looking down",
+  camera_blocked: "Camera blocked",
+  disqualification: "Disqualification",
+};
 
 const SNAPSHOT_INTERVAL_MS = 15_000;
 const SNAPSHOT_OBJECT_PREFIX = "cheat-snapshots";
@@ -436,6 +492,247 @@ const verifyTeacherSnapshotAccess = async (
   return exam ?? null;
 };
 
+const structuredDetailValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
+
+const eventSchema = z.object({
+  sessionId: z.string().min(1),
+  eventType: z.enum(EVENT_TYPES),
+  source: z.enum(EVENT_SOURCES).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  details: z.record(z.string(), structuredDetailValueSchema).optional(),
+  metadata: z.string().optional(),
+});
+
+type StructuredEventPayload = z.infer<typeof eventSchema>;
+
+type StoredCheatEvent = {
+  eventType: EventType;
+  eventSource: EventSource | string | null;
+  createdAt: string;
+};
+
+const parseStructuredMetadata = (payload: StructuredEventPayload) => {
+  let rawMetadata: unknown = null;
+  if (payload.metadata) {
+    try {
+      rawMetadata = JSON.parse(payload.metadata);
+    } catch {
+      rawMetadata = payload.metadata;
+    }
+  }
+
+  const metadataRecord =
+    rawMetadata && typeof rawMetadata === "object" && !Array.isArray(rawMetadata)
+      ? (rawMetadata as Record<string, unknown>)
+      : {};
+  const detailsRecord = payload.details ?? {};
+  const source =
+    payload.source ??
+    (typeof metadataRecord.source === "string"
+      ? (metadataRecord.source as EventSource)
+      : "unknown");
+  const confidence =
+    payload.confidence ??
+    (typeof metadataRecord.confidence === "number"
+      ? clampConfidence(metadataRecord.confidence)
+      : undefined);
+
+  const normalizedDetails = Object.entries({
+    ...detailsRecord,
+    ...metadataRecord,
+  }).reduce<Record<string, string | number | boolean | null>>((acc, [key, value]) => {
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean" ||
+      value === null
+    ) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+
+  delete normalizedDetails.source;
+  delete normalizedDetails.confidence;
+  delete normalizedDetails.timestamp;
+
+  return {
+    confidence,
+    details: normalizedDetails,
+    source: EVENT_SOURCES.includes(source as EventSource)
+      ? (source as EventSource)
+      : "unknown",
+  };
+};
+
+const buildEventDedupeKey = ({
+  eventType,
+  source,
+  details,
+}: {
+  eventType: EventType;
+  source: EventSource;
+  details: Record<string, string | number | boolean | null>;
+}) => {
+  const stableDetails = Object.entries(details)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}:${String(value)}`)
+    .join("|");
+
+  return [eventType, source, stableDetails].filter(Boolean).join("::");
+};
+
+const parseTimestamp = (value: string | null | undefined) => {
+  if (!value) return null;
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
+
+const shouldThrottleEvent = ({
+  dedupeKey,
+  eventType,
+  previousEvent,
+}: {
+  dedupeKey: string;
+  eventType: EventType;
+  previousEvent:
+    | {
+        createdAt: string;
+        dedupeKey: string | null;
+      }
+    | null;
+}) => {
+  if (!previousEvent || !previousEvent.createdAt) {
+    return false;
+  }
+
+  const previousTimestamp = parseTimestamp(previousEvent.createdAt);
+  if (previousTimestamp === null) {
+    return false;
+  }
+
+  const cooldownMs = EVENT_COOLDOWN_MS[eventType] ?? 0;
+  if (cooldownMs <= 0) {
+    return false;
+  }
+
+  return (
+    previousEvent.dedupeKey === dedupeKey &&
+    Date.now() - previousTimestamp < cooldownMs
+  );
+};
+
+const computeRiskLevel = (
+  violationScore: number,
+  uniqueSources: number,
+): RiskLevel => {
+  if (
+    violationScore >= CRITICAL_RISK_THRESHOLD ||
+    (violationScore >= HIGH_RISK_THRESHOLD && uniqueSources >= 2)
+  ) {
+    return "critical";
+  }
+  if (
+    violationScore >= HIGH_RISK_THRESHOLD ||
+    (violationScore >= FLAG_THRESHOLD && uniqueSources >= 2)
+  ) {
+    return "high";
+  }
+  if (violationScore >= 3) {
+    return "medium";
+  }
+  return "low";
+};
+
+const summarizeSessionRisk = (events: StoredCheatEvent[]) => {
+  const uniqueSources = new Set<string>();
+  let violationScore = 0;
+  let topViolationType: EventType | null = null;
+  let topViolationWeight = -1;
+  let topViolationCount = -1;
+  let lastViolationAt: string | null = null;
+  const countsByType = new Map<EventType, number>();
+
+  for (const event of events) {
+    const eventType = event.eventType;
+    const source = event.eventSource ?? "unknown";
+    uniqueSources.add(source);
+    violationScore += SEVERITY_MAP[eventType]?.weight ?? 0;
+
+    const nextCount = (countsByType.get(eventType) ?? 0) + 1;
+    countsByType.set(eventType, nextCount);
+
+    const weight = SEVERITY_MAP[eventType]?.weight ?? 0;
+    if (
+      weight > topViolationWeight ||
+      (weight === topViolationWeight && nextCount > topViolationCount)
+    ) {
+      topViolationType = eventType;
+      topViolationWeight = weight;
+      topViolationCount = nextCount;
+    }
+
+    if (!lastViolationAt || (parseTimestamp(event.createdAt) ?? 0) > (parseTimestamp(lastViolationAt) ?? 0)) {
+      lastViolationAt = event.createdAt;
+    }
+  }
+
+  const riskLevel = computeRiskLevel(violationScore, uniqueSources.size);
+
+  return {
+    flagCount: events.length,
+    isFlagged: violationScore >= FLAG_THRESHOLD || riskLevel === "high" || riskLevel === "critical",
+    lastViolationAt,
+    riskLevel,
+    topViolationType,
+    violationScore,
+  };
+};
+
+const getSessionRiskSummary = async (
+  db: ReturnType<typeof getDb>,
+  sessionId: string,
+) => {
+  const sessionEvents = await db
+    .select({
+      createdAt: cheatEvents.createdAt,
+      eventSource: cheatEvents.eventSource,
+      eventType: cheatEvents.eventType,
+    })
+    .from(cheatEvents)
+    .where(eq(cheatEvents.sessionId, sessionId));
+
+  return summarizeSessionRisk(sessionEvents as StoredCheatEvent[]);
+};
+
+const parseJsonField = (value: string | null | undefined) => {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const formatCheatEventForResponse = <
+  T extends {
+    confidence?: number | null;
+    details?: string | null;
+    metadata?: string | null;
+  },
+>(
+  event: T,
+) => ({
+  ...event,
+  details: parseJsonField(event.details ?? null),
+  metadata: parseJsonField(event.metadata ?? null),
+});
+
 // ---------------------------------------------------------------------------
 // POST /snapshot-upload-url — Create a presigned upload URL for a camera snapshot
 // ---------------------------------------------------------------------------
@@ -541,29 +838,54 @@ cheatRoutes.get("/snapshot-assets", async (c) => {
 // ---------------------------------------------------------------------------
 // POST /event — Report a cheat event (student only)
 // ---------------------------------------------------------------------------
-const eventSchema = z.object({
-  sessionId: z.string().min(1),
-  eventType: z.enum(EVENT_TYPES),
-  metadata: z.string().optional(),
-});
-
 cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchema), async (c) => {
-  const { sessionId, eventType, metadata } = c.req.valid("json");
+  const payload = c.req.valid("json");
+  const { sessionId, eventType } = payload;
   const user = c.get("user");
   const db = getDb(c.env.educore);
 
-  // Verify session belongs to student
-  const [session] = await db
-    .select()
-    .from(examSessions)
-    .where(and(eq(examSessions.id, sessionId), eq(examSessions.studentId, user.id)))
-    .limit(1);
-
+  const session = await verifyStudentSession(db, sessionId, user.id);
   if (!session) {
     return notFound(c, "Session");
   }
 
-  const { severity, weight } = SEVERITY_MAP[eventType];
+  if (session.status !== "in_progress") {
+    return error(
+      c,
+      "INVALID_STATUS",
+      "Cheat events are only accepted while a session is in progress.",
+      409,
+    );
+  }
+
+  const { confidence, details, source } = parseStructuredMetadata(payload);
+  const dedupeKey = buildEventDedupeKey({ eventType, source, details });
+  const [previousEvent] = await db
+    .select({
+      createdAt: cheatEvents.createdAt,
+      dedupeKey: cheatEvents.dedupeKey,
+    })
+    .from(cheatEvents)
+    .where(and(eq(cheatEvents.sessionId, sessionId), eq(cheatEvents.eventType, eventType)))
+    .orderBy(sql`${cheatEvents.createdAt} DESC`)
+    .limit(1);
+
+  if (
+    shouldThrottleEvent({
+      dedupeKey,
+      eventType,
+      previousEvent: previousEvent ?? null,
+    })
+  ) {
+    return success(c, {
+      deduped: true,
+      flagged: Boolean(session.isFlagged),
+      riskLevel: (session.riskLevel ?? "low") as RiskLevel,
+      violationScore: Number(session.violationScore ?? 0),
+    });
+  }
+
+  const { severity } = SEVERITY_MAP[eventType];
 
   // Insert cheat event
   const eventId = newId();
@@ -573,22 +895,27 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     examId: session.examId,
     studentId: user.id,
     eventType,
+    eventSource: source,
+    confidence: confidence ?? null,
+    details: Object.keys(details).length > 0 ? JSON.stringify(details) : null,
+    dedupeKey,
     severity,
-    metadata: metadata ?? null,
+    metadata: payload.metadata ?? null,
     isNotified: false,
   });
 
-  const nextViolationScore = Number(session.violationScore ?? 0) + weight;
-  const flagCount = Number(session.flagCount ?? 0) + 1;
-  const isFlagged = nextViolationScore >= FLAG_THRESHOLD;
+  const riskSummary = await getSessionRiskSummary(db, sessionId);
 
   // Update session flag status
   await db
     .update(examSessions)
     .set({
-      isFlagged,
-      flagCount,
-      violationScore: nextViolationScore,
+      flagCount: riskSummary.flagCount,
+      isFlagged: riskSummary.isFlagged,
+      violationScore: riskSummary.violationScore,
+      riskLevel: riskSummary.riskLevel,
+      lastViolationAt: riskSummary.lastViolationAt,
+      topViolationType: riskSummary.topViolationType,
     })
     .where(eq(examSessions.id, sessionId));
 
@@ -613,11 +940,23 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
       user.id,
       student?.fullName ?? user.id,
       eventType,
-      isFlagged ? "critical" : severity === "critical" ? "critical" : "warning",
+      riskSummary.riskLevel === "critical" || severity === "critical"
+        ? "critical"
+        : "warning",
     );
   }
 
-  return success(c, { eventId, flagged: isFlagged }, 201);
+  return success(
+    c,
+    {
+      deduped: false,
+      eventId,
+      flagged: riskSummary.isFlagged,
+      riskLevel: riskSummary.riskLevel,
+      violationScore: riskSummary.violationScore,
+    },
+    201,
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -706,7 +1045,7 @@ cheatRoutes.get("/events/:examId", requireRole("teacher"), async (c) => {
     .where(eq(cheatEvents.examId, examId))
     .orderBy(sql`${cheatEvents.createdAt} DESC`);
 
-  return success(c, events);
+  return success(c, events.map((event) => formatCheatEventForResponse(event)));
 });
 
 // ---------------------------------------------------------------------------
@@ -734,7 +1073,7 @@ cheatRoutes.get("/events/:examId/:studentId", requireRole("teacher"), async (c) 
     .where(and(eq(cheatEvents.examId, examId), eq(cheatEvents.studentId, studentId)))
     .orderBy(sql`${cheatEvents.createdAt} DESC`);
 
-  return success(c, events);
+  return success(c, events.map((event) => formatCheatEventForResponse(event)));
 });
 
 // ---------------------------------------------------------------------------
@@ -758,9 +1097,14 @@ cheatRoutes.get("/flagged/:examId", requireRole("teacher"), async (c) => {
   // Query flagged sessions joined with students
   const flaggedSessions = await db
     .select({
+      sessionId: examSessions.id,
       studentId: examSessions.studentId,
       fullName: students.fullName,
       flagCount: examSessions.flagCount,
+      riskLevel: examSessions.riskLevel,
+      violationScore: examSessions.violationScore,
+      lastViolationAt: examSessions.lastViolationAt,
+      topViolationType: examSessions.topViolationType,
     })
     .from(examSessions)
     .innerJoin(students, eq(examSessions.studentId, students.id))
@@ -769,16 +1113,27 @@ cheatRoutes.get("/flagged/:examId", requireRole("teacher"), async (c) => {
   // For each flagged student, count cheat events
   const result = await Promise.all(
     flaggedSessions.map(async (fs) => {
-      const [eventCount] = await db
-        .select({ count: sql<number>`count(*)` })
+      const studentEvents = await db
+        .select({
+          createdAt: cheatEvents.createdAt,
+          eventSource: cheatEvents.eventSource,
+          eventType: cheatEvents.eventType,
+        })
         .from(cheatEvents)
         .where(and(eq(cheatEvents.examId, examId), eq(cheatEvents.studentId, fs.studentId)));
 
+      const riskSummary = summarizeSessionRisk(studentEvents as StoredCheatEvent[]);
+
       return {
+        sessionId: fs.sessionId,
         studentId: fs.studentId,
         fullName: fs.fullName,
-        flagCount: fs.flagCount,
-        eventCount: eventCount.count,
+        flagCount: Number(fs.flagCount ?? riskSummary.flagCount),
+        eventCount: studentEvents.length,
+        lastViolationAt: fs.lastViolationAt ?? riskSummary.lastViolationAt,
+        riskLevel: (fs.riskLevel ?? riskSummary.riskLevel) as RiskLevel,
+        topViolationType: fs.topViolationType ?? riskSummary.topViolationType,
+        violationScore: Number(fs.violationScore ?? riskSummary.violationScore),
       };
     })
   );
@@ -819,7 +1174,7 @@ cheatRoutes.get("/notifications/:examId", requireRole("teacher"), async (c) => {
       .where(and(eq(cheatEvents.examId, examId), eq(cheatEvents.isNotified, false)));
   }
 
-  return success(c, events);
+  return success(c, events.map((event) => formatCheatEventForResponse(event)));
 });
 
 // ---------------------------------------------------------------------------
@@ -891,7 +1246,13 @@ cheatRoutes.post("/disqualify/:sessionId", requireRole("teacher"), zValidator("j
   // Update session status to disqualified
   await db
     .update(examSessions)
-    .set({ status: "disqualified" })
+    .set({
+      status: "disqualified",
+      isFlagged: true,
+      riskLevel: "critical",
+      lastViolationAt: new Date().toISOString(),
+      topViolationType: "disqualification",
+    })
     .where(eq(examSessions.id, sessionId));
 
   // Insert a cheat event for the disqualification
@@ -902,6 +1263,10 @@ cheatRoutes.post("/disqualify/:sessionId", requireRole("teacher"), zValidator("j
     examId: session.examId,
     studentId: session.studentId,
     eventType: "disqualification",
+    eventSource: "teacher_action",
+    confidence: 1,
+    details: JSON.stringify({ reason }),
+    dedupeKey: `disqualification::teacher_action::${sessionId}`,
     severity: "critical",
     metadata: JSON.stringify({ reason }),
     isNotified: false,

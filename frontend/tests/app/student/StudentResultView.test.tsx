@@ -2,6 +2,12 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import StudentResultView from "@/app/student/components/StudentResultView";
 import type { Submission } from "@/app/student/types";
 
+const defaultResultProps = {
+	resultPending: false,
+	resultCountdown: "00:00",
+	resultReleaseAt: null,
+};
+
 const mockSubmission: Submission = {
 	id: "sub-1",
 	examId: "e1",
@@ -37,6 +43,7 @@ describe("StudentResultView", () => {
 			<StudentResultView
 				lastSubmission={null}
 				answerReport={[]}
+				{...defaultResultProps}
 				onBack={onBack}
 			/>,
 		);
@@ -50,6 +57,7 @@ describe("StudentResultView", () => {
 			<StudentResultView
 				lastSubmission={null}
 				answerReport={[]}
+				{...defaultResultProps}
 				onBack={onBack}
 			/>,
 		);
@@ -63,6 +71,7 @@ describe("StudentResultView", () => {
 			<StudentResultView
 				lastSubmission={mockSubmission}
 				answerReport={mockAnswerReport}
+				{...defaultResultProps}
 				onBack={jest.fn()}
 			/>,
 		);
@@ -77,6 +86,7 @@ describe("StudentResultView", () => {
 			<StudentResultView
 				lastSubmission={mockSubmission}
 				answerReport={mockAnswerReport}
+				{...defaultResultProps}
 				onBack={jest.fn()}
 			/>,
 		);
@@ -92,6 +102,7 @@ describe("StudentResultView", () => {
 			<StudentResultView
 				lastSubmission={mockSubmission}
 				answerReport={mockAnswerReport}
+				{...defaultResultProps}
 				onBack={jest.fn()}
 			/>,
 		);
@@ -104,6 +115,7 @@ describe("StudentResultView", () => {
 			<StudentResultView
 				lastSubmission={mockSubmission}
 				answerReport={mockAnswerReport}
+				{...defaultResultProps}
 				onBack={jest.fn()}
 			/>,
 		);
@@ -119,6 +131,7 @@ describe("StudentResultView", () => {
 			<StudentResultView
 				lastSubmission={mockSubmission}
 				answerReport={mockAnswerReport}
+				{...defaultResultProps}
 				onBack={onBack}
 			/>,
 		);
@@ -132,6 +145,7 @@ describe("StudentResultView", () => {
 			<StudentResultView
 				lastSubmission={mockSubmission}
 				answerReport={[]}
+				{...defaultResultProps}
 				onBack={jest.fn()}
 			/>,
 		);

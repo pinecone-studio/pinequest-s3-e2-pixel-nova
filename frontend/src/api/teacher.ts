@@ -13,6 +13,19 @@ export type TeacherSubmissionSummary = {
   submittedAt: string | null;
   isFlagged?: boolean | null;
   flagCount?: number | null;
+  violationScore?: number | null;
+  riskLevel?: "low" | "medium" | "high" | "critical" | null;
+  lastViolationAt?: string | null;
+  topViolationType?: string | null;
+  eventCount?: number | null;
+  latestEvent?: {
+    createdAt: string;
+    eventSource: string | null;
+    eventType: string;
+    label: string;
+    severity: string;
+  } | null;
+  countByType?: Record<string, number>;
 };
 
 export type TeacherSessionResult = {

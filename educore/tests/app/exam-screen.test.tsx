@@ -41,7 +41,8 @@ jest.mock("@/components/student-app/MobileProctorCamera", () => ({
     permissionGranted: boolean;
   }) =>
     isEnabled
-      ? require("react").createElement(
+      ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require("react").createElement(
           "Text",
           null,
           permissionGranted
@@ -208,11 +209,11 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("camera-preview-active")).toBeTruthy();
     expect(
-      screen.getByText(
-        /ойролцоогоор 15 сек тутам snapshot авч шууд R2 storage руу upload хийгээд backend AI-аар шинжилнэ/,
-      ),
+      screen.getByText(/This build does not capture or upload snapshots/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/background and screen-blur integrity events/),
     ).toBeTruthy();
     screen.unmount();
   });

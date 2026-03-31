@@ -39,35 +39,30 @@ function ExamListScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+      showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Шалгалтуудад</Text>
 
       {/* Tab switcher */}
       <View style={styles.tabRow}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "active" && styles.tabActive]}
-          onPress={() => setActiveTab("active")}
-        >
+          onPress={() => setActiveTab("active")}>
           <Text
             style={[
               styles.tabText,
               activeTab === "active" && styles.tabTextActive,
-            ]}
-          >
+            ]}>
             Шалгалтуудад
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === "history" && styles.tabActive]}
-          onPress={() => setActiveTab("history")}
-        >
+          onPress={() => setActiveTab("history")}>
           <Text
             style={[
               styles.tabText,
               activeTab === "history" && styles.tabTextActive,
-            ]}
-          >
+            ]}>
             Шалгалтын түүх
           </Text>
         </TouchableOpacity>
@@ -200,8 +195,7 @@ function ActiveExamList({ search }: { search: string }) {
             {exam.status === "active" ? (
               <TouchableOpacity
                 style={[styles.primaryBtn, { marginTop: 6 }]}
-                onPress={() => router.push("/exam")}
-              >
+                onPress={() => router.push("/exam")}>
                 <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
               </TouchableOpacity>
             ) : (
@@ -239,14 +233,12 @@ function HistoryList({ search }: { search: string }) {
               style={[
                 styles.statusPill,
                 exam.score >= 60 ? undefined : styles.statusPillWarning,
-              ]}
-            >
+              ]}>
               <Text
                 style={[
                   styles.statusPillText,
                   exam.score >= 60 ? undefined : styles.statusPillTextWarning,
-                ]}
-              >
+                ]}>
                 {exam.score}%
               </Text>
             </View>
@@ -464,14 +456,12 @@ export default function ExamScreen() {
           </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() => router.push("/join")}
-          >
+            onPress={() => router.push("/join")}>
             <Text style={styles.primaryBtnText}>Шалгалтанд нэгдэх</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.secondaryBtn}
-            onPress={() => router.push("/home")}
-          >
+            onPress={() => router.push("/home")}>
             <Text style={styles.secondaryBtnText}>Нүүр хуудас руу буцах</Text>
           </TouchableOpacity>
         </View>
@@ -516,8 +506,7 @@ export default function ExamScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+      showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Шалгалт</Text>
 
       <View style={styles.examCard}>
@@ -544,15 +533,13 @@ export default function ExamScreen() {
                 styles.statusPill,
                 activeSession.entryStatus === "late" &&
                   styles.statusPillWarning,
-              ]}
-            >
+              ]}>
               <Text
                 style={[
                   styles.statusPillText,
                   activeSession.entryStatus === "late" &&
                     styles.statusPillTextWarning,
-                ]}
-              >
+                ]}>
                 {activeSession.entryStatus === "late"
                   ? "Хоцорсон"
                   : getEntryStatusLabel(activeSession.entryStatus)}
@@ -589,9 +576,10 @@ export default function ExamScreen() {
 
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              Энэ Expo Go build дээр front camera нээгдэж, ойролцоогоор 15 сек
-              тутам snapshot авч шууд R2 storage руу upload хийгээд backend
-              AI-аар шинжилнэ.
+              This build does not capture or upload snapshots. Browser-style
+              local camera proctoring is prepared for a future native build,
+              while app background and screen-blur integrity events continue to
+              log normally.
             </Text>
           </View>
 
@@ -601,14 +589,12 @@ export default function ExamScreen() {
             <>
               <TouchableOpacity
                 style={styles.primaryBtn}
-                onPress={() => void handleStart()}
-              >
+                onPress={() => void handleStart()}>
                 <Text style={styles.primaryBtnText}>Шалгалт эхлүүлэх</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.secondaryBtn}
-                onPress={() => void recoverActiveSession()}
-              >
+                onPress={() => void recoverActiveSession()}>
                 <Text style={styles.secondaryBtnText}>Шинэчлэх</Text>
               </TouchableOpacity>
             </>
@@ -655,14 +641,12 @@ export default function ExamScreen() {
                     style={[
                       styles.optionButton,
                       selected && styles.optionButtonSelected,
-                    ]}
-                  >
+                    ]}>
                     <Text
                       style={[
                         styles.optionLabel,
                         selected && styles.optionLabelSelected,
-                      ]}
-                    >
+                      ]}>
                       {option.label}. {option.text}
                     </Text>
                   </Pressable>
@@ -694,8 +678,7 @@ export default function ExamScreen() {
                 styles.navBtnDisabled,
             ]}
             disabled={activeSession.currentQuestionIndex === 0 || isSyncBlocked}
-            onPress={() => void moveQuestion(-1)}
-          >
+            onPress={() => void moveQuestion(-1)}>
             <Text style={styles.navBtnText}>← Өмнөх</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -710,15 +693,13 @@ export default function ExamScreen() {
               activeSession.currentQuestionIndex >=
                 activeSession.questions.length - 1 || isSyncBlocked
             }
-            onPress={() => void moveQuestion(1)}
-          >
+            onPress={() => void moveQuestion(1)}>
             <Text style={styles.navBtnText}>Дараах →</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.primaryBtn, isSyncBlocked && styles.navBtnDisabled]}
             disabled={isSyncBlocked}
-            onPress={() => void handleSubmit(false)}
-          >
+            onPress={() => void handleSubmit(false)}>
             <Text style={styles.primaryBtnText}>
               {submitting ? "Илгээж байна..." : "Шалгалт илгээх"}
             </Text>

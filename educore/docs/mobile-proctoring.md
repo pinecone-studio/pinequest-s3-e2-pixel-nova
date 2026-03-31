@@ -1,42 +1,33 @@
-# Mobile Proctoring In Expo Go
+# Mobile Proctoring
 
-## What works today
-- `expo-camera` based front camera preview on the exam screen.
-- Camera permission gate before the exam can start.
-- Preview card only mounts while the exam is in progress.
-- Preview card shows `warming up`, `ready`, and `failed` states for easier demo/debugging.
-- Once the preview is ready, the app captures one snapshot immediately and then about every `15` seconds.
-- Each snapshot is uploaded directly to R2 with a backend-issued signed PUT URL.
-- After upload, the backend analyzes the stored snapshot with Workers AI vision.
-- Suspicious snapshot results are forwarded into the existing `logIntegrityEvent()` flow.
-- Existing mobile integrity events such as `tab_hidden`, `window_blur`, and `rapid_answers` continue to work.
-- Backend accepts the camera event types used by snapshot analysis:
+## Current state
+- Snapshot-based mobile proctoring has been removed from the active app flow.
+- The Expo app no longer captures, uploads, stores, or analyzes camera snapshots.
+- Existing non-camera integrity signals such as app background and screen blur still log normally.
+
+## Why
+- The goal is local-only suspicious behavior detection.
+- The current Expo camera runtime is not sufficient for production-ready on-device face detection every 300-500ms without snapshots.
+- To meet that requirement cleanly, the mobile implementation needs a native build with frame processors.
+
+## Prepared path
+- `MobileProctorCamera` now acts as a local-only scaffold instead of an uploader.
+- `use-native-proctoring-camera.ts` defines the boundary for future native camera processing.
+- `proctoring.ts` contains the reusable state/timer logic for these event types:
   - `face_missing`
   - `multiple_faces`
   - `looking_away`
-  - `looking_down`
+  - `camera_blocked`
 
-## Expo Go limitation
-- Expo Go supports `expo-camera` preview.
-- Expo Go does not support the custom native frame-by-frame face detection stack from the original plan.
-- This build works around that by using periodic snapshots plus backend AI instead of native realtime detection.
-- Snapshot bytes do not flow through the JSON API anymore, which keeps the backend request bodies smaller when many students are active.
-- If the preview fails to mount, the camera card now shows a local recovery message instead of silently failing.
+## Planned native stack
+- custom Expo dev client or bare/native build
+- `react-native-vision-camera`
+- frame processors
+- on-device face detection / landmarks
+- event-only backend logging
 
-## How to run
-1. `cd educore`
-2. `npm install`
-3. `npx expo start`
-4. Open the project in Expo Go on a real device.
-5. Join an exam and press `Start exam`.
-6. Wait for the camera card to switch from `warming up` to `ready`.
-7. Keep the device pointed at the student so the 15-second snapshots can be analyzed successfully.
-
-## Demo checklist
-1. Confirm camera permission is requested before the exam starts.
-2. Confirm the preview card appears only after the exam enters `in_progress`.
-3. Confirm the app does not crash in Expo Go.
-4. Confirm the camera card shows that AI snapshot analysis is active.
-5. Confirm backgrounding the app still logs the existing integrity warning.
-6. Confirm a local error message appears if the preview cannot be mounted or AI analysis fails.
-7. Confirm teacher/backend flows receive `face_missing`, `multiple_faces`, `looking_away`, or `looking_down` when the AI flags a suspicious snapshot.
+## Non-goals
+- no facial recognition
+- no snapshot upload
+- no image storage
+- no video streaming

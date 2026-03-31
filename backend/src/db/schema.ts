@@ -185,6 +185,9 @@ export const examSessions = sqliteTable("exam_sessions", {
   isFlagged: integer("is_flagged", { mode: "boolean" }).notNull().default(false),
   flagCount: integer("flag_count").notNull().default(0),
   violationScore: integer("violation_score").notNull().default(0),
+  riskLevel: text("risk_level").notNull().default("low"),
+  lastViolationAt: text("last_violation_at"),
+  topViolationType: text("top_violation_type"),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
 }, (table) => [
   uniqueIndex("exam_sessions_exam_student_unique").on(table.examId, table.studentId),
@@ -221,8 +224,12 @@ export const cheatEvents = sqliteTable("cheat_events", {
   studentId: text("student_id")
     .notNull()
     .references(() => students.id, { onDelete: "cascade" }),
-  eventType: text("event_type").notNull(), // tab_switch | tab_hidden | window_blur | copy_paste | right_click | screen_capture | devtools_open | multiple_monitors | suspicious_resize | rapid_answers | idle_too_long | face_missing | multiple_faces | looking_away | looking_down
+  eventType: text("event_type").notNull(), // tab_switch | tab_hidden | window_blur | copy_paste | right_click | screen_capture | devtools_open | multiple_monitors | suspicious_resize | rapid_answers | idle_too_long | face_missing | multiple_faces | looking_away | looking_down | camera_blocked
   severity: text("severity").notNull().default("low"), // low | medium | high | critical
+  eventSource: text("event_source").notNull().default("unknown"),
+  confidence: real("confidence"),
+  details: text("details"), // normalized JSON string
+  dedupeKey: text("dedupe_key"),
   metadata: text("metadata"), // JSON string
   isNotified: integer("is_notified", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),

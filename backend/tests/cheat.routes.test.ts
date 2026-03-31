@@ -138,9 +138,25 @@ describe("cheat routes", () => {
   it("accepts the new mobile camera event types", async () => {
     queueDbResults(
       { id: "auth-result" },
-      [{ id: "session-1", examId: "exam-1", studentId: "student-1", flagCount: 0, violationScore: 0 }],
+      [{
+        id: "session-1",
+        examId: "exam-1",
+        studentId: "student-1",
+        flagCount: 0,
+        violationScore: 0,
+        riskLevel: "low",
+        status: "in_progress",
+      }],
+      [],
       undefined,
+      [{
+        createdAt: "2026-03-31T00:00:00.000Z",
+        eventSource: "mobile_camera",
+        eventType: "multiple_faces",
+      }],
       undefined,
+      [],
+      [],
     );
 
     const response = await app.request(
@@ -164,8 +180,11 @@ describe("cheat routes", () => {
     await expect(response.json()).resolves.toEqual({
       success: true,
       data: {
+        deduped: false,
         eventId: "test-id",
         flagged: true,
+        riskLevel: "high",
+        violationScore: 8,
       },
     });
     expect(mockDb.insert).toHaveBeenCalled();
@@ -175,9 +194,32 @@ describe("cheat routes", () => {
   it("combines looking_down and looking_away into the flag threshold", async () => {
     queueDbResults(
       { id: "auth-result" },
-      [{ id: "session-1", examId: "exam-1", studentId: "student-1", flagCount: 1, violationScore: 2 }],
+      [{
+        id: "session-1",
+        examId: "exam-1",
+        studentId: "student-1",
+        flagCount: 1,
+        violationScore: 2,
+        riskLevel: "low",
+        status: "in_progress",
+      }],
+      [],
       undefined,
+      [
+        {
+          createdAt: "2026-03-31T00:00:00.000Z",
+          eventSource: "browser_camera",
+          eventType: "looking_down",
+        },
+        {
+          createdAt: "2026-03-31T00:01:00.000Z",
+          eventSource: "browser",
+          eventType: "looking_away",
+        },
+      ],
       undefined,
+      [],
+      [],
     );
 
     const response = await app.request(
@@ -196,11 +238,90 @@ describe("cheat routes", () => {
     await expect(response.json()).resolves.toEqual({
       success: true,
       data: {
+        deduped: false,
         eventId: "test-id",
         flagged: true,
+        riskLevel: "high",
+        violationScore: 6,
       },
     });
     expect(mockDb.update).toHaveBeenCalled();
+  });
+
+  it("rejects cheat events for sessions that are not in progress", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{
+        id: "session-1",
+        examId: "exam-1",
+        studentId: "student-1",
+        riskLevel: "low",
+        status: "joined",
+      }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/cheat/event",
+      jsonRequest(
+        {
+          sessionId: "session-1",
+          eventType: "tab_switch",
+          source: "browser",
+        },
+        studentHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(409);
+    expect(mockDb.insert).not.toHaveBeenCalled();
+  });
+
+  it("dedupes repeated events inside the cooldown window", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{
+        id: "session-1",
+        examId: "exam-1",
+        studentId: "student-1",
+        violationScore: 4,
+        riskLevel: "medium",
+        isFlagged: false,
+        status: "in_progress",
+      }],
+      [{
+        createdAt: new Date().toISOString(),
+        dedupeKey: "tab_switch::browser::visibilityState:hidden",
+      }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/cheat/event",
+      jsonRequest(
+        {
+          sessionId: "session-1",
+          eventType: "tab_switch",
+          source: "browser",
+          details: {
+            visibilityState: "hidden",
+          },
+        },
+        studentHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: {
+        deduped: true,
+        flagged: false,
+        riskLevel: "medium",
+        violationScore: 4,
+      },
+    });
+    expect(mockDb.insert).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported camera event types", async () => {

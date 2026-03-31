@@ -19,6 +19,26 @@ import {
   violationLabels,
 } from "./teacher-analytics-helpers";
 
+const cheatTypeLabels: Record<string, string> = {
+  tab_switch: "Tab switch",
+  tab_hidden: "Fullscreen exit",
+  window_blur: "Window blur",
+  copy_paste: "Copy or paste",
+  right_click: "Context menu",
+  screen_capture: "Screen capture",
+  devtools_open: "Devtools shortcut",
+  multiple_monitors: "Multiple monitors",
+  suspicious_resize: "Suspicious resize",
+  rapid_answers: "Rapid answers",
+  idle_too_long: "Idle too long",
+  face_missing: "Face missing",
+  multiple_faces: "Multiple faces",
+  looking_away: "Looking away",
+  looking_down: "Looking down",
+  camera_blocked: "Camera blocked",
+  disqualification: "Disqualification",
+};
+
 type RawSubmission = Partial<Submission> & {
   studentНэр?: string;
   violations?: Partial<
@@ -56,6 +76,15 @@ export const normalizeSubmission = (item: RawSubmission): Submission | null => {
       keyboardShortcut: Number(item.violations?.keyboardShortcut ?? 0),
     },
     submittedAt: item.submittedAt ?? new Date().toISOString(),
+    isFlagged: Boolean(item.isFlagged),
+    flagCount: Number(item.flagCount ?? 0),
+    violationScore: Number(item.violationScore ?? 0),
+    riskLevel: item.riskLevel ?? "low",
+    lastViolationAt: item.lastViolationAt ?? null,
+    topViolationType: item.topViolationType ?? null,
+    eventCount: Number(item.eventCount ?? 0),
+    latestEvent: item.latestEvent ?? null,
+    countByType: item.countByType ?? {},
   };
 };
 
@@ -71,6 +100,8 @@ export const buildTeacherOverviewStats = (params: {
   const scheduledExams = exams.filter((exam) => Boolean(exam.scheduledAt)).length;
   const totalXp = xpLeaderboard.reduce((sum, student) => sum + student.xp, 0);
   const flaggedCount = submissions.filter((submission) =>
+    (submission.riskLevel ?? "low") !== "low" ||
+    Number(submission.eventCount ?? 0) > 0 ||
     violationKeys.some((key) => Number(submission.violations?.[key] ?? 0) > 0),
   ).length;
 
@@ -78,7 +109,7 @@ export const buildTeacherOverviewStats = (params: {
     {
       label: "Хадгалсан сан",
       value: savedExams.toString(),
-      trend: `${Math.max(exams.length - savedExams, 0)} нь зөвхөн товлолт`,
+      trend: `${Math.max(exams.length - savedExams, 0)} нь зөвхөн төлөвлөлт`,
       tone: "primary",
     },
     {
@@ -133,9 +164,15 @@ export const buildXpLeaderboard = (params: {
       const xp = progress[studentId]?.xp ?? fallbackXp;
       const levelInfo = getLevel(xp);
       const nextLevel = LEVELS.find((level) => level.level === levelInfo.level + 1);
-      const span = Math.max((nextLevel?.minXP ?? levelInfo.minXP) - levelInfo.minXP, 1);
+      const span = Math.max(
+        (nextLevel?.minXP ?? levelInfo.minXP) - levelInfo.minXP,
+        1,
+      );
       const progressPercent = nextLevel
-        ? Math.min(100, Math.max(0, Math.round(((xp - levelInfo.minXP) / span) * 100)))
+        ? Math.min(
+            100,
+            Math.max(0, Math.round(((xp - levelInfo.minXP) / span) * 100)),
+          )
         : 100;
       const lastSubmission = submissions.find(
         (submission) => submission.studentId === studentId,
@@ -151,7 +188,9 @@ export const buildXpLeaderboard = (params: {
         level: levelInfo.level,
         levelName: levelInfo.name,
         icon: levelInfo.icon,
-        examsTaken: history.length || submissions.filter((item) => item.studentId === studentId).length,
+        examsTaken:
+          history.length ||
+          submissions.filter((item) => item.studentId === studentId).length,
         progressPercent,
         nextLevelXp: nextLevel ? Math.max(nextLevel.minXP - xp, 0) : 0,
         lastActivity: history[0]?.date ?? lastSubmission?.submittedAt ?? null,
@@ -159,7 +198,9 @@ export const buildXpLeaderboard = (params: {
     })
     .sort((left, right) => {
       if (right.xp !== left.xp) return right.xp - left.xp;
-      if (right.examsTaken !== left.examsTaken) return right.examsTaken - left.examsTaken;
+      if (right.examsTaken !== left.examsTaken) {
+        return right.examsTaken - left.examsTaken;
+      }
       return left.name.localeCompare(right.name, "mn");
     });
 };
@@ -173,11 +214,12 @@ export const buildCheatStudents = (params: {
 
   const flaggedStudents = submissions
     .map<CheatStudent | null>((submission) => {
-      const events = violationKeys.reduce(
+      const legacyEvents = violationKeys.reduce(
         (sum, key) => sum + Number(submission.violations?.[key] ?? 0),
         0,
       );
-      if (events === 0) return null;
+      const totalEvents = Math.max(legacyEvents, Number(submission.eventCount ?? 0));
+      if (totalEvents === 0) return null;
 
       const dominantKey = violationKeys.reduce((current, key) => {
         const currentValue = Number(submission.violations?.[current] ?? 0);
@@ -187,24 +229,41 @@ export const buildCheatStudents = (params: {
 
       return {
         studentId: submission.studentId,
+        sessionId: submission.id,
         name: submission.studentName,
         score: submission.percentage,
-        cheat: events >= 6 ? "Өндөр" : events >= 3 ? "Дунд" : "Бага",
+        cheat:
+          (submission.riskLevel ?? "low") === "critical" ||
+          (submission.riskLevel ?? "low") === "high"
+            ? "Өндөр"
+            : (submission.riskLevel ?? "low") === "medium" || totalEvents >= 3
+              ? "Дунд"
+              : "Бага",
         examTitle: examTitleMap.get(submission.examId) ?? "Шалгалт",
-        events,
-        reason: violationLabels[dominantKey],
+        events: totalEvents,
+        reason:
+          submission.latestEvent?.label ??
+          (submission.topViolationType
+            ? cheatTypeLabels[submission.topViolationType] ?? submission.topViolationType
+            : violationLabels[dominantKey]),
+        flagCount: submission.flagCount,
+        violationScore: submission.violationScore,
+        riskLevel: submission.riskLevel,
+        lastViolationAt: submission.lastViolationAt ?? null,
+        topViolationType: submission.topViolationType ?? null,
+        latestEventLabel: submission.latestEvent?.label ?? null,
+        countByType: submission.countByType ?? {},
       };
-    });
-
-  return flaggedStudents
+    })
     .filter((student) => student !== null)
     .sort((left, right) => {
-      const rightEvents = right?.events ?? 0;
-      const leftEvents = left?.events ?? 0;
+      const rightEvents = right.events ?? 0;
+      const leftEvents = left.events ?? 0;
       if (rightEvents !== leftEvents) return rightEvents - leftEvents;
-      return (left?.score ?? 0) - (right?.score ?? 0);
-    })
-    .slice(0, 5);
+      return (right.violationScore ?? 0) - (left.violationScore ?? 0);
+    });
+
+  return flaggedStudents.slice(0, 5);
 };
 
 export const buildExamStats = (params: {

@@ -5,7 +5,7 @@ import type { Exam, ExamRosterDetail } from "@/app/teacher/types";
 describe("TeacherScheduleDetailPanel", () => {
   const exam: Exam = {
     id: "exam-1",
-    title: "Математик",
+    title: "Mathematics",
     scheduledAt: "2026-03-30T09:00:00.000Z",
     roomCode: "ROOM42",
     duration: 45,
@@ -16,7 +16,7 @@ describe("TeacherScheduleDetailPanel", () => {
 
   const roster: ExamRosterDetail = {
     examId: "exam-1",
-    title: "Математик",
+    title: "Mathematics",
     roomCode: "ROOM42",
     durationMin: 45,
     expectedStudentsCount: 10,
@@ -38,9 +38,9 @@ describe("TeacherScheduleDetailPanel", () => {
       />,
     );
 
-    expect(screen.getByText("Шалгалтын ирц")).toBeInTheDocument();
-    expect(screen.getByText("Мэдээлэл оруулаагүй байна.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Ирц 60 хувь")).toBeInTheDocument();
+    expect(screen.getByText("Attendance")).toBeInTheDocument();
+    expect(screen.getByText("Joined 6 of 10")).toBeInTheDocument();
+    expect(screen.getByLabelText("Attendance 60%")).toBeInTheDocument();
     expect(screen.getByText("60%")).toBeInTheDocument();
   });
 });
