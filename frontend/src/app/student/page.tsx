@@ -78,15 +78,6 @@ export default function StudentPage() {
   }, [exam.view]);
 
   useEffect(() => {
-    if (exam.view !== "result") return;
-    const timer = setTimeout(() => {
-      exam.leaveExamFlow();
-      router.push(`/${role}`);
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [exam.view, exam, router, role]);
-
-  useEffect(() => {
     let cancelled = false;
 
     const loadUsers = async () => {
