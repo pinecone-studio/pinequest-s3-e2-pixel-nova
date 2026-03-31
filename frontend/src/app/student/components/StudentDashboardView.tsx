@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import RoleNavbar from "@/components/RoleNavbar";
 import type { AuthUser } from "@/lib/backend-auth";
 import type { XpLeaderboardEntry } from "@/api/xp";
@@ -11,6 +11,10 @@ import StudentPreferencesTab from "./StudentPreferencesTab";
 import StudentProgressTab from "./StudentProgressTab";
 import StudentSettingsTab from "./StudentSettingsTab";
 import type { Exam, Grade, NotificationItem, StudentTab } from "../types";
+import type {
+  StudentProgressLeaderboardEntry,
+  StudentTermRankOverview,
+} from "@/lib/backend-auth";
 
 type StudentHistoryItem = {
   examId: string;
@@ -61,7 +65,8 @@ type StudentProgressState = {
   };
   nextLevel: { level: number; name: string; minXP: number } | null;
   progressSegments: number;
-  termLeaderboardEntries: XpLeaderboardEntry[];
+  termRankOverview: StudentTermRankOverview;
+  leaderboardEntries: XpLeaderboardEntry[];
 };
 
 type StudentDashboardViewProps = {
@@ -103,21 +108,12 @@ export default function StudentDashboardView({
 }: StudentDashboardViewProps) {
   const resolvedNextLevel = progress.nextLevel ?? progress.levelInfo;
   const currentUser = data.currentUser;
-  const [homeSelectedExam, setHomeSelectedExam] = useState<Exam | null>(null);
-
-  const handleTabChange = (value: StudentTab) => {
-    if (value !== "Home") {
-      setHomeSelectedExam(null);
-    }
-    exam.setActiveTab(value);
-  };
-
   return (
     <main
       key={`student-${exam.activeTab}`}
-      className="page-transition px-4 pb-10 pt-6 sm:px-6 lg:px-8"
+      className="px-4 py-6 sm:px-6 lg:px-8 page-transition"
     >
-      <div className="mx-auto w-full max-w-[1272px] space-y-7">
+      <div className="mx-auto w-full max-w-[1280px] space-y-5">
         <StudentHeader
           activeTab={exam.activeTab}
           currentUserName={currentUserName}
@@ -127,10 +123,10 @@ export default function StudentDashboardView({
           onMarkNotificationRead={data.markNotificationRead}
           onMarkAllNotificationsRead={data.markAllNotificationsRead}
           xp={currentXp}
-          onTabChange={handleTabChange}
-          onOpenProfile={() => handleTabChange("Profile")}
-          onOpenSettings={() => handleTabChange("Settings")}
-          onOpenHelp={() => handleTabChange("Help")}
+          onTabChange={exam.setActiveTab}
+          onOpenProfile={() => exam.setActiveTab("Profile")}
+          onOpenSettings={() => exam.setActiveTab("Settings")}
+          onOpenHelp={() => exam.setActiveTab("Help")}
           onToggleTheme={() =>
             data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
           }
@@ -149,32 +145,16 @@ export default function StudentDashboardView({
         {exam.activeTab === "Home" && (
           <StudentDashboardTab
             loading={data.loading}
-            currentUserId={data.currentUser?.id ?? null}
             currentUserName={currentUserName}
-            exams={data.exams}
-            selectedExam={homeSelectedExam}
+            selectedExam={exam.selectedExam}
             levelInfo={progress.levelInfo}
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}
             currentRank={currentRank}
             studentCount={totalStudents}
             studentHistory={studentHistory}
-            termLeaderboardEntries={progress.termLeaderboardEntries}
-            teacherName={
-              typeof teacherUsers[0]?.fullName === "string"
-                ? (teacherUsers[0]?.fullName ?? null)
-                : null
-            }
-            onOpenExamDetail={setHomeSelectedExam}
-            onCloseExamDetail={() => setHomeSelectedExam(null)}
-            onOpenExams={() => {
-              setHomeSelectedExam(null);
-              exam.setActiveTab("Exams");
-            }}
-            onOpenProgress={() => {
-              setHomeSelectedExam(null);
-              exam.setActiveTab("Progress");
-            }}
+            onOpenExams={() => exam.setActiveTab("Exams")}
+            onOpenProgress={() => exam.setActiveTab("Progress")}
           />
         )}
 

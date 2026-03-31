@@ -27,8 +27,8 @@ type StudentDashboardTabProps = {
   }[];
   termLeaderboardEntries?: XpLeaderboardEntry[];
   teacherName?: string | null;
-  onOpenExamDetail: (exam: Exam) => void;
-  onCloseExamDetail: () => void;
+  onOpenExamDetail?: (exam: Exam) => void;
+  onCloseExamDetail?: () => void;
   onOpenExams: () => void;
   onOpenProgress: () => void;
 };
@@ -134,8 +134,8 @@ export default function StudentDashboardTab({
   studentHistory,
   termLeaderboardEntries = [],
   teacherName,
-  onOpenExamDetail,
-  onCloseExamDetail,
+  onOpenExamDetail = () => undefined,
+  onCloseExamDetail = () => undefined,
   onOpenExams,
   onOpenProgress,
 }: StudentDashboardTabProps) {
