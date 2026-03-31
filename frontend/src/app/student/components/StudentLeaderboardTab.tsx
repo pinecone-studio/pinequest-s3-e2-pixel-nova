@@ -14,11 +14,11 @@ import {
   buildMockImprovementEntries,
 } from "./student-leaderboard-helpers";
 
-type StudentLeaderboardTabProps = {
-  currentUserId: string | null;
+export type StudentLeaderboardTabProps = {
+  currentUserId?: string | null;
   currentUserName: string;
   termRankOverview: StudentTermRankOverview;
-  progressRankOverview: StudentProgressRankOverview;
+  progressRankOverview?: StudentProgressRankOverview | null;
   termLeaderboardEntries?: XpLeaderboardEntry[];
   improvementLeaderboard?: StudentImprovementLeaderboardEntry[];
 };
@@ -38,15 +38,15 @@ const leaderboardTabs: Array<{
   {
     key: "improvement",
     label: "Ахицын XP",
-    hint: "Growth ranking",
+    hint: "Өсөлтийн эрэмбэ",
   },
 ];
 
 export default function StudentLeaderboardTab({
-  currentUserId,
+  currentUserId = null,
   currentUserName,
   termRankOverview,
-  progressRankOverview,
+  progressRankOverview = null,
   termLeaderboardEntries = [],
   improvementLeaderboard = [],
 }: StudentLeaderboardTabProps) {
@@ -102,7 +102,7 @@ export default function StudentLeaderboardTab({
             </h2>
             <p className="mt-2 text-sm text-slate-400">
               Цэнхэр блок дээр зөвхөн явцын нууц rank харагдана. Доорх хэсэг
-              нь XP leaderboard-оо тусдаа сольж харуулна.
+              нь XP жагсаалтыг тусдаа сольж харуулна.
             </p>
           </div>
 
@@ -137,10 +137,10 @@ export default function StudentLeaderboardTab({
               </div>
               <div className="rounded-2xl bg-white/10 px-3 py-2">
                 <div className="text-[11px] uppercase tracking-[0.12em] text-white/60">
-                  Level
+                  Түвшин
                 </div>
                 <div className="mt-1 text-sm font-semibold text-white">
-                  Lv.{safeProgressRankOverview.level}
+                  Түв. {safeProgressRankOverview.level}
                 </div>
               </div>
               <div className="rounded-2xl bg-white/10 px-3 py-2">
@@ -177,7 +177,7 @@ export default function StudentLeaderboardTab({
             </div>
 
             <h3 className="mt-3 text-[1.6rem] font-semibold tracking-[-0.04em] text-slate-900">
-              {showingImprovement ? "Ахицын XP Leaderboard" : "Улирлын XP Leaderboard"}
+              {showingImprovement ? "Ахицын XP жагсаалт" : "Улирлын XP жагсаалт"}
             </h3>
 
             <p className="mt-2 text-sm text-slate-400">
@@ -190,7 +190,7 @@ export default function StudentLeaderboardTab({
           <div
             className="inline-flex w-full max-w-[360px] rounded-[24px] border border-[#e8ecfb] bg-[#f6f8ff] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
             role="tablist"
-            aria-label="XP leaderboard switcher"
+            aria-label="XP жагсаалт солигч"
           >
             {leaderboardTabs.map((tab) => {
               const selected = activeView === tab.key;
@@ -230,7 +230,7 @@ export default function StudentLeaderboardTab({
             <div data-testid="term-leaderboard" className="space-y-3">
               {termEntries.length === 0 && (
                 <div className="rounded-[24px] border border-dashed border-[#e8ecfb] bg-white px-5 py-8 text-sm text-slate-400">
-                  Одоогоор улирлын XP leaderboard хоосон байна.
+                  Одоогоор улирлын XP жагсаалт хоосон байна.
                 </div>
               )}
 

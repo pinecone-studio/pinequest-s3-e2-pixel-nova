@@ -103,6 +103,8 @@ export type ExamStatsSummary = {
   average: number;
   passRate: number;
   submissionCount: number;
+  cohortSize: number;
+  absentCount: number;
   totalPoints: number;
   mostMissed: QuestionInsight[];
   mostCorrect: QuestionInsight[];

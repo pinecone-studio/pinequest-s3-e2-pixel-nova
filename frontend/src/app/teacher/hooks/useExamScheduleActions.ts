@@ -22,7 +22,7 @@ type UseExamScheduleActionsParams = {
   scheduleLocationLongitude: string;
   scheduleAllowedRadiusMeters: number;
   selectedScheduleExamId: string;
-  expectedStudentsCount: number;
+  scheduleExpectedStudentsCount: number;
   durationMinutes: number;
   questions: Question[];
   setScheduleTitle: (value: string) => void;
@@ -37,6 +37,7 @@ type UseExamScheduleActionsParams = {
   setScheduleLocationLatitude: (value: string) => void;
   setScheduleLocationLongitude: (value: string) => void;
   setScheduleAllowedRadiusMeters: (value: number) => void;
+  setScheduleExpectedStudentsCount: (value: number) => void;
   setSelectedScheduleExamId: (value: string) => void;
   setRoomCode: (value: string | null) => void;
 };
@@ -58,7 +59,7 @@ export const useExamScheduleActions = ({
   scheduleLocationLongitude,
   scheduleAllowedRadiusMeters,
   selectedScheduleExamId,
-  expectedStudentsCount,
+  scheduleExpectedStudentsCount,
   durationMinutes,
   questions,
   setScheduleTitle,
@@ -73,6 +74,7 @@ export const useExamScheduleActions = ({
   setScheduleLocationLatitude,
   setScheduleLocationLongitude,
   setScheduleAllowedRadiusMeters,
+  setScheduleExpectedStudentsCount,
   setSelectedScheduleExamId,
   setRoomCode,
 }: UseExamScheduleActionsParams) => {
@@ -157,7 +159,7 @@ export const useExamScheduleActions = ({
       className: scheduleClassName,
       groupName: scheduleGroupName,
       scheduledAt: scheduleDate,
-      expectedStudentsCount,
+      expectedStudentsCount: scheduleExpectedStudentsCount,
       questions: sourceExam?.questions ?? questions,
       durationMinutes,
       locationPolicy: locationConfig.locationPolicy,
@@ -177,7 +179,7 @@ export const useExamScheduleActions = ({
         groupName: scheduleGroupName,
         duration: durationMinutes,
         scheduledAt: scheduleDate,
-        expectedStudentsCount,
+        expectedStudentsCount: scheduleExpectedStudentsCount,
         location: locationConfig,
         questions: toSyncQuestions(sourceExam?.questions ?? questions),
       });
@@ -189,7 +191,7 @@ export const useExamScheduleActions = ({
         className: scheduleClassName,
         groupName: scheduleGroupName,
         scheduledAt: scheduleDate,
-        expectedStudentsCount,
+        expectedStudentsCount: scheduleExpectedStudentsCount,
         questions: sourceExam?.questions ?? questions,
         durationMinutes,
         locationPolicy: locationConfig.locationPolicy,
@@ -231,6 +233,7 @@ export const useExamScheduleActions = ({
     setScheduleLocationLatitude("");
     setScheduleLocationLongitude("");
     setScheduleAllowedRadiusMeters(3000);
+    setScheduleExpectedStudentsCount(0);
     setSelectedScheduleExamId("");
     setRoomCode(newExam.roomCode);
     return newExam;
@@ -238,7 +241,7 @@ export const useExamScheduleActions = ({
     currentUser,
     durationMinutes,
     exams,
-    expectedStudentsCount,
+    scheduleExpectedStudentsCount,
     questions,
     scheduleClassName,
     scheduleDate,
@@ -266,6 +269,7 @@ export const useExamScheduleActions = ({
     setScheduleSubjectName,
     setScheduleTitle,
     setScheduleAllowedRadiusMeters,
+    setScheduleExpectedStudentsCount,
     setSelectedScheduleExamId,
     showToast,
   ]);

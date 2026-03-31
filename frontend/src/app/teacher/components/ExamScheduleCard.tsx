@@ -23,6 +23,8 @@ type ExamScheduleCardProps = {
   setScheduleSubjectName: (value: string) => void;
   scheduleDescription: string;
   setScheduleDescription: (value: string) => void;
+  scheduleExpectedStudentsCount: number;
+  setScheduleExpectedStudentsCount: (value: number) => void;
   scheduleLocationPolicy: "anywhere" | "school_only";
   setScheduleLocationPolicy: (value: "anywhere" | "school_only") => void;
   scheduleLocationLabel: string;
@@ -55,6 +57,8 @@ export default function ExamScheduleCard({
   setScheduleSubjectName,
   scheduleDescription,
   setScheduleDescription,
+  scheduleExpectedStudentsCount,
+  setScheduleExpectedStudentsCount,
   scheduleLocationPolicy,
   setScheduleLocationPolicy,
   scheduleLocationLabel,
@@ -122,6 +126,8 @@ export default function ExamScheduleCard({
             setScheduleClassName={setScheduleClassName}
             scheduleDescription={scheduleDescription}
             setScheduleDescription={setScheduleDescription}
+            scheduleExpectedStudentsCount={scheduleExpectedStudentsCount}
+            setScheduleExpectedStudentsCount={setScheduleExpectedStudentsCount}
             scheduleSubjectName={scheduleSubjectName}
             setScheduleSubjectName={setScheduleSubjectName}
             scheduleLocationPolicy={scheduleLocationPolicy}

@@ -25,7 +25,8 @@ jest.mock("@/lib/backend-auth", () => ({
 jest.mock("@/lib/examGuard", () => ({
   getLevel: jest.fn((xp: number) => {
     if (xp >= 500) return { level: 3, name: "Дайчин", minXP: 500, icon: "⚔️" };
-    if (xp >= 200) return { level: 2, name: "Суралцагч", minXP: 200, icon: "📖" };
+    if (xp >= 200)
+      return { level: 2, name: "Суралцагч", minXP: 200, icon: "📖" };
     return { level: 1, name: "Анхдагч", minXP: 0, icon: "🌱" };
   }),
   LEVELS: [
@@ -57,17 +58,15 @@ const mockUser: User = {
 const mockResults = [
   {
     examId: "e1",
-    title: "Math",
-    score: 90,
     earnedPoints: 90,
+    score: 90,
     totalPoints: 100,
     submittedAt: "2024-06-02",
   },
   {
     examId: "e2",
-    title: "Science",
-    score: 75,
     earnedPoints: 75,
+    score: 75,
     totalPoints: 100,
     submittedAt: "2024-06-01",
   },
@@ -82,37 +81,37 @@ describe("useStudentProgress", () => {
       totalStudents: 12,
     });
     mockGetXpHistory.mockResolvedValue([]);
+    mockGetStudentTermLeaderboard.mockResolvedValue([
+      { rank: 1, id: "s9", fullName: "Сурагч 1", xp: 500, level: 3 },
+      { rank: 2, id: "s1", fullName: "Бат", xp: 250, level: 2 },
+    ]);
     mockGetStudentResults.mockResolvedValue(mockResults);
     mockGetStudentTermRank.mockResolvedValue({
       rank: 2,
       totalStudents: 5,
       termExamCount: 2,
-      xp: 120,
+      xp: 250,
       level: 2,
     });
-    mockGetStudentTermLeaderboard.mockResolvedValue([
-      { rank: 1, id: "s9", fullName: "Сурагч 1", xp: 300, level: 3 },
-      { rank: 2, id: "s1", fullName: "Бат", xp: 120, level: 2 },
-    ]);
     mockGetStudentProgressRank.mockResolvedValue({
-      rank: 4,
-      totalStudents: 11,
-      progressExamCount: 3,
-      xp: 80,
-      level: 1,
+      rank: 1,
+      totalStudents: 5,
+      progressExamCount: 4,
+      xp: 120,
+      level: 2,
       isPrivate: true,
     });
     mockGetStudentImprovementLeaderboard.mockResolvedValue([
       {
-        id: "s3",
-        fullName: "Тэмүүжин",
-        level: 1,
+        id: "s2",
         rank: 1,
-        xp: 20,
-        examCount: 3,
-        improvementCount: 2,
+        fullName: "Сараа",
+        xp: 35,
+        level: 4,
+        examCount: 4,
+        improvementCount: 3,
         missedCount: 0,
-      },
+      }
     ]);
   });
 
@@ -123,7 +122,11 @@ describe("useStudentProgress", () => {
   it("returns default values when no user", () => {
     const { result } = renderHook(() => useStudentProgress(null));
 
-    expect(result.current.studentProgress).toEqual({ xp: 0, level: 1, history: [] });
+    expect(result.current.studentProgress).toEqual({
+      xp: 0,
+      level: 1,
+      history: [],
+    });
     expect(result.current.studentHistory).toEqual([]);
     expect(result.current.termRankOverview).toEqual({
       rank: null,
@@ -132,7 +135,6 @@ describe("useStudentProgress", () => {
       xp: 0,
       level: 1,
     });
-    expect(result.current.termLeaderboardEntries).toEqual([]);
     expect(result.current.progressRankOverview).toEqual({
       rank: null,
       totalStudents: 0,
@@ -142,9 +144,10 @@ describe("useStudentProgress", () => {
       isPrivate: true,
     });
     expect(result.current.improvementLeaderboard).toEqual([]);
+    expect(result.current.termLeaderboardEntries).toEqual([]);
   });
 
-  it("loads term leaderboard, private progress rank, and improvement leaderboard", async () => {
+  it("loads XP profile, student results, and term rank", async () => {
     const { result } = renderHook(() => useStudentProgress(mockUser));
 
     await waitFor(() => expect(result.current.studentProgress.xp).toBe(250));
@@ -158,30 +161,19 @@ describe("useStudentProgress", () => {
       rank: 2,
       totalStudents: 5,
       termExamCount: 2,
-      xp: 120,
+      xp: 250,
       level: 2,
     });
-    expect(result.current.termLeaderboardEntries).toHaveLength(2);
     expect(result.current.progressRankOverview).toEqual({
-      rank: 4,
-      totalStudents: 11,
-      progressExamCount: 3,
-      xp: 80,
-      level: 1,
+      rank: 1,
+      totalStudents: 5,
+      progressExamCount: 4,
+      xp: 120,
+      level: 2,
       isPrivate: true,
     });
-    expect(result.current.improvementLeaderboard).toEqual([
-      {
-        id: "s3",
-        fullName: "Тэмүүжин",
-        level: 1,
-        rank: 1,
-        xp: 20,
-        examCount: 3,
-        improvementCount: 2,
-        missedCount: 0,
-      },
-    ]);
+    expect(result.current.termLeaderboardEntries).toHaveLength(2);
+    expect(result.current.improvementLeaderboard).toHaveLength(1);
     expect(result.current.studentHistory).toHaveLength(2);
   });
 
@@ -234,7 +226,7 @@ describe("useStudentProgress", () => {
     });
   });
 
-  it("handles term leaderboard API error gracefully", async () => {
+  it("handles leaderboard API error gracefully", async () => {
     mockGetStudentTermLeaderboard.mockRejectedValue(new Error("fail"));
 
     const { result } = renderHook(() => useStudentProgress(mockUser));

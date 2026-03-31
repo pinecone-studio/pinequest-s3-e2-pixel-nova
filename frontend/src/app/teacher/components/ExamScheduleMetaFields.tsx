@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { figmaTextareaClass } from "../styles";
 import {
   classOptions,
@@ -13,6 +14,8 @@ type ExamScheduleMetaFieldsProps = {
   setScheduleSubjectName: (value: string) => void;
   scheduleDescription: string;
   setScheduleDescription: (value: string) => void;
+  scheduleExpectedStudentsCount: number;
+  setScheduleExpectedStudentsCount: (value: number) => void;
   scheduleLocationPolicy: "anywhere" | "school_only";
   setScheduleLocationPolicy: (value: "anywhere" | "school_only") => void;
   scheduleLocationLabel: string;
@@ -32,6 +35,8 @@ export default function ExamScheduleMetaFields({
   setScheduleSubjectName,
   scheduleDescription,
   setScheduleDescription,
+  scheduleExpectedStudentsCount,
+  setScheduleExpectedStudentsCount,
   scheduleLocationPolicy,
   setScheduleLocationPolicy,
   scheduleLocationLabel,
@@ -72,6 +77,9 @@ export default function ExamScheduleMetaFields({
       selectedClasses.filter((item) => item !== value).join(", "),
     );
   };
+  const radiusKm = (scheduleAllowedRadiusMeters / 1000).toFixed(
+    scheduleAllowedRadiusMeters % 1000 === 0 ? 0 : 1,
+  );
 
   const captureCurrentLocation = async () => {
     if (typeof window === "undefined") {
@@ -232,6 +240,37 @@ export default function ExamScheduleMetaFields({
         />
       </label>
 
+      <div className="grid gap-3 rounded-[22px] border border-[#e5ebf3] bg-[#fbfcff] p-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-start">
+        <div className="grid gap-1">
+          <span className="text-[16px] font-semibold text-black">
+            Шалгалт өгөх сурагчдын тоо
+          </span>
+          <p className="text-[12px] leading-5 text-slate-500">
+            Энэ тоогоор шалгалтын ирц болон ангийн дундажийг тооцно. Өгөөгүй
+            сурагчдыг ирцээс хасагдсан, дундажид 0 гэж үзнэ.
+          </p>
+        </div>
+
+        <label className="grid gap-2">
+          <span className="text-[14px] font-medium text-slate-900">
+            Хүлээгдэж буй сурагч
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={500}
+            step={1}
+            value={scheduleExpectedStudentsCount}
+            onChange={(event) =>
+              setScheduleExpectedStudentsCount(
+                Math.max(0, Number(event.target.value) || 0),
+              )
+            }
+            className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-base font-medium text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
+          />
+        </label>
+      </div>
+
       <div className="grid gap-3 rounded-[22px] border border-[#e5ebf3] bg-[#fbfcff] p-4">
         <TeacherSelect
           label="Байршлын нөхцөл"
@@ -263,6 +302,23 @@ export default function ExamScheduleMetaFields({
 
         {scheduleLocationPolicy === "school_only" && (
           <div className="grid gap-3">
+            <div className="rounded-[22px] border border-[#dbeafe] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="grid gap-1">
+                  <div className="text-[14px] font-semibold text-slate-900">
+                    Сургуулийн бүсийн баталгаажуулалт
+                  </div>
+                  <p className="text-[12px] leading-5 text-slate-500">
+                    Сурагч зөвшөөрөгдсөн радиусын дотор байвал л шалгалтад
+                    нэвтэрнэ.
+                  </p>
+                </div>
+                <div className="rounded-full border border-[#dbeafe] bg-white px-3 py-1 text-[12px] font-medium text-[#2563eb]">
+                  Радиус: {radiusKm} км
+                </div>
+              </div>
+            </div>
+
             <label className="grid gap-2">
               <span className="text-[14px] font-medium text-slate-900">
                 Байршлын нэр
@@ -319,14 +375,32 @@ export default function ExamScheduleMetaFields({
                   className="min-h-[48px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
                 />
               </label>
-              <button
-                type="button"
-                onClick={captureCurrentLocation}
-                disabled={capturingLocation}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm font-medium text-[#2563eb] transition hover:bg-[#f8fbff] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {capturingLocation ? "Байршил авч байна..." : "Одоогийн байршлыг авах"}
-              </button>
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  onClick={captureCurrentLocation}
+                  disabled={capturingLocation}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm font-medium text-[#2563eb] transition hover:bg-[#f8fbff] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {capturingLocation ? "Байршил авч байна..." : "Одоогийн байршлыг авах"}
+                </button>
+                <div className="flex flex-wrap gap-2">
+                  {[500, 1000, 3000].map((radius) => (
+                    <button
+                      key={radius}
+                      type="button"
+                      onClick={() => setScheduleAllowedRadiusMeters(radius)}
+                      className={`rounded-full border px-3 py-1 text-[12px] font-medium transition ${
+                        scheduleAllowedRadiusMeters === radius
+                          ? "border-[#bfdbfe] bg-[#eff6ff] text-[#2563eb]"
+                          : "border-[#d5dfeb] bg-white text-slate-500 hover:bg-slate-50"
+                      }`}
+                    >
+                      {radius >= 1000 ? `${radius / 1000} км` : `${radius} м`}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {locationStatus.message ? (
@@ -344,13 +418,15 @@ export default function ExamScheduleMetaFields({
             ) : null}
 
             <p className="text-[12px] leading-5 text-slate-500">
-              Сурагч энэ байршлаас {Math.round(scheduleAllowedRadiusMeters / 1000)} км дотор байвал шалгалтад нэвтэрнэ.
+              Сурагч {scheduleLocationLabel || "сургуулийн"} байршлаас {radiusKm} км
+              дотор байвал шалгалтад нэвтэрнэ.
             </p>
           </div>
         )}
       </div>
 
-      {showLocationPermissionModal ? (
+      {showLocationPermissionModal && typeof document !== "undefined"
+        ? createPortal(
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/28 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[28px] border border-[#dbe5f2] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.18)]">
             <div className="grid gap-4">
@@ -390,7 +466,8 @@ export default function ExamScheduleMetaFields({
             </div>
           </div>
         </div>
-      ) : null}
+        , document.body)
+        : null}
     </>
   );
 }

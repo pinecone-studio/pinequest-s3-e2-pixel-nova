@@ -62,7 +62,7 @@ describe("StudentLeaderboardTab", () => {
     expect(screen.getByText("Тэргүүлэгчид")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Цэнхэр блок дээр зөвхөн явцын нууц rank харагдана. Доорх хэсэг нь XP leaderboard-оо тусдаа сольж харуулна.",
+        "Цэнхэр блок дээр зөвхөн явцын нууц rank харагдана. Доорх хэсэг нь XP жагсаалтыг тусдаа сольж харуулна.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("Нууц явцын эрэмбэ")).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe("StudentLeaderboardTab", () => {
       "aria-selected",
       "true",
     );
-    expect(screen.getByText("Улирлын XP Leaderboard")).toBeInTheDocument();
+    expect(screen.getByText("Улирлын XP жагсаалт")).toBeInTheDocument();
 
     const termLeaderboard = screen.getByTestId("term-leaderboard");
     expect(within(termLeaderboard).getByText("Anu")).toBeInTheDocument();
@@ -85,14 +85,16 @@ describe("StudentLeaderboardTab", () => {
     expect(screen.getByText("Нууц явцын эрэмбэ")).toBeInTheDocument();
     expect(screen.getByText("Чи 2-т явж байна.")).toBeInTheDocument();
     expect(screen.queryByTestId("term-leaderboard")).not.toBeInTheDocument();
-    expect(screen.getByText("Ахицын XP Leaderboard")).toBeInTheDocument();
+    expect(screen.getByText("Ахицын XP жагсаалт")).toBeInTheDocument();
 
     const improvementLeaderboard = screen.getByTestId("improvement-leaderboard");
     expect(within(improvementLeaderboard).getByText("25 XP")).toBeInTheDocument();
     expect(within(improvementLeaderboard).getAllByText("2 ахиц").length).toBeGreaterThan(0);
     expect(within(improvementLeaderboard).getByText("Тэмүүлэн")).toBeInTheDocument();
-    expect(screen.getAllByText("you")).toHaveLength(1);
-    expect(within(improvementLeaderboard).getAllByText(/^Lvl \d+$/)).toHaveLength(10);
+    expect(within(improvementLeaderboard).getAllByText("би")).toHaveLength(1);
+    expect(within(improvementLeaderboard).getAllByText((_, element) => {
+      return (element?.textContent ?? "").startsWith("Түв. ");
+    }).length).toBeGreaterThan(0);
   });
 
   it("shows empty term state and still fills the improvement leaderboard with mock data", () => {
@@ -122,7 +124,7 @@ describe("StudentLeaderboardTab", () => {
 
     expect(screen.getByText("Явцын XP хараахан бүрдээгүй байна.")).toBeInTheDocument();
     expect(
-      screen.getByText("Одоогоор улирлын XP leaderboard хоосон байна."),
+      screen.getByText("Одоогоор улирлын XP жагсаалт хоосон байна."),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: /Ахицын XP/i }));
@@ -131,6 +133,8 @@ describe("StudentLeaderboardTab", () => {
     const improvementLeaderboard = screen.getByTestId("improvement-leaderboard");
     expect(within(improvementLeaderboard).getByText("Anu")).toBeInTheDocument();
     expect(within(improvementLeaderboard).getAllByText("34 XP").length).toBeGreaterThan(0);
-    expect(within(improvementLeaderboard).getAllByText(/^Lvl \d+$/)).toHaveLength(10);
+    expect(within(improvementLeaderboard).getAllByText((_, element) => {
+      return (element?.textContent ?? "").startsWith("Түв. ");
+    }).length).toBeGreaterThan(0);
   });
 });

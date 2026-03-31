@@ -56,11 +56,11 @@ export default function StudentLeaderboardListItem({
             </span>
             {isCurrentUser && (
               <span className="rounded-full bg-[#5c6cff] px-2 py-0.5 text-[10px] font-semibold text-white">
-                you
+                би
               </span>
             )}
           </div>
-          <div className="mt-1 text-sm text-slate-400">Lvl {entry.level}</div>
+          <div className="mt-1 text-sm text-slate-400">Түв. {entry.level}</div>
         </div>
       </div>
 
@@ -77,9 +77,9 @@ export default function StudentLeaderboardListItem({
             ? `${entry.examCount} шалгалт`
             : isImprovementEntry(entry)
               ? entry.missedCount > 0
-                ? `${entry.improvementCount} ахиц · ${entry.missedCount} таслалт`
-                : `${entry.improvementCount} ахиц`
-              : `Rank #${entry.rank}`}
+              ? `${entry.improvementCount} ахиц · ${entry.missedCount} таслалт`
+              : `${entry.improvementCount} ахиц`
+              : `Байр #${entry.rank}`}
         </div>
       </div>
     </div>

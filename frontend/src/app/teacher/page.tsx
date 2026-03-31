@@ -79,6 +79,8 @@ function TeacherScheduleModal({
             setScheduleSubjectName={management.setScheduleSubjectName}
             scheduleDescription={management.scheduleDescription}
             setScheduleDescription={management.setScheduleDescription}
+            scheduleExpectedStudentsCount={management.scheduleExpectedStudentsCount}
+            setScheduleExpectedStudentsCount={management.setScheduleExpectedStudentsCount}
             scheduleLocationPolicy={management.scheduleLocationPolicy}
             setScheduleLocationPolicy={management.setScheduleLocationPolicy}
             scheduleLocationLabel={management.scheduleLocationLabel}

@@ -62,6 +62,8 @@ type Props = {
   setScheduleSubjectName: (v: string) => void;
   scheduleDescription: string;
   setScheduleDescription: (v: string) => void;
+  scheduleExpectedStudentsCount: number;
+  setScheduleExpectedStudentsCount: (v: number) => void;
   scheduleLocationPolicy: "anywhere" | "school_only";
   setScheduleLocationPolicy: (v: "anywhere" | "school_only") => void;
   scheduleLocationLabel: string;
@@ -93,6 +95,8 @@ export default function ScheduleCalendarView({
   setScheduleSubjectName,
   scheduleDescription,
   setScheduleDescription,
+  scheduleExpectedStudentsCount,
+  setScheduleExpectedStudentsCount,
   scheduleLocationPolicy,
   setScheduleLocationPolicy,
   scheduleLocationLabel,
@@ -288,6 +292,8 @@ export default function ScheduleCalendarView({
               setScheduleSubjectName={setScheduleSubjectName}
               scheduleDescription={scheduleDescription}
               setScheduleDescription={setScheduleDescription}
+              scheduleExpectedStudentsCount={scheduleExpectedStudentsCount}
+              setScheduleExpectedStudentsCount={setScheduleExpectedStudentsCount}
               scheduleLocationPolicy={scheduleLocationPolicy}
               setScheduleLocationPolicy={setScheduleLocationPolicy}
               scheduleLocationLabel={scheduleLocationLabel}
