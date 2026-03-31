@@ -147,6 +147,11 @@ describe("cheat routes", () => {
         riskLevel: "low",
         status: "in_progress",
       }],
+      [{
+        enabledCheatDetections:
+          '["tab_switch","tab_hidden","window_blur","copy_paste","right_click","screen_capture","devtools_open","multiple_monitors","suspicious_resize","rapid_answers","idle_too_long","face_missing","multiple_faces","looking_away","looking_down","camera_blocked"]',
+        teacherId: "teacher-1",
+      }],
       [],
       undefined,
       [{
@@ -156,7 +161,7 @@ describe("cheat routes", () => {
       }],
       undefined,
       [],
-      [],
+      [{ fullName: "Nora Student" }],
     );
 
     const response = await app.request(
@@ -203,6 +208,11 @@ describe("cheat routes", () => {
         riskLevel: "low",
         status: "in_progress",
       }],
+      [{
+        enabledCheatDetections:
+          '["tab_switch","tab_hidden","window_blur","copy_paste","right_click","screen_capture","devtools_open","multiple_monitors","suspicious_resize","rapid_answers","idle_too_long","face_missing","multiple_faces","looking_away","looking_down","camera_blocked"]',
+        teacherId: "teacher-1",
+      }],
       [],
       undefined,
       [
@@ -218,8 +228,7 @@ describe("cheat routes", () => {
         },
       ],
       undefined,
-      [],
-      [],
+      [{ fullName: "Nora Student" }],
     );
 
     const response = await app.request(
@@ -290,6 +299,11 @@ describe("cheat routes", () => {
         status: "in_progress",
       }],
       [{
+        enabledCheatDetections:
+          '["tab_switch","tab_hidden","window_blur","copy_paste","right_click","screen_capture","devtools_open","multiple_monitors","suspicious_resize","rapid_answers","idle_too_long","face_missing","multiple_faces","looking_away","looking_down","camera_blocked"]',
+        teacherId: "teacher-1",
+      }],
+      [{
         createdAt: new Date().toISOString(),
         dedupeKey: "tab_switch::browser::visibilityState:hidden",
       }],
@@ -322,6 +336,52 @@ describe("cheat routes", () => {
       },
     });
     expect(mockDb.insert).not.toHaveBeenCalled();
+  });
+
+  it("ignores disabled exam cheat detections without persisting risk changes", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{
+        id: "session-1",
+        examId: "exam-1",
+        studentId: "student-1",
+        violationScore: 4,
+        riskLevel: "medium",
+        isFlagged: false,
+        status: "in_progress",
+      }],
+      [{
+        enabledCheatDetections: '["tab_switch","camera_blocked"]',
+        teacherId: "teacher-1",
+      }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/cheat/event",
+      jsonRequest(
+        {
+          sessionId: "session-1",
+          eventType: "copy_paste",
+          source: "browser",
+        },
+        studentHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: {
+        deduped: false,
+        ignored: true,
+        flagged: false,
+        riskLevel: "medium",
+        violationScore: 4,
+      },
+    });
+    expect(mockDb.insert).not.toHaveBeenCalled();
+    expect(mockDb.update).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported camera event types", async () => {

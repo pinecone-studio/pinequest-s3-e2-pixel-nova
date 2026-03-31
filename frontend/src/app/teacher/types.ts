@@ -25,6 +25,7 @@ export type Exam = {
   expectedStudentsCount?: number;
   questionCount?: number;
   submissionCount?: number;
+  enabledCheatDetections?: string[];
   questions: Question[];
   duration?: number;
   locationPolicy?: "anywhere" | "school_only";

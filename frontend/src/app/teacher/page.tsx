@@ -20,27 +20,36 @@ import {
   setStoredSelectedUserId,
   type RoleKey,
 } from "@/lib/role-session";
+import { updateExam } from "@/api/exams";
+import {
+  DEFAULT_ENABLED_CHEAT_DETECTIONS,
+  normalizeEnabledCheatDetections,
+} from "@/lib/exam-cheat-detections";
 import TeacherHeader from "./components/TeacherHeader";
 import TeacherPageContent, {
   type TeacherTab,
 } from "./components/TeacherPageContent";
 import ExamScheduleCard from "./components/ExamScheduleCard";
+import TeacherCheatDetectionDialog from "./components/TeacherCheatDetectionDialog";
 import { useTeacherData } from "./hooks/useTeacherData";
 import { useExamManagement } from "./hooks/useExamManagement";
 import { useExamStats } from "./hooks/useExamStats";
 import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { pageShellClass } from "./styles";
+import type { Exam } from "./types";
 
 const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
 
 function TeacherScheduleModal({
   show,
   onClose,
+  onSchedule,
   data,
   management,
 }: {
   show: boolean;
   onClose: () => void;
+  onSchedule: () => Promise<void>;
   data: ReturnType<typeof useTeacherData>;
   management: ReturnType<typeof useExamManagement>;
 }) {
@@ -48,14 +57,12 @@ function TeacherScheduleModal({
 
   return (
     <div
-      className="fixed inset-0 z-[120] overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
-      onClick={onClose}
-    >
-      <div className="mx-auto flex min-h-screen w-full max-w-[46rem] items-center justify-center py-4 sm:py-8">
+      className="fixed inset-0 z-120 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
+      onClick={onClose}>
+      <div className="mx-auto flex min-h-screen w-full max-w-184 items-center justify-center py-4 sm:py-8">
         <div
           className="flex w-full justify-center transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
-          onClick={(event) => event.stopPropagation()}
-        >
+          onClick={(event) => event.stopPropagation()}>
           <ExamScheduleCard
             exams={data.exams}
             selectedScheduleExamId={management.selectedScheduleExamId}
@@ -84,7 +91,7 @@ function TeacherScheduleModal({
             setScheduleAllowedRadiusMeters={management.setScheduleAllowedRadiusMeters}
             durationMinutes={management.durationMinutes}
             setDurationMinutes={management.setDurationMinutes}
-            onSchedule={management.handleSchedule}
+            onSchedule={onSchedule}
             onClose={onClose}
           />
         </div>
@@ -114,6 +121,15 @@ export default function TeacherPage() {
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
   const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын сан");
   const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [showCheatDetectionDialog, setShowCheatDetectionDialog] =
+    useState(false);
+  const [cheatDetectionExam, setCheatDetectionExam] = useState<Exam | null>(
+    null,
+  );
+  const [selectedCheatDetections, setSelectedCheatDetections] = useState<
+    string[]
+  >([]);
+  const [savingCheatDetections, setSavingCheatDetections] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
     null,
@@ -145,11 +161,12 @@ export default function TeacherPage() {
       : "mx-auto w-full max-w-[1380px] space-y-5 px-4 py-4 sm:px-6 lg:px-8";
 
   useEffect(() => {
-    document.body.style.overflow = showScheduleForm ? "hidden" : "";
+    document.body.style.overflow =
+      showScheduleForm || showCheatDetectionDialog ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [showScheduleForm]);
+  }, [showCheatDetectionDialog, showScheduleForm]);
 
   useEffect(() => {
     setContentVisible(false);
@@ -225,6 +242,77 @@ export default function TeacherPage() {
     };
   }, [examStatsState.selectedSubmission?.studentId]);
 
+  const closeCheatDetectionDialog = () => {
+    setShowCheatDetectionDialog(false);
+    setCheatDetectionExam(null);
+    setSelectedCheatDetections([]);
+    setSavingCheatDetections(false);
+  };
+
+  const handleScheduleAndConfigure = async () => {
+    const scheduledExam = await management.handleSchedule();
+    if (!scheduledExam) {
+      return;
+    }
+
+    setShowScheduleForm(false);
+    setCheatDetectionExam(scheduledExam);
+    setSelectedCheatDetections(
+      normalizeEnabledCheatDetections(
+        scheduledExam.enabledCheatDetections ??
+          DEFAULT_ENABLED_CHEAT_DETECTIONS,
+      ),
+    );
+    setShowCheatDetectionDialog(true);
+  };
+
+  const saveCheatDetectionSettings = async () => {
+    if (!data.currentUser || !cheatDetectionExam) {
+      return;
+    }
+
+    const selectedConfig = DEFAULT_ENABLED_CHEAT_DETECTIONS.filter((value) =>
+      selectedCheatDetections.includes(value),
+    );
+    if (selectedConfig.length === 0) {
+      data.showToast("Дор хаяж нэг илрүүлэлт идэвхтэй байх ёстой.");
+      return;
+    }
+
+    setSavingCheatDetections(true);
+    try {
+      const updated = await updateExam(
+        cheatDetectionExam.id,
+        {
+          enabledCheatDetections: selectedConfig,
+        },
+        data.currentUser,
+      );
+
+      data.setExams(
+        data.exams.map((exam) =>
+          exam.id === cheatDetectionExam.id
+            ? {
+                ...exam,
+                enabledCheatDetections:
+                  updated.enabledCheatDetections ?? selectedConfig,
+              }
+            : exam,
+        ),
+      );
+      data.showToast("Луйврын илрүүлэлтийн тохиргоо хадгалагдлаа.");
+      closeCheatDetectionDialog();
+    } catch (error) {
+      data.showToast(
+        error instanceof Error && error.message
+          ? error.message
+          : "Луйврын илрүүлэлтийн тохиргоог хадгалж чадсангүй.",
+      );
+    } finally {
+      setSavingCheatDetections(false);
+    }
+  };
+
   if (!data.currentUser) return null;
 
   return (
@@ -264,8 +352,7 @@ export default function TeacherPage() {
       />
       <main className={mainClassName}>
         <div
-          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}
-        >
+          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}>
           <TeacherPageContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -282,8 +369,18 @@ export default function TeacherPage() {
       <TeacherScheduleModal
         show={showScheduleForm}
         onClose={() => setShowScheduleForm(false)}
+        onSchedule={handleScheduleAndConfigure}
         data={data}
         management={management}
+      />
+      <TeacherCheatDetectionDialog
+        exam={cheatDetectionExam}
+        open={showCheatDetectionDialog}
+        saving={savingCheatDetections}
+        selectedDetections={selectedCheatDetections}
+        onChange={setSelectedCheatDetections}
+        onClose={closeCheatDetectionDialog}
+        onSave={saveCheatDetectionSettings}
       />
     </div>
   );

@@ -57,16 +57,18 @@ describe("exam lifecycle routes", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      success: true,
-      data: {
+    const payload: any = await response.json();
+    expect(payload.success).toBe(true);
+    expect(payload.data).toEqual(
+      expect.objectContaining({
         id: "exam-1",
         teacherId: "teacher-1",
         status: "scheduled",
         scheduledAt: "2026-03-31T08:00:00.000Z",
         roomCode: "ROOM01",
-      },
-    });
+      }),
+    );
+    expect(payload.data.enabledCheatDetections).toHaveLength(16);
   });
 
   it("prevents manually starting an exam before its scheduled time", async () => {
@@ -108,15 +110,17 @@ describe("exam lifecycle routes", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      success: true,
-      data: {
+    const payload: any = await response.json();
+    expect(payload.success).toBe(true);
+    expect(payload.data).toEqual(
+      expect.objectContaining({
         id: "exam-1",
         teacherId: "teacher-1",
         status: "finished",
         finishedAt: "2026-03-30T09:00:00.000Z",
-      },
-    });
+      }),
+    );
+    expect(payload.data.enabledCheatDetections).toHaveLength(16);
   });
 
   it("archives a finished exam", async () => {
@@ -134,13 +138,15 @@ describe("exam lifecycle routes", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      success: true,
-      data: {
+    const payload: any = await response.json();
+    expect(payload.success).toBe(true);
+    expect(payload.data).toEqual(
+      expect.objectContaining({
         id: "exam-1",
         teacherId: "teacher-1",
         status: "archived",
-      },
-    });
+      }),
+    );
+    expect(payload.data.enabledCheatDetections).toHaveLength(16);
   });
 });

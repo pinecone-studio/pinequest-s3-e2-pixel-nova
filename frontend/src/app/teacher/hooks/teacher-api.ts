@@ -68,6 +68,7 @@ type TeacherExamSummary = {
   locationLatitude?: number | null;
   locationLongitude?: number | null;
   allowedRadiusMeters?: number | null;
+  enabledCheatDetections?: string[];
 };
 
 type TeacherExamDetail = TeacherExamSummary & {
@@ -116,6 +117,7 @@ export const fetchTeacherExams = async (
     locationLatitude: exam.locationLatitude ?? null,
     locationLongitude: exam.locationLongitude ?? null,
     allowedRadiusMeters: exam.allowedRadiusMeters ?? 3000,
+    enabledCheatDetections: exam.enabledCheatDetections ?? undefined,
     questions: [],
     duration: exam.durationMin ?? 60,
     createdAt: exam.createdAt,
@@ -167,6 +169,7 @@ export const fetchTeacherExamDetail = async (
     locationLatitude: exam.locationLatitude ?? null,
     locationLongitude: exam.locationLongitude ?? null,
     allowedRadiusMeters: exam.allowedRadiusMeters ?? 3000,
+    enabledCheatDetections: exam.enabledCheatDetections ?? undefined,
     questions: mappedQuestions,
     duration: exam.durationMin ?? 60,
     createdAt: exam.createdAt,
@@ -183,11 +186,25 @@ export const fetchTeacherSubmissions = async (
     "teacher",
     teacherId,
   );
-  return unwrapApi(data).map((item) => ({
-    ...item,
-    percentage: item.score ?? 0,
-    totalPoints: item.totalPoints ?? 0,
-  }));
+  return unwrapApi(data).map((item) => {
+    const totalPoints = Number(item.totalPoints ?? 0);
+    const rawScore = Number(item.score ?? 0);
+    const normalizedPercentage =
+      rawScore > totalPoints && totalPoints > 0 ? rawScore : Number(item.percentage ?? rawScore);
+    const normalizedScore =
+      totalPoints > 0
+        ? rawScore <= totalPoints
+          ? rawScore
+          : Math.min(totalPoints, Math.round((normalizedPercentage / 100) * totalPoints))
+        : rawScore;
+
+    return {
+      ...item,
+      score: normalizedScore,
+      percentage: normalizedPercentage,
+      totalPoints,
+    };
+  });
 };
 
 export const fetchTeacherExamRoster = async (

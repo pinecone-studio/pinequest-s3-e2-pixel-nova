@@ -14,6 +14,7 @@ import {
   buildSyncMessage,
   toActiveSession,
 } from '../core/context-helpers';
+import { isCheatDetectionEnabled } from '../core/cheat-detection';
 import type { AnswerValue, CheatEventType } from '@/types/student-app';
 import type { StudentAppSetState, StudentAppState } from '../core/state';
 import { mergeSessionResult, normalizeApiError } from '../core/utils';
@@ -178,6 +179,16 @@ export const useStudentSession = ({
 
   const logIntegrityEvent = useCallback(
     async (eventType: CheatEventType, metadata?: string) => {
+      if (
+        activeSession &&
+        !isCheatDetectionEnabled(
+          eventType,
+          activeSession.exam.enabledCheatDetections,
+        )
+      ) {
+        return;
+      }
+
       const timestamp = new Date().toISOString();
 
       setState((current) => ({

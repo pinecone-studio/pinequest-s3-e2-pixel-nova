@@ -18,6 +18,7 @@ import {
   notifyTeacherStudentJoined,
   notifyTeacherStudentSubmitted,
 } from "../services/notifications";
+import { parseEnabledCheatDetections } from "../utils/exam-cheat-detections";
 
 const getEffectiveExamStart = (exam: { startedAt?: string | null; scheduledAt?: string | null }) =>
   parseExamDate(exam.startedAt) ?? parseExamDate(exam.scheduledAt);
@@ -87,20 +88,24 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
   const user = c.get("user");
   const db = getDb(c.env.educore);
 
-  // Find exam by roomCode (scheduled or active)
+  // Find exam by roomCode (scheduled, active, or finished for a clearer status message)
   const [exam] = await db
     .select()
     .from(exams)
     .where(
       and(
         eq(exams.roomCode, roomCode),
-        sql`${exams.status} IN (${sql.join(["scheduled", "active"].map((s) => sql`${s}`), sql`, `)})`,
+        sql`${exams.status} IN (${sql.join(["scheduled", "active", "finished"].map((s) => sql`${s}`), sql`, `)})`,
       ),
     )
     .limit(1);
 
   if (!exam) {
     return error(c, "EXAM_NOT_FOUND", "No active exam found with this room code", 404);
+  }
+
+  if (exam.status === "finished" || exam.finishedAt) {
+    return error(c, "EXAM_FINISHED", "Энэ шалгалт аль хэдийн дууссан байна.", 400);
   }
 
   const now = new Date();
@@ -263,6 +268,9 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
         title: exam.title,
         durationMin: exam.durationMin,
         questionCount: totalQuestions,
+        enabledCheatDetections: parseEnabledCheatDetections(
+          exam.enabledCheatDetections,
+        ),
       },
     });
   }
@@ -324,6 +332,9 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
       title: exam.title,
       durationMin: exam.durationMin,
       questionCount: totalQuestions,
+      enabledCheatDetections: parseEnabledCheatDetections(
+        exam.enabledCheatDetections,
+      ),
     },
   }, 201);
 });
@@ -407,6 +418,16 @@ sessionRoutes.get("/:sessionId", requireRole("student"), async (c) => {
     options: optionsByQuestion.get(q.id) ?? [],
   }));
 
+  const savedAnswers = await db
+    .select({
+      questionId: studentAnswers.questionId,
+      selectedOptionId: studentAnswers.selectedOptionId,
+      textAnswer: studentAnswers.textAnswer,
+      answeredAt: studentAnswers.answeredAt,
+    })
+    .from(studentAnswers)
+    .where(eq(studentAnswers.sessionId, sessionId));
+
   return success(c, {
     session: {
       id: session.id,
@@ -423,7 +444,11 @@ sessionRoutes.get("/:sessionId", requireRole("student"), async (c) => {
       scheduledAt: exam.scheduledAt,
       startedAt: exam.startedAt,
       finishedAt: exam.finishedAt,
+      enabledCheatDetections: parseEnabledCheatDetections(
+        exam.enabledCheatDetections,
+      ),
     },
+    answers: savedAnswers,
     questions: questionsWithOptions,
   });
 });

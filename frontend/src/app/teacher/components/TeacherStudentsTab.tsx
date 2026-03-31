@@ -176,7 +176,7 @@ export default function TeacherStudentsTab({
 
   if (selectedExam) {
     return (
-      <div className="px-4 pb-[26px] pt-[42px] md:px-8 xl:px-[120px]">
+      <div className="mx-auto w-full max-w-[1260px] px-4 pb-8 pt-8 md:px-6 xl:px-0">
         <TeacherScheduleDetailPanel
           exam={selectedExam}
           roster={roster}
@@ -191,13 +191,13 @@ export default function TeacherStudentsTab({
   }
 
   return (
-    <section className="px-4 pb-[26px] pt-[42px] md:px-8 xl:px-[120px]">
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+    <section className="mx-auto w-full max-w-[1260px] px-4 pb-8 pt-8 md:px-6 xl:px-0">
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
         <div>
           <h2 className="text-[24px] font-semibold leading-[33px] tracking-[-0.02em] text-black">
             Шалгалтын хуваарь
           </h2>
-          <div className="mt-[10px] flex min-h-6 w-[292px] flex-wrap items-center gap-[16px] text-[16px] leading-6 text-[#212121]">
+          <div className="mt-3 flex min-h-6 flex-wrap items-center gap-5 text-[16px] leading-6 text-[#212121]">
             <div className="flex items-center gap-[10px]">
               <LegendDot category="required" />
               <span>Заавал судлах</span>
@@ -211,7 +211,7 @@ export default function TeacherStudentsTab({
 
         <div className="ml-auto flex flex-col items-end gap-3">
           <button
-            className="mt-[18px] inline-flex h-[49px] w-[185px] items-center justify-center gap-[10px] overflow-hidden rounded-[12px] bg-[linear-gradient(180deg,#3f78ff_0%,#2f66ef_100%)] px-3 text-[18px] font-semibold leading-6 text-white shadow-[0_14px_24px_-22px_rgba(37,99,235,0.8)] transition hover:brightness-[1.03]"
+            className="inline-flex h-[48px] min-w-[184px] items-center justify-center gap-[10px] overflow-hidden rounded-[14px] bg-[linear-gradient(180deg,#3f78ff_0%,#2f66ef_100%)] px-5 text-[18px] font-semibold leading-6 text-white shadow-[0_14px_24px_-22px_rgba(37,99,235,0.8)] transition hover:brightness-[1.03]"
             onClick={onAddSchedule}
             type="button"
           >
@@ -258,20 +258,20 @@ export default function TeacherStudentsTab({
         </div>
       </div>
 
-      <div className="mt-[31px]">
+      <div className="mt-8">
         {viewMode === "cards" ? (
-          <div className="space-y-[25px]">
+          <div className="space-y-7">
             {groupedItems.length === 0 ? (
               <div className="rounded-[32px] border border-dashed border-[#dce5ef] bg-white px-6 py-16 text-center text-sm text-slate-400">
                 {loading ? "Хуваарь ачаалж байна..." : "Хуваарьласан шалгалт алга."}
               </div>
             ) : (
               groupedItems.map((group) => (
-                <div key={group.label} className="space-y-4">
-                  <h3 className="text-[20px] font-medium leading-[27px] tracking-[-0.02em] text-[#7e7e7e]">
+                <div key={group.label} className="space-y-5">
+                  <h3 className="text-[18px] font-medium leading-[27px] tracking-[-0.02em] text-[#7e7e7e]">
                     {group.label}
                   </h3>
-                  <div className="grid gap-[18px] xl:grid-cols-3">
+                  <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
                     {group.items.map((item) => (
                       <ScheduleListCard
                         key={item.id}

@@ -73,6 +73,7 @@ const tableExports = {
     "locationLatitude",
     "locationLongitude",
     "allowedRadiusMeters",
+    "enabledCheatDetections",
     "createdAt",
     "updatedAt",
   ]),

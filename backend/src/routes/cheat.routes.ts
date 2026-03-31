@@ -10,6 +10,7 @@ import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
 import { notifyTeacherStudentFlagged } from "../services/notifications";
 import { createR2PresignedUrl } from "../utils/r2-presign";
+import { parseEnabledCheatDetections } from "../utils/exam-cheat-detections";
 
 const cheatRoutes = new Hono<AppEnv>();
 
@@ -105,23 +106,23 @@ const EVENT_COOLDOWN_MS: Partial<Record<EventType, number>> = {
 };
 
 const EVENT_LABELS: Record<EventType, string> = {
-  tab_switch: "Tab switch",
-  tab_hidden: "Fullscreen exit",
-  window_blur: "Window blur",
-  copy_paste: "Copy or paste",
-  right_click: "Context menu",
-  screen_capture: "Screen capture",
-  devtools_open: "Devtools shortcut",
-  multiple_monitors: "Multiple monitors",
-  suspicious_resize: "Suspicious resize",
-  rapid_answers: "Rapid answers",
-  idle_too_long: "Idle too long",
-  face_missing: "Face missing",
-  multiple_faces: "Multiple faces",
-  looking_away: "Looking away",
-  looking_down: "Looking down",
-  camera_blocked: "Camera blocked",
-  disqualification: "Disqualification",
+  tab_switch: "Таб сольсон",
+  tab_hidden: "Бүтэн дэлгэцээс гарсан",
+  window_blur: "Цонхноос гарсан",
+  copy_paste: "Хуулах эсвэл буулгах оролдлого",
+  right_click: "Баруун товшилт",
+  screen_capture: "Дэлгэцийн зураг авалт",
+  devtools_open: "Developer tools нээх оролдлого",
+  multiple_monitors: "Олон дэлгэц ашигласан",
+  suspicious_resize: "Сэжигтэй хэмжээс өөрчлөлт",
+  rapid_answers: "Хэт хурдан хариулсан",
+  idle_too_long: "Хэт удаан идэвхгүй байсан",
+  face_missing: "Нүүр илрээгүй",
+  multiple_faces: "Олон нүүр илэрсэн",
+  looking_away: "Хажуу тийш харсан",
+  looking_down: "Доош харсан",
+  camera_blocked: "Камер хаагдсан",
+  disqualification: "Шалгалтаас хасагдсан",
 };
 
 const SNAPSHOT_INTERVAL_MS = 15_000;
@@ -858,6 +859,32 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     );
   }
 
+  const [examConfig] = await db
+    .select({
+      enabledCheatDetections: exams.enabledCheatDetections,
+      teacherId: exams.teacherId,
+    })
+    .from(exams)
+    .where(eq(exams.id, session.examId))
+    .limit(1);
+
+  const enabledCheatDetections = parseEnabledCheatDetections(
+    examConfig?.enabledCheatDetections,
+  );
+
+  if (
+    eventType !== "disqualification" &&
+    !enabledCheatDetections.some((value) => value === eventType)
+  ) {
+    return success(c, {
+      deduped: false,
+      ignored: true,
+      flagged: Boolean(session.isFlagged),
+      riskLevel: (session.riskLevel ?? "low") as RiskLevel,
+      violationScore: Number(session.violationScore ?? 0),
+    });
+  }
+
   const { confidence, details, source } = parseStructuredMetadata(payload);
   const dedupeKey = buildEventDedupeKey({ eventType, source, details });
   const [previousEvent] = await db
@@ -925,16 +952,10 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
     .where(eq(students.id, user.id))
     .limit(1);
 
-  const [exam] = await db
-    .select({ teacherId: exams.teacherId })
-    .from(exams)
-    .where(eq(exams.id, session.examId))
-    .limit(1);
-
-  if (exam?.teacherId) {
+  if (examConfig?.teacherId) {
     await notifyTeacherStudentFlagged(
       db,
-      exam.teacherId,
+      examConfig.teacherId,
       session.examId,
       sessionId,
       user.id,

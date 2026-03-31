@@ -29,6 +29,7 @@ type RemoteExamDetail = {
   locationLatitude?: number | null;
   locationLongitude?: number | null;
   allowedRadiusMeters?: number | null;
+  enabledCheatDetections?: string[];
   createdAt?: string;
 };
 

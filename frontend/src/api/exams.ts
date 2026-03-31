@@ -13,6 +13,7 @@ export type TeacherExamSummary = {
   status: string;
   passScore?: number | null;
   shuffleQuestions?: boolean;
+  enabledCheatDetections?: string[];
   createdAt: string;
 };
 

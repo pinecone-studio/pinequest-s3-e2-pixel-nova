@@ -54,6 +54,7 @@ export type SessionExam = {
   description?: string | null;
   durationMin: number;
   questionCount?: number;
+  enabledCheatDetections?: string[];
   status?: string | null;
   scheduledAt?: string | null;
   startedAt?: string | null;

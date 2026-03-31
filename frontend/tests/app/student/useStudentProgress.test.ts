@@ -55,8 +55,22 @@ const mockUser: User = {
 };
 
 const mockResults = [
-  { examId: "e1", title: "Math", score: 90, totalPoints: 100, submittedAt: "2024-06-02" },
-  { examId: "e2", title: "Science", score: 75, totalPoints: 100, submittedAt: "2024-06-01" },
+  {
+    examId: "e1",
+    title: "Math",
+    score: 90,
+    earnedPoints: 90,
+    totalPoints: 100,
+    submittedAt: "2024-06-02",
+  },
+  {
+    examId: "e2",
+    title: "Science",
+    score: 75,
+    earnedPoints: 75,
+    totalPoints: 100,
+    submittedAt: "2024-06-01",
+  },
 ];
 
 describe("useStudentProgress", () => {

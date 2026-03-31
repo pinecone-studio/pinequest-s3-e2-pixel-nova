@@ -44,6 +44,7 @@ export const buildLocalExam = (params: {
     locationLatitude?: number | null;
     locationLongitude?: number | null;
     allowedRadiusMeters?: number | null;
+    enabledCheatDetections?: string[];
     createdAt?: string;
   } | null;
 }): Exam => {
@@ -62,6 +63,7 @@ export const buildLocalExam = (params: {
     roomCode: remote?.roomCode ?? generateRoomCode(),
     expectedStudentsCount:
       remote?.expectedStudentsCount ?? payload.expectedStudentsCount,
+    enabledCheatDetections: remote?.enabledCheatDetections,
     questions: payload.questions,
     duration: remote?.durationMin ?? durationMinutes,
     locationPolicy: remote?.locationPolicy ?? payload.locationPolicy ?? "anywhere",

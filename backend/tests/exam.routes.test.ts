@@ -49,6 +49,7 @@ describe("exam routes", () => {
         durationMin: 45,
         passScore: 70,
         shuffleQuestions: true,
+        enabledCheatDetections: '["tab_switch","copy_paste"]',
       }],
     );
 
@@ -82,8 +83,79 @@ describe("exam routes", () => {
         durationMin: 45,
         passScore: 70,
         shuffleQuestions: true,
+        enabledCheatDetections: ["tab_switch", "copy_paste"],
       },
     });
+  });
+
+  it("defaults exam cheat detections to the full allowlist", async () => {
+    queueDbResults(
+      [{ id: "teacher-1", fullName: "Ada Teacher" }],
+      [{ id: "math-1" }],
+      undefined,
+      [{
+        id: "exam-1",
+        teacherId: "teacher-1",
+        subjectId: "math-1",
+        title: "Algebra Final",
+        enabledCheatDetections:
+          '["tab_switch","tab_hidden","window_blur","copy_paste","right_click","screen_capture","devtools_open","multiple_monitors","suspicious_resize","rapid_answers","idle_too_long","face_missing","multiple_faces","looking_away","looking_down","camera_blocked"]',
+      }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/exams",
+      {
+        ...jsonRequest(
+          {
+            subjectId: "math-1",
+            title: "Algebra Final",
+          },
+          teacherHeaders(),
+        ),
+      },
+      workerEnv,
+    );
+
+    expect(response.status).toBe(201);
+    const payload: any = await response.json();
+    expect(payload.data.enabledCheatDetections).toHaveLength(16);
+    expect(payload.data.enabledCheatDetections).toContain("tab_switch");
+    expect(payload.data.enabledCheatDetections).toContain("camera_blocked");
+  });
+
+  it("blocks cheat detection updates after an exam starts", async () => {
+    queueDbResults(
+      [{ id: "teacher-1", fullName: "Ada Teacher" }],
+      [
+        {
+          id: "exam-1",
+          teacherId: "teacher-1",
+          title: "Active exam",
+          status: "active",
+          enabledCheatDetections:
+            '["tab_switch","copy_paste","camera_blocked"]',
+        },
+      ],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/exams/exam-1",
+      {
+        method: "PUT",
+        headers: {
+          "content-type": "application/json",
+          ...teacherHeaders(),
+        },
+        body: JSON.stringify({
+          enabledCheatDetections: ["tab_switch"],
+        }),
+      },
+      workerEnv,
+    );
+
+    expect(response.status).toBe(400);
+    expect(mockDb.update).not.toHaveBeenCalled();
   });
 
   it("lists the current teacher's exams", async () => {
@@ -104,13 +176,23 @@ describe("exam routes", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      success: true,
-      data: [
-        { id: "exam-1", title: "Algebra Final", status: "draft" },
-        { id: "exam-2", title: "Geometry Quiz", status: "scheduled" },
-      ],
-    });
+    const payload: any = await response.json();
+    expect(payload.success).toBe(true);
+    expect(payload.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "exam-1",
+          title: "Algebra Final",
+          status: "draft",
+        }),
+        expect.objectContaining({
+          id: "exam-2",
+          title: "Geometry Quiz",
+          status: "scheduled",
+        }),
+      ]),
+    );
+    expect(payload.data[0].enabledCheatDetections).toHaveLength(16);
   });
 
   it("batch creates exam questions with bulk inserts", async () => {

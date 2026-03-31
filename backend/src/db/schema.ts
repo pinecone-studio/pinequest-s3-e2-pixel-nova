@@ -1,5 +1,6 @@
 import { sqliteTable, text, integer, real, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import { serializeEnabledCheatDetections } from "../utils/exam-cheat-detections";
 
 // ============================================
 // SHARED — Code-based auth (no external provider)
@@ -78,6 +79,9 @@ export const exams = sqliteTable("exams", {
   locationLatitude: real("location_latitude"),
   locationLongitude: real("location_longitude"),
   allowedRadiusMeters: integer("allowed_radius_meters").notNull().default(3000),
+  enabledCheatDetections: text("enabled_cheat_detections")
+    .notNull()
+    .default(serializeEnabledCheatDetections()),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
   updatedAt: text("updated_at").notNull().default(sql`(current_timestamp)`),
 });
