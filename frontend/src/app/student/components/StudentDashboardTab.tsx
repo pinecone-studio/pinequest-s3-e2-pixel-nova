@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import type { XpLeaderboardEntry } from "@/api/xp";
 import type { Exam } from "../types";
+import StudentExamDetailSection from "./StudentExamDetailSection";
 import { subjectFromExam, formatClock } from "./student-exams-helpers";
 
 type StudentDashboardTabProps = {
@@ -25,6 +26,9 @@ type StudentDashboardTabProps = {
     date: string;
   }[];
   termLeaderboardEntries?: XpLeaderboardEntry[];
+  teacherName?: string | null;
+  onOpenExamDetail: (exam: Exam) => void;
+  onCloseExamDetail: () => void;
   onOpenExams: () => void;
   onOpenProgress: () => void;
 };
@@ -54,6 +58,23 @@ const getExamTimestamp = (exam: Exam) => {
   const value = exam.scheduledAt ?? exam.createdAt;
   const timestamp = new Date(value ?? "");
   return Number.isNaN(timestamp.getTime()) ? new Date() : timestamp;
+};
+
+const compareDashboardExams = (left: Exam, right: Exam) => {
+  const leftHasSchedule = Boolean(left.scheduledAt);
+  const rightHasSchedule = Boolean(right.scheduledAt);
+  const leftTime = getExamTimestamp(left).getTime();
+  const rightTime = getExamTimestamp(right).getTime();
+
+  if (leftHasSchedule !== rightHasSchedule) {
+    return leftHasSchedule ? -1 : 1;
+  }
+
+  if (leftHasSchedule && rightHasSchedule) {
+    return leftTime - rightTime;
+  }
+
+  return rightTime - leftTime;
 };
 
 const formatSlashDate = (value: Date) =>
@@ -89,7 +110,8 @@ const buildBezierPath = (points: Array<{ x: number; y: number }>) => {
 
 const formatCompactXp = (value: number) => {
   if (value >= 1000) {
-    const compact = value >= 10000 ? Math.round(value / 1000) : Math.round(value / 100) / 10;
+    const compact =
+      value >= 10000 ? Math.round(value / 1000) : Math.round(value / 100) / 10;
     return `${compact.toString().replace(/\.0$/, "")}k`;
   }
 
@@ -111,15 +133,15 @@ export default function StudentDashboardTab({
   studentCount,
   studentHistory,
   termLeaderboardEntries = [],
+  teacherName,
+  onOpenExamDetail,
+  onCloseExamDetail,
   onOpenExams,
   onOpenProgress,
 }: StudentDashboardTabProps) {
   const scheduleCards = useMemo(() => {
-    const sourceExams = [
-      ...(selectedExam ? [selectedExam] : []),
-      ...exams.filter((exam) => exam.id !== selectedExam?.id),
-    ]
-      .sort((left, right) => getExamTimestamp(right).getTime() - getExamTimestamp(left).getTime())
+    const sourceExams = [...exams]
+      .sort(compareDashboardExams)
       .slice(0, 4)
       .map((exam, index) => {
         const timestamp = getExamTimestamp(exam);
@@ -127,6 +149,7 @@ export default function StudentDashboardTab({
 
         return {
           id: exam.id,
+          exam,
           title: subjectFromExam(exam),
           badgeLabel: badge.label,
           badgeClassName: badge.className,
@@ -149,6 +172,19 @@ export default function StudentDashboardTab({
 
         return {
           id: item.examId,
+          exam: {
+            id: item.examId,
+            title: item.title,
+            description: item.title,
+            status: null,
+            sessionStatus: null,
+            entryStatus: null,
+            scheduledAt: item.date,
+            roomCode: "",
+            questions: [],
+            duration: 40,
+            createdAt: item.date,
+          } as Exam,
           title: getDisplayName(item.title),
           badgeLabel: badge.label,
           badgeClassName: badge.className,
@@ -159,7 +195,7 @@ export default function StudentDashboardTab({
       });
 
     return [...sourceExams, ...historyCards];
-  }, [exams, selectedExam, studentHistory]);
+  }, [exams, studentHistory]);
 
   const progressChart = useMemo(() => {
     const orderedHistory = [...studentHistory].sort(
@@ -273,8 +309,11 @@ export default function StudentDashboardTab({
     const normalizedEntries = termLeaderboardEntries.map((entry) => ({
       ...entry,
       fullName:
-        currentUserId && entry.id === currentUserId ? currentUserName : entry.fullName,
+        currentUserId && entry.id === currentUserId
+          ? currentUserName
+          : entry.fullName,
     }));
+
     const currentEntry =
       normalizedEntries.find((entry) => entry.id === currentUserId) ??
       (currentUserId
@@ -308,32 +347,59 @@ export default function StudentDashboardTab({
 
   if (loading) {
     return (
-      <section className="mx-auto grid w-full max-w-[1216px] gap-8 xl:grid-cols-[800px_384px]">
-        <div className="space-y-5">
-          <div className="h-8 w-52 animate-pulse rounded-full bg-[#e9ecfb]" />
-          <div className="grid gap-8 md:grid-cols-2 xl:[grid-template-columns:repeat(2,384px)]">
+      <section
+        aria-label="student-dashboard-loading"
+        className="mx-auto grid w-full max-w-[1272px] gap-7 xl:grid-cols-[856px_344px]"
+      >
+        <div className="space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="h-8 w-[258px] animate-pulse rounded-full bg-[#e4e7f0]" />
+            <div className="h-6 w-[72px] animate-pulse rounded-full bg-[#e4e7f0]" />
+          </div>
+          <div className="grid gap-5 md:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
-                className="h-[264px] animate-pulse rounded-[28px] border border-[#e8ecfb] bg-white"
+                className="h-[214px] animate-pulse rounded-[24px] bg-[#e4e4e4]"
               />
             ))}
           </div>
         </div>
 
         <div className="space-y-5">
-          <div className="h-[294px] animate-pulse rounded-[32px] border border-[#e8ecfb] bg-white" />
-          <div className="h-[210px] animate-pulse rounded-[28px] border border-[#e8ecfb] bg-white" />
+          <div className="space-y-4">
+            <div className="h-6 w-[72px] animate-pulse rounded-full bg-[#e4e7f0]" />
+            <div className="h-[236px] animate-pulse rounded-[24px] bg-[#e4e4e4]" />
+          </div>
+          <div className="space-y-3">
+            <div className="h-6 w-[112px] animate-pulse rounded-[10px] bg-[#e4e7f0]" />
+            <div className="h-[52px] animate-pulse rounded-[12px] bg-[#e4e4e4]" />
+            <div className="h-[52px] animate-pulse rounded-[12px] bg-[#e4e4e4]" />
+            <div className="h-[52px] animate-pulse rounded-[12px] bg-[#e4e4e4]" />
+          </div>
         </div>
       </section>
     );
   }
 
+  if (selectedExam) {
+    return (
+      <StudentExamDetailSection
+        selectedExam={selectedExam}
+        teacherName={teacherName}
+        onBack={onCloseExamDetail}
+        onPrimaryAction={onOpenExams}
+        primaryActionLabel="Start Exam"
+        maxWidthClassName="max-w-[720px]"
+      />
+    );
+  }
+
   return (
-    <section className="mx-auto grid w-full max-w-[1216px] gap-8 xl:grid-cols-[800px_384px]">
-      <div className="space-y-5">
+    <section className="mx-auto grid w-full max-w-[1272px] gap-7 xl:grid-cols-[856px_344px]">
+      <div className="space-y-6">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[1.9rem] font-semibold tracking-[-0.04em] text-slate-900">
+          <h2 className="text-[1.7rem] font-semibold tracking-[-0.04em] text-slate-900">
             Шалгалтын хуваарь
           </h2>
           <button
@@ -346,18 +412,18 @@ export default function StudentDashboardTab({
         </div>
 
         {scheduleCards.length === 0 ? (
-          <div className="rounded-[28px] border border-dashed border-[#dfe5fb] bg-white px-5 py-8 text-sm text-slate-400">
+          <div className="rounded-[28px] border border-dashed border-[#dfe5fb] bg-white/90 px-5 py-8 text-sm text-slate-400">
             Одоогоор харагдах шалгалтын хуваарь алга.
           </div>
         ) : (
-          <div className="grid gap-8 md:grid-cols-2 xl:[grid-template-columns:repeat(2,384px)]">
+          <div className="grid gap-5 md:grid-cols-2">
             {scheduleCards.map((card) => (
               <article
                 key={card.id}
-                className="h-[264px] rounded-[30px] border border-[#dfe5fb] bg-white px-5 py-6 shadow-[0_18px_42px_rgba(79,93,132,0.08)]"
+                className="group flex min-h-[214px] flex-col rounded-[24px] border border-[#dfe5fb] bg-white px-5 py-5 shadow-[0_12px_28px_-24px_rgba(79,93,132,0.26)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-24px_rgba(79,93,132,0.32)]"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-[1.15rem] font-semibold tracking-[-0.03em] text-slate-900">
+                  <h3 className="text-[1.05rem] font-semibold tracking-[-0.03em] text-slate-900">
                     {card.title}
                   </h3>
                   <span
@@ -367,7 +433,7 @@ export default function StudentDashboardTab({
                   </span>
                 </div>
 
-                <dl className="mt-6 space-y-3 text-sm">
+                <dl className="mt-5 space-y-3 text-[0.95rem]">
                   <div className="flex items-center justify-between gap-3">
                     <dt className="text-slate-400">Өдөр:</dt>
                     <dd className="font-medium text-slate-700">{card.dateLabel}</dd>
@@ -382,10 +448,10 @@ export default function StudentDashboardTab({
                   </div>
                 </dl>
 
-                <div className="mt-7 border-t border-[#edf1ff] pt-4">
+                <div className="mt-auto border-t border-[#edf1ff] pt-3.5">
                   <button
-                    className="inline-flex w-full items-center justify-end gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
-                    onClick={onOpenExams}
+                    className="inline-flex w-full items-center justify-end gap-2 text-sm font-semibold text-slate-600 transition group-hover:text-slate-900"
+                    onClick={() => onOpenExamDetail(card.exam)}
                   >
                     Дэлгэрэнгүй
                     <ChevronRight className="h-4 w-4" />
@@ -397,38 +463,39 @@ export default function StudentDashboardTab({
         )}
       </div>
 
-      <div className="w-full space-y-5 xl:w-[384px]">
+      <div className="w-full space-y-5 xl:w-[344px]">
         <button
           type="button"
           aria-label="Ахиц харах"
-          className="relative h-[294px] w-full overflow-hidden rounded-[32px] border border-[#eef2ff] bg-white px-5 pb-4 pt-5 text-left shadow-[0_18px_42px_rgba(79,93,132,0.08)] transition hover:shadow-[0_24px_54px_rgba(79,93,132,0.12)]"
+          className="relative h-[236px] w-full overflow-hidden rounded-[24px] border border-[#eef2ff] bg-white px-5 pb-4 pt-4 text-left shadow-[0_12px_28px_-24px_rgba(79,93,132,0.26)] transition hover:shadow-[0_18px_36px_-24px_rgba(79,93,132,0.32)]"
           onClick={onOpenProgress}
         >
           <div>
             <div>
-              <h3 className="text-[1.9rem] font-semibold tracking-[-0.05em] text-[#111216]">
+              <h3 className="text-[1.05rem] font-semibold tracking-[-0.03em] text-[#111216]">
                 Ахиц дэвшил
               </h3>
-              <p className="mt-1.5 text-[0.9rem] font-medium text-[#aab4cc]">
+              <p className="mt-1 text-[0.82rem] font-medium text-[#aab4cc]">
                 Сүүлийн шалгалтуудын дундаж
               </p>
             </div>
           </div>
 
-          <div className="relative mt-4 h-[200px] overflow-hidden rounded-[26px] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)]">
+          <div className="relative mt-4 h-[164px] overflow-hidden rounded-[20px] bg-[radial-gradient(circle_at_top_left,#ffffff_0%,#f8f9ff_52%,#eef2ff_100%)]">
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(238,242,255,0.72)_100%)]" />
             <div
-              className="absolute z-20 w-[168px] -translate-x-[34%] -translate-y-1/2 rounded-[22px] bg-white px-5 py-3.5 shadow-[0_18px_34px_rgba(79,93,132,0.14)]"
+              className="absolute z-20 w-[138px] -translate-x-[34%] -translate-y-1/2 rounded-[18px] bg-white px-3.5 py-2.5 shadow-[0_12px_26px_rgba(79,93,132,0.14)]"
               style={{
                 left: `${progressChart.bubbleLeftPercent}%`,
                 top: `${progressChart.bubbleTopPercent}%`,
               }}
             >
               <div className="absolute -left-1.5 top-[56%] h-4 w-4 -translate-y-1/2 rotate-45 bg-white shadow-[-6px_8px_16px_rgba(79,93,132,0.06)]" />
-              <div className="relative text-[0.95rem] font-semibold tracking-[-0.03em] text-slate-800">
-                <span className="text-[1.2rem]">{progressChart.latestValue}%</span>{" "}
+              <div className="relative text-[0.82rem] font-semibold tracking-[-0.03em] text-slate-800">
+                <span className="text-[1rem]">{progressChart.latestValue}%</span>{" "}
                 {progressChart.latestTitle}
               </div>
-              <div className="relative mt-1 text-[0.82rem] text-[#b4b9c8]">
+              <div className="relative mt-0.5 text-[0.72rem] text-[#b4b9c8]">
                 {progressChart.latestDateLabel}
               </div>
             </div>
@@ -436,7 +503,7 @@ export default function StudentDashboardTab({
             <svg
               viewBox="0 0 100 52"
               preserveAspectRatio="none"
-              className="absolute inset-x-0 bottom-0 h-[175px] w-full"
+              className="absolute inset-x-0 bottom-0 h-[148px] w-full"
               aria-label="Сурагчийн ахицын график"
               role="img"
             >
@@ -467,14 +534,14 @@ export default function StudentDashboardTab({
           </div>
         </button>
 
-        <div className="rounded-[30px] border border-[#edf1ff] bg-white px-5 py-5 shadow-[0_18px_42px_rgba(79,93,132,0.08)]">
+        <div className="rounded-[24px] border border-[#edf1ff] bg-white px-4 py-4 shadow-[0_12px_28px_-24px_rgba(79,93,132,0.26)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-[1.1rem] font-semibold tracking-[-0.03em] text-slate-900">
+              <h3 className="text-[1rem] font-semibold tracking-[-0.03em] text-slate-900">
                 XP оноо
               </h3>
-              <p className="mt-1 text-sm text-slate-400">
-                Дараагийн түвшин хүртэл {xpToNext} XP
+              <p className="mt-1 text-[0.82rem] text-slate-400">
+                Дараагийн level хүртэл {xpToNext} XP
               </p>
             </div>
             {currentRank ? (
@@ -486,26 +553,34 @@ export default function StudentDashboardTab({
 
           <div className="mt-4 space-y-3">
             {xpRows.map((entry, index) => {
-              const isCurrentUser = Boolean(currentUserId && entry.id === currentUserId);
+              const isCurrentUser = Boolean(
+                currentUserId && entry.id === currentUserId,
+              );
 
               return (
                 <div
                   key={entry.id}
-                  className={`flex items-center gap-3 rounded-[20px] border px-3 py-3 shadow-[0_12px_30px_rgba(79,93,132,0.06)] ${
+                  className={`flex items-center gap-3 rounded-[16px] border px-3 py-2.5 shadow-[0_8px_22px_-20px_rgba(79,93,132,0.22)] ${
                     isCurrentUser
-                      ? "border-[#bfcaff] bg-[#eef1ff]"
+                      ? "border-[#bfcaff] bg-[linear-gradient(135deg,#eef1ff_0%,#e8edff_100%)]"
                       : "border-[#edf1ff] bg-white"
                   }`}
                 >
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f5f7ff] text-sm font-semibold text-slate-600">
+                  <div
+                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold ${
+                      isCurrentUser
+                        ? "bg-[#6172ff] text-white shadow-[0_12px_24px_rgba(97,114,255,0.28)]"
+                        : "bg-[#f5f7ff] text-slate-600"
+                    }`}
+                  >
                     {entry.rank}
                   </div>
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#fff8eb] text-lg">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#fff8eb] text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
                     {xpEmojis[index % xpEmojis.length]}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <div className="truncate text-sm font-semibold text-slate-900">
+                      <div className="truncate text-[13px] font-semibold text-slate-900">
                         {getDisplayName(entry.fullName)}
                       </div>
                       {isCurrentUser && (
@@ -514,9 +589,11 @@ export default function StudentDashboardTab({
                         </span>
                       )}
                     </div>
-                    <div className="mt-0.5 text-xs text-slate-400">Түв. {entry.level}</div>
+                    <div className="mt-0.5 text-[11px] text-slate-400">
+                      Lvl {entry.level}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-sm font-semibold text-[#f0a24d]">
+                  <div className="flex items-center gap-1 text-[13px] font-semibold text-[#f0a24d]">
                     <svg
                       className="h-4 w-4"
                       viewBox="0 0 24 24"

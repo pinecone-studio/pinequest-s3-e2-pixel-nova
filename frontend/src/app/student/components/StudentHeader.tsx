@@ -1,21 +1,20 @@
-import { Bell, ChevronDown, CircleHelp, MoonIcon, Settings, User2 } from "lucide-react";
-import Image from "next/image";
+import {
+  Bell,
+  ChevronDown,
+  CircleHelp,
+  GraduationCap,
+  MoonIcon,
+  Settings,
+  User2,
+} from "lucide-react";
 import { useState, type FocusEvent, type ReactNode } from "react";
 import type { NotificationItem, StudentTab } from "../types";
 
-const primaryTabs = [
-  "Home",
-  "Exams",
-  "Progress",
-  "Insights",
-  "Leaderboard",
-] as const;
+const primaryTabs = ["Home", "Exams", "Progress"] as const;
 const tabLabels: Record<(typeof primaryTabs)[number], string> = {
   Home: "Нүүр",
   Exams: "Шалгалт",
   Progress: "Ахиц",
-  Insights: "AI дүгнэлт",
-  Leaderboard: "Тэргүүлэгчид",
 };
 
 type HeaderTab = (typeof primaryTabs)[number];
@@ -79,32 +78,27 @@ export default function StudentHeader({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="rounded-[32px] border border-[#e5e9fb]  bg-white px-4 py-4 shadow-[0_18px_44px_rgba(77,93,138,0.08)] sm:px-6">
-      <div className="flex flex-wrap items-center gap-4 xl:flex-nowrap xl:justify-between">
-        <div className="flex min-w-[220px] items-center gap-3 py-2">
-          <div className="overflow-hidden rounded-xl">
-            <Image
-              src="/group-web.svg"
-              alt="PineQuest"
-              width={32}
-              height={32}
-              className="h-8 w-8"
-              priority
-            />
+    <header className="rounded-[30px] border border-[#e7ecff] bg-white px-5 py-4 shadow-[0_18px_44px_-28px_rgba(77,93,138,0.22)] sm:px-6">
+      <div className="flex flex-wrap items-center gap-3 xl:flex-nowrap xl:justify-between">
+        <div className="flex min-w-[220px] items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-[#6b6fff] to-[#7f5cff] text-white shadow-[0_12px_24px_rgba(108,104,255,0.24)]">
+            <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="text-[15px] font-bold text-slate-900">Educore</span>
+          <div className="text-[1.18rem] font-semibold tracking-[-0.03em] text-slate-800">
+            EduCore LMS
+          </div>
         </div>
 
-        <nav className="order-3 flex w-full items-center gap-2 overflow-x-auto rounded-[20px] border border-[#e7edf5] bg-[#fbfcff] px-1.5 py-1.5 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)] xl:order-2 xl:w-auto xl:justify-center">
+        <nav className="order-3 flex w-full items-center justify-start gap-1 rounded-full border border-[#edf0ff] bg-[#fafbff] p-1 xl:order-2 xl:w-auto xl:justify-center">
           {primaryTabs.map((tab) => {
             const selected = activeTab === tab;
             return (
               <button
                 key={tab}
-                className={`relative whitespace-nowrap rounded-[14px] px-5 py-2.5 text-sm font-medium transition ${
+                className={`rounded-full px-4 py-2 text-[13px] font-semibold transition sm:px-5 ${
                   selected
-                    ? "bg-[#f5f4ff] text-slate-900 shadow-[inset_0_-2px_0_0_#5c6cff,0_10px_18px_-16px_rgba(92,108,255,0.65)]"
-                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                    ? "bg-white text-slate-900 shadow-[0_8px_20px_rgba(97,108,149,0.12)] ring-1 ring-[#dce2ff]"
+                    : "text-slate-400 hover:text-slate-700"
                 }`}
                 onClick={() => onTabChange(tab)}
               >
@@ -115,7 +109,7 @@ export default function StudentHeader({
         </nav>
 
         <div className="order-2 ml-auto flex items-center gap-2 xl:order-3">
-          <div className="hidden items-center gap-2 rounded-full bg-[#fff5ec] px-4 py-2 text-sm font-semibold text-[#ef8c46] sm:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-[#ffe6d4] bg-[#fff5ec] px-4 py-2 text-[13px] font-semibold text-[#ef8c46] sm:flex">
             <svg
               className="h-4 w-4"
               viewBox="0 0 24 24"
@@ -149,7 +143,7 @@ export default function StudentHeader({
             </button>
 
             <div
-              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-80 rounded-[28px] border border-[#eceefb] bg-white p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] transition ${
+              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-80 rounded-[28px] border border-[#eceefb] bg-white/98 p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] backdrop-blur transition ${
                 notificationsOpen
                   ? "translate-y-0 opacity-100"
                   : "pointer-events-none translate-y-2 opacity-0"
@@ -239,7 +233,7 @@ export default function StudentHeader({
           >
             <button
               aria-label="Дансны цэс нээх"
-              className="flex items-center gap-2 rounded-full border border-[#e4e8fb] bg-white px-2 py-1.5 shadow-sm transition hover:border-[#cfd8ff]"
+              className="flex items-center gap-2 rounded-full border border-[#e4e8fb] bg-white px-2 py-1.5 shadow-[0_10px_24px_rgba(77,93,138,0.08)] transition hover:border-[#cfd8ff]"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
               <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#7b67ff] to-[#9a7dff] text-sm font-semibold text-white">
@@ -253,16 +247,14 @@ export default function StudentHeader({
             </button>
 
             <div
-              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-[min(26rem,calc(100vw-2rem))] rounded-[28px] border border-[#eceefb] bg-white p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] transition ${
+              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-[min(26rem,calc(100vw-2rem))] rounded-[28px] border border-[#eceefb] bg-white/98 p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] backdrop-blur transition ${
                 menuOpen
                   ? "translate-y-0 opacity-100"
                   : "pointer-events-none translate-y-2 opacity-0"
               }`}
             >
               <div className="rounded-[22px] bg-gradient-to-r from-[#f4f6ff] via-[#faf5ff] to-[#fff6f0] p-4">
-                <div className="text-sm text-slate-400">
-                  Нэвтэрсэн хэрэглэгч
-                </div>
+                <div className="text-sm text-slate-400">Нэвтэрсэн хэрэглэгч</div>
                 <div className="mt-1 text-base font-semibold text-slate-900">
                   {currentUserName}
                 </div>

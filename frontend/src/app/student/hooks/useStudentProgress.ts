@@ -4,14 +4,8 @@ import type { StudentProgress } from "../types";
 import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
 import {
-  getStudentImprovementLeaderboard,
   getStudentResults,
-  getStudentProgressRank,
   getStudentTermLeaderboard,
-  type StudentImprovementLeaderboardEntry,
-  type StudentProgressRankOverview,
-  getStudentTermRank,
-  type StudentTermRankOverview,
 } from "@/lib/backend-auth";
 import {
   getXpHistory,
@@ -32,25 +26,6 @@ export const useStudentProgress = (currentUser: User | null) => {
     rank: null as number | null,
     totalStudents: 0,
   });
-  const [termRankOverview, setTermRankOverview] = useState<StudentTermRankOverview>({
-    rank: null,
-    totalStudents: 0,
-    termExamCount: 0,
-    xp: 0,
-    level: 1,
-  });
-  const [progressRankOverview, setProgressRankOverview] =
-    useState<StudentProgressRankOverview>({
-      rank: null,
-      totalStudents: 0,
-      progressExamCount: 0,
-      xp: 0,
-      level: 1,
-      isPrivate: true,
-    });
-  const [improvementLeaderboard, setImprovementLeaderboard] = useState<
-    StudentImprovementLeaderboardEntry[]
-  >([]);
   const [studentProgress, setStudentProgress] = useState({
     xp: 0,
     level: 1,
@@ -108,39 +83,6 @@ export const useStudentProgress = (currentUser: User | null) => {
       } catch {
         setStudentHistory([]);
       }
-
-      try {
-        setTermRankOverview(await getStudentTermRank(currentUser));
-      } catch {
-        setTermRankOverview({
-          rank: null,
-          totalStudents: 0,
-          termExamCount: 0,
-          xp: 0,
-          level: 1,
-        });
-      }
-
-      try {
-        setProgressRankOverview(await getStudentProgressRank(currentUser));
-      } catch {
-        setProgressRankOverview({
-          rank: null,
-          totalStudents: 0,
-          progressExamCount: 0,
-          xp: 0,
-          level: 1,
-          isPrivate: true,
-        });
-      }
-
-      try {
-        setImprovementLeaderboard(
-          await getStudentImprovementLeaderboard(currentUser),
-        );
-      } catch {
-        setImprovementLeaderboard([]);
-      }
     };
     void load();
   }, [currentUser]);
@@ -164,9 +106,6 @@ export const useStudentProgress = (currentUser: User | null) => {
     xpActivities,
     termLeaderboardEntries,
     rankOverview,
-    termRankOverview,
-    progressRankOverview,
-    improvementLeaderboard,
     studentProgress,
     levelInfo,
     nextLevel,

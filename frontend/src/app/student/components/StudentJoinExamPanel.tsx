@@ -2,12 +2,11 @@ import {
   CircleAlert,
   ClipboardX,
   Clock3,
+  Info,
   Play,
   RefreshCcw,
   Video,
-  Info,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import type { Exam } from "../types";
 import { formatDate, gradeFromPercentage } from "../utils";
 
@@ -71,6 +70,17 @@ export default function StudentJoinExamPanel({
   selectedExam,
   studentHistory,
 }: JoinExamPanelProps) {
+  if (loading) {
+    return (
+      <section
+        aria-label="student-exams-loading"
+        className="mx-auto w-full max-w-[1272px]"
+      >
+        <div className="h-[224px] w-full animate-pulse rounded-[24px] bg-[#e4e4e4]" />
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto w-full max-w-[1088px]">
       <div className="rounded-[34px] border border-[#e8ecfb] bg-white p-5 shadow-[0_22px_60px_rgba(80,94,133,0.08)] sm:p-6 lg:p-7">
@@ -84,34 +94,27 @@ export default function StudentJoinExamPanel({
             </h2>
 
             <div className="mt-5 max-w-[410px] space-y-4">
-              {loading ? (
-                <>
-                  <Skeleton className="h-12 rounded-[18px]" />
-                  <Skeleton className="ml-auto h-12 w-44 rounded-full" />
-                </>
-              ) : (
-                <>
-                  <input
-                    className="h-12 w-full rounded-[18px] border border-[#e4e9fb] bg-[#fbfcff] px-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-[#adb7cf] focus:border-[#aab7ff] focus:bg-white"
-                    placeholder="Өрөөний код"
-                    value={roomCodeInput}
-                    onChange={(event) =>
-                      setRoomCodeInput(event.target.value.toUpperCase())
-                    }
-                  />
+              <input
+                className="h-12 w-full rounded-[18px] border border-[#e4e9fb] bg-[#fbfcff] px-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-[#adb7cf] focus:border-[#aab7ff] focus:bg-white"
+                placeholder="Өрөөний код"
+                value={roomCodeInput}
+                onChange={(event) =>
+                  setRoomCodeInput(event.target.value.toUpperCase())
+                }
+              />
 
-                  <div className="flex justify-end">
-                    <button
-                      className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#6758ee] to-[#5d50de] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(96,84,228,0.24)] transition hover:brightness-105 ${joinLoading ? "opacity-70" : ""}`}
-                      onClick={onLookup}
-                      disabled={joinLoading}
-                    >
-                      <Play className="h-4 w-4" />
-                      {joinLoading ? "Нэвтэрч байна..." : "Шалгалтад нэвтрэх"}
-                    </button>
-                  </div>
-                </>
-              )}
+              <div className="flex justify-end">
+                <button
+                  className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#6758ee] to-[#5d50de] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(96,84,228,0.24)] transition hover:brightness-105 ${
+                    joinLoading ? "opacity-70" : ""
+                  }`}
+                  onClick={onLookup}
+                  disabled={joinLoading}
+                >
+                  <Play className="h-4 w-4" />
+                  {joinLoading ? "Нэвтэрч байна..." : "Шалгалтад нэвтрэх"}
+                </button>
+              </div>
 
               {joinError && (
                 <div className="rounded-[18px] border border-[#ffd4d4] bg-[#fff7f7] px-4 py-3 text-sm text-[#e45d5d]">
@@ -128,32 +131,24 @@ export default function StudentJoinExamPanel({
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {loading
-                ? Array.from({ length: 4 }).map((_, index) => (
-                    <Skeleton key={index} className="h-[90px] rounded-[16px]" />
-                  ))
-                : infoItems.map((item) => {
-                    const Icon = item.icon;
+              {infoItems.map((item) => {
+                const Icon = item.icon;
 
-                    return (
-                      <div
-                        key={item.title}
-                        className={`rounded-[16px] border p-3 ${item.className}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Icon
-                            className={`h-4.5 w-4.5 ${item.iconClassName}`}
-                          />
-                          <span className="text-sm font-semibold">
-                            {item.title}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs text-[#6b779a]">
-                          {item.description}
-                        </p>
-                      </div>
-                    );
-                  })}
+                return (
+                  <div
+                    key={item.title}
+                    className={`rounded-[16px] border px-4 py-3.5 ${item.className}`}
+                  >
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <Icon className={`h-4 w-4 ${item.iconClassName}`} />
+                      {item.title}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {item.description}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -184,11 +179,7 @@ export default function StudentJoinExamPanel({
         </div>
 
         <div className="mt-5 grid gap-4">
-          {loading ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-24 rounded-[20px]" />
-            ))
-          ) : studentHistory.length === 0 ? (
+          {studentHistory.length === 0 ? (
             <div className="rounded-[22px] border border-dashed border-[#d7def4] bg-[#fafbff] px-5 py-8 text-sm text-slate-400">
               Одоогоор өмнөх шалгалтын түүх алга байна.
             </div>
