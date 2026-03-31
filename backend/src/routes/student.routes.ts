@@ -15,72 +15,190 @@ import type { AppEnv } from "../types";
 import { success, notFound } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
+import { getLevel } from "../utils/level-calc";
+import { getBucketXp } from "../utils/xp-buckets";
 
 const studentRoutes = new Hono<AppEnv>();
 
-type RankedStudentStats = {
+type XpBucket = "progress" | "term";
+
+type RankedBucketStudent = {
   studentId: string;
   fullName: string;
+  avatarUrl: string | null;
+  xp: number;
   level: number;
-  examCount: number;
-  averageScore: number;
 };
 
-const roundAverageScore = (value: number) =>
-  Math.round(value * 10) / 10;
+type ProgressSessionTimelineRow = {
+  studentId: string;
+  fullName: string;
+  status: string;
+  score: number | null;
+  submittedAt: string | null;
+  startedAt: string | null;
+  createdAt: string;
+};
 
-const buildRankedStudentsByExamType = async (
+type ImprovementLeaderboardEntry = {
+  studentId: string;
+  fullName: string;
+  xp: number;
+  level: number;
+  examCount: number;
+  improvementCount: number;
+  missedCount: number;
+};
+
+const IMPROVEMENT_PERFECT_REPEAT_XP = 10;
+const IMPROVEMENT_MISSED_EXAM_PENALTY = 10;
+const MISSED_PROGRESS_STATUSES = new Set([
+  "joined",
+  "late",
+  "in_progress",
+  "disqualified",
+]);
+
+const buildRankedStudentsByBucket = async (
   db: ReturnType<typeof getDb>,
-  examType: "progress" | "term",
+  bucket: XpBucket,
+) => {
+  const bucketStudents = await db
+    .select({
+      studentId: students.id,
+      fullName: students.fullName,
+      avatarUrl: students.avatarUrl,
+      termXp: students.termXp,
+      progressXp: students.progressXp,
+    })
+    .from(students);
+
+  return bucketStudents
+    .map((student): RankedBucketStudent => {
+      const xp = getBucketXp(student, bucket);
+      return {
+        studentId: student.studentId,
+        fullName: student.fullName,
+        avatarUrl: student.avatarUrl ?? null,
+        xp,
+        level: getLevel(xp),
+      };
+    })
+    .filter((student) => student.xp > 0)
+    .sort((left, right) => {
+      if (right.xp !== left.xp) {
+        return right.xp - left.xp;
+      }
+      return left.studentId.localeCompare(right.studentId);
+    });
+};
+
+const countStudentExamsByType = async (
+  db: ReturnType<typeof getDb>,
+  studentId: string,
+  examType: XpBucket,
 ) => {
   const gradedSessions = await db
     .select({
-      studentId: examSessions.studentId,
-      fullName: students.fullName,
-      level: students.level,
-      score: examSessions.score,
+      sessionId: examSessions.id,
     })
     .from(examSessions)
     .innerJoin(exams, eq(examSessions.examId, exams.id))
-    .innerJoin(students, eq(examSessions.studentId, students.id))
     .where(
       and(
+        eq(examSessions.studentId, studentId),
         eq(examSessions.status, "graded"),
         eq(exams.examType, examType),
       ),
     );
 
-  const statsByStudent = new Map<
-    string,
-    { fullName: string; level: number; totalScore: number; examCount: number }
-  >();
+  return gradedSessions.length;
+};
 
-  for (const session of gradedSessions) {
-    if (typeof session.score !== "number") continue;
+const buildImprovementLeaderboard = async (db: ReturnType<typeof getDb>) => {
+  const progressSessions = await db
+    .select({
+      studentId: examSessions.studentId,
+      fullName: students.fullName,
+      status: examSessions.status,
+      score: examSessions.score,
+      submittedAt: examSessions.submittedAt,
+      startedAt: examSessions.startedAt,
+      createdAt: examSessions.createdAt,
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .innerJoin(students, eq(examSessions.studentId, students.id))
+    .where(eq(exams.examType, "progress"));
 
-    const current = statsByStudent.get(session.studentId) ?? {
-      fullName: session.fullName,
-      level: session.level ?? 1,
-      totalScore: 0,
-      examCount: 0,
-    };
+  const timelineByStudent = new Map<string, ProgressSessionTimelineRow[]>();
 
-    current.totalScore += session.score;
-    current.examCount += 1;
-    statsByStudent.set(session.studentId, current);
+  for (const session of progressSessions) {
+    const bucket = timelineByStudent.get(session.studentId) ?? [];
+    bucket.push(session);
+    timelineByStudent.set(session.studentId, bucket);
   }
 
-  return [...statsByStudent.entries()]
-    .map(([studentId, stats]): RankedStudentStats => ({
-      studentId,
-      fullName: stats.fullName,
-      level: stats.level,
-      examCount: stats.examCount,
-      averageScore: stats.examCount > 0 ? stats.totalScore / stats.examCount : 0,
-    }))
+  return [...timelineByStudent.entries()]
+    .map(([studentId, timeline]): ImprovementLeaderboardEntry => {
+      const orderedTimeline = [...timeline].sort((left, right) => {
+        const leftDate = left.submittedAt ?? left.startedAt ?? left.createdAt;
+        const rightDate = right.submittedAt ?? right.startedAt ?? right.createdAt;
+        return leftDate.localeCompare(rightDate);
+      });
+
+      let previousScore: number | null = null;
+      let xp = 0;
+      let examCount = 0;
+      let improvementCount = 0;
+      let missedCount = 0;
+
+      for (const session of orderedTimeline) {
+        if (MISSED_PROGRESS_STATUSES.has(session.status)) {
+          examCount += 1;
+          missedCount += 1;
+          xp -= IMPROVEMENT_MISSED_EXAM_PENALTY;
+          continue;
+        }
+
+        if (session.status !== "graded" || typeof session.score !== "number") {
+          continue;
+        }
+
+        examCount += 1;
+
+        if (previousScore !== null) {
+          if (previousScore === 100 && session.score === 100) {
+            xp += IMPROVEMENT_PERFECT_REPEAT_XP;
+            improvementCount += 1;
+          } else {
+            const delta = Math.round(session.score - previousScore);
+            if (delta > 0) {
+              xp += delta;
+              improvementCount += 1;
+            }
+          }
+        }
+
+        previousScore = session.score;
+      }
+
+      return {
+        studentId,
+        fullName: orderedTimeline[0]?.fullName ?? "Сурагч",
+        xp,
+        level: getLevel(Math.max(xp, 0)),
+        examCount,
+        improvementCount,
+        missedCount,
+      };
+    })
     .sort((left, right) => {
-      if (right.averageScore !== left.averageScore) {
-        return right.averageScore - left.averageScore;
+      if (right.xp !== left.xp) {
+        return right.xp - left.xp;
+      }
+      if (right.improvementCount !== left.improvementCount) {
+        return right.improvementCount - left.improvementCount;
       }
       if (right.examCount !== left.examCount) {
         return right.examCount - left.examCount;
@@ -170,24 +288,67 @@ studentRoutes.get("/results", async (c) => {
 studentRoutes.get("/term-rank", async (c) => {
   const user = c.get("user");
   const db = getDb(c.env.educore);
-  const rankedStudents = await buildRankedStudentsByExamType(db, "term");
+  const rankedStudents = await buildRankedStudentsByBucket(db, "term");
 
   const currentIndex = rankedStudents.findIndex(
     (entry) => entry.studentId === user.id,
   );
+  const currentStudent = currentIndex >= 0 ? rankedStudents[currentIndex] : null;
+  const termExamCount = await countStudentExamsByType(db, user.id, "term");
 
   return success(c, {
     rank: currentIndex >= 0 ? currentIndex + 1 : null,
     totalStudents: rankedStudents.length,
-    termExamCount:
-      currentIndex >= 0 ? rankedStudents[currentIndex]?.examCount ?? 0 : 0,
+    termExamCount,
+    xp: currentStudent?.xp ?? 0,
+    level: currentStudent?.level ?? getLevel(0),
   });
 });
 
-// GET /progress-leaderboard — top students ranked by graded progress exams
-studentRoutes.get("/progress-leaderboard", async (c) => {
+// GET /term-leaderboard — top students ranked by term XP
+studentRoutes.get("/term-leaderboard", async (c) => {
   const db = getDb(c.env.educore);
-  const rankedStudents = await buildRankedStudentsByExamType(db, "progress");
+  const rankedStudents = await buildRankedStudentsByBucket(db, "term");
+
+  return success(
+    c,
+    rankedStudents.slice(0, 10).map((entry, index) => ({
+      id: entry.studentId,
+      fullName: entry.fullName,
+      avatarUrl: entry.avatarUrl,
+      level: entry.level,
+      rank: index + 1,
+      xp: entry.xp,
+    })),
+  );
+});
+
+// GET /progress-rank — current student's private progress XP rank
+studentRoutes.get("/progress-rank", async (c) => {
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+  const rankedStudents = await buildRankedStudentsByBucket(db, "progress");
+
+  const currentIndex = rankedStudents.findIndex(
+    (entry) => entry.studentId === user.id,
+  );
+  const currentStudent = currentIndex >= 0 ? rankedStudents[currentIndex] : null;
+  const progressExamCount = await countStudentExamsByType(db, user.id, "progress");
+
+  return success(c, {
+    rank: currentIndex >= 0 ? currentIndex + 1 : null,
+    totalStudents: rankedStudents.length,
+    progressExamCount,
+    xp: currentStudent?.xp ?? 0,
+    level: currentStudent?.level ?? getLevel(0),
+    isPrivate: true,
+  });
+});
+
+// GET /improvement-leaderboard — separate growth XP leaderboard from progress exams
+studentRoutes.get("/improvement-leaderboard", async (c) => {
+  const db = getDb(c.env.educore);
+  const rankedStudents = await buildImprovementLeaderboard(db);
 
   return success(
     c,
@@ -196,8 +357,10 @@ studentRoutes.get("/progress-leaderboard", async (c) => {
       fullName: entry.fullName,
       level: entry.level,
       rank: index + 1,
-      averageScore: roundAverageScore(entry.averageScore),
+      xp: entry.xp,
       examCount: entry.examCount,
+      improvementCount: entry.improvementCount,
+      missedCount: entry.missedCount,
     })),
   );
 });
