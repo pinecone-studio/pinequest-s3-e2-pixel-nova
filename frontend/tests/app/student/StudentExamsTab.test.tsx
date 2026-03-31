@@ -43,12 +43,15 @@ describe("StudentExamsTab", () => {
       />,
     );
 
-    expect(screen.getByText("Англи хэлний авцын шалгалт")).toBeInTheDocument();
+    expect(screen.getByText("Start Exam")).toBeInTheDocument();
+    expect(
+      screen.getByText("Англи хэлний авцын шалгалт"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Англи хэл")).toBeInTheDocument();
     expect(screen.getByText("Г. Сарантуяа")).toBeInTheDocument();
     expect(screen.getByText("AX7K2P")).toBeInTheDocument();
-    expect(screen.getByText("Шалгалт эхлүүлэх")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Шалгалт эхлүүлэх" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start Exam" }));
     expect(onStartExam).toHaveBeenCalledTimes(1);
 
     fireEvent.click(
@@ -88,5 +91,25 @@ describe("StudentExamsTab", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Шалгалтад нэвтрэх" }));
     expect(onLookup).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the screenshot-style loading block for exams tab", () => {
+    render(
+      <StudentExamsTab
+        loading={true}
+        joinLoading={false}
+        roomCodeInput=""
+        setRoomCodeInput={jest.fn()}
+        joinError={null}
+        onLookup={jest.fn()}
+        selectedExam={null}
+        onStartExam={jest.fn()}
+        onClearSelection={jest.fn()}
+        teacherName={null}
+        studentHistory={[]}
+      />,
+    );
+
+    expect(screen.getByLabelText("student-exams-loading")).toBeInTheDocument();
   });
 });

@@ -16,7 +16,6 @@ export type StudentTab =
   | "Home"
   | "Exams"
   | "Progress"
-  | "Leaderboard"
   | "Profile"
   | "Settings"
   | "Help";
