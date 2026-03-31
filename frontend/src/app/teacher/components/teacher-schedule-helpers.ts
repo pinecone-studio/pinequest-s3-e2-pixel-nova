@@ -1,6 +1,6 @@
 import type { Exam } from "../types";
 
-export const HOURS = [8, 9, 10, 11, 12, 13, 14];
+export const HOURS = Array.from({ length: 17 }, (_, index) => index + 8);
 export const ROW_HEIGHT = 76;
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const TIME_COLUMN_WIDTH = 88;

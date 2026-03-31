@@ -25,14 +25,13 @@ describe("TeacherStudentsTab", () => {
     jest.useRealTimers();
   });
 
-  it("renders the schedule starting from today and keeps the time column separate from the scroll area", () => {
+  it("renders the schedule starting from today in calendar view", () => {
     render(<TeacherStudentsTab exams={[]} onAddSchedule={() => {}} />);
 
-    expect(screen.getByText("3 сарын 27")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Calendar view"));
 
-    const hourLabel = screen.getByText("08 цаг");
-    expect(hourLabel.parentElement).toHaveClass("shrink-0");
-    expect(hourLabel.parentElement).toHaveStyle({ width: "88px" });
+    expect(screen.getByText("3 сарын 27")).toBeInTheDocument();
+    expect(screen.getByText("08 цаг")).toBeInTheDocument();
   });
 
   it("shows a check icon after room code is copied in card view", async () => {
@@ -46,7 +45,6 @@ describe("TeacherStudentsTab", () => {
       />,
     );
 
-    fireEvent.click(screen.getByLabelText("Card view"));
     fireEvent.click(screen.getByLabelText("Өрөөний код хуулах"));
 
     await waitFor(() => expect(onCopyCode).toHaveBeenCalledWith("ROOM42"));

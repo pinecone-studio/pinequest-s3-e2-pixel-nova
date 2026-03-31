@@ -9,19 +9,13 @@ import {
 } from "../hooks/teacher-api";
 import { useExamAttendanceStats } from "../hooks/useExamAttendanceStats";
 import type { Exam, ExamAttendanceStats, ExamRosterDetail } from "../types";
-import { sectionTitleClass } from "../styles";
-import {
-  LegendDot,
-  ScheduleCard,
-  ScheduleListCard,
-} from "./TeacherScheduleCards";
-import TeacherScheduleDetailPanel from "./TeacherScheduleDetailPanel";
+import { LegendDot, ScheduleCard, ScheduleListCard } from "./TeacherScheduleCards";
 import type { CopyCodeHandler } from "./RoomCodeCopyButton";
+import TeacherScheduleDetailPanel from "./TeacherScheduleDetailPanel";
 import {
   HOURS,
-  TIME_COLUMN_WIDTH,
   DAY_COLUMN_WIDTH,
-  VISIBLE_DAY_COUNT,
+  ROW_HEIGHT,
   buildScheduleData,
   formatDateValue,
   formatDayLabel,
@@ -30,6 +24,20 @@ import {
 } from "./teacher-schedule-helpers";
 
 const ACTIVE_MONITOR_POLL_MS = 5000;
+const TIME_COLUMN_WIDTH = 76;
+
+function isLiveMonitoringExam(exam: Exam | null) {
+  if (!exam) return false;
+  if (exam.status === "active" || exam.status === "in_progress") return true;
+  if (exam.finishedAt || exam.status === "finished" || !exam.scheduledAt) return false;
+
+  const startTime = new Date(exam.scheduledAt).getTime();
+  if (Number.isNaN(startTime)) return false;
+
+  const endTime = startTime + (exam.duration ?? 45) * 60_000;
+  const now = Date.now();
+  return startTime <= now && now < endTime;
+}
 
 type TeacherStudentsTabProps = {
   exams: Exam[];
@@ -40,6 +48,8 @@ type TeacherStudentsTabProps = {
 };
 
 type ViewMode = "calendar" | "cards";
+const VISIBLE_HOUR_COUNT = 7;
+const CALENDAR_VIEWPORT_OFFSET = 64;
 
 export default function TeacherStudentsTab({
   exams,
@@ -49,30 +59,22 @@ export default function TeacherStudentsTab({
   onCopyCode,
 }: TeacherStudentsTabProps) {
   const { days, items } = buildScheduleData(exams);
-  const scrollHostRef = useRef<HTMLDivElement>(null);
-  const [dayColumnWidth, setDayColumnWidth] = useState(DAY_COLUMN_WIDTH);
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [roster, setRoster] = useState<ExamRosterDetail | null>(null);
   const [rosterLoading, setRosterLoading] = useState(false);
-  const [liveAttendance, setLiveAttendance] =
-    useState<ExamAttendanceStats | null>(null);
+  const [liveAttendance, setLiveAttendance] = useState<ExamAttendanceStats | null>(null);
   const [liveStreamFailed, setLiveStreamFailed] = useState(false);
+  const calendarScrollRef = useRef<HTMLDivElement>(null);
+
   const selectedExam = useMemo(
     () => exams.find((exam) => exam.id === selectedExamId) ?? null,
     [exams, selectedExamId],
   );
-  const isActiveSelectedExam = selectedExam?.status === "active";
-  const shouldUseLiveStream = Boolean(
-    selectedExamId && isActiveSelectedExam && !liveStreamFailed,
-  );
-  const shouldPollSelectedExam = Boolean(
-    selectedExamId && isActiveSelectedExam && liveStreamFailed,
-  );
-  const attendance = useExamAttendanceStats(
-    selectedExamId,
-    shouldPollSelectedExam,
-  );
+  const isActiveSelectedExam = isLiveMonitoringExam(selectedExam);
+  const shouldUseLiveStream = Boolean(selectedExamId && isActiveSelectedExam && !liveStreamFailed);
+  const shouldPollSelectedExam = Boolean(selectedExamId && isActiveSelectedExam && liveStreamFailed);
+  const attendance = useExamAttendanceStats(selectedExamId, shouldPollSelectedExam);
   const effectiveAttendance = liveAttendance ?? attendance.stats;
 
   useEffect(() => {
@@ -81,18 +83,13 @@ export default function TeacherStudentsTab({
   }, [selectedExamId]);
 
   useEffect(() => {
-    const node = scrollHostRef.current;
-    if (!node) return;
-    const updateWidth = () => {
-      const nextWidth = node.getBoundingClientRect().width;
-      if (nextWidth) setDayColumnWidth(nextWidth / VISIBLE_DAY_COUNT);
-    };
-    updateWidth();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
+    if (viewMode !== "calendar") return;
+
+    const viewport = calendarScrollRef.current;
+    if (!viewport) return;
+
+    viewport.scrollTop = 0;
+  }, [days.length, items.length, viewMode]);
 
   useEffect(() => {
     if (!selectedExamId) {
@@ -159,12 +156,7 @@ export default function TeacherStudentsTab({
       active = false;
       window.clearInterval(timer);
     };
-  }, [
-    currentUserId,
-    selectedExamId,
-    shouldPollSelectedExam,
-    shouldUseLiveStream,
-  ]);
+  }, [currentUserId, selectedExamId, shouldPollSelectedExam, shouldUseLiveStream]);
 
   const groupedItems = useMemo(
     () =>
@@ -177,49 +169,53 @@ export default function TeacherStudentsTab({
     [days, items],
   );
 
+  const calendarHeight = HOURS.length * ROW_HEIGHT;
+  const calendarViewportHeight = VISIBLE_HOUR_COUNT * ROW_HEIGHT + CALENDAR_VIEWPORT_OFFSET;
+  const scheduleMinWidth = TIME_COLUMN_WIDTH + Math.max(days.length, 5) * DAY_COLUMN_WIDTH;
+
   if (selectedExam) {
     return (
-      <TeacherScheduleDetailPanel
-        exam={selectedExam}
-        roster={roster}
-        rosterLoading={rosterLoading}
-        attendanceJoined={effectiveAttendance?.joined ?? 0}
-        attendanceSubmitted={effectiveAttendance?.submitted ?? 0}
-        onBack={() => setSelectedExamId(null)}
-        onCopyCode={onCopyCode}
-      />
+      <div className="px-4 pb-[26px] pt-[42px] md:px-8 xl:px-[120px]">
+        <TeacherScheduleDetailPanel
+          exam={selectedExam}
+          roster={roster}
+          rosterLoading={rosterLoading}
+          attendanceJoined={effectiveAttendance?.joined ?? 0}
+          attendanceSubmitted={effectiveAttendance?.submitted ?? 0}
+          onBack={() => setSelectedExamId(null)}
+          onCopyCode={onCopyCode}
+        />
+      </div>
     );
   }
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-5 rounded-[28px] border border-[#e7edf5] bg-white/80 px-6 py-5 shadow-[0_18px_34px_-30px_rgba(15,23,42,0.16)] backdrop-blur">
+    <section className="px-4 pb-[26px] pt-[42px] md:px-8 xl:px-[120px]">
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div>
-          <h2
-            className={`${sectionTitleClass} text-[24px] font-semibold leading-[0.95] tracking-[-0.04em]`}
-          >
+          <h2 className="text-[24px] font-semibold leading-[33px] tracking-[-0.02em] text-black">
             Шалгалтын хуваарь
           </h2>
-          <div className="mt-3 flex flex-wrap items-center gap-4 text-[15px] text-slate-500">
-            <div className="flex items-center gap-2">
+          <div className="mt-[10px] flex min-h-6 w-[292px] flex-wrap items-center gap-[16px] text-[16px] leading-6 text-[#212121]">
+            <div className="flex items-center gap-[10px]">
               <LegendDot category="required" />
               <span>Заавал судлах</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-[10px]">
               <LegendDot category="elective" />
               <span>Сонгон судлал</span>
             </div>
           </div>
         </div>
 
-        <div className="ml-auto flex flex-col items-end gap-2.5">
+        <div className="ml-auto flex flex-col items-end gap-3">
           <button
-            className="inline-flex min-w-[185px] h-12 items-center justify-center gap-2 rounded-[18px] bg-[#355cde] px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_22px_40px_-28px_rgba(53,92,222,0.95)] transition hover:bg-[#2d52cf]"
+            className="mt-[18px] inline-flex h-[49px] w-[185px] items-center justify-center gap-[10px] overflow-hidden rounded-[12px] bg-[linear-gradient(180deg,#3f78ff_0%,#2f66ef_100%)] px-3 text-[18px] font-semibold leading-6 text-white shadow-[0_14px_24px_-22px_rgba(37,99,235,0.8)] transition hover:brightness-[1.03]"
             onClick={onAddSchedule}
             type="button"
           >
             <svg
-              className="h-4 w-4"
+              className="size-[18px]"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -232,134 +228,126 @@ export default function TeacherStudentsTab({
             Хуваарь нэмэх
           </button>
 
-          <div className="inline-flex rounded-[18px] bg-white p-1.5 shadow-[0_16px_30px_-24px_rgba(251,146,60,0.7)]">
+          <div className="inline-flex items-center gap-1 rounded-[20px] bg-[#dfe8ff] p-[5px] shadow-[0_12px_24px_-22px_rgba(59,130,246,0.55)] ring-1 ring-[#c9d9ff]">
             <button
               type="button"
               onClick={() => setViewMode("cards")}
               aria-label="Card view"
-              className={`grid size-11 place-items-center rounded-[14px] transition ${viewMode === "cards" ? "bg-[#2563EB] text-white shadow-[0_14px_24px_-18px_rgba(255,155,74,0.95)]" : "text-slate-700 hover:bg-white/60"}`}
+              className={`grid h-10 w-10 place-items-center rounded-[16px] transition ${
+                viewMode === "cards"
+                  ? "bg-[linear-gradient(180deg,#4f8dff_0%,#2f66ef_100%)] text-white shadow-[0_14px_24px_-18px_rgba(37,99,235,0.9)]"
+                  : "bg-transparent text-[#2f66ef] hover:bg-white/75 hover:text-[#1d4ed8]"
+              }`}
             >
-              <Layers className="h-5 w-5" />
+              <Layers className="size-[18px]" />
             </button>
             <button
               type="button"
               onClick={() => setViewMode("calendar")}
               aria-label="Calendar view"
-              className={`grid size-11 place-items-center rounded-[14px] transition ${viewMode === "calendar" ? "bg-[#2563EB] text-white shadow-[0_12px_24px_-20px_rgba(15,23,42,0.25)]" : "text-slate-700 hover:bg-white/60"}`}
+              className={`grid h-10 w-10 place-items-center rounded-[16px] transition ${
+                viewMode === "calendar"
+                  ? "bg-[linear-gradient(180deg,#4f8dff_0%,#2f66ef_100%)] text-white shadow-[0_14px_24px_-18px_rgba(37,99,235,0.9)]"
+                  : "bg-transparent text-[#2f66ef] hover:bg-white/75 hover:text-[#1d4ed8]"
+              }`}
             >
-              <CalendarDays className="size-5" />
+              <CalendarDays className="size-[18px]" />
             </button>
           </div>
         </div>
       </div>
 
-      {viewMode === "cards" ? (
-        <div className="space-y-7">
-          {groupedItems.length === 0 ? (
-            <div className="rounded-[32px] border border-dashed border-[#dce5ef] bg-white px-6 py-16 text-center text-sm text-slate-400">
-              {loading
-                ? "Хуваарь ачаалж байна..."
-                : "Хуваарьласан шалгалт алга."}
-            </div>
-          ) : (
-            groupedItems.map((group) => (
-              <div key={group.label} className="space-y-4">
-                <h3 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
-                  {group.label}
-                </h3>
-                <div className="grid gap-5 xl:grid-cols-3">
-                  {group.items.map((item) => (
-                    <ScheduleListCard
-                      key={item.id}
-                      item={item}
-                      onOpen={setSelectedExamId}
-                      onCopyCode={onCopyCode}
-                      formatDateValue={formatDateValue}
-                      formatTimeValue={formatTimeValue}
-                    />
-                  ))}
-                </div>
+      <div className="mt-[31px]">
+        {viewMode === "cards" ? (
+          <div className="space-y-[25px]">
+            {groupedItems.length === 0 ? (
+              <div className="rounded-[32px] border border-dashed border-[#dce5ef] bg-white px-6 py-16 text-center text-sm text-slate-400">
+                {loading ? "Хуваарь ачаалж байна..." : "Хуваарьласан шалгалт алга."}
               </div>
-            ))
-          )}
-        </div>
-      ) : (
-        <div className="w-full rounded-[34px] border border-[#dce5ef] bg-white p-5 shadow-[0_24px_48px_-36px_rgba(15,23,42,0.2)]">
-          <div className="overflow-hidden rounded-[28px] bg-[#f8fbff]">
-            <div className="flex">
-              <div
-                className="shrink-0 border-r border-[#dce5ef] bg-white/70"
-                style={{ width: `${TIME_COLUMN_WIDTH}px` }}
-              >
-                <div
-                  className="flex items-center justify-center border-b border-[#dce5ef] text-xs font-medium uppercase tracking-[0.12em] text-slate-400"
-                  style={{ height: "61px" }}
-                />
-                {HOURS.map((hour) => (
-                  <div
-                    key={hour}
-                    className="flex items-center justify-center border-b border-[#dce5ef] text-sm text-slate-500 last:border-b-0"
-                    style={{ height: "76px" }}
-                  >
-                    {hour.toString().padStart(2, "0")} цаг
-                  </div>
-                ))}
-              </div>
-
-              <div
-                ref={scrollHostRef}
-                className="min-w-0 flex-1 overflow-x-auto"
-              >
-                <div style={{ minWidth: `${days.length * dayColumnWidth}px` }}>
-                  <div
-                    className="grid border-b border-[#dce5ef] bg-white/70"
-                    style={{
-                      gridTemplateColumns: `repeat(${days.length}, minmax(${dayColumnWidth}px, 1fr))`,
-                    }}
-                  >
-                    {days.map((day, index) => (
-                      <div
-                        key={`${day.toISOString()}-${index}`}
-                        className="border-r border-[#dce5ef] px-4 py-4 text-center text-lg font-semibold text-foreground last:border-r-0"
-                      >
-                        {formatDayLabel(day)}
-                      </div>
+            ) : (
+              groupedItems.map((group) => (
+                <div key={group.label} className="space-y-4">
+                  <h3 className="text-[20px] font-medium leading-[27px] tracking-[-0.02em] text-[#7e7e7e]">
+                    {group.label}
+                  </h3>
+                  <div className="grid gap-[18px] xl:grid-cols-3">
+                    {group.items.map((item) => (
+                      <ScheduleListCard
+                        key={item.id}
+                        item={item}
+                        onOpen={setSelectedExamId}
+                        onCopyCode={onCopyCode}
+                        formatDateValue={formatDateValue}
+                        formatTimeValue={formatTimeValue}
+                      />
                     ))}
                   </div>
-
-                  <div className="relative">
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="mx-auto w-full max-w-[1272px] rounded-[32px] border border-[#eceef4] bg-white p-[18px] shadow-[0_16px_36px_-34px_rgba(15,23,42,0.18)]">
+            <div
+              ref={calendarScrollRef}
+              className="scrollbar-soft overflow-auto rounded-[28px] border border-[#edf1f7] bg-white"
+              style={{ height: `${calendarViewportHeight}px` }}
+            >
+              <div className="mx-auto p-[28px]" style={{ minWidth: `${scheduleMinWidth + 56}px` }}>
+                <div
+                  className="grid items-center gap-0 pb-4"
+                  style={{
+                    gridTemplateColumns: `${TIME_COLUMN_WIDTH}px repeat(${days.length}, ${DAY_COLUMN_WIDTH}px)`,
+                  }}
+                >
+                  <div />
+                  {days.map((day, index) => (
                     <div
-                      className="grid"
-                      style={{
-                        gridTemplateColumns: `repeat(${days.length}, minmax(${dayColumnWidth}px, 1fr))`,
-                      }}
+                      key={`${day.toISOString()}-${index}`}
+                      className="relative text-center text-[16px] font-semibold text-[#2e2e2e]"
                     >
-                      {Array.from({ length: days.length }, (_, dayIndex) => (
+                      {index > 0 ? (
+                        <span className="absolute left-0 top-1/2 h-10 w-px -translate-y-1/2 bg-[#e9edf5]" />
+                      ) : null}
+                      {formatDayLabel(day)}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex">
+                  <div className="sticky left-0 z-10 shrink-0 bg-white">
+                    <div
+                      className="relative"
+                      style={{ width: `${TIME_COLUMN_WIDTH}px`, height: `${calendarHeight}px` }}
+                    >
+                      {HOURS.map((hour, index) => (
                         <div
-                          key={`column-${dayIndex}`}
-                          className="border-r border-[#dce5ef] last:border-r-0"
+                          key={hour}
+                          className="absolute left-0 right-0 text-[16px] leading-10 text-[#9d9d9d]"
+                          style={{ top: `${index * ROW_HEIGHT}px` }}
                         >
-                          {HOURS.map((hour, rowIndex) => (
-                            <div
-                              key={`${dayIndex}-${hour}`}
-                              style={{
-                                height: "76px",
-                                opacity:
-                                  rowIndex === HOURS.length - 1 ? 0.7 : 1,
-                              }}
-                            />
-                          ))}
+                          {hour.toString().padStart(2, "0")} цаг
                         </div>
                       ))}
+                      <span className="absolute right-0 top-0 h-full w-px bg-[#e9edf5]" />
                     </div>
+                  </div>
 
-                    {!items.length && !loading && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="rounded-2xl border border-dashed border-[#dce5ef] bg-white/80 px-5 py-3 text-sm text-slate-500 shadow-sm">
-                          Шалгалт алга
-                        </div>
-                      </div>
-                    )}
+                  <div
+                    className="relative"
+                    style={{
+                      width: `${days.length * DAY_COLUMN_WIDTH}px`,
+                      height: `${calendarHeight}px`,
+                    }}
+                  >
+                    {days.slice(1).map((day, index) => (
+                      <span
+                        key={`${day.toISOString()}-divider`}
+                        className="absolute top-0 h-full w-px bg-[#e9edf5]"
+                        style={{ left: `${(index + 1) * DAY_COLUMN_WIDTH}px` }}
+                      />
+                    ))}
+
                     {items.map((item) => (
                       <ScheduleCard
                         key={item.id}
@@ -372,9 +360,17 @@ export default function TeacherStudentsTab({
                 </div>
               </div>
             </div>
+
+            {!items.length && !loading && (
+              <div className="mt-4 flex items-center justify-center">
+                <div className="rounded-2xl border border-dashed border-[#dce5ef] bg-white/80 px-5 py-3 text-sm text-slate-500 shadow-sm">
+                  Шалгалт алга
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }
