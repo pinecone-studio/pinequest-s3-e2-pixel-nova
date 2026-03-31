@@ -13,6 +13,7 @@ export type TeacherExamSummary = {
   status: string;
   passScore?: number | null;
   shuffleQuestions?: boolean;
+  requiresAudioRecording?: boolean;
   enabledCheatDetections?: string[];
   createdAt: string;
 };
@@ -41,6 +42,7 @@ export const createExam = (
     durationMin?: number;
     passScore?: number;
     shuffleQuestions?: boolean;
+    requiresAudioRecording?: boolean;
   },
   user?: User | null,
 ) =>
@@ -56,6 +58,7 @@ export const createExam = (
       durationMin: payload.durationMin,
       passScore: payload.passScore,
       shuffleQuestions: payload.shuffleQuestions,
+      requiresAudioRecording: payload.requiresAudioRecording,
     }),
   });
 

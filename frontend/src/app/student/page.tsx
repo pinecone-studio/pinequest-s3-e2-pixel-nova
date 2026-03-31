@@ -14,6 +14,7 @@ import {
 } from "@/lib/role-session";
 import StudentDashboardView from "./components/StudentDashboardView";
 import DesktopExamCameraCard from "./components/DesktopExamCameraCard";
+import DesktopExamAudioCard from "./components/DesktopExamAudioCard";
 import StudentExamView from "./components/StudentExamView";
 import StudentResultView from "./components/StudentResultView";
 import StudentLoadingScreen from "./components/StudentLoadingScreen";
@@ -208,15 +209,25 @@ export default function StudentPage() {
             onSubmit={() => exam.submitExam(false)}
             onExit={exam.leaveExamFlow}
             cameraPanel={
-              <DesktopExamCameraCard
-                view={exam.view}
-                sessionId={exam.sessionId}
-                user={data.currentUser}
-                showWarning={exam.showWarning}
-                enabledCheatDetections={
-                  exam.activeExam?.enabledCheatDetections ?? null
-                }
-              />
+              <div className="space-y-4">
+                <DesktopExamCameraCard
+                  view={exam.view}
+                  sessionId={exam.sessionId}
+                  user={data.currentUser}
+                  showWarning={exam.showWarning}
+                  enabledCheatDetections={
+                    exam.activeExam?.enabledCheatDetections ?? null
+                  }
+                />
+                <DesktopExamAudioCard
+                  view={exam.view}
+                  sessionId={exam.sessionId}
+                  user={data.currentUser}
+                  showWarning={exam.showWarning}
+                  required={Boolean(exam.activeExam?.requiresAudioRecording)}
+                  onTerminateExam={exam.terminateExam}
+                />
+              </div>
             }
           />
         </div>

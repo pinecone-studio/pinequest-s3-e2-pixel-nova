@@ -25,6 +25,7 @@ export type Exam = {
   expectedStudentsCount?: number;
   questionCount?: number;
   submissionCount?: number;
+  requiresAudioRecording?: boolean;
   enabledCheatDetections?: string[];
   questions: Question[];
   duration?: number;
@@ -79,6 +80,23 @@ export type Submission = {
     severity: string;
   } | null;
   countByType?: Record<string, number>;
+  sessionId?: string;
+};
+
+export type ExamAudioChunk = {
+  id: string;
+  sessionId: string;
+  examId: string;
+  studentId: string;
+  objectKey: string;
+  mimeType: string;
+  sequenceNumber: number;
+  chunkStartedAt: string;
+  chunkEndedAt: string;
+  uploadedAt: string;
+  durationMs: number;
+  sizeBytes: number;
+  assetUrl: string;
 };
 
 export type QuestionInsight = {

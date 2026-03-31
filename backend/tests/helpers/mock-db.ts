@@ -34,8 +34,10 @@ const createChain = (fallback: unknown) => {
     chain[method] = () => chain;
   }
 
-  chain.then = (onFulfilled?: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) =>
-    dequeue(fallback).then(onFulfilled, onRejected);
+  chain.then = (
+    onFulfilled?: (value: unknown) => unknown,
+    onRejected?: (reason: unknown) => unknown,
+  ) => dequeue(fallback).then(onFulfilled, onRejected);
 
   return chain;
 };
@@ -64,7 +66,14 @@ const tableExports = {
     "createdAt",
     "updatedAt",
   ]),
-  subjects: createTable(["id", "name", "code", "description", "createdAt", "updatedAt"]),
+  subjects: createTable([
+    "id",
+    "name",
+    "code",
+    "description",
+    "createdAt",
+    "updatedAt",
+  ]),
   exams: createTable([
     "id",
     "teacherId",
@@ -85,6 +94,7 @@ const tableExports = {
     "locationLatitude",
     "locationLongitude",
     "allowedRadiusMeters",
+    "requiresAudioRecording",
     "enabledCheatDetections",
     "createdAt",
     "updatedAt",
@@ -103,7 +113,15 @@ const tableExports = {
     "points",
     "orderIndex",
   ]),
-  options: createTable(["id", "questionId", "label", "text", "imageUrl", "isCorrect", "orderIndex"]),
+  options: createTable([
+    "id",
+    "questionId",
+    "label",
+    "text",
+    "imageUrl",
+    "isCorrect",
+    "orderIndex",
+  ]),
   examSessions: createTable([
     "id",
     "examId",
@@ -150,7 +168,29 @@ const tableExports = {
     "isNotified",
     "createdAt",
   ]),
-  xpTransactions: createTable(["id", "studentId", "amount", "reason", "referenceId", "createdAt"]),
+  examAudioChunks: createTable([
+    "id",
+    "sessionId",
+    "examId",
+    "studentId",
+    "objectKey",
+    "mimeType",
+    "sequenceNumber",
+    "chunkStartedAt",
+    "chunkEndedAt",
+    "uploadedAt",
+    "durationMs",
+    "sizeBytes",
+    "createdAt",
+  ]),
+  xpTransactions: createTable([
+    "id",
+    "studentId",
+    "amount",
+    "reason",
+    "referenceId",
+    "createdAt",
+  ]),
   savedExams: createTable(["id", "studentId", "examId", "createdAt"]),
   aiExamGeneratorRuns: createTable([
     "id",
@@ -185,9 +225,40 @@ const tableExports = {
     "readAt",
     "archivedAt",
   ]),
-  materials: createTable(["id", "examId", "fileName", "fileType", "materialType", "fileUrl", "createdAt"]),
-  questionBank: createTable(["id", "teacherId", "subjectId", "type", "difficulty", "questionText", "imageUrl", "audioUrl", "explanation", "correctAnswerText", "tags", "usageCount", "createdAt", "updatedAt"]),
-  questionBankOptions: createTable(["id", "bankQuestionId", "label", "text", "imageUrl", "isCorrect", "orderIndex"]),
+  materials: createTable([
+    "id",
+    "examId",
+    "fileName",
+    "fileType",
+    "materialType",
+    "fileUrl",
+    "createdAt",
+  ]),
+  questionBank: createTable([
+    "id",
+    "teacherId",
+    "subjectId",
+    "type",
+    "difficulty",
+    "questionText",
+    "imageUrl",
+    "audioUrl",
+    "explanation",
+    "correctAnswerText",
+    "tags",
+    "usageCount",
+    "createdAt",
+    "updatedAt",
+  ]),
+  questionBankOptions: createTable([
+    "id",
+    "bankQuestionId",
+    "label",
+    "text",
+    "imageUrl",
+    "isCorrect",
+    "orderIndex",
+  ]),
 };
 
 // Mock auth middleware — bypass DB lookup, use x-user-id/x-user-role headers directly
@@ -198,11 +269,24 @@ jest.mock("../../src/middleware/auth", () => ({
     const userId = c.req.header("x-user-id");
     const role = c.req.header("x-user-role");
     if (!userId || !role) {
-      return c.json({ success: false, error: { code: "UNAUTHORIZED", message: "Missing x-user-id or x-user-role header" } }, 401);
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Missing x-user-id or x-user-role header",
+          },
+        },
+        401,
+      );
     }
     // Consume the "auth" result that tests queue as first item
     if (resultQueue.length > 0) resultQueue.shift();
-    c.set("user", { id: userId, role, fullName: role === "teacher" ? "Test Teacher" : "Test Student" });
+    c.set("user", {
+      id: userId,
+      role,
+      fullName: role === "teacher" ? "Test Teacher" : "Test Student",
+    });
     await next();
   }),
 }));
@@ -249,7 +333,10 @@ export function studentHeaders(overrides: Record<string, string> = {}) {
   };
 }
 
-export function jsonRequest(body: unknown, headers: Record<string, string> = {}) {
+export function jsonRequest(
+  body: unknown,
+  headers: Record<string, string> = {},
+) {
   return {
     method: "POST",
     headers: {
