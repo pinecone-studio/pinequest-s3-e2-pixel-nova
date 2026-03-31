@@ -95,11 +95,7 @@ export const useExamScheduleActions = ({
       return null;
     }
 
-<<<<<<< HEAD
-    let sourceExam = selectedScheduleExam;
-=======
     let sourceExam: Exam | null = selectedScheduleExam ?? null;
->>>>>>> 761b946 (bug)
 
     if (sourceExam && sourceExam.questions.length === 0) {
       try {
@@ -143,7 +139,7 @@ export const useExamScheduleActions = ({
         Number.isNaN(normalizedLongitude))
     ) {
       showToast("Сургуулийн байршлын өргөрөг, уртрагийг зөв оруулна уу.");
-      return;
+      return null;
     }
 
     const locationConfig = {
