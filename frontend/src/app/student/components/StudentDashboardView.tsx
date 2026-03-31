@@ -12,6 +12,7 @@ import StudentHeader from "./StudentHeader";
 import StudentDashboardTab from "./StudentDashboardTab";
 import StudentExamsTab from "./StudentExamsTab";
 import StudentHelpTab from "./StudentHelpTab";
+import StudentAiInsightsTab from "./StudentAiInsightsTab";
 import StudentLeaderboardTab from "./StudentLeaderboardTab";
 import StudentPreferencesTab from "./StudentPreferencesTab";
 import StudentProgressTab from "./StudentProgressTab";
@@ -196,6 +197,18 @@ export default function StudentDashboardView({
               progressSegments={progress.progressSegments}
               studentHistory={studentHistory}
             />
+        )}
+
+        {exam.activeTab === "Insights" && (
+          <StudentAiInsightsTab
+            currentUserId={data.currentUser?.id ?? null}
+            currentUserName={currentUserName}
+            currentXp={currentXp}
+            currentRank={currentRank}
+            totalStudents={totalStudents}
+            levelInfo={progress.levelInfo}
+            studentHistory={studentHistory}
+          />
         )}
 
         {exam.activeTab === "Leaderboard" && (

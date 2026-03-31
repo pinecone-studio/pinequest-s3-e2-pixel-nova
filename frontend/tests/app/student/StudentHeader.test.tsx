@@ -39,7 +39,7 @@ describe("StudentHeader", () => {
       />,
     );
 
-    expect(screen.getByText("EduCore LMS")).toBeInTheDocument();
+    expect(screen.getByText("Educore")).toBeInTheDocument();
     expect(screen.getByText("2.5k XP")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Шалгалт" }));

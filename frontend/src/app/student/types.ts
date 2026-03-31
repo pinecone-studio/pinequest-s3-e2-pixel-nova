@@ -16,6 +16,7 @@ export type StudentTab =
   | "Home"
   | "Exams"
   | "Progress"
+  | "Insights"
   | "Leaderboard"
   | "Profile"
   | "Settings"
