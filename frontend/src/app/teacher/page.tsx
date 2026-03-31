@@ -49,11 +49,13 @@ function TeacherScheduleModal({
   return (
     <div
       className="fixed inset-0 z-[120] overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
-      onClick={onClose}>
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-xl items-center justify-center">
+      onClick={onClose}
+    >
+      <div className="mx-auto flex min-h-screen w-full max-w-[46rem] items-center justify-end py-4 sm:py-8">
         <div
-          className="w-full rounded-[36px] border border-white/35 bg-white/96 shadow-[0_40px_120px_-40px_rgba(15,23,42,0.48)] ring-1 ring-white/25 transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
-          onClick={(event) => event.stopPropagation()}>
+          className="w-full transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
+          onClick={(event) => event.stopPropagation()}
+        >
           <ExamScheduleCard
             exams={data.exams}
             selectedScheduleExamId={management.selectedScheduleExamId}
@@ -215,7 +217,7 @@ export default function TeacherPage() {
     <div className={pageShellClass}>
       {data.toast && (
         <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
-          {data.toast}  
+          {data.toast}
         </div>
       )}
       <TeacherHeader
@@ -248,7 +250,8 @@ export default function TeacherPage() {
       />
       <main className="mx-auto w-full max-w-[1380px] space-y-5 px-4 py-4 sm:px-6 lg:px-8">
         <div
-          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}>
+          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}
+        >
           <TeacherPageContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
