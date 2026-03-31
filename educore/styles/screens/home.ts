@@ -3,20 +3,24 @@ import { StyleSheet } from "react-native";
 export const homeStyles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F2F4F7",
+    backgroundColor: "#F5F6FA",
   },
   content: {
     padding: 20,
     paddingBottom: 40,
   },
 
-  // Header
+  // ── Greeting header ──
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    gap: 6,
     marginTop: 8,
+    marginBottom: 20,
+  },
+  greetingIcon: {
+    // slight offset so icon aligns with text baseline
+    marginTop: 1,
   },
   brandWrap: {
     flexDirection: "row",
@@ -39,81 +43,47 @@ export const homeStyles = StyleSheet.create({
     marginBottom: 2,
   },
   greeting: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#888",
     fontWeight: "500",
   },
-  name: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#111",
-    marginTop: 2,
-  },
-  bell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  bellDot: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#FF3B30",
-    borderWidth: 1.5,
-    borderColor: "#fff",
-  },
 
-  // Section
+  // ── Section row (title + "Бүгд ›") ──
   sectionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
-    marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "700",
     color: "#111",
-    marginBottom: 10,
-    marginTop: 4,
   },
-  viewAll: {
+  sectionLinkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  sectionLink: {
     fontSize: 14,
     color: "#5B67F8",
-    fontWeight: "600",
+    fontWeight: "500",
   },
 
-  // Card
+  // ── Exam card ──
   card: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 14,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-    overflow: "hidden",
-  },
-  cardTopBar: {
-    height: 6,
-    backgroundColor: "#5B67F8",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardBody: {
     padding: 16,
-    gap: 10,
+    gap: 12,
   },
   cardRow: {
     flexDirection: "row",
@@ -121,37 +91,74 @@ export const homeStyles = StyleSheet.create({
     alignItems: "center",
   },
   examTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#1A1A2E",
+    color: "#111",
     flex: 1,
-    marginRight: 8,
-  },
-  examMeta: {
-    fontSize: 13,
-    color: "#888",
+    marginRight: 10,
   },
 
-  // Status pill
+  // ── Status pills ──
   statusPill: {
-    backgroundColor: "#E8F5E9",
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   statusPillText: {
-    color: "#2E7D32",
     fontSize: 12,
     fontWeight: "700",
   },
+  statusPillGreen: {
+    backgroundColor: "#E6F9F1",
+  },
+  statusPillTextGreen: {
+    color: "#1D9E75",
+  },
+  statusPillAmber: {
+    backgroundColor: "#FEF3C7",
+  },
+  statusPillTextAmber: {
+    color: "#B45309",
+  },
+  statusPillRed: {
+    backgroundColor: "#FEE2E2",
+  },
+  statusPillTextRed: {
+    color: "#DC2626",
+  },
 
-  // Buttons
+  // ── Meta table (Өдөр / Эхэлсэн цаг / Үргэлжилсэн хугацаа) ──
+  metaTable: {
+    gap: 0,
+  },
+  metaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 5,
+  },
+  metaDivider: {
+    height: 0.5,
+    backgroundColor: "#F0F1F5",
+  },
+  metaLabel: {
+    fontSize: 13,
+    color: "#AAB0C0",
+    fontWeight: "400",
+  },
+  metaValue: {
+    fontSize: 13,
+    color: "#333",
+    fontWeight: "500",
+  },
+
+  // ── Primary button ──
   primaryBtn: {
     backgroundColor: "#5B67F8",
     borderRadius: 12,
     paddingVertical: 13,
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 2,
   },
   primaryBtnText: {
     color: "#fff",
@@ -159,16 +166,52 @@ export const homeStyles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // Achievements
-  badgeRow: {
+  // ── "Дэлгэрэнгүй ›" link ──
+  detailLinkRow: {
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 3,
+    paddingTop: 4,
+  },
+  detailLink: {
+    fontSize: 14,
+    color: "#5B67F8",
+    fontWeight: "500",
+  },
+
+  // ── Kept for compatibility with other parts of the app ──
+  name: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#111",
+    marginTop: 2,
+  },
+  cardTopBar: {
+    height: 6,
+    backgroundColor: "#5B67F8",
+  },
+  examMeta: {
+    fontSize: 13,
+    color: "#888",
+  },
+  statusPillWarning: { backgroundColor: "#FEF3C7" },
+  statusPillTextWarning: { color: "#B45309" },
+  statusPillDanger: { backgroundColor: "#FEE2E2" },
+  statusPillTextDanger: { color: "#DC2626" },
+  badgeScroll: {
+    marginHorizontal: -20,
+    marginBottom: 16,
+  },
+  badgeScrollContent: {
+    paddingHorizontal: 20,
     gap: 12,
-    marginBottom: 20,
+    flexDirection: "row",
   },
   badge: {
     alignItems: "center",
     gap: 6,
-    flex: 1,
+    width: 80,
   },
   badgeIcon: {
     width: 60,
@@ -177,17 +220,13 @@ export const homeStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeEmoji: {
-    fontSize: 26,
-  },
+  badgeEmoji: { fontSize: 26 },
   badgeLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     color: "#333",
     textAlign: "center",
   },
-
-  // Stats
   statsRow: {
     flexDirection: "row",
     gap: 10,
@@ -215,14 +254,11 @@ export const homeStyles = StyleSheet.create({
     marginTop: 2,
     fontWeight: "500",
   },
-
-  // Result
   bigScore: {
     fontSize: 42,
     fontWeight: "900",
     color: "#5B67F8",
   },
-
   errorText: {
     color: "#FF3B30",
     fontSize: 13,
