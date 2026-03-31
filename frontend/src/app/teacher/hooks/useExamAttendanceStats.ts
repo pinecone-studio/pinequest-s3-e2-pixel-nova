@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiFetch, unwrapApi } from "@/lib/api-client";
+import { apiRequest } from "@/api/client";
 import { openTeacherExamLiveStream } from "./teacher-api";
 import type { ExamAttendanceStats } from "../types";
 
@@ -28,10 +28,9 @@ export const useExamAttendanceStats = (
     const fetchStats = async () => {
       setLoading(true);
       try {
-        const payload = await apiFetch<
-          { data?: ExamAttendanceStats } | ExamAttendanceStats
-        >(`/api/exams/${examId}/stats`, {}, "teacher");
-        const data = unwrapApi(payload);
+        const data = await apiRequest<ExamAttendanceStats>(`/api/exams/${examId}/stats`, {
+          roleOverride: "teacher",
+        });
         if (!active) return;
         setStats({
           expected: Number(data.expected ?? 0),

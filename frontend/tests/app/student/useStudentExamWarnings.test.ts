@@ -1,18 +1,18 @@
 import { act, renderHook } from "@testing-library/react";
 import { useStudentExamWarnings } from "@/app/student/hooks/useStudentExamWarnings";
-import { apiFetch } from "@/lib/api-client";
+import { apiRequest } from "@/api/client";
 
-jest.mock("@/lib/api-client", () => ({
-  apiFetch: jest.fn(),
+jest.mock("@/api/client", () => ({
+  apiRequest: jest.fn(),
 }));
 
-const mockApiFetch = apiFetch as jest.MockedFunction<typeof apiFetch>;
+const mockApiRequest = apiRequest as jest.MockedFunction<typeof apiRequest>;
 
 describe("useStudentExamWarnings", () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    mockApiFetch.mockReset();
-    mockApiFetch.mockResolvedValue({ data: { riskLevel: "low" } } as never);
+    mockApiRequest.mockReset();
+    mockApiRequest.mockResolvedValue({ riskLevel: "low" } as never);
   });
 
   afterEach(() => {
@@ -30,7 +30,7 @@ describe("useStudentExamWarnings", () => {
 
     expect(result.current.violations.eventCount).toBe(0);
     expect(result.current.violations.copyAttempt).toBe(0);
-    expect(mockApiFetch).not.toHaveBeenCalled();
+    expect(mockApiRequest).not.toHaveBeenCalled();
   });
 
   it("logs and reports enabled detections", async () => {
@@ -45,7 +45,7 @@ describe("useStudentExamWarnings", () => {
 
     expect(result.current.violations.eventCount).toBe(1);
     expect(result.current.violations.copyAttempt).toBe(1);
-    expect(mockApiFetch).toHaveBeenCalledWith(
+    expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/cheat/event",
       expect.objectContaining({
         method: "POST",

@@ -1,22 +1,18 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 
 import { useExamAttendanceStats } from "@/app/teacher/hooks/useExamAttendanceStats";
-import { apiFetch } from "@/lib/api-client";
+import { apiRequest } from "@/api/client";
 import { openTeacherExamLiveStream } from "@/app/teacher/hooks/teacher-api";
 
-jest.mock("@/lib/api-client", () => ({
-  apiFetch: jest.fn(),
-  unwrapApi: (payload: { data?: unknown } | unknown) =>
-    payload && typeof payload === "object" && "data" in payload
-      ? (payload as { data?: unknown }).data
-      : payload,
+jest.mock("@/api/client", () => ({
+  apiRequest: jest.fn(),
 }));
 
 jest.mock("@/app/teacher/hooks/teacher-api", () => ({
   openTeacherExamLiveStream: jest.fn(),
 }));
 
-const mockApiFetch = apiFetch as jest.MockedFunction<typeof apiFetch>;
+const mockApiRequest = apiRequest as jest.MockedFunction<typeof apiRequest>;
 const mockOpenTeacherExamLiveStream =
   openTeacherExamLiveStream as jest.MockedFunction<
     typeof openTeacherExamLiveStream
@@ -25,7 +21,7 @@ const mockOpenTeacherExamLiveStream =
 describe("useExamAttendanceStats", () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    mockApiFetch.mockReset();
+    mockApiRequest.mockReset();
     mockOpenTeacherExamLiveStream.mockReset();
   });
 
@@ -35,14 +31,12 @@ describe("useExamAttendanceStats", () => {
   });
 
   it("hydrates from the live stream when updates arrive", async () => {
-    mockApiFetch.mockResolvedValue({
-      data: {
-        expected: 10,
-        joined: 1,
-        submitted: 0,
-        attendance_rate: 10,
-        submission_rate: 0,
-      },
+    mockApiRequest.mockResolvedValue({
+      expected: 10,
+      joined: 1,
+      submitted: 0,
+      attendance_rate: 10,
+      submission_rate: 0,
     });
 
     mockOpenTeacherExamLiveStream.mockImplementation((_examId, handlers) => {
@@ -95,33 +89,27 @@ describe("useExamAttendanceStats", () => {
   });
 
   it("falls back to polling when the live stream errors", async () => {
-    mockApiFetch
+    mockApiRequest
       .mockResolvedValueOnce({
-        data: {
-          expected: 10,
-          joined: 1,
-          submitted: 0,
-          attendance_rate: 10,
-          submission_rate: 0,
-        },
+        expected: 10,
+        joined: 1,
+        submitted: 0,
+        attendance_rate: 10,
+        submission_rate: 0,
       })
       .mockResolvedValueOnce({
-        data: {
-          expected: 10,
-          joined: 3,
-          submitted: 1,
-          attendance_rate: 30,
-          submission_rate: 10,
-        },
+        expected: 10,
+        joined: 3,
+        submitted: 1,
+        attendance_rate: 30,
+        submission_rate: 10,
       })
       .mockResolvedValue({
-        data: {
-          expected: 10,
-          joined: 5,
-          submitted: 2,
-          attendance_rate: 50,
-          submission_rate: 20,
-        },
+        expected: 10,
+        joined: 5,
+        submitted: 2,
+        attendance_rate: 50,
+        submission_rate: 20,
       });
 
     mockOpenTeacherExamLiveStream.mockImplementation((_examId, handlers) => {

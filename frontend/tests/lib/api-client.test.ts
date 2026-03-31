@@ -10,9 +10,9 @@ jest.mock("@/lib/examGuard", () => ({
   })),
 }));
 
-import { apiFetch } from "@/lib/api-client";
+import { apiRequest } from "@/api/client";
 
-describe("apiFetch", () => {
+describe("apiRequest", () => {
   it("encodes non-Latin user names before sending request headers", async () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
@@ -21,7 +21,7 @@ describe("apiFetch", () => {
 
     global.fetch = fetchMock as typeof fetch;
 
-    await apiFetch("/api/sessions/join", {
+    await apiRequest("/api/sessions/join", {
       method: "POST",
       body: JSON.stringify({ roomCode: "BHT6X6" }),
     });

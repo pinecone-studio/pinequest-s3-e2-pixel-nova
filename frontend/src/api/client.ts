@@ -1,4 +1,5 @@
 import { getSessionUser, type User } from "@/lib/examGuard";
+import { getStoredRole, type RoleKey } from "@/lib/role-session";
 
 const getApiBaseUrl = () => {
   // Build-time env var takes priority
@@ -24,23 +25,72 @@ type ApiEnvelope<T> = {
 };
 
 type RequestOptions = RequestInit & {
+  roleOverride?: RoleKey;
   user?: User | null;
+  userIdOverride?: string;
 };
 
-const unwrapResponse = <T,>(value: ApiEnvelope<T> | T): T => {
+export type ApiUserContext = {
+  roleKey: RoleKey;
+  userId: string;
+  userRole: "teacher" | "student";
+  userName: string;
+};
+
+export const unwrapApi = <T,>(value: ApiEnvelope<T> | T): T => {
   if (value && typeof value === "object" && "data" in value) {
     return (value as ApiEnvelope<T>).data as T;
   }
   return value as T;
 };
 
-const buildHeaders = (headers: HeadersInit | undefined, user?: User | null) => {
-  const resolvedUser = user ?? getSessionUser();
+export const getApiUserContext = (
+  roleOverride?: RoleKey,
+  userOverride?: User | null,
+): ApiUserContext => {
+  const roleKey = roleOverride ?? getStoredRole();
+  const sessionUser = userOverride ?? getSessionUser();
+  const user =
+    sessionUser ??
+    ({
+      id: roleKey,
+      username: roleKey === "teacher" ? "Ð‘Ð°Ð³Ñˆ" : "Ð¡ÑƒÑ€Ð°Ð³Ñ‡",
+      role: roleKey,
+    } as const);
+
+  return {
+    roleKey,
+    userId: user.id,
+    userRole: user.role,
+    userName: user.username,
+  };
+};
+
+const encodeHeaderValue = (value: string) => encodeURIComponent(value);
+
+const buildHeaders = (
+  headers: HeadersInit | undefined,
+  user?: User | null,
+  roleOverride?: RoleKey,
+  userIdOverride?: string,
+  body?: BodyInit | null,
+) => {
+  const context = getApiUserContext(roleOverride, user);
   const next = new Headers(headers);
 
-  if (resolvedUser) {
-    next.set("x-user-id", resolvedUser.id);
-    next.set("x-user-role", resolvedUser.role);
+  if (context) {
+    next.set("x-user-id", userIdOverride ?? context.userId);
+    next.set("x-user-role", context.userRole);
+    next.set("x-user-name-encoded", encodeHeaderValue(context.userName));
+  }
+
+  if (
+    body &&
+    !(body instanceof FormData) &&
+    !(body instanceof URLSearchParams) &&
+    !next.has("Content-Type")
+  ) {
+    next.set("Content-Type", "application/json");
   }
 
   return next;
@@ -48,13 +98,13 @@ const buildHeaders = (headers: HeadersInit | undefined, user?: User | null) => {
 
 export const apiRequest = async <T,>(
   path: string,
-  { user, headers, ...init }: RequestOptions = {},
+  { user, roleOverride, userIdOverride, headers, ...init }: RequestOptions = {},
 ): Promise<T> => {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
-      headers: buildHeaders(headers, user),
+      headers: buildHeaders(headers, user, roleOverride, userIdOverride, init.body),
     });
   } catch (error) {
     const message =
@@ -74,5 +124,5 @@ export const apiRequest = async <T,>(
   }
 
   const json = (await response.json()) as ApiEnvelope<T> | T;
-  return unwrapResponse<T>(json);
+  return unwrapApi<T>(json);
 };
