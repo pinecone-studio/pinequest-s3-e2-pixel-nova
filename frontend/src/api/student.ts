@@ -1,5 +1,6 @@
 import type { User } from "@/lib/examGuard";
 import { apiRequest } from "./client";
+import type { XpLeaderboardEntry } from "./xp";
 
 export type StudentProfile = {
   id?: string;
@@ -52,6 +53,17 @@ export type StudentTermRankOverview = {
   rank: number | null;
   totalStudents: number;
   termExamCount: number;
+  xp: number;
+  level: number;
+};
+
+export type StudentProgressRankOverview = {
+  rank: number | null;
+  totalStudents: number;
+  progressExamCount: number;
+  xp: number;
+  level: number;
+  isPrivate: boolean;
 };
 
 export type StudentProgressLeaderboardEntry = {
@@ -88,6 +100,12 @@ export const getStudentProfile = (user?: User | null) =>
 
 export const getStudentTermRank = (user?: User | null) =>
   apiRequest<StudentTermRankOverview>("/api/student/term-rank", { user });
+
+export const getStudentTermLeaderboard = (user?: User | null) =>
+  apiRequest<XpLeaderboardEntry[]>("/api/student/term-leaderboard", { user });
+
+export const getStudentProgressRank = (user?: User | null) =>
+  apiRequest<StudentProgressRankOverview>("/api/student/progress-rank", { user });
 
 export const getStudentProgressLeaderboard = (user?: User | null) =>
   apiRequest<StudentProgressLeaderboardEntry[]>(

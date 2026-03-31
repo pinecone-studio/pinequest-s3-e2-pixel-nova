@@ -2,27 +2,36 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import StudentLeaderboardTab from "@/app/student/components/StudentLeaderboardTab";
 
 describe("StudentLeaderboardTab", () => {
-  it("shows the total XP leaderboard first and switches to the improvement leaderboard", () => {
+  it("shows the progress rank card while keeping the term leaderboard first", () => {
     render(
       <StudentLeaderboardTab
         currentUserId="current-student"
         currentUserName="Anu Bold"
-        currentLevel={3}
         termRankOverview={{
           rank: 4,
           totalStudents: 18,
           termExamCount: 3,
+          xp: 140,
+          level: 2,
         }}
-        leaderboardEntries={[
-          { rank: 1, id: "s1", fullName: "Bataa B.", xp: 8400, level: 5 },
-          { rank: 2, id: "s2", fullName: "Saraa T.", xp: 7750, level: 5 },
-          { rank: 3, id: "s3", fullName: "Temuulen", xp: 7100, level: 4 },
+        progressRankOverview={{
+          rank: 2,
+          totalStudents: 12,
+          progressExamCount: 4,
+          xp: 90,
+          level: 3,
+          isPrivate: true,
+        }}
+        termLeaderboardEntries={[
+          { rank: 1, id: "s1", fullName: "Bataa B.", xp: 260, level: 3 },
+          { rank: 2, id: "s2", fullName: "Saraa T.", xp: 220, level: 3 },
+          { rank: 3, id: "s3", fullName: "Temuulen", xp: 180, level: 2 },
           {
             rank: 4,
             id: "current-student",
             fullName: "Anu Bold",
-            xp: 6450,
-            level: 3,
+            xp: 140,
+            level: 2,
           },
         ]}
         improvementLeaderboard={[
@@ -53,99 +62,75 @@ describe("StudentLeaderboardTab", () => {
     expect(screen.getByText("Тэргүүлэгчид")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Цэнхэр блок нь улирлын шалгалтаар, доорх самбар нь сонгосон XP төрлөөр эрэмбэлэгдэнэ.",
+        "Цэнхэр блок дээр зөвхөн явцын нууц rank харагдана. Доорх хэсэг нь XP leaderboard-оо тусдаа сольж харуулна.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Чиний эрэмбэ")).toBeInTheDocument();
-    expect(screen.getByText("#4")).toBeInTheDocument();
-    expect(screen.getByText("Чи 4-т явж байна.")).toBeInTheDocument();
-    expect(screen.getByText("3 шалгалт")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Нийт XP/i })).toHaveAttribute(
+    expect(screen.getByText("Нууц явцын эрэмбэ")).toBeInTheDocument();
+    expect(screen.getByText("Чи 2-т явж байна.")).toBeInTheDocument();
+    expect(screen.queryByText("Улирлын rank")).not.toBeInTheDocument();
+    expect(screen.queryByText("Явцын rank")).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Улирлын XP/i })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    expect(screen.getByText("Нийт XP Leaderboard")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Энэ самбар нь сурагчдыг нийт XP болон level-ээр нь эрэмбэлж харуулна.",
-      ),
-    ).toBeInTheDocument();
-    const xpLeaderboard = screen.getByTestId("xp-leaderboard");
-    expect(within(xpLeaderboard).getByText("Anu")).toBeInTheDocument();
-    expect(screen.getByText("Bataa")).toBeInTheDocument();
-    expect(screen.getByText("6,450 XP")).toBeInTheDocument();
-    expect(screen.getByText("8,400 XP")).toBeInTheDocument();
+    expect(screen.getByText("Улирлын XP Leaderboard")).toBeInTheDocument();
+
+    const termLeaderboard = screen.getByTestId("term-leaderboard");
+    expect(within(termLeaderboard).getByText("Anu")).toBeInTheDocument();
+    expect(within(termLeaderboard).getByText("Bataa")).toBeInTheDocument();
+    expect(within(termLeaderboard).getByText("260 XP")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: /Ахицын XP/i }));
 
-    expect(screen.getByText("Ахиц дэвшлийн тэргүүлэгчид")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Ахицын XP/i })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    expect(screen.queryByTestId("xp-leaderboard")).not.toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Өмнөх явцын шалгалтаасаа ахисан хувьтай тэнцэх growth XP авна. 100 → 100 бол +10 XP, тасалбал -10 XP хасагдана.",
-      ),
-    ).toBeInTheDocument();
-    const improvementLeaderboard = screen.getByTestId(
-      "improvement-leaderboard",
-    );
-    expect(
-      within(improvementLeaderboard).getByText("25 XP"),
-    ).toBeInTheDocument();
-    expect(
-      within(improvementLeaderboard).getAllByText("2 ахиц").length,
-    ).toBeGreaterThan(0);
-    expect(
-      within(improvementLeaderboard).getByText("Тэмүүлэн"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Нууц явцын эрэмбэ")).toBeInTheDocument();
+    expect(screen.getByText("Чи 2-т явж байна.")).toBeInTheDocument();
+    expect(screen.queryByTestId("term-leaderboard")).not.toBeInTheDocument();
+    expect(screen.getByText("Ахицын XP Leaderboard")).toBeInTheDocument();
+
+    const improvementLeaderboard = screen.getByTestId("improvement-leaderboard");
+    expect(within(improvementLeaderboard).getByText("25 XP")).toBeInTheDocument();
+    expect(within(improvementLeaderboard).getAllByText("2 ахиц").length).toBeGreaterThan(0);
+    expect(within(improvementLeaderboard).getByText("Тэмүүлэн")).toBeInTheDocument();
     expect(screen.getAllByText("you")).toHaveLength(1);
-    expect(
-      within(improvementLeaderboard).getAllByText(/^Lvl \d+$/),
-    ).toHaveLength(10);
+    expect(within(improvementLeaderboard).getAllByText(/^Lvl \d+$/)).toHaveLength(10);
   });
 
-  it("shows the XP empty state and still lets users switch to the mock improvement leaderboard", () => {
+  it("shows empty term state and still fills the improvement leaderboard with mock data", () => {
     render(
       <StudentLeaderboardTab
         currentUserId="current-student"
         currentUserName="Anu Bold"
-        currentLevel={3}
         termRankOverview={{
           rank: null,
           totalStudents: 0,
           termExamCount: 0,
+          xp: 0,
+          level: 1,
         }}
-        leaderboardEntries={[]}
+        progressRankOverview={{
+          rank: null,
+          totalStudents: 0,
+          progressExamCount: 0,
+          xp: 0,
+          level: 1,
+          isPrivate: true,
+        }}
+        termLeaderboardEntries={[]}
+        improvementLeaderboard={[]}
       />,
     );
 
+    expect(screen.getByText("Явцын XP хараахан бүрдээгүй байна.")).toBeInTheDocument();
     expect(
-      screen.getByText("XP leaderboard хараахан бүрдээгүй байна."),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Эрэмбэ удахгүй харагдана.")).toBeInTheDocument();
-    expect(screen.getByText("0 шалгалт")).toBeInTheDocument();
-    expect(screen.getByText("Нийт XP Leaderboard")).toBeInTheDocument();
-    expect(
-      screen.getByText("Одоогоор XP leaderboard хоосон байна."),
+      screen.getByText("Одоогоор улирлын XP leaderboard хоосон байна."),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: /Ахицын XP/i }));
 
-    expect(
-      screen.queryByText("Одоогоор XP leaderboard хоосон байна."),
-    ).not.toBeInTheDocument();
-    const improvementLeaderboard = screen.getByTestId(
-      "improvement-leaderboard",
-    );
+    expect(screen.getByText("Явцын XP хараахан бүрдээгүй байна.")).toBeInTheDocument();
+    const improvementLeaderboard = screen.getByTestId("improvement-leaderboard");
     expect(within(improvementLeaderboard).getByText("Anu")).toBeInTheDocument();
-    expect(
-      within(improvementLeaderboard).getAllByText("34 XP").length,
-    ).toBeGreaterThan(0);
-    expect(
-      within(improvementLeaderboard).getAllByText(/^Lvl \d+$/),
-    ).toHaveLength(10);
+    expect(within(improvementLeaderboard).getAllByText("34 XP").length).toBeGreaterThan(0);
+    expect(within(improvementLeaderboard).getAllByText(/^Lvl \d+$/)).toHaveLength(10);
   });
 });
