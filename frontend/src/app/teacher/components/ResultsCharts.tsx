@@ -163,21 +163,24 @@ export default function ResultsCharts({ examStats }: ResultsChartsProps) {
                   className="rounded-[22px] border border-[#dce8f8] bg-white/90 px-4 py-4 shadow-[0_14px_30px_-26px_rgba(20,184,166,0.35)]"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div>
+                    <div className="min-w-0 flex-1 pr-2">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                         {question.label}
                       </div>
-                      <div className="mt-1 text-sm font-semibold text-slate-900 line-clamp-2">
+                      <div
+                        className="mt-1 break-words text-sm font-semibold leading-7 text-slate-900 line-clamp-3"
+                        title={question.text}
+                      >
                         {question.text}
                       </div>
                     </div>
                     <div
-                      className="grid h-20 w-20 shrink-0 place-items-center rounded-full"
+                      className="grid h-20 w-20 shrink-0 place-items-center rounded-full sm:h-24 sm:w-24"
                       style={{
                         background: `conic-gradient(#14b8a6 ${question.correctRate * 3.6}deg, #d9f3ef 0deg)`,
                       }}
                     >
-                      <div className="grid h-14 w-14 place-items-center rounded-full border border-[#dce8f8] bg-white text-sm font-semibold text-slate-900">
+                      <div className="grid h-14 w-14 place-items-center rounded-full border border-[#dce8f8] bg-white text-sm font-semibold text-slate-900 sm:h-16 sm:w-16">
                         {question.correctRate}%
                       </div>
                     </div>

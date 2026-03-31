@@ -21,29 +21,29 @@ type JoinExamPanelProps = {
 
 const infoItems = [
   {
-    title: "Go Back",
-    description: "Cannot return to previous",
+    title: "Буцах боломжгүй",
+    description: "Өмнөх асуулт руу буцах боломжгүй",
     icon: RefreshCcw,
     className: "border-[#cfd8ff] bg-white text-[#6670d6]",
     iconClassName: "text-[#6670d6]",
   },
   {
-    title: "Auto Submit",
-    description: "Submits when time ends",
+    title: "Автоматаар илгээнэ",
+    description: "Хугацаа дуусмагц автоматаар илгээгдэнэ",
     icon: Clock3,
     className: "border-[#cfd8ff] bg-white text-[#6670d6]",
     iconClassName: "text-[#6670d6]",
   },
   {
-    title: "Copy/Paste",
-    description: "Disabled",
+    title: "Хуулах, буулгах",
+    description: "Идэвхгүй",
     icon: ClipboardX,
     className: "border-[#f1c1c1] bg-[#fff9f9] text-[#ef6f67]",
     iconClassName: "text-[#ef6f67]",
   },
   {
-    title: "Camera",
-    description: "Required",
+    title: "Камер",
+    description: "Заавал асаалттай байна",
     icon: Video,
     className: "border-[#f1c1c1] bg-[#fff9f9] text-[#ef6f67]",
     iconClassName: "text-[#ef6f67]",
