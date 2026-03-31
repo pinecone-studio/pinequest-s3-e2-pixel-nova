@@ -213,6 +213,9 @@ export default function StudentPage() {
                 sessionId={exam.sessionId}
                 user={data.currentUser}
                 showWarning={exam.showWarning}
+                enabledCheatDetections={
+                  exam.activeExam?.enabledCheatDetections ?? null
+                }
               />
             }
           />

@@ -32,6 +32,7 @@ export type Exam = {
   examStartedAt?: string | null;
   finishedAt?: string | null;
   roomCode: string;
+  enabledCheatDetections?: string[];
   questions: Question[];
   duration?: number;
   createdAt: string;

@@ -22,7 +22,13 @@ type UseStudentExamSessionParams = {
 };
 
 type SessionData = {
-  exam: { id: string; title: string; description?: string | null; durationMin: number };
+  exam: {
+    id: string;
+    title: string;
+    description?: string | null;
+    durationMin: number;
+    enabledCheatDetections?: string[];
+  };
   answers?: {
     questionId: string;
     selectedOptionId?: string | null;
@@ -163,7 +169,8 @@ export const useStudentExamSession = ({
   const sidebarTimerRef = useRef<number | null>(null);
   const answerFlushTimerRef = useRef<number | null>(null);
   const pendingAnswersRef = useRef<Record<string, string>>({});
-  const { violations, setViolations, warning, showWarning, logViolation } = useStudentExamWarnings(sessionId);
+  const { violations, setViolations, warning, showWarning, logViolation } =
+    useStudentExamWarnings(sessionId, activeExam?.enabledCheatDetections);
   const {
     lastSubmission,
     setLastSubmission,

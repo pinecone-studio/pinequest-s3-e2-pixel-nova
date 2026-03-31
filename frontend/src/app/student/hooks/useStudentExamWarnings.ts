@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-client";
+import { isCheatDetectionEnabled } from "@/lib/exam-cheat-detections";
 import type { Violations } from "../types";
 import { EMPTY_VIOLATIONS, EVENT_TYPE_MAP } from "./student-exam-session-helpers";
 
@@ -10,7 +11,10 @@ type ViolationInput = {
   type: string;
 };
 
-export function useStudentExamWarnings(sessionId: string | null) {
+export function useStudentExamWarnings(
+  sessionId: string | null,
+  enabledCheatDetections?: string[] | null,
+) {
   const [violations, setViolations] = useState<Violations>({
     ...EMPTY_VIOLATIONS,
   });
@@ -24,6 +28,11 @@ export function useStudentExamWarnings(sessionId: string | null) {
   const logViolation = (input: string | ViolationInput) => {
     const { confidence, details, source = "browser", type } =
       typeof input === "string" ? { type: input } : input;
+    const eventType = EVENT_TYPE_MAP[type] ?? "suspicious_resize";
+
+    if (!isCheatDetectionEnabled(eventType, enabledCheatDetections)) {
+      return;
+    }
 
     setViolations((prev) => ({
       ...prev,
@@ -54,7 +63,6 @@ export function useStudentExamWarnings(sessionId: string | null) {
     }));
     if (!sessionId) return;
 
-    const eventType = EVENT_TYPE_MAP[type] ?? "suspicious_resize";
     void apiFetch<{
       data?: { deduped?: boolean; riskLevel?: Violations["riskLevel"] };
       deduped?: boolean;

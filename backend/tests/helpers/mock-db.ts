@@ -68,6 +68,7 @@ const tableExports = {
     "roomCode",
     "passScore",
     "shuffleQuestions",
+    "enabledCheatDetections",
     "createdAt",
     "updatedAt",
   ]),

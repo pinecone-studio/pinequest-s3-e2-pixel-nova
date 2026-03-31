@@ -63,6 +63,7 @@ type TeacherExamSummary = {
   submissionCount?: number | null;
   startedAt?: string | null;
   finishedAt?: string | null;
+  enabledCheatDetections?: string[];
 };
 
 type TeacherExamDetail = TeacherExamSummary & {
@@ -106,6 +107,7 @@ export const fetchTeacherExams = async (
     expectedStudentsCount: exam.expectedStudentsCount ?? 0,
     questionCount: Number(exam.questionCount ?? 0),
     submissionCount: Number(exam.submissionCount ?? 0),
+    enabledCheatDetections: exam.enabledCheatDetections ?? undefined,
     questions: [],
     duration: exam.durationMin ?? 60,
     createdAt: exam.createdAt,
@@ -152,6 +154,7 @@ export const fetchTeacherExamDetail = async (
     roomCode: exam.roomCode ?? "",
     expectedStudentsCount: exam.expectedStudentsCount ?? 0,
     questionCount: mappedQuestions.length,
+    enabledCheatDetections: exam.enabledCheatDetections ?? undefined,
     questions: mappedQuestions,
     duration: exam.durationMin ?? 60,
     createdAt: exam.createdAt,

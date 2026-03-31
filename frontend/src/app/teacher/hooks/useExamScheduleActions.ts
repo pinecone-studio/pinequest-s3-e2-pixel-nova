@@ -56,47 +56,52 @@ export const useExamScheduleActions = ({
   setSelectedScheduleExamId,
   setRoomCode,
 }: UseExamScheduleActionsParams) => {
-  const handleSchedule = useCallback(async () => {
-    if (!scheduleDate || isNaN(new Date(scheduleDate).getTime())) {
+  const handleSchedule = useCallback(async (): Promise<Exam | null> => {
+    if (!scheduleDate || Number.isNaN(new Date(scheduleDate).getTime())) {
       showToast("Шалгалтын огноо оруулна уу.");
-      return;
+      return null;
     }
 
     if (!currentUser) {
       showToast("Багшийн хэрэглэгч олдсонгүй.");
-      return;
+      return null;
     }
 
-    const selectedScheduleExam = exams.find(
-      (exam) => exam.id === selectedScheduleExamId,
-    );
+    const selectedScheduleExam =
+      exams.find((exam) => exam.id === selectedScheduleExamId) ?? null;
 
     if (!selectedScheduleExam && !scheduleTitle) {
       showToast("Шалгалтын файл сонгоно уу.");
-      return;
+      return null;
     }
 
-    let sourceExam = selectedScheduleExam ?? null;
+    let sourceExam = selectedScheduleExam;
 
     if (sourceExam && sourceExam.questions.length === 0) {
       try {
         sourceExam = await fetchTeacherExamDetail(sourceExam.id, currentUser.id);
       } catch {
-        showToast("Шалгалтын материалыг дуудаж чадсангүй. Дахин оролдоно уу.");
-        return;
+        showToast(
+          "Шалгалтын материалыг дуудаж чадсангүй. Дахин оролдоно уу.",
+        );
+        return null;
       }
     }
 
     if (sourceExam) {
       if ((sourceExam.questionCount ?? sourceExam.questions.length) === 0) {
-        showToast("Асуултгүй шалгалтыг хуваарьлах боломжгүй.");
-        return;
+        showToast(
+          "Асуултгүй шалгалтыг хуваарьлах боломжгүй.",
+        );
+        return null;
       }
     }
 
     if (!sourceExam && questions.length === 0) {
-      showToast("Хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.");
-      return;
+      showToast(
+        "Хуваарьлахын тулд дор хаяж 1 асуулт бэлэн байх хэрэгтэй.",
+      );
+      return null;
     }
 
     let newExam = buildLocalExam({
@@ -115,8 +120,7 @@ export const useExamScheduleActions = ({
     try {
       const syncedExam = await syncExamToBackend(currentUser, {
         title: sourceExam?.title ?? scheduleTitle,
-        description:
-          scheduleDescription || sourceExam?.description || "",
+        description: scheduleDescription || sourceExam?.description || "",
         examType: scheduleExamType || sourceExam?.examType || "",
         className: scheduleClassName,
         groupName: scheduleGroupName,
@@ -128,8 +132,7 @@ export const useExamScheduleActions = ({
 
       newExam = buildLocalExam({
         title: sourceExam?.title ?? scheduleTitle,
-        description:
-          scheduleDescription || sourceExam?.description || "",
+        description: scheduleDescription || sourceExam?.description || "",
         examType: scheduleExamType || sourceExam?.examType || "",
         className: scheduleClassName,
         groupName: scheduleGroupName,
@@ -141,7 +144,8 @@ export const useExamScheduleActions = ({
       });
       showToast("Шалгалтын материалыг хуулж шинэ хуваарь үүслээ.");
     } catch (err) {
-      let message = "Хуваарьлах үед алдаа гарлаа. Дахин оролдоно уу.";
+      let message =
+        "Хуваарьлах үед алдаа гарлаа. Дахин оролдоно уу.";
       if (err instanceof Error && err.message) {
         if (
           err.message.toLowerCase().includes("load failed") ||
@@ -154,7 +158,7 @@ export const useExamScheduleActions = ({
         }
       }
       showToast(message);
-      return;
+      return null;
     }
 
     setExams([newExam, ...exams]);
@@ -167,8 +171,12 @@ export const useExamScheduleActions = ({
     setScheduleDescription("");
     setSelectedScheduleExamId("");
     setRoomCode(newExam.roomCode);
+    return newExam;
   }, [
+    currentUser,
+    durationMinutes,
     exams,
+    expectedStudentsCount,
     questions,
     scheduleClassName,
     scheduleDate,
@@ -177,9 +185,6 @@ export const useExamScheduleActions = ({
     scheduleGroupName,
     scheduleTitle,
     selectedScheduleExamId,
-    durationMinutes,
-    expectedStudentsCount,
-    currentUser,
     setExams,
     setRoomCode,
     setScheduleClassName,

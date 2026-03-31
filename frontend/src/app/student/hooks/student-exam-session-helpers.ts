@@ -47,6 +47,7 @@ type SessionExam = {
   title: string;
   description?: string | null;
   durationMin: number;
+  enabledCheatDetections?: string[];
   status?: string | null;
   scheduledAt?: string | null;
   startedAt?: string | null;
@@ -74,6 +75,7 @@ export const mapSessionToExam = (
     examStartedAt: examData.startedAt ?? null,
     finishedAt: examData.finishedAt ?? null,
     roomCode: roomCodeInput.trim().toUpperCase(),
+    enabledCheatDetections: examData.enabledCheatDetections ?? undefined,
     questions: sessionData.questions.map((question) => ({
       id: question.id,
       text: question.questionText,
