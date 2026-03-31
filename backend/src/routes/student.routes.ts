@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc, or } from "drizzle-orm";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import {
@@ -111,6 +111,31 @@ studentRoutes.get("/exams", async (c) => {
     .where(eq(examSessions.studentId, user.id));
 
   return success(c, sessions);
+});
+
+// GET /upcoming-exams — scheduled or active exams visible to the current student
+studentRoutes.get("/upcoming-exams", async (c) => {
+  const db = getDb(c.env.educore);
+
+  const upcomingExams = await db
+    .select({
+      examId: exams.id,
+      title: exams.title,
+      description: exams.description,
+      status: exams.status,
+      className: exams.className,
+      groupName: exams.groupName,
+      scheduledAt: exams.scheduledAt,
+      startedAt: exams.startedAt,
+      finishedAt: exams.finishedAt,
+      durationMin: exams.durationMin,
+      roomCode: exams.roomCode,
+    })
+    .from(exams)
+    .where(and(or(eq(exams.status, "scheduled"), eq(exams.status, "active"))))
+    .orderBy(asc(exams.scheduledAt), asc(exams.createdAt));
+
+  return success(c, upcomingExams);
 });
 
 // GET /results — All past results (graded sessions)
