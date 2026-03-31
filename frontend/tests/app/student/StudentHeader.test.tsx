@@ -18,7 +18,7 @@ const notifications: NotificationItem[] = [
 ];
 
 describe("StudentHeader", () => {
-  it("switches between primary tabs", () => {
+  it("switches between primary tabs inside the redesigned header", () => {
     const onTabChange = jest.fn();
 
     render(
@@ -39,9 +39,11 @@ describe("StudentHeader", () => {
       />,
     );
 
+    expect(screen.getByText("EduCore LMS")).toBeInTheDocument();
+    expect(screen.getByText("2.5k XP")).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: "Шалгалт" }));
     expect(onTabChange).toHaveBeenCalledWith("Exams");
-    expect(screen.getByText("2,450 XP")).toBeInTheDocument();
   });
 
   it("opens notifications and account menu actions", () => {

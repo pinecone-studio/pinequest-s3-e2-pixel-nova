@@ -1,118 +1,141 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import StudentDashboardTab from "@/app/student/components/StudentDashboardTab";
 
 const defaultProps = {
-	loading: false,
-	currentUserName: "Бат",
-	selectedExam: null,
-	levelInfo: { level: 2, minXP: 200 },
-	studentProgress: { xp: 350 },
-	nextLevel: { minXP: 500 },
-	currentRank: 3,
-	studentCount: 20,
-	studentHistory: [
-		{
-			examId: "e1",
-			title: "Математик",
-			percentage: 85,
-			score: 85,
-			totalPoints: 100,
-			grade: "B" as const,
-			date: "2024-06-01T10:00:00Z",
-		},
-		{
-			examId: "e2",
-			title: "Физик",
-			percentage: 92,
-			score: 92,
-			totalPoints: 100,
-			grade: "A" as const,
-			date: "2024-06-02T10:00:00Z",
-		},
-	],
-	onOpenExams: jest.fn(),
-	onOpenProgress: jest.fn(),
+  loading: false,
+  currentUserId: "student-1",
+  currentUserName: "Золбоо Бат",
+  exams: [
+    {
+      id: "exam-1",
+      title: "English Mock Exam",
+      description: "Англи хэл",
+      scheduledAt: "2026-03-30T03:00:00.000Z",
+      roomCode: "ROOM01",
+      questions: [],
+      duration: 40,
+      createdAt: "2026-03-29T03:00:00.000Z",
+    },
+    {
+      id: "exam-2",
+      title: "Mongolian Literature",
+      description: "Монгол хэл",
+      scheduledAt: "2026-03-30T05:00:00.000Z",
+      roomCode: "ROOM02",
+      questions: [],
+      duration: 40,
+      createdAt: "2026-03-29T05:00:00.000Z",
+    },
+    {
+      id: "exam-3",
+      title: "Russian Practice",
+      description: "Орос хэл",
+      scheduledAt: "2026-03-30T07:00:00.000Z",
+      roomCode: "ROOM03",
+      questions: [],
+      duration: 40,
+      createdAt: "2026-03-29T07:00:00.000Z",
+    },
+    {
+      id: "exam-4",
+      title: "Social Studies",
+      description: "Нийгэм",
+      scheduledAt: "2026-03-30T09:00:00.000Z",
+      roomCode: "ROOM04",
+      questions: [],
+      duration: 40,
+      createdAt: "2026-03-29T09:00:00.000Z",
+    },
+  ],
+  selectedExam: null,
+  levelInfo: { level: 12, minXP: 1200 },
+  studentProgress: { xp: 2100 },
+  nextLevel: { minXP: 2400 },
+  currentRank: 4,
+  studentCount: 20,
+  studentHistory: [
+    {
+      examId: "history-1",
+      title: "Математик",
+      percentage: 54,
+      score: 54,
+      totalPoints: 100,
+      grade: "C" as const,
+      date: "2026-03-25T10:00:00Z",
+    },
+    {
+      examId: "history-2",
+      title: "Физик",
+      percentage: 83,
+      score: 83,
+      totalPoints: 100,
+      grade: "B" as const,
+      date: "2026-03-30T10:00:00Z",
+    },
+  ],
+  termLeaderboardEntries: [
+    { rank: 1, id: "student-2", fullName: "Бат", xp: 2400, level: 11 },
+    { rank: 2, id: "student-3", fullName: "Сараа", xp: 2300, level: 11 },
+    { rank: 4, id: "student-1", fullName: "Золбоо Бат", xp: 2100, level: 12 },
+  ],
+  onOpenExams: jest.fn(),
+  onOpenProgress: jest.fn(),
 };
 
 describe("StudentDashboardTab", () => {
-	it("renders welcome message with user name", () => {
-		render(<StudentDashboardTab {...defaultProps} />);
+  it("renders the screenshot-style schedule and XP panels", () => {
+    render(<StudentDashboardTab {...defaultProps} />);
 
-		expect(screen.getByText(/Бат/)).toBeInTheDocument();
-	});
+    expect(screen.getByText("Шалгалтын хуваарь")).toBeInTheDocument();
+    expect(screen.getByText("Ахиц дэвшил")).toBeInTheDocument();
+    expect(screen.getByText("83%")).toBeInTheDocument();
+    expect(screen.getByText("Физик")).toBeInTheDocument();
+    expect(screen.getByText("XP оноо")).toBeInTheDocument();
+    expect(screen.getByText("Англи хэл")).toBeInTheDocument();
+    expect(screen.getByText("Монгол хэл")).toBeInTheDocument();
+    expect(screen.getByText("Золбоо")).toBeInTheDocument();
+    expect(screen.getByText("you")).toBeInTheDocument();
+    expect(screen.getByText("#4 / 20")).toBeInTheDocument();
+  });
 
-	it("renders student history exams", () => {
-		render(<StudentDashboardTab {...defaultProps} />);
+  it("opens exams from the schedule header", () => {
+    const onOpenExams = jest.fn();
+    render(<StudentDashboardTab {...defaultProps} onOpenExams={onOpenExams} />);
 
-		expect(screen.getAllByText("Математик").length).toBeGreaterThan(0);
-		expect(screen.getAllByText("Физик").length).toBeGreaterThan(0);
-	});
+    fireEvent.click(screen.getByRole("button", { name: /Бүгдийг харах/i }));
+    expect(onOpenExams).toHaveBeenCalledTimes(1);
+  });
 
-	it("displays rank information", () => {
-		render(<StudentDashboardTab {...defaultProps} />);
+  it("opens progress from the compact chart action", () => {
+    const onOpenProgress = jest.fn();
+    render(
+      <StudentDashboardTab {...defaultProps} onOpenProgress={onOpenProgress} />,
+    );
 
-		expect(screen.getAllByText(/3/).length).toBeGreaterThan(0);
-	});
+    fireEvent.click(screen.getByRole("button", { name: "Ахиц харах" }));
+    expect(onOpenProgress).toHaveBeenCalledTimes(1);
+  });
 
-	it("calls onOpenExams when exam button clicked", () => {
-		const onOpenExams = jest.fn();
-		render(<StudentDashboardTab {...defaultProps} onOpenExams={onOpenExams} />);
+  it("renders loading skeletons", () => {
+    const { container } = render(
+      <StudentDashboardTab {...defaultProps} loading={true} />,
+    );
 
-		const examButtons = screen.getAllByRole("button");
-		const examButton = examButtons.find((btn) =>
-			btn.textContent?.includes("Шалгалт"),
-		);
-		if (examButton) {
-			fireEvent.click(examButton);
-			expect(onOpenExams).toHaveBeenCalledTimes(1);
-		}
-	});
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+  });
 
-	it("calls onOpenProgress when progress button clicked", () => {
-		const onOpenProgress = jest.fn();
-		render(
-			<StudentDashboardTab {...defaultProps} onOpenProgress={onOpenProgress} />,
-		);
+  it("keeps the layout stable even without history", () => {
+    render(<StudentDashboardTab {...defaultProps} studentHistory={[]} />);
 
-		const buttons = screen.getAllByRole("button");
-		const progressButton = buttons.find((btn) =>
-			btn.textContent?.includes("Дүн"),
-		);
-		if (progressButton) {
-			fireEvent.click(progressButton);
-			expect(onOpenProgress).toHaveBeenCalledTimes(1);
-		}
-	});
+    expect(screen.getByText("83%")).toBeInTheDocument();
+    expect(screen.getAllByText("Нийгэм").length).toBeGreaterThan(0);
+    expect(screen.getByText("XP оноо")).toBeInTheDocument();
+  });
 
-	it("renders loading skeleton when loading is true", () => {
-		const { container } = render(
-			<StudentDashboardTab {...defaultProps} loading={true} />,
-		);
+  it("still renders without a public rank value", () => {
+    render(<StudentDashboardTab {...defaultProps} currentRank={null} />);
 
-		const animatedElements = container.querySelectorAll(".animate-pulse");
-		expect(animatedElements.length).toBeGreaterThan(0);
-	});
-
-	it("renders with empty history", () => {
-		render(
-			<StudentDashboardTab {...defaultProps} studentHistory={[]} />,
-		);
-
-		// Should still render without errors
-		expect(screen.getByText(/Бат/)).toBeInTheDocument();
-	});
-
-	it("renders with null rank", () => {
-		render(
-			<StudentDashboardTab {...defaultProps} currentRank={null} />,
-		);
-
-		expect(screen.getAllByText(/Бат/).length).toBeGreaterThan(0);
-	});
-
-	it("displays level information", () => {
-		render(<StudentDashboardTab {...defaultProps} />);
-
-		expect(screen.getAllByText(/2/).length).toBeGreaterThan(0);
-	});
+    expect(screen.getByText("Золбоо")).toBeInTheDocument();
+    expect(screen.queryByText("#4 / 20")).not.toBeInTheDocument();
+  });
 });

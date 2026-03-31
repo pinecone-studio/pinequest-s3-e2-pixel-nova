@@ -58,6 +58,8 @@ describe("StudentExamsTab", () => {
   });
 
   it("shows the join panel when no exam is selected", () => {
+    const onLookup = jest.fn();
+
     render(
       <StudentExamsTab
         loading={false}
@@ -65,7 +67,7 @@ describe("StudentExamsTab", () => {
         roomCodeInput=""
         setRoomCodeInput={jest.fn()}
         joinError={null}
-        onLookup={jest.fn()}
+        onLookup={onLookup}
         selectedExam={null}
         onStartExam={jest.fn()}
         onClearSelection={jest.fn()}
@@ -74,7 +76,17 @@ describe("StudentExamsTab", () => {
       />,
     );
 
-    expect(screen.getByText("Дараагийн шалгалтад нэвтрэх")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("AX7K2P")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Шалгалтад нэвтрэх" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Шалгалтын дүрэм ба мэдээлэл")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Өрөөний код")).toBeInTheDocument();
+    expect(screen.getByText("Go Back")).toBeInTheDocument();
+    expect(screen.getByText("Auto Submit")).toBeInTheDocument();
+    expect(screen.getByText("Copy/Paste")).toBeInTheDocument();
+    expect(screen.getByText("Camera")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Шалгалтад нэвтрэх" }));
+    expect(onLookup).toHaveBeenCalledTimes(1);
   });
 });
