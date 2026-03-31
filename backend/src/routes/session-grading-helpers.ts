@@ -133,6 +133,7 @@ export async function autoGradeSession(db: any, session: ExamSessionRow, exam: E
     db,
     studentId: session.studentId,
     sessionId: session.id,
+    examType: exam.examType,
     score,
     passScore: exam.passScore ?? 50,
     totalPoints,

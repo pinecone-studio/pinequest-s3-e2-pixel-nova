@@ -51,7 +51,19 @@ export const mockGetDb = jest.fn(() => mockDb);
 
 const tableExports = {
   teachers: createTable(["id", "code", "fullName", "email", "avatarUrl"]),
-  students: createTable(["id", "code", "fullName", "email", "avatarUrl", "xp", "level", "createdAt", "updatedAt"]),
+  students: createTable([
+    "id",
+    "code",
+    "fullName",
+    "email",
+    "avatarUrl",
+    "xp",
+    "termXp",
+    "progressXp",
+    "level",
+    "createdAt",
+    "updatedAt",
+  ]),
   subjects: createTable(["id", "name", "code", "description", "createdAt", "updatedAt"]),
   exams: createTable([
     "id",
@@ -99,6 +111,7 @@ const tableExports = {
     "status",
     "startedAt",
     "submittedAt",
+    "createdAt",
     "score",
     "earnedPoints",
     "totalPoints",

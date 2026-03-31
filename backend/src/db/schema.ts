@@ -30,6 +30,8 @@ export const students = sqliteTable("students", {
   groupName: text("group_name"),
   bio: text("bio"),
   xp: integer("xp").notNull().default(0),
+  termXp: integer("term_xp").notNull().default(0),
+  progressXp: integer("progress_xp").notNull().default(0),
   level: integer("level").notNull().default(1),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
   updatedAt: text("updated_at").notNull().default(sql`(current_timestamp)`),

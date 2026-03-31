@@ -2,14 +2,13 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
-import { getDb, exams, examSessions, studentAnswers, questions, options, students, xpTransactions } from "../db";
+import { getDb, exams, examSessions, studentAnswers, questions, options } from "../db";
 import type { AppEnv } from "../types";
 import { success, error, notFound, forbidden } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
-import { getLevel } from "../utils/level-calc";
-import { awardXpForGrading } from "../utils/xp-award";
+import { applyXpEntries, awardXpForGrading } from "../utils/xp-award";
 import { parseExamDate } from "../utils/exam-time";
 import {
   enrichTeacherNotificationTargets,
@@ -813,28 +812,13 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
     percentage >= 60 ? 40 :
     percentage >= 50 ? 20 : 10;
 
-  const [student] = await db
-    .select()
-    .from(students)
-    .where(eq(students.id, user.id))
-    .limit(1);
-
-  if (student) {
-    const nextXp = student.xp + xpEarned;
-    const nextLevel = getLevel(nextXp);
-    await db
-      .update(students)
-      .set({ xp: nextXp, level: nextLevel })
-      .where(eq(students.id, user.id));
-
-    await db.insert(xpTransactions).values({
-      id: newId(),
-      studentId: student.id,
-      amount: xpEarned,
-      reason: "exam_completed",
-      referenceId: sessionId,
-    });
-  }
+  await applyXpEntries({
+    db,
+    studentId: user.id,
+    sessionId,
+    examType: exam.examType,
+    entries: [{ amount: xpEarned, reason: "exam_completed" }],
+  });
 
   const targets = await enrichTeacherNotificationTargets(db, exam.id, user.id);
   if (targets.teacherId) {
@@ -1086,6 +1070,7 @@ sessionRoutes.post("/:sessionId/grade", requireRole("teacher"), async (c) => {
     db,
     studentId: session.studentId,
     sessionId,
+    examType: exam.examType,
     score,
     passScore: exam.passScore ?? 50,
     totalPoints,
