@@ -77,6 +77,13 @@ const compareDashboardExams = (left: Exam, right: Exam) => {
   return rightTime - leftTime;
 };
 
+const isUpcomingExam = (exam: Exam, now = Date.now()) => {
+  if (!exam.scheduledAt) return false;
+  const scheduledAt = new Date(exam.scheduledAt).getTime();
+  if (Number.isNaN(scheduledAt)) return false;
+  return scheduledAt >= now;
+};
+
 const formatSlashDate = (value: Date) =>
   value.toLocaleDateString("en-CA").replace(/-/g, "/");
 
@@ -141,6 +148,7 @@ export default function StudentDashboardTab({
 }: StudentDashboardTabProps) {
   const scheduleCards = useMemo(() => {
     const sourceExams = [...exams]
+      .filter((exam) => isUpcomingExam(exam))
       .sort(compareDashboardExams)
       .slice(0, 4)
       .map((exam, index) => {
@@ -159,43 +167,8 @@ export default function StudentDashboardTab({
         };
       });
 
-    if (sourceExams.length >= 4) return sourceExams;
-
-    const historyCards = studentHistory
-      .filter((item) => !sourceExams.some((exam) => exam.id === item.examId))
-      .slice(0, 4 - sourceExams.length)
-      .map((item, index) => {
-        const timestamp = new Date(item.date);
-        const safeDate = Number.isNaN(timestamp.getTime()) ? new Date() : timestamp;
-        const badge =
-          scheduleBadgeStyles[(sourceExams.length + index) % scheduleBadgeStyles.length];
-
-        return {
-          id: item.examId,
-          exam: {
-            id: item.examId,
-            title: item.title,
-            description: item.title,
-            status: null,
-            sessionStatus: null,
-            entryStatus: null,
-            scheduledAt: item.date,
-            roomCode: "",
-            questions: [],
-            duration: 40,
-            createdAt: item.date,
-          } as Exam,
-          title: getDisplayName(item.title),
-          badgeLabel: badge.label,
-          badgeClassName: badge.className,
-          dateLabel: formatSlashDate(safeDate),
-          timeLabel: formatClock(safeDate),
-          durationLabel: "40 минут",
-        };
-      });
-
-    return [...sourceExams, ...historyCards];
-  }, [exams, studentHistory]);
+    return sourceExams;
+  }, [exams]);
 
   const progressChart = useMemo(() => {
     const orderedHistory = [...studentHistory].sort(
@@ -421,7 +394,7 @@ export default function StudentDashboardTab({
 
         {scheduleCards.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-[#dfe5fb] bg-white/90 px-5 py-8 text-sm text-slate-400">
-            Одоогоор харагдах шалгалтын хуваарь алга.
+            Одоогоор ирээдүйд болох шалгалтын хуваарь алга.
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2">
