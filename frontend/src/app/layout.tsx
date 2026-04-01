@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
-import "katex/dist/katex.min.css";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
