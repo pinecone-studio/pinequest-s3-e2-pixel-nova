@@ -86,21 +86,79 @@ export default function ExamScheduleMetaFields({
     scheduleLocationLatitude.trim().length > 0 &&
     scheduleLocationLongitude.trim().length > 0;
 
-  const applyCapturedLocation = (position: GeolocationPosition) => {
-    setScheduleLocationLatitude(position.coords.latitude.toFixed(6));
-    setScheduleLocationLongitude(position.coords.longitude.toFixed(6));
+  const findNearestSchoolLabel = (latitude: number, longitude: number) => {
+    const toRadians = (value: number) => (value * Math.PI) / 180;
+    const haversineDistance = (
+      lat1: number,
+      lon1: number,
+      lat2: number,
+      lon2: number,
+    ) => {
+      const earthRadius = 6371_000;
+      const dLat = toRadians(lat2 - lat1);
+      const dLon = toRadians(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRadians(lat1)) *
+          Math.cos(toRadians(lat2)) *
+          Math.sin(dLon / 2) ** 2;
+      return 2 * earthRadius * Math.asin(Math.sqrt(a));
+    };
 
-    if (!scheduleLocationLabel.trim()) {
-      setScheduleLocationLabel("Pinecone сургууль");
+    const nearest = ubSchoolOptions.reduce<{
+      label: string;
+      distance: number;
+    } | null>((closest, school) => {
+      const distance = haversineDistance(
+        latitude,
+        longitude,
+        school.latitude,
+        school.longitude,
+      );
+
+      if (!closest || distance < closest.distance) {
+        return { label: school.label, distance };
+      }
+
+      return closest;
+    }, null);
+
+    if (!nearest) {
+      return "Одоогийн байршил";
     }
+
+    return nearest.distance <= 5000
+      ? `${nearest.label} орчим`
+      : "Одоогийн байршил";
+  };
+
+  const applyCapturedLocation = (position: GeolocationPosition) => {
+    const latitude = Number(position.coords.latitude.toFixed(6));
+    const longitude = Number(position.coords.longitude.toFixed(6));
+    setScheduleLocationLatitude(latitude.toFixed(6));
+    setScheduleLocationLongitude(longitude.toFixed(6));
+
+    if (
+      !scheduleLocationLabel.trim() ||
+      scheduleLocationLabel === "Pinecone сургууль" ||
+      scheduleLocationLabel === "Одоогийн байршил"
+    ) {
+      setScheduleLocationLabel(findNearestSchoolLabel(latitude, longitude));
+    }
+
+    if (scheduleAllowedRadiusMeters <= 0) {
+      setScheduleAllowedRadiusMeters(1500);
+    }
+
+    setShowLocationPermissionModal(false);
 
     const accuracy = Math.round(position.coords.accuracy || 0);
     setLocationStatus({
       tone: "success",
       message:
         accuracy > 0
-          ? `Байршил амжилттай авлаа. Нарийвчлал ойролцоогоор ${accuracy}м байна.`
-          : "Байршил амжилттай авлаа.",
+          ? `Байршил амжилттай авлаа. Нарийвчлал ойролцоогоор ${accuracy}м байна. Газрын зураг дээр шууд шалгаж болно.`
+          : "Байршил амжилттай авлаа. Газрын зураг дээр байршлаа шалгаж болно.",
     });
   };
 
@@ -158,12 +216,12 @@ export default function ExamScheduleMetaFields({
         setLocationStatus({
           tone: "error",
           message:
-            "Байршлын зөвшөөрөл хаалттай байна. Browser-ийн permission-оо зөвшөөрөөд дахин оролдоно уу.",
+            "Байршлын зөвшөөрөл хаалттай байна. Browser-ийн permission-оо зөвшөөрөөд дахин оролдоно уу, эсвэл доорх газрын зургаас сургуулиа сонгоно уу.",
         });
         return;
       }
 
-      let position: GeolocationPosition;
+      let position: GeolocationPosition | null = null;
 
       try {
         position = await readPosition({
@@ -179,17 +237,19 @@ export default function ExamScheduleMetaFields({
         });
       }
 
-      applyCapturedLocation(position);
+      if (position) {
+        applyCapturedLocation(position);
+      }
     } catch (error) {
       const geoError = error as GeolocationPositionError | undefined;
       const message =
         geoError?.code === 1
-          ? "Байршлын зөвшөөрөл өгөөгүй байна. Зөвшөөрөөд дахин оролдоно уу."
+          ? "Байршлын зөвшөөрөл өгөөгүй байна. Browser дээрх зөвшөөрлийг идэвхжүүлээд дахин оролдоно уу."
           : geoError?.code === 2
-            ? "Байршлыг тодорхойлж чадсангүй. Wi‑Fi/GPS-ээ шалгаад дахин оролдоно уу."
+            ? "Байршлыг тодорхойлж чадсангүй. Wi‑Fi эсвэл GPS-ээ асаагаад дахин оролдоно уу, эсвэл доорх газрын зургаас сургуулиа сонгоно уу."
             : geoError?.code === 3
-              ? "Байршил авах хугацаа дууслаа. Сүлжээ эсвэл байршлын үйлчилгээний тохиргоогоо шалгана уу."
-              : "Байршил авах үед алдаа гарлаа. Дахин оролдоно уу.";
+              ? "Байршил авах хугацаа дууслаа. Сүлжээ эсвэл байршлын үйлчилгээний тохиргоогоо шалгаад дахин оролдоно уу."
+              : "Байршил авах үед алдаа гарлаа. Дахин оролдоно уу, эсвэл газрын зургаас сургуулиа сонгоно уу.";
 
       setLocationStatus({
         tone: "error",
@@ -427,11 +487,11 @@ export default function ExamScheduleMetaFields({
             <div className="rounded-[26px] border border-[#e5ebf3] bg-white p-6 shadow-[0_16px_40px_rgba(59,78,111,0.05)]">
               <div className="mb-4">
                 <div className="text-[15px] font-semibold text-slate-900">
-                  Байршлын мэдээллийг гараар засах
+                  Байршлын мэдээллийг нягтлах
                 </div>
                 <div className="mt-1 text-[13px] leading-6 text-slate-500">
-                  Автоматаар авсан эсвэл газрын зургаас сонгосон байршлаа эндээс
-                  нягталж, шаардлагатай бол өөрчилж болно.
+                  Автоматаар авсан эсвэл газрын зургаас сонгосон байршлын нэр,
+                  зөвшөөрөх радиусыг эндээс тохируулж болно.
                 </div>
               </div>
 
@@ -446,31 +506,6 @@ export default function ExamScheduleMetaFields({
                   placeholder="Жишээ: Pinecone сургууль"
                 />
               </label>
-
-              <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                <label className="grid gap-2">
-                  <span className="text-[14px] font-medium text-slate-900">
-                    Өргөрөг
-                  </span>
-                  <input
-                    value={scheduleLocationLatitude}
-                    onChange={(event) => setScheduleLocationLatitude(event.target.value)}
-                    className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
-                    placeholder="47.918873"
-                  />
-                </label>
-                <label className="grid gap-2">
-                  <span className="text-[14px] font-medium text-slate-900">
-                    Уртраг
-                  </span>
-                  <input
-                    value={scheduleLocationLongitude}
-                    onChange={(event) => setScheduleLocationLongitude(event.target.value)}
-                    className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
-                    placeholder="106.917701"
-                  />
-                </label>
-              </div>
 
               <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                 <label className="grid gap-2">
