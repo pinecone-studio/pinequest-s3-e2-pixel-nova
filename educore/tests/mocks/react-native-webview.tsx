@@ -19,7 +19,7 @@ function decodeHtml(value: string) {
 
 export function WebView({ source, testID }: MockWebViewProps) {
   const match = source?.html?.match(/<div id="math-root">([\s\S]*?)<\/div>/);
-  const content = match ? decodeHtml(match[1]) : "";
+  const content = match ? decodeHtml(match[1]) : source?.html ?? "";
 
   return <Text testID={testID}>{content}</Text>;
 }
