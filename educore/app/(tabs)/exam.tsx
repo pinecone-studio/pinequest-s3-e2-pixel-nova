@@ -3,7 +3,10 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCameraPermissions } from "expo-camera";
 import { Redirect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import {
   Alert,
   AppState,
@@ -189,6 +192,7 @@ function ExamDetailModal({
   visible: boolean;
   onClose: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   if (!exam) return null;
 
   const classLabel = [exam.className, exam.groupName]
@@ -198,9 +202,15 @@ function ExamDetailModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.detailOverlay}>
-        <SafeAreaView style={styles.detailSheet} edges={["top"]}>
+        <View
+          style={[styles.detailSheet, { paddingTop: Math.max(insets.top, 12) }]}
+        >
           <View style={styles.detailTopBar}>
-            <Pressable style={styles.detailBackButton} onPress={onClose}>
+            <Pressable
+              style={styles.detailBackButton}
+              onPress={onClose}
+              hitSlop={12}
+            >
               <Ionicons name="chevron-back" size={22} color="#111827" />
             </Pressable>
             <Text style={styles.detailHeaderTitle}>Дэлгэрэнгүй</Text>
@@ -209,7 +219,8 @@ function ExamDetailModal({
 
           <ScrollView
             contentContainerStyle={styles.detailContent}
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.detailHeroCard}>
               <View style={styles.listCardRow}>
                 <View style={{ flex: 1 }}>
@@ -324,7 +335,7 @@ function ExamDetailModal({
               </View>
             </View>
           </ScrollView>
-        </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );
@@ -498,57 +509,64 @@ function ExamListScreen() {
       : [];
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
-      <Text style={styles.pageTitle}>Exams</Text>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.pageTitle}>Exams</Text>
 
-      {/* Tab switcher */}
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "active" && styles.tabActive]}
-          onPress={() => setActiveTab("active")}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "active" && styles.tabTextActive,
-            ]}>
-            Upcoming
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "history" && styles.tabActive]}
-          onPress={() => setActiveTab("history")}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "history" && styles.tabTextActive,
-            ]}>
-            History
-          </Text>
-        </TouchableOpacity>
-      </View>
+        {/* Tab switcher */}
+        <View style={styles.tabRow}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "active" && styles.tabActive]}
+            onPress={() => setActiveTab("active")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "active" && styles.tabTextActive,
+              ]}
+            >
+              Upcoming
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "history" && styles.tabActive]}
+            onPress={() => setActiveTab("history")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "history" && styles.tabTextActive,
+              ]}
+            >
+              History
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Search bar */}
-      <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={18} color="#98A2B3" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search exams..."
-          placeholderTextColor="#AAB0C0"
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+        {/* Search bar */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={18} color="#98A2B3" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search exams..."
+            placeholderTextColor="#AAB0C0"
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
 
-      {/* List */}
-      {activeTab === "active" ? (
-        <ActiveExamList search={search} items={activeItems} />
-      ) : (
-        <HistoryList search={search} items={historyItems} />
-      )}
-    </ScrollView>
+        {/* List */}
+        {activeTab === "active" ? (
+          <ActiveExamList search={search} items={activeItems} />
+        ) : (
+          <HistoryList search={search} items={historyItems} />
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -622,14 +640,16 @@ function ActiveExamList({
             {exam.status === "active" ? (
               <TouchableOpacity
                 style={styles.upcomingPrimaryButton}
-                onPress={() => router.push("/exam")}>
+                onPress={() => router.push("/exam")}
+              >
                 <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
               </TouchableOpacity>
             ) : (
               <View style={styles.upcomingButtonRow}>
                 <TouchableOpacity
                   style={styles.upcomingDetailButton}
-                  onPress={() => setSelectedExam(exam)}>
+                  onPress={() => setSelectedExam(exam)}
+                >
                   <Text style={styles.upcomingDetailText}>Дэлгэрэнгүй</Text>
                 </TouchableOpacity>
               </View>
@@ -681,7 +701,8 @@ function HistoryList({
                   : exam.status === "late"
                     ? styles.statusPillDanger
                     : undefined,
-              ]}>
+              ]}
+            >
               <Text
                 style={[
                   styles.statusPillText,
@@ -690,7 +711,8 @@ function HistoryList({
                     : exam.status === "late"
                       ? styles.statusPillTextDanger
                       : undefined,
-                ]}>
+                ]}
+              >
                 {exam.status === "missed"
                   ? "Өгөөгүй"
                   : exam.status === "late"
@@ -986,14 +1008,21 @@ export default function ExamScreen() {
   // No active session → show exam list with tabs
   if (!hydrated) {
     return (
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <Text style={styles.pageTitle}>Exam</Text>
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyEmoji}>Loading</Text>
-          <Text style={styles.emptyTitle}>Loading...</Text>
-          <Text style={styles.emptyText}>Restoring the latest exam state.</Text>
-        </View>
-      </ScrollView>
+      <SafeAreaView style={styles.screen} edges={["top"]}>
+        <ScrollView
+          style={styles.screen}
+          contentContainerStyle={styles.content}
+        >
+          <Text style={styles.pageTitle}>Шалгалт</Text>
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>Loading</Text>
+            <Text style={styles.emptyTitle}>Loading...</Text>
+            <Text style={styles.emptyText}>
+              Restoring the latest exam state.
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -1072,241 +1101,267 @@ export default function ExamScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
-      <Text style={styles.pageTitle}>Exam</Text>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.pageTitle}>Шалгалт</Text>
 
-      <View style={styles.examCard}>
-        <View style={styles.examCardTop} />
-        <View style={styles.examCardBody}>
-          <View style={styles.examCardRow}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {activeSession.exam.title.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.examTitle}>{activeSession.exam.title}</Text>
-              <Text style={styles.examMeta}>
-                {"Scheduled: "}
-                {formatDateTime(
-                  activeSession.exam.scheduledAt ?? activeSession.startedAt,
-                )}{" "}
-                · {activeSession.exam.durationMin} min
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.statusPill,
-                activeSession.entryStatus === "late" &&
-                  styles.statusPillWarning,
-              ]}>
-              <Text
-                style={[
-                  styles.statusPillText,
-                  activeSession.entryStatus === "late" &&
-                    styles.statusPillTextWarning,
-                ]}>
-                {activeSession.entryStatus === "late"
-                  ? "Late"
-                  : getEntryStatusLabel(activeSession.entryStatus)}
-              </Text>
-            </View>
-          </View>
-
-          {!isJoined && (
-            <View style={styles.metaRow}>
-              <View style={styles.metaChip}>
-                <Text style={styles.metaChipLabel}>Time left</Text>
-                <Text style={styles.metaChipValue}>
-                  {formatCountdown(remainingSeconds)}
+        <View style={styles.examCard}>
+          <View style={styles.examCardTop} />
+          <View style={styles.examCardBody}>
+            <View style={styles.examCardRow}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {activeSession.exam.title.charAt(0).toUpperCase()}
                 </Text>
               </View>
-              <View style={styles.metaChip}>
-                <Text style={styles.metaChipLabel}>Progress</Text>
-                <Text style={styles.metaChipValue}>{progressLabel}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.examTitle}>{activeSession.exam.title}</Text>
+                <Text style={styles.examMeta}>
+                  {"Scheduled: "}
+                  {formatDateTime(
+                    activeSession.exam.scheduledAt ?? activeSession.startedAt,
+                  )}{" "}
+                  · {activeSession.exam.durationMin} min
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.statusPill,
+                  activeSession.entryStatus === "late" &&
+                    styles.statusPillWarning,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusPillText,
+                    activeSession.entryStatus === "late" &&
+                      styles.statusPillTextWarning,
+                  ]}
+                >
+                  {activeSession.entryStatus === "late"
+                    ? "Late"
+                    : getEntryStatusLabel(activeSession.entryStatus)}
+                </Text>
               </View>
             </View>
-          )}
 
-          {activeSession.syncMessage ? (
-            <Text style={styles.warningText}>{activeSession.syncMessage}</Text>
-          ) : null}
+            {!isJoined && (
+              <View style={styles.metaRow}>
+                <View style={styles.metaChip}>
+                  <Text style={styles.metaChipLabel}>Time left</Text>
+                  <Text style={styles.metaChipValue}>
+                    {formatCountdown(remainingSeconds)}
+                  </Text>
+                </View>
+                <View style={styles.metaChip}>
+                  <Text style={styles.metaChipLabel}>Progress</Text>
+                  <Text style={styles.metaChipValue}>{progressLabel}</Text>
+                </View>
+              </View>
+            )}
 
-          {integrity.warningMessage ? (
-            <View style={styles.warningBox}>
-              <Text style={styles.warningText}>{integrity.warningMessage}</Text>
+            {activeSession.syncMessage ? (
+              <Text style={styles.warningText}>
+                {activeSession.syncMessage}
+              </Text>
+            ) : null}
+
+            {integrity.warningMessage ? (
+              <View style={styles.warningBox}>
+                <Text style={styles.warningText}>
+                  {integrity.warningMessage}
+                </Text>
+              </View>
+            ) : null}
+
+            {proctoringBlockedMessage ? (
+              <View style={styles.warningBox}>
+                <Text style={styles.warningText}>
+                  {proctoringBlockedMessage}
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={styles.infoBox}>
+              <Text style={styles.infoText}>
+                Camera preflight, periodic snapshot evidence, and rolling audio
+                recording are managed from this screen. Proctoring must stay
+                active for the whole exam.
+              </Text>
             </View>
-          ) : null}
 
-          {proctoringBlockedMessage ? (
-            <View style={styles.warningBox}>
-              <Text style={styles.warningText}>{proctoringBlockedMessage}</Text>
-            </View>
-          ) : null}
+            {syncError ? (
+              <Text style={styles.errorText}>{syncError}</Text>
+            ) : null}
 
-          <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              Camera preflight, periodic snapshot evidence, and rolling audio
-              recording are managed from this screen. Proctoring must stay
-              active for the whole exam.
+              Audio status: {audioRecorder.status}
+              {audioRecorder.lastUploadedAt
+                ? ` · Last upload ${formatDateTime(audioRecorder.lastUploadedAt)}`
+                : ""}
             </Text>
+
+            {isJoined ? (
+              <>
+                <MobileProctorCamera
+                  captureEnabled={false}
+                  isEnabled
+                  permissionGranted={!!cameraPermission?.granted}
+                  sessionId={activeSession.sessionId}
+                  student={student}
+                  onCameraReadyChange={setCameraReady}
+                  onViolation={logIntegrityEvent}
+                />
+                <TouchableOpacity
+                  style={styles.primaryBtn}
+                  onPress={() => void handleStart()}
+                >
+                  <Text style={styles.primaryBtnText}>Start exam</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.secondaryBtn}
+                  onPress={() => void recoverActiveSession()}
+                >
+                  <Text style={styles.secondaryBtnText}>Refresh session</Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
           </View>
+        </View>
 
-          {syncError ? <Text style={styles.errorText}>{syncError}</Text> : null}
-
-          <Text style={styles.infoText}>
-            Audio status: {audioRecorder.status}
-            {audioRecorder.lastUploadedAt
-              ? ` · Last upload ${formatDateTime(audioRecorder.lastUploadedAt)}`
-              : ""}
-          </Text>
-
-          {isJoined ? (
-            <>
-              <MobileProctorCamera
-                captureEnabled={false}
-                isEnabled
-                permissionGranted={!!cameraPermission?.granted}
-                sessionId={activeSession.sessionId}
-                student={student}
-                onCameraReadyChange={setCameraReady}
-                onViolation={logIntegrityEvent}
-              />
-              <TouchableOpacity
-                style={styles.primaryBtn}
-                onPress={() => void handleStart()}>
-                <Text style={styles.primaryBtnText}>Start exam</Text>
-              </TouchableOpacity>
+        {!isJoined ? (
+          <>
+            <MobileProctorCamera
+              captureEnabled={
+                activeSession.status === "in_progress" && appIsActive
+              }
+              isEnabled={activeSession.status === "in_progress" && appIsActive}
+              permissionGranted={!!cameraPermission?.granted}
+              sessionId={activeSession.sessionId}
+              student={student}
+              onCameraReadyChange={setCameraReady}
+              onViolation={logIntegrityEvent}
+            />
+            {proctoringBlockedMessage ? (
               <TouchableOpacity
                 style={styles.secondaryBtn}
-                onPress={() => void recoverActiveSession()}>
-                <Text style={styles.secondaryBtnText}>Refresh session</Text>
+                onPress={() => void handleRecoverProctoring()}
+              >
+                <Text style={styles.secondaryBtnText}>Recover proctoring</Text>
               </TouchableOpacity>
-            </>
-          ) : null}
-        </View>
-      </View>
+            ) : null}
+          </>
+        ) : null}
 
-      {!isJoined ? (
-        <>
-          <MobileProctorCamera
-            captureEnabled={
-              activeSession.status === "in_progress" && appIsActive
-            }
-            isEnabled={activeSession.status === "in_progress" && appIsActive}
-            permissionGranted={!!cameraPermission?.granted}
-            sessionId={activeSession.sessionId}
-            student={student}
-            onCameraReadyChange={setCameraReady}
-            onViolation={logIntegrityEvent}
-          />
-          {proctoringBlockedMessage ? (
-            <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={() => void handleRecoverProctoring()}>
-              <Text style={styles.secondaryBtnText}>Recover proctoring</Text>
-            </TouchableOpacity>
-          ) : null}
-        </>
-      ) : null}
-
-      {!isJoined && currentQuestion ? (
-        <View style={styles.questionCard}>
-          <Text style={styles.questionCounter}>
-            Question {activeSession.currentQuestionIndex + 1}
-          </Text>
-          <Text style={styles.questionText}>
-            {currentQuestion.questionText}
-          </Text>
-
-          {currentQuestion.imageUrl ? (
-            <Image
-              source={{ uri: currentQuestion.imageUrl }}
-              style={styles.questionImage}
-            />
-          ) : null}
-
-          {(currentQuestion.type === "multiple_choice" ||
-            currentQuestion.type === "true_false") &&
-          currentQuestion.options.length > 0 ? (
-            <View style={styles.optionList}>
-              {currentQuestion.options.map((option) => {
-                const selected = currentAnswer.selectedOptionId === option.id;
-                return (
-                  <Pressable
-                    key={option.id}
-                    onPress={() => void saveMcqAnswer(option.id)}
-                    style={[
-                      styles.optionButton,
-                      selected && styles.optionButtonSelected,
-                    ]}>
-                    <Text
-                      style={[
-                        styles.optionLabel,
-                        selected && styles.optionLabelSelected,
-                      ]}>
-                      {option.label}. {option.text}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ) : (
-            <TextInput
-              key={currentQuestion.id}
-              multiline
-              contextMenuHidden={integrity.capabilities.copyPasteRestricted}
-              placeholder="Write your answer here"
-              placeholderTextColor="#BBBFC9"
-              style={styles.answerInput}
-              value={textDraft}
-              onChangeText={setTextDraft}
-              onBlur={() => void persistTextAnswer()}
-            />
-          )}
-        </View>
-      ) : null}
-
-      {!isJoined ? (
-        <View style={styles.footerActions}>
-          <TouchableOpacity
-            style={[
-              styles.navBtn,
-              (activeSession.currentQuestionIndex === 0 || isSyncBlocked) &&
-                styles.navBtnDisabled,
-            ]}
-            disabled={activeSession.currentQuestionIndex === 0 || isSyncBlocked}
-            onPress={() => void moveQuestion(-1)}>
-            <Text style={styles.navBtnText}>Previous</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.navBtn,
-              (activeSession.currentQuestionIndex >=
-                activeSession.questions.length - 1 ||
-                isSyncBlocked) &&
-                styles.navBtnDisabled,
-            ]}
-            disabled={
-              activeSession.currentQuestionIndex >=
-                activeSession.questions.length - 1 || isSyncBlocked
-            }
-            onPress={() => void moveQuestion(1)}>
-            <Text style={styles.navBtnText}>Next</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.primaryBtn, isSyncBlocked && styles.navBtnDisabled]}
-            disabled={isSyncBlocked}
-            onPress={() => void handleSubmit(false)}>
-            <Text style={styles.primaryBtnText}>
-              {submitting ? "Submitting..." : "Submit exam"}
+        {!isJoined && currentQuestion ? (
+          <View style={styles.questionCard}>
+            <Text style={styles.questionCounter}>
+              Question {activeSession.currentQuestionIndex + 1}
             </Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-    </ScrollView>
+            <Text style={styles.questionText}>
+              {currentQuestion.questionText}
+            </Text>
+
+            {currentQuestion.imageUrl ? (
+              <Image
+                source={{ uri: currentQuestion.imageUrl }}
+                style={styles.questionImage}
+              />
+            ) : null}
+
+            {(currentQuestion.type === "multiple_choice" ||
+              currentQuestion.type === "true_false") &&
+            currentQuestion.options.length > 0 ? (
+              <View style={styles.optionList}>
+                {currentQuestion.options.map((option) => {
+                  const selected = currentAnswer.selectedOptionId === option.id;
+                  return (
+                    <Pressable
+                      key={option.id}
+                      onPress={() => void saveMcqAnswer(option.id)}
+                      style={[
+                        styles.optionButton,
+                        selected && styles.optionButtonSelected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.optionLabel,
+                          selected && styles.optionLabelSelected,
+                        ]}
+                      >
+                        {option.label}. {option.text}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : (
+              <TextInput
+                key={currentQuestion.id}
+                multiline
+                contextMenuHidden={integrity.capabilities.copyPasteRestricted}
+                placeholder="Write your answer here"
+                placeholderTextColor="#BBBFC9"
+                style={styles.answerInput}
+                value={textDraft}
+                onChangeText={setTextDraft}
+                onBlur={() => void persistTextAnswer()}
+              />
+            )}
+          </View>
+        ) : null}
+
+        {!isJoined ? (
+          <View style={styles.footerActions}>
+            <TouchableOpacity
+              style={[
+                styles.navBtn,
+                (activeSession.currentQuestionIndex === 0 || isSyncBlocked) &&
+                  styles.navBtnDisabled,
+              ]}
+              disabled={
+                activeSession.currentQuestionIndex === 0 || isSyncBlocked
+              }
+              onPress={() => void moveQuestion(-1)}
+            >
+              <Text style={styles.navBtnText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.navBtn,
+                (activeSession.currentQuestionIndex >=
+                  activeSession.questions.length - 1 ||
+                  isSyncBlocked) &&
+                  styles.navBtnDisabled,
+              ]}
+              disabled={
+                activeSession.currentQuestionIndex >=
+                  activeSession.questions.length - 1 || isSyncBlocked
+              }
+              onPress={() => void moveQuestion(1)}
+            >
+              <Text style={styles.navBtnText}>Next</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.primaryBtn,
+                isSyncBlocked && styles.navBtnDisabled,
+              ]}
+              disabled={isSyncBlocked}
+              onPress={() => void handleSubmit(false)}
+            >
+              <Text style={styles.primaryBtnText}>
+                {submitting ? "Submitting..." : "Submit exam"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
   );
 }

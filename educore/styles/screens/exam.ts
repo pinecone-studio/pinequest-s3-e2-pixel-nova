@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 export const examStyles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F2F4F7" },
-  content: { padding: 20, paddingBottom: 40, gap: 16 },
+  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 16 },
   pageTitle: {
     fontSize: 26,
     fontWeight: "800",
@@ -351,18 +351,19 @@ export const examStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    minHeight: 46,
-    paddingTop: 14,
-    paddingBottom: 4,
+    paddingHorizontal: 18,
+    minHeight: 56,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   detailBackButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
   },
   detailHeaderTitle: {
     fontSize: 18,
@@ -371,7 +372,7 @@ export const examStyles = StyleSheet.create({
     lineHeight: 22,
   },
   detailHeaderSpacer: {
-    width: 38,
+    width: 44,
   },
   detailContent: {
     padding: 16,

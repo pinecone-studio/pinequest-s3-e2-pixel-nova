@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 export const progressStyles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F8FAFC" },
-  content: { padding: 16, paddingBottom: 32, gap: 14 },
+  content: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32, gap: 14 },
 
   sectionTitle: {
     fontSize: 18,
