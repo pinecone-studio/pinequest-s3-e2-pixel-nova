@@ -51,8 +51,10 @@ const defaultProps = {
   levelInfo: { level: 12, minXP: 1200 },
   studentProgress: { xp: 2100 },
   nextLevel: { minXP: 2400 },
-  currentRank: 4,
+  currentRank: 3,
   studentCount: 20,
+  leaderboardXp: 2100,
+  leaderboardLevel: 12,
   studentHistory: [
     {
       examId: "history-1",
@@ -87,24 +89,26 @@ const defaultProps = {
 };
 
 describe("StudentDashboardTab", () => {
-  it("renders the screenshot-style schedule and XP panels", () => {
+  it("renders the screenshot-style home overview", () => {
     render(<StudentDashboardTab {...defaultProps} />);
 
-    expect(screen.getByText("Шалгалтын хуваарь")).toBeInTheDocument();
-    expect(screen.getByText("Ахиц дэвшил")).toBeInTheDocument();
+    expect(screen.getByText("Шалгалт өгөх")).toBeInTheDocument();
+    expect(screen.getByText("Таны эрэмбэ")).toBeInTheDocument();
+    expect(screen.getByText("Дараагийн шалгалтууд")).toBeInTheDocument();
     expect(screen.getByText("83%")).toBeInTheDocument();
-    expect(screen.getByText("Физик")).toBeInTheDocument();
-    expect(screen.getByText("XP оноо")).toBeInTheDocument();
-    expect(screen.getByText("Англи хэл")).toBeInTheDocument();
+    expect(screen.getByText("English Mock Exam")).toBeInTheDocument();
+    expect(screen.getAllByText("Англи хэл").length).toBeGreaterThan(0);
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
-    expect(screen.getByText("Бат")).toBeInTheDocument();
-    expect(screen.getByText("Сараа")).toBeInTheDocument();
-    expect(screen.getByText("би")).toBeInTheDocument();
+    expect(screen.getAllByText("Сурагч").length).toBe(2);
+    expect(screen.queryByText("Бат")).not.toBeInTheDocument();
+    expect(screen.queryByText("Сараа")).not.toBeInTheDocument();
+    expect(screen.getByText("YOU")).toBeInTheDocument();
+    expect(screen.getByText("300xp")).toBeInTheDocument();
     expect(screen.queryByText("Топ")).not.toBeInTheDocument();
-    expect(screen.getByText("#4 / 20")).toBeInTheDocument();
+    expect(screen.getByText("#3")).toBeInTheDocument();
   });
 
-  it("opens exams from the schedule header", () => {
+  it("opens exams from the upcoming exams header", () => {
     const onOpenExams = jest.fn();
     render(<StudentDashboardTab {...defaultProps} onOpenExams={onOpenExams} />);
 
@@ -129,7 +133,7 @@ describe("StudentDashboardTab", () => {
     });
   });
 
-  it("opens progress from the compact chart action", () => {
+  it("opens progress from the average score card", () => {
     const onOpenProgress = jest.fn();
     render(
       <StudentDashboardTab {...defaultProps} onOpenProgress={onOpenProgress} />,
@@ -153,7 +157,7 @@ describe("StudentDashboardTab", () => {
 
     expect(screen.getByText("83%")).toBeInTheDocument();
     expect(screen.getAllByText("Нийгэм").length).toBeGreaterThan(0);
-    expect(screen.getByText("XP оноо")).toBeInTheDocument();
+    expect(screen.getByText("Таны эрэмбэ")).toBeInTheDocument();
   });
 
   it("shows an empty state when there are no upcoming exams", () => {
@@ -176,7 +180,28 @@ describe("StudentDashboardTab", () => {
     render(<StudentDashboardTab {...defaultProps} currentRank={null} />);
 
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
-    expect(screen.queryByText("#4 / 20")).not.toBeInTheDocument();
+    expect(screen.getByText("#3")).toBeInTheDocument();
+  });
+
+  it("orders leaderboard rows by XP even if incoming ranks are stale", () => {
+    render(
+      <StudentDashboardTab
+        {...defaultProps}
+        currentRank={2}
+        studentCount={3}
+        leaderboardXp={45}
+        leaderboardLevel={12}
+        termLeaderboardEntries={[
+          { rank: 1, id: "student-2", fullName: "Бат", xp: 20, level: 11 },
+          { rank: 2, id: "student-1", fullName: "Золбоо Бат", xp: 45, level: 12 },
+          { rank: 3, id: "student-3", fullName: "Сараа", xp: 10, level: 11 },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("#1")).toBeInTheDocument();
+    expect(screen.getByText("45")).toBeInTheDocument();
+    expect(screen.queryByText("25xp")).not.toBeInTheDocument();
   });
 
   it("renders exam detail inline when a home exam is selected", () => {

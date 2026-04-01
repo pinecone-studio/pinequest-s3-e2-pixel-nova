@@ -5,6 +5,7 @@ import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
 import {
   getStudentResults,
+  getStudentTermRank,
   getStudentTermLeaderboard,
 } from "@/lib/backend-auth";
 import {
@@ -26,6 +27,12 @@ export const useStudentProgress = (currentUser: User | null) => {
     rank: null as number | null,
     totalStudents: 0,
   });
+  const [termRankOverview, setTermRankOverview] = useState({
+    rank: null as number | null,
+    totalStudents: 0,
+    xp: 0,
+    level: 1,
+  });
   const [studentProgress, setStudentProgress] = useState({
     xp: 0,
     level: 1,
@@ -38,6 +45,12 @@ export const useStudentProgress = (currentUser: User | null) => {
       setXpActivities([]);
       setTermLeaderboardEntries([]);
       setRankOverview({ rank: null, totalStudents: 0 });
+      setTermRankOverview({
+        rank: null,
+        totalStudents: 0,
+        xp: 0,
+        level: 1,
+      });
       setStudentProgress({ xp: 0, level: 1, history: [] });
       return;
     }
@@ -71,6 +84,23 @@ export const useStudentProgress = (currentUser: User | null) => {
     }
 
     try {
+      const termRank = await getStudentTermRank(currentUser);
+      setTermRankOverview({
+        rank: termRank.rank ?? null,
+        totalStudents: termRank.totalStudents ?? 0,
+        xp: termRank.xp ?? 0,
+        level: termRank.level ?? 1,
+      });
+    } catch {
+      setTermRankOverview({
+        rank: null,
+        totalStudents: 0,
+        xp: 0,
+        level: 1,
+      });
+    }
+
+    try {
       const results = await getStudentResults(currentUser);
       const history = results.map((item) => {
         const percentage = item.score ?? 0;
@@ -91,9 +121,8 @@ export const useStudentProgress = (currentUser: User | null) => {
   }, [currentUser]);
 
   useEffect(() => {
-    if (!currentUser) return;
     void refreshProgress();
-  }, [currentUser, refreshProgress]);
+  }, [refreshProgress]);
 
   const levelInfo = useMemo(
     () => getLevel(studentProgress.xp),
@@ -114,6 +143,7 @@ export const useStudentProgress = (currentUser: User | null) => {
     xpActivities,
     termLeaderboardEntries,
     rankOverview,
+    termRankOverview,
     studentProgress,
     levelInfo,
     nextLevel,

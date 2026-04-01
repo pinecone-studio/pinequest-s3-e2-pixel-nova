@@ -32,6 +32,7 @@ describe("StudentProgressTab", () => {
   it("renders the redesigned progress overview cards and chart sections", () => {
     render(
       <StudentProgressTab
+        loading={false}
         levelInfo={{ level: 4, minXP: 1200 }}
         studentProgress={{ xp: 1480 }}
         nextLevel={{ minXP: 1600 }}
@@ -45,5 +46,20 @@ describe("StudentProgressTab", () => {
     expect(screen.getByText("Одоогийн түвшин")).toBeInTheDocument();
     expect(screen.getByText("Дундаж оноо")).toBeInTheDocument();
     expect(screen.getByText("Сүүлийн дүн")).toBeInTheDocument();
+  });
+
+  it("renders progress loading skeletons", () => {
+    render(
+      <StudentProgressTab
+        loading={true}
+        levelInfo={{ level: 4, minXP: 1200 }}
+        studentProgress={{ xp: 1480 }}
+        nextLevel={{ minXP: 1600 }}
+        progressSegments={7}
+        studentHistory={studentHistory}
+      />,
+    );
+
+    expect(screen.getByLabelText("student-progress-loading")).toBeInTheDocument();
   });
 });

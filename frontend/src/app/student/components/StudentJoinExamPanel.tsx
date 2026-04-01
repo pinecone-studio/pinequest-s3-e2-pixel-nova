@@ -74,9 +74,56 @@ export default function StudentJoinExamPanel({
     return (
       <section
         aria-label="student-exams-loading"
-        className="mx-auto w-full max-w-[1272px]"
+        className="mx-auto w-full max-w-[1272px] space-y-8"
       >
-        <div className="h-[224px] w-full animate-pulse rounded-[24px] bg-[#e4e4e4]" />
+        <div className="rounded-[36px] border border-[#dfe5fb] bg-white px-6 py-6 shadow-[0_26px_70px_rgba(80,94,133,0.10)] sm:px-8 sm:py-6">
+          <div className="grid items-center gap-8 xl:grid-cols-[496px_minmax(0,1fr)]">
+            <div className="flex min-h-[235px] w-full max-w-[496px] flex-col justify-between rounded-[30px] bg-white pr-0 xl:pr-6">
+              <div>
+                <div className="h-5 w-28 animate-pulse rounded-full bg-[#eef2fb]" />
+                <div className="mt-3 h-11 w-[270px] max-w-full animate-pulse rounded-full bg-[#e4e7f0]" />
+              </div>
+
+              <div className="mt-6 max-w-[496px] space-y-4">
+                <div className="h-14 w-full animate-pulse rounded-[20px] bg-[#eef2fb]" />
+                <div className="flex justify-end pt-1">
+                  <div className="h-11 min-w-[198px] animate-pulse rounded-full bg-[#dfe5fb]" />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[30px] border border-[#edf1ff] bg-[#f7f8ff] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-6">
+              <div className="h-7 w-[255px] max-w-full animate-pulse rounded-full bg-[#e4e7f0]" />
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="rounded-[14px] border border-[#dbe3fb] bg-white px-3.5 py-2.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="h-[18px] w-[18px] animate-pulse rounded-full bg-[#eef2fb]" />
+                      <div className="h-4 w-24 animate-pulse rounded-full bg-[#e4e7f0]" />
+                    </div>
+                    <div className="mt-2 h-3 w-28 animate-pulse rounded-full bg-[#eef2fb]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-[#e6ecfb] bg-[#f8fbff] p-4">
+          <div className="h-5 w-28 animate-pulse rounded-full bg-[#e4e7f0]" />
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-4 w-full animate-pulse rounded-full bg-[#eef2fb]"
+              />
+            ))}
+          </div>
+        </div>
       </section>
     );
   }

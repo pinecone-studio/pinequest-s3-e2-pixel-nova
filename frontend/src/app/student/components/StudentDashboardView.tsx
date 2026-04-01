@@ -1,4 +1,10 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import RoleNavbar from "@/components/RoleNavbar";
 import type { AuthUser } from "@/lib/backend-auth";
 import type { XpLeaderboardEntry } from "@/api/xp";
@@ -63,6 +69,12 @@ type StudentProgressState = {
   nextLevel: { level: number; name: string; minXP: number } | null;
   progressSegments: number;
   termLeaderboardEntries: XpLeaderboardEntry[];
+  termRankOverview: {
+    rank: number | null;
+    totalStudents: number;
+    xp: number;
+    level: number;
+  };
 };
 
 type StudentDashboardViewProps = {
@@ -111,11 +123,58 @@ export default function StudentDashboardView({
         teacher.fullName.trim().length > 0,
     )?.fullName ?? null;
   const [homeSelectedExam, setHomeSelectedExam] = useState<Exam | null>(null);
+  const [pendingTabLoading, setPendingTabLoading] = useState<StudentTab | null>(
+    null,
+  );
+  const loadingTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (loadingTimerRef.current !== null) {
+        window.clearTimeout(loadingTimerRef.current);
+      }
+    };
+  }, []);
+
+  const showHomeLoading =
+    !homeSelectedExam &&
+    (usersLoading || data.loading || pendingTabLoading === "Home");
+  const showExamsLoading =
+    usersLoading || data.loading || pendingTabLoading === "Exams";
+  const showProgressLoading =
+    usersLoading || data.loading || pendingTabLoading === "Progress";
+  const showAiInsightsLoading =
+    usersLoading || data.loading || pendingTabLoading === "AIInsights";
 
   const handleTabChange = (value: StudentTab) => {
+    if (value === exam.activeTab) {
+      return;
+    }
+
     if (value !== "Home") {
       setHomeSelectedExam(null);
     }
+
+    if (loadingTimerRef.current !== null) {
+      window.clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
+
+    if (
+      value === "Home" ||
+      value === "Exams" ||
+      value === "Progress" ||
+      value === "AIInsights"
+    ) {
+      setPendingTabLoading(value);
+      loadingTimerRef.current = window.setTimeout(() => {
+        setPendingTabLoading((current) => (current === value ? null : current));
+        loadingTimerRef.current = null;
+      }, 1000);
+    } else {
+      setPendingTabLoading(null);
+    }
+
     exam.setActiveTab(value);
   };
 
@@ -155,7 +214,7 @@ export default function StudentDashboardView({
 
         {exam.activeTab === "Home" && (
           <StudentDashboardTab
-            loading={data.loading}
+            loading={showHomeLoading}
             currentUserId={data.currentUser?.id ?? null}
             currentUserName={currentUserName}
             exams={data.exams}
@@ -163,8 +222,10 @@ export default function StudentDashboardView({
             levelInfo={progress.levelInfo}
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}
-            currentRank={currentRank}
-            studentCount={totalStudents}
+            currentRank={progress.termRankOverview.rank}
+            studentCount={progress.termRankOverview.totalStudents}
+            leaderboardXp={progress.termRankOverview.xp}
+            leaderboardLevel={progress.termRankOverview.level}
             studentHistory={studentHistory}
             termLeaderboardEntries={progress.termLeaderboardEntries}
             teacherName={activeTeacherName}
@@ -183,7 +244,7 @@ export default function StudentDashboardView({
 
         {exam.activeTab === "Exams" && (
           <StudentExamsTab
-            loading={data.loading}
+            loading={showExamsLoading}
             roomCodeInput={exam.roomCodeInput}
             setRoomCodeInput={exam.setRoomCodeInput}
             joinLoading={exam.joinLoading}
@@ -202,6 +263,7 @@ export default function StudentDashboardView({
 
         {exam.activeTab === "Progress" && (
           <StudentProgressTab
+            loading={showProgressLoading}
             levelInfo={progress.levelInfo}
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}
@@ -212,6 +274,7 @@ export default function StudentDashboardView({
 
         {exam.activeTab === "AIInsights" && (
           <StudentAiInsightsTab
+            loading={showAiInsightsLoading}
             currentUserId={data.currentUser?.id ?? null}
             currentUserName={currentUserName}
             currentXp={currentXp}
