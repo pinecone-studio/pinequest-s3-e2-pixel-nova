@@ -11,8 +11,8 @@ import {
   getImportQuestionPlanTotal,
 } from "./import-question-plan";
 import {
-  ExtractedPdfPayload,
-  UploadedPdfPayload,
+  type ExtractedPdfPayload,
+  type UploadedPdfPayload,
   isApiUnavailableError,
   mapBackendPdfQuestions,
   uploadQuestionImages,
@@ -43,6 +43,7 @@ export const useExamImport = (params: {
     openCount: importOpenCount,
     shuffleQuestions: shuffleImportedQuestions,
   } as const;
+
   const plannedQuestionCount = getImportQuestionPlanTotal(importQuestionPlan);
   const generationCounts = {
     mcq: importMcqCount,
@@ -52,15 +53,18 @@ export const useExamImport = (params: {
 
   const finalizeImportedQuestions = (questions: Question[]) => {
     const shaped = applyImportQuestionPlan(questions, importQuestionPlan);
+
     if (shaped.questions.length === 0) {
       setImportError("Сонгосон бүтэцтэй асуулт хангалттай олдсонгүй.");
       return null;
     }
+
     if (shaped.producedTotal < shaped.requestedTotal) {
       showToast(
         `Хүссэн ${shaped.requestedTotal} асуултаас ${shaped.producedTotal}-ыг л бүрдүүллээ.`,
       );
     }
+
     return shaped.questions;
   };
 
@@ -91,16 +95,23 @@ export const useExamImport = (params: {
     setImportError(null);
     setImportLoading(true);
     setImportLoadingLabel("CSV уншиж байна...");
+
     try {
       const text = await file.text();
       const parsed = parseCsvQuestions(text);
+
       if (parsed.length === 0) {
         setImportError("CSV формат тохирохгүй байна.");
         return;
       }
+
       setQuestions(parsed);
-      if (!examTitle) setExamTitle(file.name.replace(/\.csv$/i, ""));
-      showToast(`${parsed.length} асуулт CSV‑ээс бөглөгдлөө.`);
+
+      if (!examTitle) {
+        setExamTitle(file.name.replace(/\.csv$/i, ""));
+      }
+
+      showToast(`${parsed.length} асуулт CSV-ээс бөглөгдлөө.`);
     } catch {
       setImportError("CSV боловсруулах үед алдаа гарлаа.");
     } finally {
@@ -113,35 +124,45 @@ export const useExamImport = (params: {
     setImportError(null);
     setImportLoading(true);
     setImportLoadingLabel("Зураг уншиж байна...");
+
     try {
       if (plannedQuestionCount <= 0) {
-        setImportError("Импортлох асуултын төрлөө, тоотой нь тохируулна уу.");
+        setImportError("Импортлох асуултын төрөл, тоогоо эхлээд тохируулна уу.");
         return;
       }
+
       const { questions, rawText, usedFallback } = await parseImageQuestions(
         file,
         plannedQuestionCount,
       );
+
       const backendQuestions =
         rawText.trim() && currentUser
           ? await generateBackendQuestions({ material: rawText })
           : [];
+
       const shapedQuestions = finalizeImportedQuestions(
         backendQuestions.length > 0 ? backendQuestions : questions,
       );
+
       if (!shapedQuestions) {
-        setImportError("Зурагнаас асуулт олдсонгүй. Илүү тод зураг оруулна уу.");
+        setImportError("Зурганаас асуулт олдсонгүй. Илүү тод зураг оруулна уу.");
         return;
       }
+
       setQuestions((prev) => [...prev, ...shapedQuestions]);
+
       showToast(
         backendQuestions.length > 0
           ? `${shapedQuestions.length} асуулт зургаас автоматаар бэлэн боллоо.`
           : usedFallback
-          ? "OCR асуулт олсонгүй. Загвар асуултууд нэмэгдлээ."
-          : `${shapedQuestions.length} асуулт зурагнаас үүсгэгдлээ. Зөв хариултыг сонгоно уу.`,
+            ? "OCR асуулт олсонгүй. Загвар асуултууд нэмэгдлээ."
+            : `${shapedQuestions.length} асуулт зурганаас үүсгэгдлээ. Зөв хариултыг шалгана уу.`,
       );
-      if (!examTitle) setExamTitle(file.name.replace(/\.[^.]+$/, ""));
+
+      if (!examTitle) {
+        setExamTitle(file.name.replace(/\.[^.]+$/, ""));
+      }
     } catch {
       setImportError("Зураг боловсруулах үед алдаа гарлаа.");
     } finally {
@@ -154,25 +175,33 @@ export const useExamImport = (params: {
     setImportError(null);
     setImportLoading(true);
     setImportLoadingLabel("DOCX уншиж байна...");
+
     try {
       const parsedDocx = await parseDocxQuestions(file);
       const backendQuestions =
         parsedDocx.rawText.trim() && currentUser
           ? await generateBackendQuestions({ material: parsedDocx.rawText })
           : [];
+
       const shapedQuestions = finalizeImportedQuestions(
         backendQuestions.length > 0 ? backendQuestions : parsedDocx.questions,
       );
+
       if (!shapedQuestions) {
-        setImportError("DOCX‑ээс асуулт олдсонгүй.");
+        setImportError("DOCX-ээс асуулт олдсонгүй.");
         return;
       }
+
       setQuestions(shapedQuestions);
-      if (!examTitle) setExamTitle(file.name.replace(/\.docx$/i, ""));
+
+      if (!examTitle) {
+        setExamTitle(file.name.replace(/\.docx$/i, ""));
+      }
+
       showToast(
         backendQuestions.length > 0
           ? `${shapedQuestions.length} асуулт DOCX-ээс шууд бэлэн боллоо.`
-          : `${shapedQuestions.length} асуулт DOCX‑ээс бөглөгдлөө.`,
+          : `${shapedQuestions.length} асуулт DOCX-ээс бөглөгдлөө.`,
       );
     } catch {
       setImportError("DOCX боловсруулах үед алдаа гарлаа.");
@@ -187,12 +216,13 @@ export const useExamImport = (params: {
     setPdfError(null);
     setImportLoading(true);
     setImportLoadingLabel("PDF уншиж байна...");
+
     try {
       if (plannedQuestionCount <= 0) {
-        setPdfError("Импортлох асуултын төрлөө, тоотой нь тохируулна уу.");
-        setPdfLoading(false);
+        setPdfError("Импортлох асуултын төрөл, тоогоо эхлээд тохируулна уу.");
         return;
       }
+
       let localQuestions: Question[] = [];
       try {
         localQuestions = await parsePdfQuestions({
@@ -230,29 +260,33 @@ export const useExamImport = (params: {
         setPdfError(
           backendUnavailable
             ? "Backend холбогдохгүй байна. Local parser-оор ч асуулт олдсонгүй."
-            : "PDF‑ээс асуулт олдсонгүй. Форматыг шалгана уу.",
+            : "PDF-ээс асуулт олдсонгүй. Скан эсвэл Монгол тексттэй файл бол OCR асаалттай эсэхийг шалгаад дахин оролдоно уу.",
         );
-      } else {
-        const uploadedQuestions = await uploadQuestionImages(
-          shapedQuestions,
-          currentUser,
-        );
-        setQuestions(uploadedQuestions);
-        if (!examTitle) {
-          setExamTitle(file.name.replace(/\.pdf$/i, ""));
-        }
-        if (backendUnavailable && !usedBackend) {
-          showToast("Backend холбогдохгүй тул local PDF parser ашиглалаа.");
-        }
-        showToast(
-          usedBackend
-            ? `${uploadedQuestions.length} асуулт backend + PDF parser-оос бөглөгдлөө. Зөв хариултыг шалгана уу.`
-            : `${uploadedQuestions.length} асуулт автоматаар бөглөгдлөө. Зөв хариултыг гараар сонгоно уу.`,
-        );
+        return;
       }
+
+      const uploadedQuestions = await uploadQuestionImages(
+        shapedQuestions,
+        currentUser,
+      );
+
+      setQuestions(uploadedQuestions);
+
+      if (!examTitle) {
+        setExamTitle(file.name.replace(/\.pdf$/i, ""));
+      }
+
+      if (backendUnavailable && !usedBackend) {
+        showToast("Backend холбогдохгүй тул local PDF parser ашиглалаа.");
+      }
+
+      showToast(
+        usedBackend
+          ? `${uploadedQuestions.length} асуулт backend + PDF parser-оос бөглөгдлөө. Зөв хариултыг шалгана уу.`
+          : `${uploadedQuestions.length} асуулт автоматаар бөглөгдлөө. Зөв хариултыг гараар шалгана уу.`,
+      );
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Тодорхойгүй алдаа";
+      const message = err instanceof Error ? err.message : "Тодорхойгүй алдаа";
       setPdfError(`PDF боловсруулах үед алдаа гарлаа. (${message})`);
     } finally {
       setPdfLoading(false);

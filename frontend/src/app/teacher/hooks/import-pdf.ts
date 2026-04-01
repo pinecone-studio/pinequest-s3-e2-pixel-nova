@@ -1,5 +1,6 @@
 import { isQuestionTextSuspicious, parseQuestionsFromText } from "../utils";
 import type { Question } from "../types";
+import { recognizeWithFallback } from "./import-ocr";
 import { createCropCanvas, canvasToDataUrl, renderPageToCanvas } from "./import-pdf-canvas";
 import { getPdfJs, getTesseract } from "./import-pdf-loaders";
 import {
@@ -113,7 +114,7 @@ export const parsePdfQuestions = async (params: {
     const canvas = keyPage ? await renderPageToCanvas(keyPage, 2) : null;
     if (canvas) {
       const tesseract = await getTesseract();
-      const result = await tesseract.recognize(canvas, "eng");
+      const result = await recognizeWithFallback(tesseract, canvas);
       const ocrAnswerKey = parseAnswerKeyFromPage(result.data.text);
       if (ocrAnswerKey.size >= Math.max(3, answerKey.size)) {
         answerKey = ocrAnswerKey;
@@ -168,7 +169,7 @@ export const parsePdfQuestions = async (params: {
         (pdfUseOcr || !parsedQuestion || isQuestionTextSuspicious(parsedQuestion.text))
       ) {
         tesseract ??= await getTesseract();
-        const ocrResult = await tesseract.recognize(questionCropCanvas, "eng");
+        const ocrResult = await recognizeWithFallback(tesseract, questionCropCanvas);
         const ocrText = `${segment.number}. ${ocrResult.data.text || ""}`.trim();
         const ocrQuestion = parseSingleQuestion(ocrText, answerKey);
 
