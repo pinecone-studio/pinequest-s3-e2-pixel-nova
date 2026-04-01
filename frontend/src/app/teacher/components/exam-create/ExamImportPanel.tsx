@@ -67,7 +67,7 @@ export default function ExamImportPanel({
             Файлаас асуулт үүсгэх
           </h3>
           <p className="mt-2 max-w-[340px] text-[13px] leading-6 text-slate-500">
-            Эх сурвалжаа оруулаад, ямар төрлийн хэдэн асуулт авахыг урьдчилж
+            Эх сурвалжаа оруулаад, ямар төрлийн хэдэн асуулт авахаа урьдчилж
             тохируулна.
           </p>
         </div>
@@ -147,7 +147,7 @@ export default function ExamImportPanel({
               Асуултын бүтэц
             </p>
             <p className="mt-1 text-[12px] leading-5 text-slate-500">
-              Импортын дараа ямар төрлийн асуулт хэдэн ширхэг авахыг энд
+              Импортын дараа ямар төрлийн асуулт хэдэн ширхэг авахаа энд
               тохируулна.
             </p>
           </div>
@@ -208,6 +208,12 @@ export default function ExamImportPanel({
           {importLoadingLabel ?? "Файл боловсруулж байна..."}
         </div>
       )}
+
+      <div className="mt-3 rounded-2xl border border-[#e6edf7] bg-white px-4 py-3 text-xs leading-5 text-slate-500">
+        Уламжлалт монгол бичиг page дээр босоо хэлбэрээр харагдана. Харин PDF
+        OCR нь ийм бичгийг бүрэн найдвартай танихгүй байж болно.
+      </div>
+
       {pdfError && (
         <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-medium text-red-600">
           {pdfError}

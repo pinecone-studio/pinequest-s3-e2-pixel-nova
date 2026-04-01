@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-sans",
+});
+
+const notoSansMongolian = localFont({
+  src: "../../node_modules/@fontsource/noto-sans-mongolian/files/noto-sans-mongolian-mongolian-400-normal.woff2",
+  variable: "--font-mongolian",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +35,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="mn">
-      <body className={`${manrope.variable} antialiased`}>
+      <body
+        className={`${manrope.variable} ${notoSansMongolian.variable} antialiased`}
+      >
         <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>

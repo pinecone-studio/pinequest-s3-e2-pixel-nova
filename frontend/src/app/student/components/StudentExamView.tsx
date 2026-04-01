@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import MathText from "@/components/MathText";
+import MongolianText from "@/components/MongolianText";
+import { hasTraditionalMongolian } from "@/lib/mongolian-script";
 import { formatTimer } from "../utils";
 import type { Exam, Violations } from "../types";
 
@@ -44,7 +46,11 @@ function QuestionBlock({
           {index + 1}
         </div>
         <div className="pt-1 text-[18px] font-semibold leading-8 text-slate-900 sm:text-[20px]">
-          <MathText text={question.text} />
+          {hasTraditionalMongolian(question.text) ? (
+            <MongolianText text={question.text} />
+          ) : (
+            <MathText text={question.text} />
+          )}
         </div>
       </div>
 
@@ -84,7 +90,11 @@ function QuestionBlock({
               >
                 <div className="flex flex-wrap items-start gap-1">
                   <span>{label}.</span>
-                  <MathText text={option} className="flex-1" />
+                  {hasTraditionalMongolian(option) ? (
+                    <MongolianText text={option} className="flex-1" />
+                  ) : (
+                    <MathText text={option} className="flex-1" />
+                  )}
                 </div>
               </button>
             );

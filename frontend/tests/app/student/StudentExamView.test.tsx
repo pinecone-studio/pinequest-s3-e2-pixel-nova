@@ -137,4 +137,37 @@ describe("StudentExamView", () => {
     expect(screen.getByText("x^2 = 4")).toBeInTheDocument();
     expect(screen.getByText("\\sqrt{9}")).toBeInTheDocument();
   });
+
+  it("renders traditional Mongolian question and option content through MongolianText", () => {
+    const traditionalText = "\u182e\u1823\u1829\u182d\u1823\u182f";
+
+    render(
+      <StudentExamView
+        activeExam={{
+          ...exam,
+          questions: [
+            {
+              ...exam.questions[0],
+              text: traditionalText,
+              options: [traditionalText, "5", "6", "7"],
+            },
+          ],
+        }}
+        warning={null}
+        timeLeft={120}
+        currentQuestionIndex={0}
+        setCurrentQuestionIndex={jest.fn()}
+        violations={violations}
+        answers={{}}
+        onUpdateAnswer={jest.fn()}
+        onSelectMcq={jest.fn()}
+        onPrev={jest.fn()}
+        onNext={jest.fn()}
+        onSubmit={jest.fn()}
+        onExit={jest.fn()}
+      />,
+    );
+
+    expect(screen.getAllByTestId("traditional-mongolian-text")).toHaveLength(2);
+  });
 });

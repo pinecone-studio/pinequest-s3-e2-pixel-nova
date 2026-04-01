@@ -1,5 +1,7 @@
 import type { Question } from "../../types";
 import MathText from "@/components/MathText";
+import MongolianText from "@/components/MongolianText";
+import { hasTraditionalMongolian } from "@/lib/mongolian-script";
 import { optionLabels } from "./question-preview-helpers";
 
 type QuestionPreviewContentProps = {
@@ -27,7 +29,11 @@ export default function QuestionPreviewContent({
       </div>
 
       <div className="text-base font-semibold leading-7 text-slate-800">
-        <MathText text={activeQuestion.text} />
+        {hasTraditionalMongolian(activeQuestion.text) ? (
+          <MongolianText text={activeQuestion.text} />
+        ) : (
+          <MathText text={activeQuestion.text} />
+        )}
       </div>
 
       {activeQuestion.type === "mcq" ? (
@@ -45,7 +51,11 @@ export default function QuestionPreviewContent({
               <span className="font-semibold text-slate-800">
                 {(optionLabels[optionIndex] ?? optionIndex + 1) + ". "}
               </span>
-              <MathText text={option} className="inline-flex" />
+              {hasTraditionalMongolian(option) ? (
+                <MongolianText text={option} className="inline-flex" />
+              ) : (
+                <MathText text={option} className="inline-flex" />
+              )}
             </button>
           ))}
         </div>

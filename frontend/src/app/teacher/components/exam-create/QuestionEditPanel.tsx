@@ -87,6 +87,9 @@ export default function QuestionEditPanel({
           })
         }
       />
+      <p className="text-xs text-muted-foreground">
+        Уламжлалт монгол бичиг Unicode-оор оруулбал preview дээр босоо хэлбэрээр харагдана.
+      </p>
 
       <div className="grid gap-2 md:grid-cols-[140px_minmax(0,1fr)]">
         <QuestionTypeDropdown
