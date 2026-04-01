@@ -23,6 +23,7 @@ describe("session routes", () => {
         requiresAudioRecording: 1,
         enabledCheatDetections: '["tab_switch","camera_blocked"]',
       }],
+      [{ fullName: "Б.Сундуйбасар" }],
       [],
       [{ count: 3 }],
       undefined,
@@ -43,6 +44,7 @@ describe("session routes", () => {
         exam: {
           id: "exam-1",
           title: "Algebra Final",
+          teacherName: "Б.Сундуйбасар",
           durationMin: 45,
           questionCount: 0,
           requiresAudioRecording: true,
@@ -68,6 +70,7 @@ describe("session routes", () => {
           allowedRadiusMeters: 3000,
         },
       ],
+      [{ fullName: "Б.Сундуйбасар" }],
     );
 
     const response = await app.request(
@@ -102,6 +105,7 @@ describe("session routes", () => {
           allowedRadiusMeters: 3000,
         },
       ],
+      [{ fullName: "Б.Сундуйбасар" }],
       [{ count: 3 }],
       [],
       undefined,
@@ -136,6 +140,7 @@ describe("session routes", () => {
         exam: {
           id: "exam-1",
           title: "Algebra Final",
+          teacherName: "Б.Сундуйбасар",
           durationMin: 45,
           questionCount: 3,
           enabledCheatDetections: expect.any(Array),
@@ -156,6 +161,7 @@ describe("session routes", () => {
         requiresAudioRecording: 1,
         enabledCheatDetections: '["tab_switch","camera_blocked"]',
       }],
+      [{ fullName: "Б.Сундуйбасар" }],
       [
         {
           id: "question-1",
@@ -210,6 +216,7 @@ describe("session routes", () => {
         exam: {
           id: "exam-1",
           title: "Algebra Final",
+          teacherName: "Б.Сундуйбасар",
           description: "Practice",
           durationMin: 45,
           requiresAudioRecording: true,

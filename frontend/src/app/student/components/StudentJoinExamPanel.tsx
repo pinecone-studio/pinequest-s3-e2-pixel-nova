@@ -82,20 +82,20 @@ export default function StudentJoinExamPanel({
   }
 
   return (
-    <section className="mx-auto w-full max-w-[1088px]">
-      <div className="rounded-[34px] border border-[#e8ecfb] bg-white p-5 shadow-[0_22px_60px_rgba(80,94,133,0.08)] sm:p-6 lg:p-7">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]">
-          <div className="rounded-[30px] bg-white px-2 py-4 sm:px-3 sm:py-5">
-            <div className="text-sm font-medium text-[#b0bbd6]">
+    <section className="mx-auto w-full max-w-[1220px] space-y-8">
+      <div className="rounded-[36px] border border-[#dfe5fb] bg-white px-6 py-7 shadow-[0_26px_70px_rgba(80,94,133,0.10)] sm:px-8 sm:py-8">
+        <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,0.95fr)]">
+          <div className="flex min-h-[300px] flex-col justify-center rounded-[30px] bg-white pr-0 xl:pr-6">
+            <div className="text-[15px] font-medium text-[#aeb9d6]">
               Шалгалтын мэдээлэл
             </div>
-            <h2 className="mt-1 text-[2rem] font-semibold tracking-[-0.05em] text-[#5c63ce]">
+            <h2 className="mt-2 text-[2.35rem] font-semibold tracking-[-0.055em] text-[#5564d9] sm:text-[2.65rem]">
               Шалгалтад нэвтрэх
             </h2>
 
-            <div className="mt-5 max-w-[410px] space-y-4">
+            <div className="mt-7 max-w-[640px] space-y-5">
               <input
-                className="h-12 w-full rounded-[18px] border border-[#e4e9fb] bg-[#fbfcff] px-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-[#adb7cf] focus:border-[#aab7ff] focus:bg-white"
+                className="h-16 w-full rounded-[24px] border border-[#dfe5fb] bg-[#fbfcff] px-6 text-[1.05rem] font-medium text-slate-800 outline-none transition placeholder:text-[#adb7cf] focus:border-[#aab7ff] focus:bg-white"
                 placeholder="Өрөөний код"
                 value={roomCodeInput}
                 onChange={(event) =>
@@ -103,15 +103,15 @@ export default function StudentJoinExamPanel({
                 }
               />
 
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-1">
                 <button
-                  className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#6758ee] to-[#5d50de] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(96,84,228,0.24)] transition hover:brightness-105 ${
+                  className={`inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#6354ee] to-[#4f4be4] px-7 py-4 text-base font-semibold text-white shadow-[0_20px_42px_rgba(96,84,228,0.28)] transition hover:brightness-105 ${
                     joinLoading ? "opacity-70" : ""
                   }`}
                   onClick={onLookup}
                   disabled={joinLoading}
                 >
-                  <Play className="h-4 w-4" />
+                  <Play className="h-5 w-5" />
                   {joinLoading ? "Нэвтэрч байна..." : "Шалгалтад нэвтрэх"}
                 </button>
               </div>
@@ -124,26 +124,26 @@ export default function StudentJoinExamPanel({
             </div>
           </div>
 
-          <div className="rounded-[28px] bg-[#f6f8ff] px-5 py-5 sm:px-6">
-            <div className="flex items-center gap-2 text-[1.05rem] font-semibold text-[#5f6bcf]">
-              <CircleAlert className="h-4.5 w-4.5" />
+          <div className="rounded-[30px] border border-[#edf1ff] bg-[#f7f8ff] px-6 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-7">
+            <div className="flex items-center gap-2.5 text-[1.15rem] font-semibold text-[#4f5fc7]">
+              <CircleAlert className="h-5 w-5" />
               Шалгалтын дүрэм ба мэдээлэл
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {infoItems.map((item) => {
                 const Icon = item.icon;
 
                 return (
                   <div
                     key={item.title}
-                    className={`rounded-[16px] border px-4 py-3.5 ${item.className}`}
+                    className={`rounded-[18px] border px-5 py-4 ${item.className}`}
                   >
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                      <Icon className={`h-4 w-4 ${item.iconClassName}`} />
+                    <div className="flex items-center gap-2.5 text-[1rem] font-semibold">
+                      <Icon className={`h-[18px] w-[18px] ${item.iconClassName}`} />
                       {item.title}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <div className="mt-1.5 text-sm text-slate-400">
                       {item.description}
                     </div>
                   </div>

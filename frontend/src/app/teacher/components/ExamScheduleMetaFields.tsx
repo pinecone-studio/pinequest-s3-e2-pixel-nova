@@ -4,8 +4,10 @@ import { figmaTextareaClass } from "../styles";
 import {
   classOptions,
   subjectOptions,
+  ubSchoolOptions,
 } from "./exam-schedule-constants";
 import TeacherSelect from "./TeacherSelect";
+import TeacherLocationPickerMap from "./TeacherLocationPickerMap";
 
 type ExamScheduleMetaFieldsProps = {
   scheduleClassName: string;
@@ -80,6 +82,27 @@ export default function ExamScheduleMetaFields({
   const radiusKm = (scheduleAllowedRadiusMeters / 1000).toFixed(
     scheduleAllowedRadiusMeters % 1000 === 0 ? 0 : 1,
   );
+  const hasCapturedLocation =
+    scheduleLocationLatitude.trim().length > 0 &&
+    scheduleLocationLongitude.trim().length > 0;
+
+  const applyCapturedLocation = (position: GeolocationPosition) => {
+    setScheduleLocationLatitude(position.coords.latitude.toFixed(6));
+    setScheduleLocationLongitude(position.coords.longitude.toFixed(6));
+
+    if (!scheduleLocationLabel.trim()) {
+      setScheduleLocationLabel("Pinecone сургууль");
+    }
+
+    const accuracy = Math.round(position.coords.accuracy || 0);
+    setLocationStatus({
+      tone: "success",
+      message:
+        accuracy > 0
+          ? `Байршил амжилттай авлаа. Нарийвчлал ойролцоогоор ${accuracy}м байна.`
+          : "Байршил амжилттай авлаа.",
+    });
+  };
 
   const captureCurrentLocation = async () => {
     if (typeof window === "undefined") {
@@ -112,8 +135,15 @@ export default function ExamScheduleMetaFields({
         navigator.geolocation.getCurrentPosition(resolve, reject, options);
       });
 
+    if (capturingLocation) {
+      return;
+    }
+
     setCapturingLocation(true);
-    setLocationStatus({ tone: "idle", message: "" });
+    setLocationStatus({
+      tone: "idle",
+      message: "Байршлын мэдээллийг авч байна. Түр хүлээнэ үү.",
+    });
 
     try {
       const permissionState =
@@ -138,32 +168,18 @@ export default function ExamScheduleMetaFields({
       try {
         position = await readPosition({
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 12000,
           maximumAge: 0,
         });
       } catch {
         position = await readPosition({
           enableHighAccuracy: false,
-          timeout: 15000,
+          timeout: 18000,
           maximumAge: 300000,
         });
       }
 
-      setScheduleLocationLatitude(position.coords.latitude.toFixed(6));
-      setScheduleLocationLongitude(position.coords.longitude.toFixed(6));
-
-      if (!scheduleLocationLabel.trim()) {
-        setScheduleLocationLabel("Сургууль");
-      }
-
-      const accuracy = Math.round(position.coords.accuracy || 0);
-      setLocationStatus({
-        tone: "success",
-        message:
-          accuracy > 0
-            ? `Байршил амжилттай авлаа. Нарийвчлал ойролцоогоор ${accuracy}м байна.`
-            : "Байршил амжилттай авлаа.",
-      });
+      applyCapturedLocation(position);
     } catch (error) {
       const geoError = error as GeolocationPositionError | undefined;
       const message =
@@ -268,6 +284,22 @@ export default function ExamScheduleMetaFields({
             }
             className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-base font-medium text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
           />
+          <div className="flex flex-wrap gap-2">
+            {[15, 20, 30, 40].map((count) => (
+              <button
+                key={count}
+                type="button"
+                onClick={() => setScheduleExpectedStudentsCount(count)}
+                className={`rounded-full border px-3 py-1 text-[12px] font-medium transition ${
+                  scheduleExpectedStudentsCount === count
+                    ? "border-[#bfdbfe] bg-[#eff6ff] text-[#2563eb]"
+                    : "border-[#d5dfeb] bg-white text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                {count} сурагч
+              </button>
+            ))}
+          </div>
         </label>
       </div>
 
@@ -302,13 +334,13 @@ export default function ExamScheduleMetaFields({
 
         {scheduleLocationPolicy === "school_only" && (
           <div className="grid gap-3">
-            <div className="rounded-[22px] border border-[#dbeafe] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-4">
+            <div className="rounded-[26px] border border-[#dbeafe] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] p-6 shadow-[0_20px_48px_rgba(66,101,156,0.08)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="grid gap-1">
-                  <div className="text-[14px] font-semibold text-slate-900">
+                  <div className="text-[15px] font-semibold text-slate-900">
                     Сургуулийн бүсийн баталгаажуулалт
                   </div>
-                  <p className="text-[12px] leading-5 text-slate-500">
+                  <p className="max-w-2xl text-[13px] leading-6 text-slate-500">
                     Сурагч зөвшөөрөгдсөн радиусын дотор байвал л шалгалтад
                     нэвтэрнэ.
                   </p>
@@ -317,80 +349,155 @@ export default function ExamScheduleMetaFields({
                   Радиус: {radiusKm} км
                 </div>
               </div>
+
+              <div className="mt-5 grid gap-3 lg:grid-cols-3">
+                <div className="rounded-2xl border border-[#e8ecfb] bg-white px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    Байршил
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-slate-900">
+                    {scheduleLocationLabel.trim() || "Сургууль"}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[#e8ecfb] bg-white px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    Төлөв
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-slate-900">
+                    {hasCapturedLocation ? "Байршил бэлэн" : "Байршил дутуу"}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[#e8ecfb] bg-white px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    Хүлээгдэж буй ирц
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-slate-900">
+                    {scheduleExpectedStudentsCount > 0
+                      ? `${scheduleExpectedStudentsCount} сурагч`
+                      : "Оруулаагүй байна"}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <label className="grid gap-2">
-              <span className="text-[14px] font-medium text-slate-900">
-                Байршлын нэр
-              </span>
-              <input
-                value={scheduleLocationLabel}
-                onChange={(event) => setScheduleLocationLabel(event.target.value)}
-                className="min-h-[48px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
-                placeholder="Жишээ: PineQuest сургууль"
-              />
-            </label>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="grid gap-2">
-                <span className="text-[14px] font-medium text-slate-900">
-                  Өргөрөг
-                </span>
-                <input
-                  value={scheduleLocationLatitude}
-                  onChange={(event) => setScheduleLocationLatitude(event.target.value)}
-                  className="min-h-[48px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
-                  placeholder="47.918873"
-                />
-              </label>
-              <label className="grid gap-2">
-                <span className="text-[14px] font-medium text-slate-900">
-                  Уртраг
-                </span>
-                <input
-                  value={scheduleLocationLongitude}
-                  onChange={(event) => setScheduleLocationLongitude(event.target.value)}
-                  className="min-h-[48px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
-                  placeholder="106.917701"
-                />
-              </label>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
-              <label className="grid gap-2">
-                <span className="text-[14px] font-medium text-slate-900">
-                  Зөвшөөрөх радиус
-                </span>
-                <input
-                  type="number"
-                  min={100}
-                  max={10000}
-                  step={100}
-                  value={scheduleAllowedRadiusMeters}
-                  onChange={(event) =>
-                    setScheduleAllowedRadiusMeters(
-                      Math.max(100, Number(event.target.value) || 3000),
-                    )
-                  }
-                  className="min-h-[48px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
-                />
-              </label>
-              <div className="grid gap-2">
+            <div className="rounded-[26px] border border-[#e5ebf3] bg-[#fbfcff] p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="text-[15px] font-semibold text-slate-900">
+                    Байршлаа оруулах 2 арга
+                  </div>
+                  <div className="mt-1 text-[13px] leading-6 text-slate-500">
+                    1. Одоогийн байршлаа авах 2. Сургуулиа газрын зургаас хайж
+                    сонгох
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={captureCurrentLocation}
                   disabled={capturingLocation}
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm font-medium text-[#2563eb] transition hover:bg-[#f8fbff] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl border border-[#d5dfeb] bg-white px-5 text-sm font-medium text-[#2563eb] transition hover:bg-[#f8fbff] disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto lg:min-w-[220px]"
                 >
                   {capturingLocation ? "Байршил авч байна..." : "Одоогийн байршлыг авах"}
                 </button>
+              </div>
+
+              <div className="mt-5">
+                <TeacherLocationPickerMap
+                  schools={ubSchoolOptions}
+                  selectedLabel={scheduleLocationLabel}
+                  selectedLatitude={scheduleLocationLatitude}
+                  selectedLongitude={scheduleLocationLongitude}
+                  selectedRadiusMeters={scheduleAllowedRadiusMeters}
+                  onSelectSchool={(school) => {
+                    setScheduleLocationLabel(school.label);
+                    setScheduleLocationLatitude(school.latitude.toFixed(6));
+                    setScheduleLocationLongitude(school.longitude.toFixed(6));
+                    if (!hasCapturedLocation || scheduleAllowedRadiusMeters === 3000) {
+                      setScheduleAllowedRadiusMeters(school.radiusMeters);
+                    }
+                    setLocationStatus({
+                      tone: "success",
+                      message: `${school.label} байршлыг газрын зургаас сонголоо.`,
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-[#e5ebf3] bg-white p-6 shadow-[0_16px_40px_rgba(59,78,111,0.05)]">
+              <div className="mb-4">
+                <div className="text-[15px] font-semibold text-slate-900">
+                  Байршлын мэдээллийг гараар засах
+                </div>
+                <div className="mt-1 text-[13px] leading-6 text-slate-500">
+                  Автоматаар авсан эсвэл газрын зургаас сонгосон байршлаа эндээс
+                  нягталж, шаардлагатай бол өөрчилж болно.
+                </div>
+              </div>
+
+              <label className="grid gap-2">
+                <span className="text-[14px] font-medium text-slate-900">
+                  Байршлын нэр
+                </span>
+                <input
+                  value={scheduleLocationLabel}
+                  onChange={(event) => setScheduleLocationLabel(event.target.value)}
+                  className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
+                  placeholder="Жишээ: Pinecone сургууль"
+                />
+              </label>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="text-[14px] font-medium text-slate-900">
+                    Өргөрөг
+                  </span>
+                  <input
+                    value={scheduleLocationLatitude}
+                    onChange={(event) => setScheduleLocationLatitude(event.target.value)}
+                    className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
+                    placeholder="47.918873"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[14px] font-medium text-slate-900">
+                    Уртраг
+                  </span>
+                  <input
+                    value={scheduleLocationLongitude}
+                    onChange={(event) => setScheduleLocationLongitude(event.target.value)}
+                    className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
+                    placeholder="106.917701"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <label className="grid gap-2">
+                  <span className="text-[14px] font-medium text-slate-900">
+                    Зөвшөөрөх радиус
+                  </span>
+                  <input
+                    type="number"
+                    min={100}
+                    max={10000}
+                    step={100}
+                    value={scheduleAllowedRadiusMeters}
+                    onChange={(event) =>
+                      setScheduleAllowedRadiusMeters(
+                        Math.max(100, Number(event.target.value) || 3000),
+                      )
+                    }
+                    className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
+                  />
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {[500, 1000, 3000].map((radius) => (
                     <button
                       key={radius}
                       type="button"
                       onClick={() => setScheduleAllowedRadiusMeters(radius)}
-                      className={`rounded-full border px-3 py-1 text-[12px] font-medium transition ${
+                      className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition ${
                         scheduleAllowedRadiusMeters === radius
                           ? "border-[#bfdbfe] bg-[#eff6ff] text-[#2563eb]"
                           : "border-[#d5dfeb] bg-white text-slate-500 hover:bg-slate-50"
@@ -414,6 +521,19 @@ export default function ExamScheduleMetaFields({
                 }`}
               >
                 {locationStatus.message}
+              </div>
+            ) : null}
+
+            {locationStatus.tone === "error" ? (
+              <div className="rounded-2xl border border-[#e8ecfb] bg-white px-4 py-3 text-[13px] leading-6 text-slate-600">
+                <div className="font-semibold text-slate-900">
+                  Зөвшөөрөл өгөхөд туслах алхмууд
+                </div>
+                <div className="mt-2">
+                  1. Address bar-ийн хажуугийн site settings icon дээр дарна.
+                </div>
+                <div>2. `Location`-ийг `Allow` болгоно.</div>
+                <div>3. Page-ээ refresh хийгээд дахин оролдоно.</div>
               </div>
             ) : null}
 

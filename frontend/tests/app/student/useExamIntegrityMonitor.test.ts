@@ -42,7 +42,7 @@ describe("useExamIntegrityMonitor", () => {
         source: "browser",
       }),
     );
-    expect(showWarning).toHaveBeenCalledWith("Tab switch detected");
+    expect(showWarning).toHaveBeenCalledWith("Таб сольсон үйлдэл илэрлээ");
   });
 
   it("throttles repeated fullscreen exits inside the client cooldown", () => {

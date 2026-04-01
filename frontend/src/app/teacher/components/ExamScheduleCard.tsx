@@ -51,8 +51,8 @@ export default function ExamScheduleCard({
   setScheduleExamType,
   scheduleClassName,
   setScheduleClassName,
-  scheduleGroupName,
-  setScheduleGroupName,
+  scheduleGroupName: _scheduleGroupName,
+  setScheduleGroupName: _setScheduleGroupName,
   scheduleSubjectName,
   setScheduleSubjectName,
   scheduleDescription,
@@ -85,7 +85,7 @@ export default function ExamScheduleCard({
 
   return (
     <div
-      className={`${cardClass} max-h-[min(88vh,980px)] w-125 overflow-auto p-6 font-sans sm:p-7 no-scrollbar`}
+      className={`${cardClass} max-h-[min(90vh,1040px)] w-full max-w-[1080px] overflow-auto p-6 font-sans sm:p-7 lg:p-8 no-scrollbar`}
     >
       <div className="grid gap-6">
         <div className="flex items-center justify-between">

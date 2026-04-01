@@ -163,6 +163,19 @@ export const getStudentAiInsightBucket = (timestamp = Date.now()) =>
 export const getMsUntilNextInsightRefresh = (timestamp = Date.now()) =>
   FIVE_HOURS_MS - (timestamp % FIVE_HOURS_MS);
 
+export const formatInsightRefreshCountdown = (milliseconds: number) => {
+  const safeMs = Math.max(0, milliseconds);
+  const totalMinutes = Math.ceil(safeMs / (60 * 1000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours <= 0) {
+    return `${minutes} минутын дараа`;
+  }
+
+  return `${hours}ц ${minutes.toString().padStart(2, "0")}м дараа`;
+};
+
 export const buildStudentAiInsightSignature = ({
   currentUserName,
   levelInfo,

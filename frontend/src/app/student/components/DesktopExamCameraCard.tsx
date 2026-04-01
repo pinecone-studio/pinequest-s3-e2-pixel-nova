@@ -18,10 +18,10 @@ type DesktopExamCameraCardProps = {
 };
 
 const EVENT_LABELS: Record<ProctoringEvent["type"], string> = {
-  NO_FACE: "No face detected",
-  MULTIPLE_FACES: "Multiple faces detected",
-  LOOKING_AWAY: "Looking away for too long",
-  CAMERA_BLOCKED: "Camera appears blocked",
+  NO_FACE: "Нүүр илрээгүй",
+  MULTIPLE_FACES: "Олон нүүр илэрсэн",
+  LOOKING_AWAY: "Хэт удаан өөр тийш харлаа",
+  CAMERA_BLOCKED: "Камер халхлагдсан байж магадгүй",
 };
 
 const mapEventTypeToBackend = (type: ProctoringEvent["type"]) => {
@@ -45,7 +45,7 @@ const formatDuration = (durationMs: number) => {
 
 const formatBrightness = (brightness: number | null) => {
   if (brightness === null) {
-    return "n/a";
+    return "тодорхойгүй";
   }
 
   return `${brightness}/255`;
@@ -109,7 +109,7 @@ export default function DesktopExamCameraCard({
   const latestEvent = events[0] ?? null;
   const yawLabel = useMemo(() => {
     if (latestObservation.yaw === null) {
-      return "n/a";
+      return "тодорхойгүй";
     }
 
     return `${latestObservation.yaw.toFixed(1)}°`;
@@ -119,9 +119,9 @@ export default function DesktopExamCameraCard({
     <section className="overflow-hidden rounded-[24px] border border-[#d8e1f0] bg-white shadow-[0_18px_40px_-32px_rgba(15,23,42,0.25)]">
       <div className="flex items-center justify-between border-b border-[#e9eef7] px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-slate-900">Exam proctoring</p>
+          <p className="text-sm font-semibold text-slate-900">Камерын хяналт</p>
           <p className="text-xs text-slate-500">
-            Browser-only webcam monitoring with local frame analysis
+            Browser доторх локал frame анализ ашигласан камерын хяналт
           </p>
         </div>
         <span
@@ -145,7 +145,7 @@ export default function DesktopExamCameraCard({
           <div className="grid gap-3 text-xs text-slate-600 sm:grid-cols-2">
             <div className="rounded-2xl border border-[#d8e1f0] bg-white px-3 py-3">
               <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                Face Count
+                Илэрсэн нүүр
               </div>
               <div className="mt-1 text-lg font-semibold text-slate-900">
                 {latestObservation.faceCount}
@@ -153,7 +153,7 @@ export default function DesktopExamCameraCard({
             </div>
             <div className="rounded-2xl border border-[#d8e1f0] bg-white px-3 py-3">
               <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                Estimated Yaw
+                Толгойн өнцөг
               </div>
               <div className="mt-1 text-lg font-semibold text-slate-900">
                 {yawLabel}
@@ -161,7 +161,7 @@ export default function DesktopExamCameraCard({
             </div>
             <div className="rounded-2xl border border-[#d8e1f0] bg-white px-3 py-3">
               <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                Brightness
+                Гэрэлтэлт
               </div>
               <div className="mt-1 text-lg font-semibold text-slate-900">
                 {formatBrightness(latestObservation.brightness)}
@@ -169,21 +169,21 @@ export default function DesktopExamCameraCard({
             </div>
             <div className="rounded-2xl border border-[#d8e1f0] bg-white px-3 py-3">
               <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                Last Event
+                Сүүлд илэрсэн төлөв
               </div>
               <div className="mt-1 text-sm font-semibold text-slate-900">
-                {latestEvent ? EVENT_LABELS[latestEvent.type] : "No suspicious events"}
+                {latestEvent ? EVENT_LABELS[latestEvent.type] : "Сэжигтэй үйлдэл илрээгүй"}
               </div>
             </div>
           </div>
 
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            Only local analysis runs in the browser. No images or video are stored or
-            uploaded.
+            Зөвхөн browser дотор локал анализ хийгдэнэ. Зураг, видео хадгалахгүй
+            бөгөөд сервер рүү илгээхгүй.
           </p>
           {latestObservation.blockedReason && (
             <p className="mt-2 text-xs font-medium text-[#d25b2b]">
-              Camera blocked signal: {latestObservation.blockedReason.replace(/_/g, " ")}
+              Камер халхлагдсан дохио: {latestObservation.blockedReason.replace(/_/g, " ")}
             </p>
           )}
           {error && (
@@ -200,14 +200,14 @@ export default function DesktopExamCameraCard({
               void start();
             }}
           >
-            Restart camera
+            Камерыг дахин асаах
           </button>
           <button
             type="button"
             className="rounded-xl border border-[#d8e1f0] bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-[#f8fbff]"
             onClick={stop}
           >
-            Stop
+            Зогсоох
           </button>
         </div>
 
@@ -222,9 +222,9 @@ export default function DesktopExamCameraCard({
                   {EVENT_LABELS[event.type]}
                 </div>
                 <div className="mt-1">
-                  Duration: {formatDuration(event.duration)}
+                  Үргэлжилсэн хугацаа: {formatDuration(event.duration)}
                   {event.details?.yaw !== null && event.details?.yaw !== undefined
-                    ? ` · yaw ${event.details.yaw.toFixed(1)}°`
+                    ? ` · өнцөг ${event.details.yaw.toFixed(1)}°`
                     : ""}
                 </div>
               </div>

@@ -45,6 +45,7 @@ type SessionSavedAnswer = {
 type SessionExam = {
   id: string;
   title: string;
+  teacherName?: string | null;
   description?: string | null;
   durationMin: number;
   requiresAudioRecording?: boolean;
@@ -70,6 +71,7 @@ export const mapSessionToExam = (
   return {
     id: examData.id,
     title: examData.title,
+    teacherName: examData.teacherName ?? null,
     description: examData.description ?? null,
     status: examData.status ?? null,
     scheduledAt: examData.scheduledAt ?? null,

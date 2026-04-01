@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
-import { getDb, exams, examSessions, studentAnswers, questions, options } from "../db";
+import { getDb, exams, examSessions, studentAnswers, questions, options, teachers } from "../db";
 import type { AppEnv } from "../types";
 import { success, error, notFound, forbidden } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
@@ -106,6 +106,14 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
   if (exam.status === "finished" || exam.finishedAt) {
     return error(c, "EXAM_FINISHED", "Энэ шалгалт аль хэдийн дууссан байна.", 400);
   }
+
+  const [teacher] = await db
+    .select({
+      fullName: teachers.fullName,
+    })
+    .from(teachers)
+    .where(eq(teachers.id, exam.teacherId))
+    .limit(1);
 
   const now = new Date();
   const scheduledAt = parseExamDate(exam.scheduledAt);
@@ -265,6 +273,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
       exam: {
         id: exam.id,
         title: exam.title,
+        teacherName: teacher?.fullName ?? null,
         durationMin: exam.durationMin,
         questionCount: totalQuestions,
         requiresAudioRecording: Boolean(exam.requiresAudioRecording),
@@ -330,6 +339,7 @@ sessionRoutes.post("/join", requireRole("student"), zValidator("json", joinSchem
     exam: {
       id: exam.id,
       title: exam.title,
+      teacherName: teacher?.fullName ?? null,
       durationMin: exam.durationMin,
       questionCount: totalQuestions,
       requiresAudioRecording: Boolean(exam.requiresAudioRecording),
@@ -369,6 +379,14 @@ sessionRoutes.get("/:sessionId", requireRole("student"), async (c) => {
   if (!exam) {
     return notFound(c, "Exam");
   }
+
+  const [teacher] = await db
+    .select({
+      fullName: teachers.fullName,
+    })
+    .from(teachers)
+    .where(eq(teachers.id, exam.teacherId))
+    .limit(1);
 
   // Fetch questions (without correctAnswerText)
   const examQuestions = await db
@@ -439,6 +457,7 @@ sessionRoutes.get("/:sessionId", requireRole("student"), async (c) => {
     exam: {
       id: exam.id,
       title: exam.title,
+      teacherName: teacher?.fullName ?? null,
       description: exam.description,
       durationMin: exam.durationMin,
       status: exam.status,
