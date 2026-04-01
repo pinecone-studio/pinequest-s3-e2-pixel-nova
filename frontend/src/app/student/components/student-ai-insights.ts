@@ -12,7 +12,6 @@ type InsightSubjectSignal = {
 };
 
 export type StudentAiInsightSnapshot = {
-  bucket: number;
   generatedAt: string;
   signature: string;
   headline: string;
@@ -32,7 +31,6 @@ export type StudentAiInsightSnapshot = {
 };
 
 type BuildStudentAiInsightInput = {
-  bucket: number;
   currentUserName: string;
   levelInfo: {
     level: number;
@@ -44,8 +42,6 @@ type BuildStudentAiInsightInput = {
   totalStudents: number;
   studentHistory: StudentHistoryItem[];
 };
-
-const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
 
 const encouragements = [
   "Өдөр бүрийн жижиг ахиц урт хугацаанд хамгийн том ялгааг бий болгодог.",
@@ -157,25 +153,6 @@ const buildSubjectSignals = (history: StudentHistoryItem[]): InsightSubjectSigna
   });
 };
 
-export const getStudentAiInsightBucket = (timestamp = Date.now()) =>
-  Math.floor(timestamp / FIVE_HOURS_MS);
-
-export const getMsUntilNextInsightRefresh = (timestamp = Date.now()) =>
-  FIVE_HOURS_MS - (timestamp % FIVE_HOURS_MS);
-
-export const formatInsightRefreshCountdown = (milliseconds: number) => {
-  const safeMs = Math.max(0, milliseconds);
-  const totalMinutes = Math.ceil(safeMs / (60 * 1000));
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours <= 0) {
-    return `${minutes} минутын дараа`;
-  }
-
-  return `${hours}ц ${minutes.toString().padStart(2, "0")}м дараа`;
-};
-
 export const buildStudentAiInsightSignature = ({
   currentUserName,
   levelInfo,
@@ -199,7 +176,6 @@ export const buildStudentAiInsightSignature = ({
   });
 
 export const buildStudentAiInsight = ({
-  bucket,
   currentUserName,
   levelInfo,
   currentXp,
@@ -215,7 +191,7 @@ export const buildStudentAiInsight = ({
     totalStudents,
     studentHistory,
   });
-  const seed = hashString(`${signature}:${bucket}`);
+  const seed = hashString(signature);
   const scores = [...studentHistory]
     .sort((left, right) => right.date.localeCompare(left.date))
     .map((item) => item.percentage);
@@ -300,7 +276,6 @@ export const buildStudentAiInsight = ({
     encouragements[0];
 
   return {
-    bucket,
     generatedAt: new Date().toISOString(),
     signature,
     headline,
