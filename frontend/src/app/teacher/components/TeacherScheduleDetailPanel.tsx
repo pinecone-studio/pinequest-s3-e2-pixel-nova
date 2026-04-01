@@ -51,37 +51,9 @@ function getParticipantMeta(participant: ExamRosterParticipant) {
 }
 
 function formatParticipantEvidence(participant: ExamRosterParticipant) {
-  const locationLabel =
-    participant.joinLocationStatus === "inside"
-      ? "Сургуулийн бүс дотор"
-      : participant.joinLocationStatus === "near_edge"
-        ? "Сургуулийн бүсийн зааг дээр"
-        : participant.joinLocationStatus === "outside"
-          ? "Сургуулийн бүсээс гадуур"
-          : participant.joinLocationStatus === "not_required"
-            ? "Байршил шаардаагүй"
-            : null;
-  const distanceLabel =
-    typeof participant.joinDistanceMeters === "number"
-      ? `${(participant.joinDistanceMeters / 1000).toFixed(1)} км`
-      : null;
-  const locationBadge =
-    participant.joinLocationStatus === "inside"
-      ? { label: "Дотор", tone: "bg-emerald-50 text-emerald-700" }
-      : participant.joinLocationStatus === "near_edge"
-        ? { label: "Зааг дээр", tone: "bg-amber-50 text-amber-700" }
-        : participant.joinLocationStatus === "outside"
-          ? { label: "Гадуур", tone: "bg-rose-50 text-rose-700" }
-          : participant.joinLocationStatus === "not_required"
-            ? { label: "Шаардаагүй", tone: "bg-slate-100 text-slate-600" }
-            : null;
-
   if (!participant.latestEvent) {
     return {
-      summary: [locationLabel, distanceLabel, "Зөрчил бүртгэгдээгүй"]
-        .filter(Boolean)
-        .join(" · "),
-      locationBadge,
+      summary: "Зөрчил бүртгэгдээгүй",
     };
   }
 
@@ -94,14 +66,11 @@ function formatParticipantEvidence(participant: ExamRosterParticipant) {
 
   return {
     summary: [
-      locationLabel,
-      distanceLabel,
       `${participant.latestEvent.label} · ${sourceLabel}`,
       `${participant.eventCount} үйлдэл`,
     ]
       .filter(Boolean)
       .join(" · "),
-    locationBadge,
   };
 }
 
@@ -367,13 +336,6 @@ export default function TeacherScheduleDetailPanel({
                         {participant.studentName}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
-                        {evidence.locationBadge ? (
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${evidence.locationBadge.tone}`}
-                          >
-                            {evidence.locationBadge.label}
-                          </span>
-                        ) : null}
                         <div className="text-xs text-slate-500">
                           {evidence.summary}
                         </div>

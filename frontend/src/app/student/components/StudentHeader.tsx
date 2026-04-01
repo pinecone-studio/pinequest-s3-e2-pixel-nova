@@ -92,7 +92,7 @@ export default function StudentHeader({
               priority
             />
           </div>
-          <span className="text-[15px] font-bold text-slate-900">Pinecone</span>
+          <span className="text-[15px] font-bold text-slate-900">Educore</span>
         </div>
 
         <nav className="order-3 flex w-full items-center gap-2 overflow-x-auto rounded-[20px] border border-[#e7edf5] bg-[#fbfcff] px-1.5 py-1.5 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)] xl:order-2 xl:w-auto xl:justify-center">

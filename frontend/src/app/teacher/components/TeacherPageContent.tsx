@@ -14,7 +14,7 @@ import { Dialog } from "@/components/ui/dialog";
 import CreateExamDialogContent from "./CreateExamDialogContent";
 import { contentCanvasClass } from "../styles";
 
-export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Гүйцэтгэл";
+export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Гүйцэтгэл" | "XP";
 
 const sanitizeFileName = (value: string) =>
   value
@@ -117,7 +117,7 @@ export default function TeacherPageContent({
       ? null
       : data.exams.find((exam) => exam.id === previewExamId) ?? null;
 
-  if (data.loading && activeTab !== "Гүйцэтгэл") {
+  if (data.loading && activeTab !== "Гүйцэтгэл" && activeTab !== "XP") {
     return <TeacherPageSkeleton />;
   }
 
@@ -166,23 +166,28 @@ export default function TeacherPageContent({
 
   if (activeTab === "Гүйцэтгэл") {
     return (
+      <ResultsTab
+        loading={data.loading}
+        examOptions={examStatsState.examOptions}
+        activeExamId={examStatsState.activeExamId}
+        onSelectExam={examStatsState.setSelectedExamId}
+        examStats={examStatsState.examStats}
+        submissions={examStatsState.activeSubmissions}
+        onSelectSubmission={examStatsState.setSelectedSubmissionId}
+        selectedSubmissionId={examStatsState.selectedSubmissionId}
+        selectedSubmission={examStatsState.selectedSubmission}
+        selectedExam={examStatsState.selectedExam}
+        attendanceStats={attendance.stats}
+        attendanceLoading={attendance.loading}
+        studentProfile={studentProfile as never}
+        profileLoading={profileLoading}
+      />
+    );
+  }
+
+  if (activeTab === "XP") {
+    return (
       <div className="space-y-6">
-        <ResultsTab
-          loading={data.loading}
-          examOptions={examStatsState.examOptions}
-          activeExamId={examStatsState.activeExamId}
-          onSelectExam={examStatsState.setSelectedExamId}
-          examStats={examStatsState.examStats}
-          submissions={examStatsState.activeSubmissions}
-          onSelectSubmission={examStatsState.setSelectedSubmissionId}
-          selectedSubmissionId={examStatsState.selectedSubmissionId}
-          selectedSubmission={examStatsState.selectedSubmission}
-          selectedExam={examStatsState.selectedExam}
-          attendanceStats={attendance.stats}
-          attendanceLoading={attendance.loading}
-          studentProfile={studentProfile as never}
-          profileLoading={profileLoading}
-        />
         <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
       </div>
     );

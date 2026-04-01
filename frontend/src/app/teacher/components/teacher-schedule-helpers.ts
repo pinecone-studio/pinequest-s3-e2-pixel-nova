@@ -21,9 +21,6 @@ export type ScheduleItem = {
   lifecycle: ScheduleLifecycle;
   scheduledDate: Date;
   roomCode: string;
-  expectedStudentsCount: number;
-  locationPolicy: "anywhere" | "school_only";
-  locationLabel?: string | null;
 };
 
 export function startOfDay(date: Date) {
@@ -79,6 +76,22 @@ function resolveScheduleLifecycle(exam: Exam, scheduledAt: Date): ScheduleLifecy
 }
 
 export function buildScheduleData(exams: Exam[]) {
+  const looksLikeClassLabel = (value: string) =>
+    /^(\d{1,2}\s*[A-Za-zА-Яа-яӨөҮүЁё]+)(\s*,\s*\d{1,2}\s*[A-Za-zА-Яа-яӨөҮүЁё]+)*$/u.test(
+      value.trim(),
+    );
+
+  const resolveTitle = (exam: Exam) => {
+    const title = exam.title?.trim() || "";
+    const description = exam.description?.trim() || "";
+
+    if (description && looksLikeClassLabel(title)) {
+      return description;
+    }
+
+    return title || description || "Шалгалт";
+  };
+
   const scheduled = exams
     .filter((exam) => Boolean(exam.scheduledAt))
     .sort(
@@ -129,8 +142,8 @@ export function buildScheduleData(exams: Exam[]) {
 
       return {
         id: exam.id,
-        title: exam.className || exam.title,
-        subtitle: [exam.title, exam.groupName, exam.description]
+        title: resolveTitle(exam),
+        subtitle: [exam.className, exam.groupName, exam.description]
           .filter(Boolean)
           .join(" · "),
         dayIndex,
@@ -146,9 +159,6 @@ export function buildScheduleData(exams: Exam[]) {
         lifecycle: resolveScheduleLifecycle(exam, scheduledAt),
         scheduledDate: scheduledAt,
         roomCode: exam.roomCode,
-        expectedStudentsCount: exam.expectedStudentsCount ?? 0,
-        locationPolicy: exam.locationPolicy ?? "anywhere",
-        locationLabel: exam.locationLabel ?? null,
       };
     })
     .filter((item): item is ScheduleItem => Boolean(item));

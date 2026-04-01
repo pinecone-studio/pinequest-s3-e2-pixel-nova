@@ -41,8 +41,6 @@ export default function StudentExamDetailSection({
     const title = selectedExam.title?.trim() || subject;
     const normalizedTitle = title.trim().replace(/\s+/g, " ").toLowerCase();
     const normalizedSubject = subject.trim().replace(/\s+/g, " ").toLowerCase();
-    const locationLabel = selectedExam.locationLabel?.trim() || "";
-
     return {
       title,
       subtitle: normalizedTitle === normalizedSubject ? null : subject,
@@ -57,8 +55,8 @@ export default function StudentExamDetailSection({
         selectedExam.teacherName?.trim() ||
         teacherName?.trim() ||
         "Pinecone баг",
-      secondaryLabel: locationLabel ? "Анги" : "Өрөө",
-      secondaryValue: locationLabel || selectedExam.roomCode || "Нээлттэй",
+      secondaryLabel: "Өрөө",
+      secondaryValue: selectedExam.roomCode || "Нээлттэй",
       dateLabel: formatDate(safeStart.toISOString()),
       startLabel: formatClock(safeStart),
       endLabel: formatClock(end),

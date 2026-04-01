@@ -190,7 +190,7 @@ export default function TeacherCheatDetectionDialog({
             </button>
             <button
               type="button"
-              className={`rounded-[14px] px-5 py-2.5 text-sm font-semibold text-white transition ${
+              className={`inline-flex items-center gap-2 rounded-[14px] px-5 py-2.5 text-sm font-semibold text-white transition ${
                 selectedSet.size === 0 || saving
                   ? "cursor-not-allowed bg-slate-300"
                   : "bg-[#0f766e] hover:bg-[#0b5f59]"
@@ -198,7 +198,33 @@ export default function TeacherCheatDetectionDialog({
               onClick={onSave}
               disabled={selectedSet.size === 0 || saving}
             >
-              {saving ? "Хадгалж байна..." : "Тохиргоо хадгалах"}
+              {saving ? (
+                <>
+                  <svg
+                    className="size-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="9"
+                      stroke="currentColor"
+                      strokeOpacity="0.28"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M21 12a9 9 0 0 0-9-9"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  Хадгалж байна...
+                </>
+              ) : (
+                "Тохиргоо хадгалах"
+              )}
             </button>
           </div>
         </div>
