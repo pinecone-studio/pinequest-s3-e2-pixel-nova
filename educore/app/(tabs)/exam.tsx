@@ -3,10 +3,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCameraPermissions } from "expo-camera";
 import { Redirect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Alert,
   AppState,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -38,6 +40,9 @@ type ActiveListItem = {
   duration: number;
   status: "active" | "waiting" | "late";
   badgeText: string;
+  className?: string | null;
+  groupName?: string | null;
+  teacherName?: string | null;
 };
 
 type HistoryListItem = {
@@ -167,6 +172,146 @@ function wasLateSubmission(
   return started.getTime() >= scheduled.getTime() + 5 * 60 * 1000;
 }
 
+function getMockTeacherName(title: string) {
+  if (title.toLowerCase().includes("english")) return "Г. Сарантуяа";
+  if (title.toLowerCase().includes("мат")) return "Б. Нарантуяа";
+  if (title.toLowerCase().includes("монгол")) return "Д. Оюун";
+  return "Г. Сарантуяа";
+}
+
+function ExamDetailModal({
+  exam,
+  visible,
+  onClose,
+}: {
+  exam: ActiveListItem | null;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  if (!exam) return null;
+
+  const classLabel = [exam.className, exam.groupName].filter(Boolean).join(" · ");
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.detailOverlay}>
+        <SafeAreaView style={styles.detailSheet} edges={["top"]}>
+          <View style={styles.detailTopBar}>
+            <Pressable style={styles.detailBackButton} onPress={onClose}>
+              <Ionicons name="chevron-back" size={22} color="#111827" />
+            </Pressable>
+            <Text style={styles.detailHeaderTitle}>Дэлгэрэнгүй</Text>
+            <View style={styles.detailHeaderSpacer} />
+          </View>
+
+          <ScrollView
+            contentContainerStyle={styles.detailContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.detailHeroCard}>
+              <View style={styles.listCardRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailExamTitle}>{exam.title}</Text>
+                  <Text style={styles.detailExamSub}>Шалгалтын мэдээлэл</Text>
+                </View>
+                <View style={styles.statusPill}>
+                  <Text style={styles.statusPillText}>{exam.badgeText}</Text>
+                </View>
+              </View>
+
+              <View style={styles.detailInfoRow}>
+                <View style={styles.detailInfoChip}>
+                  <View style={styles.detailInfoIcon}>
+                    <Ionicons name="person-outline" size={18} color="#7C8798" />
+                  </View>
+                  <View>
+                    <Text style={styles.detailInfoLabel}>Багш</Text>
+                    <Text style={styles.detailInfoValue}>
+                      {exam.teacherName ?? getMockTeacherName(exam.title)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.detailInfoChip}>
+                  <View style={styles.detailInfoIcon}>
+                    <Ionicons name="school-outline" size={18} color="#7C8798" />
+                  </View>
+                  <View>
+                    <Text style={styles.detailInfoLabel}>Анги</Text>
+                    <Text style={styles.detailInfoValue}>
+                      {classLabel || "10а анги"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.detailSectionCard}>
+              <View style={styles.detailSectionHeader}>
+                <Ionicons name="information-circle-outline" size={20} color="#111827" />
+                <Text style={styles.detailSectionTitle}>Шалгалтын дүрэм ба мэдээлэл</Text>
+              </View>
+
+              <View style={styles.ruleGrid}>
+                <View style={[styles.ruleCard, styles.ruleCardWarning]}>
+                  <Ionicons name="swap-horizontal-outline" size={18} color="#F59E0B" />
+                  <Text style={styles.ruleTitle}>Change tab</Text>
+                  <Text style={styles.ruleSubtitle}>Cannot change tab.</Text>
+                </View>
+
+                <View style={[styles.ruleCard, styles.ruleCardWarning]}>
+                  <Ionicons name="timer-outline" size={18} color="#F59E0B" />
+                  <Text style={styles.ruleTitle}>Auto Submit</Text>
+                  <Text style={styles.ruleSubtitle}>Submits when time ends</Text>
+                </View>
+
+                <View style={[styles.ruleCard, styles.ruleCardDanger]}>
+                  <Ionicons name="lock-closed-outline" size={18} color="#EF4444" />
+                  <Text style={styles.ruleTitle}>Copy/Paste</Text>
+                  <Text style={styles.ruleSubtitle}>Disabled</Text>
+                </View>
+
+                <View style={[styles.ruleCard, styles.ruleCardDanger]}>
+                  <Ionicons name="camera-outline" size={18} color="#EF4444" />
+                  <Text style={styles.ruleTitle}>Camera</Text>
+                  <Text style={styles.ruleSubtitle}>Required</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.detailSectionCard}>
+              <View style={styles.detailSectionHeader}>
+                <Ionicons name="time-outline" size={20} color="#111827" />
+                <Text style={styles.detailSectionTitle}>Хугацаа</Text>
+              </View>
+
+              <View style={styles.durationHighlight}>
+                <Ionicons name="timer-outline" size={18} color="#3568F5" />
+                <Text style={styles.durationLabel}>Үргэлжлэх хугацаа</Text>
+                <Text style={styles.durationValue}>{exam.duration} минут</Text>
+              </View>
+
+              <View style={styles.scheduleRow}>
+                <View style={[styles.scheduleCard, styles.scheduleCardGreen]}>
+                  <Ionicons name="play-outline" size={18} color="#22C55E" />
+                  <Text style={styles.scheduleLabel}>Эхлэх цаг</Text>
+                  <Text style={styles.scheduleValue}>{exam.time}</Text>
+                </View>
+
+                <View style={styles.scheduleCard}>
+                  <Ionicons name="calendar-outline" size={18} color="#111827" />
+                  <Text style={styles.scheduleLabel}>Огноо</Text>
+                  <Text style={styles.scheduleValue}>{exam.date}</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Exam list screen (tab = "active" | "history") Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function ExamListScreen() {
@@ -209,6 +354,9 @@ function ExamListScreen() {
           time: formatListTime(scheduledAt),
           duration: exam.durationMin,
           status,
+          className: exam.className ?? null,
+          groupName: exam.groupName ?? null,
+          teacherName: getMockTeacherName(exam.title),
           badgeText:
             status === "active"
               ? "Өнөөдөр"
@@ -399,6 +547,7 @@ function ActiveExamList({
   items: ActiveListItem[];
 }) {
   const router = useRouter();
+  const [selectedExam, setSelectedExam] = useState<ActiveListItem | null>(null);
   const filtered = items.filter((e) =>
     e.title.toLowerCase().includes(search.toLowerCase()),
   );
@@ -465,17 +614,23 @@ function ActiveExamList({
                 <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
               </TouchableOpacity>
             ) : (
-              <>
-                <View style={styles.upcomingDivider} />
-                <TouchableOpacity style={styles.upcomingDetailRow}>
+              <View style={styles.upcomingButtonRow}>
+                <TouchableOpacity
+                  style={styles.upcomingDetailButton}
+                  onPress={() => setSelectedExam(exam)}
+                >
                   <Text style={styles.upcomingDetailText}>Дэлгэрэнгүй</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#111827" />
                 </TouchableOpacity>
-              </>
+              </View>
             )}
           </View>
         );
       })}
+      <ExamDetailModal
+        exam={selectedExam}
+        visible={!!selectedExam}
+        onClose={() => setSelectedExam(null)}
+      />
     </>
   );
 }
