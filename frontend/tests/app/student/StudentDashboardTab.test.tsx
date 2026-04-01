@@ -74,9 +74,10 @@ const defaultProps = {
     },
   ],
   termLeaderboardEntries: [
-    { rank: 1, id: "student-2", fullName: "Бат", xp: 2400, level: 11 },
-    { rank: 2, id: "student-3", fullName: "Сараа", xp: 2300, level: 11 },
+    { rank: 1, id: "student-9", fullName: "Топ", xp: 2800, level: 13 },
+    { rank: 3, id: "student-2", fullName: "Бат", xp: 2400, level: 11 },
     { rank: 4, id: "student-1", fullName: "Золбоо Бат", xp: 2100, level: 12 },
+    { rank: 5, id: "student-3", fullName: "Сараа", xp: 2050, level: 11 },
   ],
   teacherName: "Г. Сарантуяа",
   onOpenExamDetail: jest.fn(),
@@ -95,9 +96,11 @@ describe("StudentDashboardTab", () => {
     expect(screen.getByText("Физик")).toBeInTheDocument();
     expect(screen.getByText("XP оноо")).toBeInTheDocument();
     expect(screen.getByText("Англи хэл")).toBeInTheDocument();
-    expect(screen.getByText("Монгол хэл")).toBeInTheDocument();
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
+    expect(screen.getByText("Бат")).toBeInTheDocument();
+    expect(screen.getByText("Сараа")).toBeInTheDocument();
     expect(screen.getByText("би")).toBeInTheDocument();
+    expect(screen.queryByText("Топ")).not.toBeInTheDocument();
     expect(screen.getByText("#4 / 20")).toBeInTheDocument();
   });
 
