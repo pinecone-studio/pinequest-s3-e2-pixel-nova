@@ -1,6 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
+import MongolianText from '@/components/MongolianText';
 import {
   AppScreen,
   Card,
@@ -9,6 +10,7 @@ import {
   SectionTitle,
   uiStyles,
 } from '@/components/student-app/ui';
+import { hasTraditionalMongolian } from '@/lib/mongolian-script';
 import { useStudentApp } from '@/lib/student-app/context';
 import { formatDateTime, getResultMessage } from '@/lib/student-app/utils';
 import { resultStyles as styles } from '@/styles/screens/result';
@@ -70,13 +72,34 @@ export default function ResultScreen() {
         <Text style={styles.answerTitle}>Answer review</Text>
         {submittedResult.answers.map((answer, index) => (
           <View key={`${answer.questionId}-${index}`} style={styles.answerRow}>
-            <Text style={styles.answerQuestion}>
-              {index + 1}. {answer.questionText}
-            </Text>
+            {hasTraditionalMongolian(answer.questionText) ? (
+              <View>
+                <Text style={styles.answerQuestion}>{index + 1}.</Text>
+                <MongolianText
+                  text={answer.questionText}
+                  style={styles.answerQuestion}
+                />
+              </View>
+            ) : (
+              <Text style={styles.answerQuestion}>
+                {index + 1}. {answer.questionText}
+              </Text>
+            )}
             <Text style={styles.answerMeta}>Your answer: {resolveAnswerText(answer)}</Text>
-            <Text style={styles.answerMeta}>
-              Correct answer: {answer.correctAnswerText ?? 'Not provided'}
-            </Text>
+            {answer.correctAnswerText &&
+            hasTraditionalMongolian(answer.correctAnswerText) ? (
+              <View>
+                <Text style={styles.answerMeta}>Correct answer:</Text>
+                <MongolianText
+                  text={answer.correctAnswerText}
+                  style={styles.answerMeta}
+                />
+              </View>
+            ) : (
+              <Text style={styles.answerMeta}>
+                Correct answer: {answer.correctAnswerText ?? 'Not provided'}
+              </Text>
+            )}
             <Text
               style={[
                 styles.answerState,

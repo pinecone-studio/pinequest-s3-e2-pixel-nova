@@ -240,6 +240,29 @@ describe("ExamScreen", () => {
     screen.unmount();
   });
 
+  it("renders traditional Mongolian question text through the mobile Mongolian renderer", () => {
+    const traditionalText = "\u182e\u1823\u1829\u182d\u1823\u182f";
+
+    mockUseCameraPermissions.mockReturnValue([{ granted: true }, jest.fn()]);
+    mockUseStudentApp.mockReturnValue({
+      ...baseContext,
+      activeSession: {
+        ...buildActiveSession("in_progress"),
+        questions: [
+          {
+            ...buildActiveSession("in_progress").questions[0],
+            questionText: traditionalText,
+          },
+        ],
+      },
+    });
+
+    const screen = render(<ExamScreen />);
+
+    expect(screen.getByTestId("traditional-mongolian-webview")).toBeTruthy();
+    screen.unmount();
+  });
+
   it("does not render mock active exam CTAs when there is no real exam data", () => {
     mockUseStudentApp.mockReturnValue(baseContext);
 

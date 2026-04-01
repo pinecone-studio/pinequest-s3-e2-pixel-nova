@@ -21,7 +21,9 @@ import {
 } from "react-native";
 
 import MathText from "@/components/MathText";
+import MongolianText from "@/components/MongolianText";
 import MobileProctorCamera from "@/components/student-app/MobileProctorCamera";
+import { hasTraditionalMongolian } from "@/lib/mongolian-script";
 import { useStudentApp } from "@/lib/student-app/context";
 import { useExamAudioRecorder } from "@/lib/student-app/hooks/use-exam-audio-recorder";
 import {
@@ -1263,10 +1265,17 @@ export default function ExamScreen() {
             <Text style={styles.questionCounter}>
               Question {activeSession.currentQuestionIndex + 1}
             </Text>
-            <MathText
-              text={currentQuestion.questionText}
-              style={styles.questionText}
-            />
+            {hasTraditionalMongolian(currentQuestion.questionText) ? (
+              <MongolianText
+                text={currentQuestion.questionText}
+                style={styles.questionText}
+              />
+            ) : (
+              <MathText
+                text={currentQuestion.questionText}
+                style={styles.questionText}
+              />
+            )}
 
             {currentQuestion.imageUrl ? (
               <Image
@@ -1306,13 +1315,23 @@ export default function ExamScreen() {
                         >
                           {option.label}.
                         </Text>
-                        <MathText
-                          text={option.text}
-                          style={[
-                            styles.optionLabel,
-                            selected && styles.optionLabelSelected,
-                          ]}
-                        />
+                        {hasTraditionalMongolian(option.text) ? (
+                          <MongolianText
+                            text={option.text}
+                            style={[
+                              styles.optionLabel,
+                              selected && styles.optionLabelSelected,
+                            ]}
+                          />
+                        ) : (
+                          <MathText
+                            text={option.text}
+                            style={[
+                              styles.optionLabel,
+                              selected && styles.optionLabelSelected,
+                            ]}
+                          />
+                        )}
                       </View>
                     </Pressable>
                   );
