@@ -33,16 +33,6 @@ type ExamTabProps = {
   setScheduleDescription: (value: string) => void;
   scheduleExpectedStudentsCount: number;
   setScheduleExpectedStudentsCount: (value: number) => void;
-  scheduleLocationPolicy: "anywhere" | "school_only";
-  setScheduleLocationPolicy: (value: "anywhere" | "school_only") => void;
-  scheduleLocationLabel: string;
-  setScheduleLocationLabel: (value: string) => void;
-  scheduleLocationLatitude: string;
-  setScheduleLocationLatitude: (value: string) => void;
-  scheduleLocationLongitude: string;
-  setScheduleLocationLongitude: (value: string) => void;
-  scheduleAllowedRadiusMeters: number;
-  setScheduleAllowedRadiusMeters: (value: number) => void;
   selectedScheduleExamId: string;
   setSelectedScheduleExamId: (value: string) => void;
   durationMinutes: number;
@@ -148,16 +138,6 @@ export default function ExamTab(props: ExamTabProps) {
           setScheduleDescription={props.setScheduleDescription}
           scheduleExpectedStudentsCount={props.scheduleExpectedStudentsCount}
           setScheduleExpectedStudentsCount={props.setScheduleExpectedStudentsCount}
-          scheduleLocationPolicy={props.scheduleLocationPolicy}
-          setScheduleLocationPolicy={props.setScheduleLocationPolicy}
-          scheduleLocationLabel={props.scheduleLocationLabel}
-          setScheduleLocationLabel={props.setScheduleLocationLabel}
-          scheduleLocationLatitude={props.scheduleLocationLatitude}
-          setScheduleLocationLatitude={props.setScheduleLocationLatitude}
-          scheduleLocationLongitude={props.scheduleLocationLongitude}
-          setScheduleLocationLongitude={props.setScheduleLocationLongitude}
-          scheduleAllowedRadiusMeters={props.scheduleAllowedRadiusMeters}
-          setScheduleAllowedRadiusMeters={props.setScheduleAllowedRadiusMeters}
           durationMinutes={props.durationMinutes}
           setDurationMinutes={props.setDurationMinutes}
           onSchedule={props.onSchedule}

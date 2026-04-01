@@ -162,22 +162,6 @@ export function ScheduleListCard({
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between text-[16px] leading-5">
-              <span className="text-[#959595]">Хүлээгдэж буй ирц:</span>
-              <span className="text-black">
-                {item.expectedStudentsCount > 0
-                  ? `${item.expectedStudentsCount} сурагч`
-                  : "Тохируулаагүй"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[16px] leading-5">
-              <span className="text-[#959595]">Байршлын нөхцөл:</span>
-              <span className="text-right text-black">
-                {item.locationPolicy === "school_only"
-                  ? `${item.locationLabel || "Сургууль"} дотор`
-                  : "Хаанаас ч өгч болно"}
-              </span>
-            </div>
           </div>
         </div>
 

@@ -169,7 +169,7 @@ describe("TeacherPage", () => {
     });
   });
 
-  it("opens the cheat detection dialog after schedule save succeeds", async () => {
+  it("closes the schedule modal after schedule save succeeds", async () => {
     render(<TeacherPage />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Open schedule" }));
@@ -177,27 +177,37 @@ describe("TeacherPage", () => {
       fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
     });
 
-    expect(
-      await screen.findByRole("heading", {
-        name: "Луйврын илрүүлэлтийн тохиргоо",
-      }),
-    ).toBeInTheDocument();
-    const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes).toHaveLength(17);
-    expect(checkboxes[1]).toBeChecked();
-    expect(screen.getByText("Камер хаагдах")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "Save schedule" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(mockUpdateExam).not.toHaveBeenCalled();
   });
 
-  it("keeps the scheduled exam and skips API updates when the dialog closes", async () => {
+  it("keeps the scheduled exam and skips API updates after scheduling", async () => {
     render(<TeacherPage />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Open schedule" }));
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
     });
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Дараа" }),
-    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "Save schedule" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(mockUpdateExam).not.toHaveBeenCalled();
+  });
+
+  it("schedules once without opening any follow-up configuration dialog", async () => {
+    render(<TeacherPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Open schedule" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
+    });
 
     await waitFor(() => {
       expect(
@@ -205,49 +215,11 @@ describe("TeacherPage", () => {
           name: "Луйврын илрүүлэлтийн тохиргоо",
         }),
       ).not.toBeInTheDocument();
-    });
-    expect(mockUpdateExam).not.toHaveBeenCalled();
-  });
-
-  it("saves the selected detections from the follow-up dialog", async () => {
-    mockUpdateExam.mockResolvedValue({
-      id: "exam-1",
-      title: "Algebra Final",
-      scheduledAt: "2026-03-31T10:00:00.000Z",
-      roomCode: "ROOM01",
-      durationMin: 45,
-      status: "scheduled",
-      createdAt: "2026-03-31T09:00:00.000Z",
-      enabledCheatDetections: ["tab_switch", "camera_blocked"],
-    } as never);
-
-    render(<TeacherPage />);
-
-    fireEvent.click(await screen.findByRole("button", { name: "Open schedule" }));
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
-    });
-    await screen.findByRole("heading", {
-      name: "Луйврын илрүүлэлтийн тохиргоо",
-    });
-    const copyPasteToggle = screen
-      .getByText("Хуулах, буулгах")
-      .closest("label")
-      ?.querySelector('input[type="checkbox"]');
-    expect(copyPasteToggle).not.toBeNull();
-    fireEvent.click(copyPasteToggle as Element);
-    fireEvent.click(screen.getByRole("button", { name: "Тохиргоо хадгалах" }));
-
-    await waitFor(() => {
-      expect(mockUpdateExam).toHaveBeenCalledWith(
-        "exam-1",
-        expect.objectContaining({
-          enabledCheatDetections: expect.arrayContaining([
-            "tab_switch",
-            "camera_blocked",
-          ]),
-        }),
-        expect.objectContaining({ id: "teacher-1" }),
+      expect(mockHandleSchedule).toHaveBeenCalledTimes(1);
+      expect(mockUpdateExam).not.toHaveBeenCalled();
+      expect(mockSetExams).not.toHaveBeenCalled();
+      expect(mockShowToast).not.toHaveBeenCalledWith(
+        expect.stringContaining("илрүүлэлтийн тохиргоо"),
       );
     });
   });

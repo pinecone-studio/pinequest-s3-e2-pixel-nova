@@ -38,7 +38,7 @@ import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { pageShellClass } from "./styles";
 import type { Exam } from "./types";
 
-const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
+const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл", "XP"] as const;
 
 function TeacherScheduleModal({
   show,
@@ -58,7 +58,9 @@ function TeacherScheduleModal({
   return (
     <div
       className="fixed inset-0 z-120 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
-      onClick={onClose}>
+      onClick={() => {
+        if (!management.scheduling) onClose();
+      }}>
       <div className="mx-auto flex min-h-screen w-full max-w-184 items-center justify-center py-4 sm:py-8">
         <div
           className="flex w-full justify-center transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
@@ -81,18 +83,9 @@ function TeacherScheduleModal({
             setScheduleDescription={management.setScheduleDescription}
             scheduleExpectedStudentsCount={management.scheduleExpectedStudentsCount}
             setScheduleExpectedStudentsCount={management.setScheduleExpectedStudentsCount}
-            scheduleLocationPolicy={management.scheduleLocationPolicy}
-            setScheduleLocationPolicy={management.setScheduleLocationPolicy}
-            scheduleLocationLabel={management.scheduleLocationLabel}
-            setScheduleLocationLabel={management.setScheduleLocationLabel}
-            scheduleLocationLatitude={management.scheduleLocationLatitude}
-            setScheduleLocationLatitude={management.setScheduleLocationLatitude}
-            scheduleLocationLongitude={management.scheduleLocationLongitude}
-            setScheduleLocationLongitude={management.setScheduleLocationLongitude}
-            scheduleAllowedRadiusMeters={management.scheduleAllowedRadiusMeters}
-            setScheduleAllowedRadiusMeters={management.setScheduleAllowedRadiusMeters}
             durationMinutes={management.durationMinutes}
             setDurationMinutes={management.setDurationMinutes}
+            scheduling={management.scheduling}
             onSchedule={onSchedule}
             onClose={onClose}
           />
@@ -262,17 +255,6 @@ export default function TeacherPage() {
     }
 
     setShowScheduleForm(false);
-    setCheatDetectionExam(scheduledExam);
-    setSelectedCheatDetections(
-      normalizeEnabledCheatDetections(
-        scheduledExam.enabledCheatDetections ??
-          DEFAULT_ENABLED_CHEAT_DETECTIONS,
-      ),
-    );
-    setSelectedRequiresAudioRecording(
-      Boolean(scheduledExam.requiresAudioRecording),
-    );
-    setShowCheatDetectionDialog(true);
   };
 
   const saveCheatDetectionSettings = async () => {
