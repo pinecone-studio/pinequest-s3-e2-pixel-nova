@@ -6,6 +6,7 @@ module.exports = {
     '^expo-camera$': '<rootDir>/tests/mocks/expo-camera.tsx',
     '^expo-notifications$': '<rootDir>/tests/mocks/expo-notifications.ts',
     '^react-native-math-view$': '<rootDir>/tests/mocks/react-native-math-view.tsx',
+    '^react-native-webview$': '<rootDir>/tests/mocks/react-native-webview.tsx',
   },
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native|expo(nent)?|@expo(nent)?/.*|@expo/.*|expo-router|@react-navigation/.*|react-navigation|unimodules|sentry-expo|native-base|react-native-svg|react-native-math-view))',
