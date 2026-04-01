@@ -55,7 +55,7 @@ describe("StudentExamView", () => {
     const image = screen.getByAltText("Асуултын зураг");
     expect(image).toBeInTheDocument();
     expect(image).toHaveAttribute("src", "data:image/png;base64,abc123");
-    expect(screen.getByText("A. 2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /A\.\s*2/ })).toBeInTheDocument();
   });
 
   it("selects an mcq option", () => {
@@ -78,7 +78,7 @@ describe("StudentExamView", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "A. 2" }));
+    fireEvent.click(screen.getByRole("button", { name: /A\.\s*2/ }));
     expect(onSelectMcq).toHaveBeenCalledWith("q-1", "2");
   });
 
@@ -103,5 +103,38 @@ describe("StudentExamView", () => {
     );
 
     expect(screen.getByText("desktop-camera-panel")).toBeInTheDocument();
+  });
+
+  it("renders latex question and option content through MathText", () => {
+    render(
+      <StudentExamView
+        activeExam={{
+          ...exam,
+          questions: [
+            {
+              ...exam.questions[0],
+              text: "Solve $x^2 = 4$",
+              options: ["$\\sqrt{9}$", "5", "6", "7"],
+            },
+          ],
+        }}
+        warning={null}
+        timeLeft={120}
+        currentQuestionIndex={0}
+        setCurrentQuestionIndex={jest.fn()}
+        violations={violations}
+        answers={{}}
+        onUpdateAnswer={jest.fn()}
+        onSelectMcq={jest.fn()}
+        onPrev={jest.fn()}
+        onNext={jest.fn()}
+        onSubmit={jest.fn()}
+        onExit={jest.fn()}
+      />,
+    );
+
+    expect(screen.getAllByTestId("inline-math")).toHaveLength(2);
+    expect(screen.getByText("x^2 = 4")).toBeInTheDocument();
+    expect(screen.getByText("\\sqrt{9}")).toBeInTheDocument();
   });
 });

@@ -44,7 +44,7 @@ export type NormalizedDraftExam = {
   questions: NormalizedDraftQuestion[];
 };
 
-const SYSTEM_PROMPT = `You generate exam drafts for teachers.
+const BASE_SYSTEM_PROMPT = `You generate exam drafts for teachers.
 
 Return ONLY valid JSON with this exact object shape:
 {
@@ -70,13 +70,50 @@ Rules:
 - Keep points as a positive integer, default 1.
 - Do not include markdown fences or commentary.`;
 
+const MATH_SCIENCE_SUBJECTS = new Set([
+  "math",
+  "mathematics",
+  "algebra",
+  "geometry",
+  "calculus",
+  "trigonometry",
+  "statistics",
+  "physics",
+  "chemistry",
+  "biology",
+  "science",
+]);
+
+export function isMathOrScience(input: ExamGeneratorRequest): boolean {
+  const subject = (input.subject ?? "").toLowerCase().trim();
+  const topic = (input.topic ?? "").toLowerCase();
+
+  return (
+    MATH_SCIENCE_SUBJECTS.has(subject) ||
+    Array.from(MATH_SCIENCE_SUBJECTS).some((term) => topic.includes(term))
+  );
+}
+
+export function buildSystemPrompt(input: ExamGeneratorRequest): string {
+  if (!isMathOrScience(input)) {
+    return BASE_SYSTEM_PROMPT;
+  }
+
+  return `${BASE_SYSTEM_PROMPT}
+
+LaTeX rules (math/science only):
+- Use $...$ for inline: "Solve $x^2 + 3x - 4 = 0$"
+- Use $$...$$ for block equations: "$$\\frac{d}{dx}(x^n) = nx^{n-1}$$"
+- Only use LaTeX when it meaningfully improves clarity.`;
+}
+
 export async function generateExamDraft(
   ai: Ai,
   input: ExamGeneratorRequest,
 ): Promise<NormalizedDraftExam> {
   const response = await ai.run("@cf/meta/llama-3.1-70b-instruct" as any, {
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: buildSystemPrompt(input) },
       {
         role: "user",
         content: [
