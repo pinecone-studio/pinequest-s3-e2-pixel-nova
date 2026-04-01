@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
+import MathText from "@/components/MathText";
 import { formatTimer } from "../utils";
 import type { Exam, Violations } from "../types";
 
@@ -42,9 +43,9 @@ function QuestionBlock({
         <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[#edf3ff] text-sm font-semibold text-[#355cde]">
           {index + 1}
         </div>
-        <h2 className="pt-1 text-[18px] font-semibold leading-8 text-slate-900 sm:text-[20px]">
-          {question.text}
-        </h2>
+        <div className="pt-1 text-[18px] font-semibold leading-8 text-slate-900 sm:text-[20px]">
+          <MathText text={question.text} />
+        </div>
       </div>
 
       {question.imageUrl && (
@@ -81,7 +82,10 @@ function QuestionBlock({
                 }`}
                 onClick={() => onSelectMcq(question.id, option)}
               >
-                {label}. {option}
+                <div className="flex flex-wrap items-start gap-1">
+                  <span>{label}.</span>
+                  <MathText text={option} className="flex-1" />
+                </div>
               </button>
             );
           })}

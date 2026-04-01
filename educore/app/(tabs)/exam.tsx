@@ -20,6 +20,7 @@ import {
   View,
 } from "react-native";
 
+import MathText from "@/components/MathText";
 import MobileProctorCamera from "@/components/student-app/MobileProctorCamera";
 import { useStudentApp } from "@/lib/student-app/context";
 import { useExamAudioRecorder } from "@/lib/student-app/hooks/use-exam-audio-recorder";
@@ -341,7 +342,7 @@ function ExamDetailModal({
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Exam list screen (tab = "active" | "history") Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Exam list screen (tab = "active" | "history")
 
 function ExamListScreen() {
   const { history, upcomingExams } = useStudentApp();
@@ -1262,9 +1263,10 @@ export default function ExamScreen() {
             <Text style={styles.questionCounter}>
               Question {activeSession.currentQuestionIndex + 1}
             </Text>
-            <Text style={styles.questionText}>
-              {currentQuestion.questionText}
-            </Text>
+            <MathText
+              text={currentQuestion.questionText}
+              style={styles.questionText}
+            />
 
             {currentQuestion.imageUrl ? (
               <Image
@@ -1288,14 +1290,30 @@ export default function ExamScreen() {
                         selected && styles.optionButtonSelected,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.optionLabel,
-                          selected && styles.optionLabelSelected,
-                        ]}
+                      <View
+                        style={{
+                          alignItems: "flex-start",
+                          flexDirection: "row",
+                          flexWrap: "wrap",
+                          gap: 4,
+                        }}
                       >
-                        {option.label}. {option.text}
-                      </Text>
+                        <Text
+                          style={[
+                            styles.optionLabel,
+                            selected && styles.optionLabelSelected,
+                          ]}
+                        >
+                          {option.label}.
+                        </Text>
+                        <MathText
+                          text={option.text}
+                          style={[
+                            styles.optionLabel,
+                            selected && styles.optionLabelSelected,
+                          ]}
+                        />
+                      </View>
                     </Pressable>
                   );
                 })}

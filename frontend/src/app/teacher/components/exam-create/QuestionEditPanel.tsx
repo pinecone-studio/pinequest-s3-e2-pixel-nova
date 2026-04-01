@@ -57,16 +57,14 @@ export default function QuestionEditPanel({
               className={buttonGhost}
               disabled={imageBusy}
               onClick={onOpenCrop}
-              type="button"
-            >
+              type="button">
               {imageBusy ? "Ачаалж байна..." : "Re-crop image"}
             </button>
             <button
               className="rounded-xl border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
               disabled={imageBusy}
               onClick={onRemoveImage}
-              type="button"
-            >
+              type="button">
               Remove wrong image
             </button>
           </>
@@ -74,8 +72,7 @@ export default function QuestionEditPanel({
           <button
             className={buttonGhost}
             onClick={() => attachInputRef.current?.click()}
-            type="button"
-          >
+            type="button">
             Attach page crop
           </button>
         )}
@@ -126,8 +123,7 @@ export default function QuestionEditPanel({
             {activeOptions.map((option, optionIndex) => (
               <div
                 key={`${activeQuestion.id}-${optionIndex}`}
-                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2"
-              >
+                className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
                 <span className="grid h-6 w-6 place-items-center rounded-lg border border-border bg-card text-xs font-semibold text-muted-foreground">
                   {optionLabels[optionIndex] ?? optionIndex + 1}
                 </span>
@@ -153,8 +149,7 @@ export default function QuestionEditPanel({
                   className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600"
                   onClick={() =>
                     removeQuestionOption(activeQuestion.id, optionIndex)
-                  }
-                >
+                  }>
                   Remove
                 </button>
               </div>
@@ -163,8 +158,7 @@ export default function QuestionEditPanel({
 
           <button
             className={buttonGhost}
-            onClick={() => addQuestionOption(activeQuestion.id)}
-          >
+            onClick={() => addQuestionOption(activeQuestion.id)}>
             + Хариулт нэмэх
           </button>
         </div>
