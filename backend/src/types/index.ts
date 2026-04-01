@@ -3,6 +3,10 @@ import type { Context } from "hono";
 // Hono app environment — used by all routes
 export type AppEnv = {
   Bindings: Env & {
+    RATE_LIMIT_GENERAL_READ?: RateLimit;
+    RATE_LIMIT_HIGH_COST?: RateLimit;
+    RATE_LIMIT_STUDENT_WRITE?: RateLimit;
+    RATE_LIMIT_TEACHER_MUTATION?: RateLimit;
     R2_ACCESS_KEY_ID?: string;
     R2_ACCOUNT_ID?: string;
     R2_BUCKET_NAME?: string;

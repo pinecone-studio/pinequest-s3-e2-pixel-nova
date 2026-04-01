@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { errorHandler } from "./middleware/error-handler";
+import { rateLimitMiddleware } from "./middleware/rate-limit";
 import type { AppEnv } from "./types";
 import auth from "./routes/auth.routes";
 import examRoutes from "./routes/exam.routes";
@@ -24,6 +25,7 @@ const app = new Hono<AppEnv>();
 
 // Global middleware
 app.use("*", logger());
+app.use("*", rateLimitMiddleware);
 app.use(
   "*",
   cors({
