@@ -138,6 +138,31 @@ describe("StudentResultView", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  it("renders traditional Mongolian report content through MongolianText", () => {
+    const traditionalText = "\u182e\u1823\u1829\u182d\u1823\u182f";
+
+    render(
+      <StudentResultView
+        lastSubmission={mockSubmission}
+        answerReport={[
+          {
+            question: {
+              id: "q3",
+              text: traditionalText,
+              correctAnswer: traditionalText,
+            },
+            answer: "",
+            correct: false,
+          },
+        ]}
+        {...defaultResultProps}
+        onBack={jest.fn()}
+      />,
+    );
+
+    expect(screen.getAllByTestId("traditional-mongolian-text")).toHaveLength(2);
+  });
+
   it("renders with empty answer report", () => {
     render(
       <StudentResultView
