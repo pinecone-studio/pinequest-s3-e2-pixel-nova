@@ -1,5 +1,6 @@
 import { parseQuestionsFromText } from "../utils";
 import type { Question } from "../types";
+import { recognizeWithFallback } from "./import-ocr";
 import { downscaleImage, readFileAsDataUrl } from "./import-utils";
 
 type ImageImportResult = {
@@ -23,7 +24,7 @@ export const parseImageQuestions = async (
     ) => Promise<{ data: { text: string } }>;
   };
   const tesseract = (await import("tesseract.js")) as Tesseract;
-  const result = await tesseract.recognize(dataUrl, "eng");
+  const result = await recognizeWithFallback(tesseract, dataUrl);
   const rawText = result.data.text || "";
   const parsed = parseQuestionsFromText(rawText, new Map());
   const forcedMcq = parsed.map((question, idx) => ({
