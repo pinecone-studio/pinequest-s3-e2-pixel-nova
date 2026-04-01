@@ -21,11 +21,6 @@ export default function TabLayout() {
         <Icon sf="chart.bar.fill" drawable="ic_menu_sort_by_size" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="leaderboard">
-        <Label>Leaderboard</Label>
-        <Icon sf="trophy.fill" drawable="ic_menu_upload" />
-      </NativeTabs.Trigger>
-
       <NativeTabs.Trigger name="profile">
         <Label>Profile</Label>
         <Icon sf="person.fill" drawable="ic_menu_preferences" />
