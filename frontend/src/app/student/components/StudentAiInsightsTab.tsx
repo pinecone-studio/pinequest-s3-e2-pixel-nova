@@ -2,11 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Award,
+  BarChart3,
   BrainCircuit,
+  CheckCircle2,
+  CircleAlert,
+  Clock3,
+  Flame,
+  Gauge,
   Lightbulb,
   Sparkles,
   Target,
   TrendingUp,
+  Trophy,
 } from "lucide-react";
 import {
   buildStudentAiInsight,
@@ -149,6 +157,63 @@ export default function StudentAiInsightsTab({
       ? `#${currentRank} / ${totalStudents}`
       : "Тооцогдож байна";
 
+  const averageScore = snapshot.stats.average;
+  const nextLevelXp = Math.max(levelInfo.minXP + 150 - currentXp, 0);
+  const summaryCards = [
+    {
+      label: "Одоогийн түвшин",
+      value: `Түвшин ${levelInfo.level}`,
+      helper: levelInfo.name,
+      icon: Trophy,
+      tone: "text-[#5167f6] bg-[#eef2ff]",
+    },
+    {
+      label: "XP эрэмбэ",
+      value: rankLabel,
+      helper: `${currentXp} XP цугларсан`,
+      icon: Award,
+      tone: "text-[#f08b3e] bg-[#fff3e7]",
+    },
+    {
+      label: "Дундаж оноо",
+      value: `${averageScore}%`,
+      helper: snapshot.stats.trendLabel,
+      icon: Gauge,
+      tone: "text-[#0f9f77] bg-[#ebfbf5]",
+    },
+    {
+      label: "Дараагийн зорилт",
+      value: `${nextLevelXp} XP`,
+      helper: "Дараагийн түвшин хүртэл",
+      icon: Flame,
+      tone: "text-[#d94f70] bg-[#fff0f4]",
+    },
+  ];
+
+  const subjectStatusMeta = {
+    strong: {
+      label: "Давуу гүйцэтгэл",
+      icon: CheckCircle2,
+      chipClass: "bg-emerald-50 text-emerald-700",
+      barClass: "bg-emerald-500",
+      panelClass: "border-emerald-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7fdf9_100%)]",
+    },
+    focus: {
+      label: "Анхаарах шаардлагатай",
+      icon: CircleAlert,
+      chipClass: "bg-amber-50 text-amber-700",
+      barClass: "bg-amber-500",
+      panelClass: "border-amber-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]",
+    },
+    steady: {
+      label: "Тогтвортой түвшин",
+      icon: BarChart3,
+      chipClass: "bg-[#eef2ff] text-[#5167f6]",
+      barClass: "bg-[#7b8cff]",
+      panelClass: "border-[#edf1ff] bg-[#fbfcff]",
+    },
+  } as const;
+
   return (
     <section className="space-y-6">
       <div className="relative overflow-hidden rounded-[32px] border border-[#dfe4ff] bg-[linear-gradient(135deg,#ffffff_0%,#f7f9ff_54%,#eef4ff_100%)] px-5 py-6 shadow-[0_24px_60px_rgba(77,92,148,0.10)] sm:px-6 lg:px-8">
@@ -183,6 +248,33 @@ export default function StudentAiInsightsTab({
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={item.label}
+              className="rounded-[26px] border border-[#e8ecfb] bg-white/95 px-5 py-5 shadow-[0_18px_40px_rgba(78,93,132,0.07)]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    {item.label}
+                  </div>
+                  <div className="mt-3 text-[1.55rem] font-semibold tracking-[-0.04em] text-slate-900">
+                    {item.value}
+                  </div>
+                  <div className="mt-1 text-sm text-slate-500">{item.helper}</div>
+                </div>
+                <div className={`grid h-12 w-12 place-items-center rounded-2xl ${item.tone}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
@@ -249,26 +341,41 @@ export default function StudentAiInsightsTab({
         </div>
 
         <div className="space-y-5">
-          <div className={cardClass}>
+          <div className={`${cardClass} bg-[linear-gradient(180deg,#ffffff_0%,#fbfdfb_100%)]`}>
             <div className="flex items-center gap-2 text-sm font-semibold text-[#31a16b]">
               <TrendingUp className="h-4 w-4" />
               Давуу тал
             </div>
             <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
               {snapshot.strengths.map((item) => (
-                <li key={item} className="rounded-[18px] bg-[#f7fbf8] px-4 py-3">
-                  {item}
+                <li
+                  key={item}
+                  className="flex gap-3 rounded-[18px] border border-emerald-100 bg-[#f7fbf8] px-4 py-3"
+                >
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                  <div>{item}</div>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className={cardClass}>
-            <div className="text-sm font-semibold text-[#ef8c46]">Анхаарах зүйл</div>
+          <div className={`${cardClass} bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]`}>
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#ef8c46]">
+              <CircleAlert className="h-4 w-4" />
+              Анхаарах зүйл
+            </div>
             <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
               {snapshot.focusAreas.map((item) => (
-                <li key={item} className="rounded-[18px] bg-[#fff9f4] px-4 py-3">
-                  {item}
+                <li
+                  key={item}
+                  className="flex gap-3 rounded-[18px] border border-amber-100 bg-[#fff9f4] px-4 py-3"
+                >
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700">
+                    <Lightbulb className="h-4 w-4" />
+                  </div>
+                  <div>{item}</div>
                 </li>
               ))}
             </ul>
@@ -277,8 +384,11 @@ export default function StudentAiInsightsTab({
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <div className={cardClass}>
-          <div className="text-sm font-semibold text-slate-900">Сэдвийн ажиглалт</div>
+        <div className={`${cardClass} bg-[linear-gradient(180deg,#ffffff_0%,#f9fbff_100%)]`}>
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <BarChart3 className="h-4 w-4 text-[#5167f6]" />
+            Сэдвийн ажиглалт
+          </div>
           <div className="mt-1 text-sm text-slate-500">
             Аль сэдэв дээр тогтвортой, аль хэсэг дээр илүү ажиллах хэрэгтэйг харуулна.
           </div>
@@ -291,42 +401,34 @@ export default function StudentAiInsightsTab({
               snapshot.subjectSignals.map((subject) => (
                 <div
                   key={subject.subject}
-                  className="rounded-[18px] border border-[#edf1ff] bg-[#fbfcff] px-4 py-4"
+                  className={`rounded-[20px] border px-4 py-4 ${subjectStatusMeta[subject.status].panelClass}`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white shadow-[0_10px_24px_rgba(59,78,111,0.08)]">
+                        {(() => {
+                          const Icon = subjectStatusMeta[subject.status].icon;
+                          return <Icon className="h-4 w-4 text-slate-700" />;
+                        })()}
+                      </div>
+                      <div className="min-w-0">
                       <div className="truncate text-sm font-semibold text-slate-900">
                         {subject.subject}
                       </div>
                       <div className="mt-1 text-xs text-slate-400">
-                        {subject.status === "strong"
-                          ? "Давуу гүйцэтгэл"
-                          : subject.status === "focus"
-                            ? "Анхаарах шаардлагатай"
-                            : "Тогтвортой түвшин"}
+                        {subjectStatusMeta[subject.status].label}
                       </div>
                     </div>
+                    </div>
                     <div
-                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                        subject.status === "strong"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : subject.status === "focus"
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-white text-slate-700"
-                      }`}
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${subjectStatusMeta[subject.status].chipClass}`}
                     >
                       {subject.average}%
                     </div>
                   </div>
                   <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e8eefc]">
                     <div
-                      className={`h-full rounded-full ${
-                        subject.status === "strong"
-                          ? "bg-emerald-500"
-                          : subject.status === "focus"
-                            ? "bg-amber-500"
-                            : "bg-[#7b8cff]"
-                      }`}
+                      className={`h-full rounded-full ${subjectStatusMeta[subject.status].barClass}`}
                       style={{ width: `${Math.min(100, Math.max(0, subject.average))}%` }}
                     />
                   </div>
@@ -336,7 +438,7 @@ export default function StudentAiInsightsTab({
           </div>
         </div>
 
-        <div className={cardClass}>
+        <div className={`${cardClass} bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)]`}>
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <Target className="h-4 w-4 text-[#5167f6]" />
             Дараагийн алхам
@@ -348,12 +450,18 @@ export default function StudentAiInsightsTab({
             {snapshot.actionPlan.map((item, index) => (
               <div
                 key={item}
-                className="flex gap-4 rounded-[20px] border border-[#e8ecfb] bg-[#fbfcff] px-4 py-4"
+                className="flex gap-4 rounded-[22px] border border-[#e8ecfb] bg-white px-4 py-4 shadow-[0_14px_30px_rgba(77,92,148,0.06)]"
               >
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#eef2ff] text-sm font-semibold text-[#5167f6]">
                   {index + 1}
                 </div>
-                <div className="text-sm leading-7 text-slate-700">{item}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    <Clock3 className="h-4 w-4 text-[#5167f6]" />
+                    Алхам {index + 1}
+                  </div>
+                  <div className="mt-1 text-sm leading-7 text-slate-700">{item}</div>
+                </div>
               </div>
             ))}
           </div>

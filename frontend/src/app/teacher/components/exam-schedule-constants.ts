@@ -51,14 +51,64 @@ export const secondOptions = ["00", "15", "30", "45"];
 export const groupOptions = ["А", "Б", "В", "Г"];
 
 export const ubSchoolOptions = [
-  { label: "Pinecone сургууль", latitude: 47.918873, longitude: 106.917701, radiusMeters: 3000 },
-  { label: "Шинэ Монгол сургууль", latitude: 47.9199, longitude: 106.9172, radiusMeters: 2000 },
-  { label: "Орчлон сургууль", latitude: 47.9226, longitude: 106.8948, radiusMeters: 2000 },
-  { label: "Сант сургууль", latitude: 47.9148, longitude: 106.9054, radiusMeters: 1500 },
-  { label: "Хобби сургууль", latitude: 47.9127, longitude: 106.8838, radiusMeters: 1500 },
-  { label: "Монгол Тэмүүлэл сургууль", latitude: 47.9282, longitude: 106.9694, radiusMeters: 2500 },
-  { label: "Бритиш сургууль", latitude: 47.9144, longitude: 106.9348, radiusMeters: 1500 },
-  { label: "Эрдмийн Ундраа цогцолбор сургууль", latitude: 47.9236, longitude: 106.8865, radiusMeters: 2000 },
-  { label: "1-р сургууль", latitude: 47.9221, longitude: 106.9121, radiusMeters: 1500 },
-  { label: "23-р сургууль", latitude: 47.9214, longitude: 106.9005, radiusMeters: 1500 },
+  {
+    label: "Pinecone academy",
+    latitude: 47.918873,
+    longitude: 106.917701,
+    radiusMeters: 3000,
+  },
+  {
+    label: "Шинэ Монгол сургууль",
+    latitude: 47.9199,
+    longitude: 106.9172,
+    radiusMeters: 2000,
+  },
+  {
+    label: "Орчлон сургууль",
+    latitude: 47.9226,
+    longitude: 106.8948,
+    radiusMeters: 2000,
+  },
+  {
+    label: "Сант сургууль",
+    latitude: 47.9148,
+    longitude: 106.9054,
+    radiusMeters: 1500,
+  },
+  {
+    label: "Хобби сургууль",
+    latitude: 47.9127,
+    longitude: 106.8838,
+    radiusMeters: 1500,
+  },
+  {
+    label: "Монгол Тэмүүлэл сургууль",
+    latitude: 47.9282,
+    longitude: 106.9694,
+    radiusMeters: 2500,
+  },
+  {
+    label: "Бритиш сургууль",
+    latitude: 47.9144,
+    longitude: 106.9348,
+    radiusMeters: 1500,
+  },
+  {
+    label: "Эрдмийн Ундраа цогцолбор сургууль",
+    latitude: 47.9236,
+    longitude: 106.8865,
+    radiusMeters: 2000,
+  },
+  {
+    label: "1-р сургууль",
+    latitude: 47.9221,
+    longitude: 106.9121,
+    radiusMeters: 1500,
+  },
+  {
+    label: "23-р сургууль",
+    latitude: 47.9214,
+    longitude: 106.9005,
+    radiusMeters: 1500,
+  },
 ] as const;

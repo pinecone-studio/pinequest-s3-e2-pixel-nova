@@ -18,6 +18,7 @@ import questionBankRoutes from "./routes/question-bank.routes";
 import pdfRoutes from "./routes/pdf.routes";
 import agentRoutes from "./routes/agent.routes";
 import notificationsRoutes from "./routes/notifications.routes";
+import schoolsRoutes from "./routes/schools.routes";
 
 const app = new Hono<AppEnv>();
 
@@ -69,5 +70,6 @@ app.route("/api/question-bank", questionBankRoutes);
 app.route("/api/pdf", pdfRoutes);
 app.route("/api/agent", agentRoutes);
 app.route("/api/notifications", notificationsRoutes);
+app.route("/api/schools", schoolsRoutes);
 
 export default app;
