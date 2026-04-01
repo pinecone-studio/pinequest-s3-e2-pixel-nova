@@ -28,3 +28,12 @@ export function unauthorized(c: Context, message: string = "Unauthorized") {
 export function forbidden(c: Context, message: string = "Forbidden") {
   return error(c, "FORBIDDEN", message, 403);
 }
+
+export function tooManyRequests(
+  c: Context,
+  message: string = "Too many requests",
+  retryAfterSeconds: number = 60,
+) {
+  c.header("Retry-After", String(retryAfterSeconds));
+  return error(c, "TOO_MANY_REQUESTS", message, 429);
+}
