@@ -35,7 +35,7 @@ export type StudentAppContextValue = {
   saveProfile: (payload: StudentProfile) => Promise<void>;
   joinExam: (roomCode: string) => Promise<ActiveExamSession>;
   recoverActiveSession: () => Promise<void>;
-  startExam: () => Promise<void>;
+  startExam: (options?: { audioReady?: boolean }) => Promise<void>;
   answerQuestion: (questionId: string, answer: AnswerValue) => Promise<void>;
   setCurrentQuestionIndex: (index: number) => void;
   logIntegrityEvent: (
@@ -43,6 +43,6 @@ export type StudentAppContextValue = {
     metadata?: string,
   ) => Promise<void>;
   setIntegrityWarning: (warningMessage: string | null) => void;
-  submitCurrentExam: () => Promise<SessionResultResponse>;
+  submitCurrentExam: (options?: { beforeSubmit?: () => Promise<void> }) => Promise<SessionResultResponse>;
   clearResult: () => void;
 };

@@ -17,6 +17,7 @@ import {
 
 import MobileProctorCamera from "@/components/student-app/MobileProctorCamera";
 import { useStudentApp } from "@/lib/student-app/context";
+import { useExamAudioRecorder } from "@/lib/student-app/hooks/use-exam-audio-recorder";
 import {
   computeRemainingSeconds,
   formatCountdown,
@@ -26,7 +27,7 @@ import {
 } from "@/lib/student-app/utils";
 import { examStyles as styles } from "@/styles/screens/exam";
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Types Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Types
 
 type TabKey = "active" | "history";
 
@@ -167,7 +168,7 @@ function wasLateSubmission(
   return started.getTime() >= scheduled.getTime() + 5 * 60 * 1000;
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Exam list screen (tab = "active" | "history") Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Exam list screen (tab = "active" | "history")
 
 function ExamListScreen() {
   const { history, upcomingExams } = useStudentApp();
@@ -337,7 +338,7 @@ function ExamListScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.pageTitle}>Шалгалтуудад</Text>
+      <Text style={styles.pageTitle}>Exams</Text>
 
       {/* Tab switcher */}
       <View style={styles.tabRow}>
@@ -351,7 +352,7 @@ function ExamListScreen() {
               activeTab === "active" && styles.tabTextActive,
             ]}
           >
-            Шалгалтууд
+            Upcoming
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -364,7 +365,7 @@ function ExamListScreen() {
               activeTab === "history" && styles.tabTextActive,
             ]}
           >
-            Шалгалтын түүх
+            History
           </Text>
         </TouchableOpacity>
       </View>
@@ -374,14 +375,14 @@ function ExamListScreen() {
         <Ionicons name="search-outline" size={18} color="#98A2B3" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Шалгалт хайх..."
+          placeholder="Search exams..."
           placeholderTextColor="#AAB0C0"
           value={search}
           onChangeText={setSearch}
         />
       </View>
 
-      {/* List Ã¢â‚¬â€ replace with real data from context when ready */}
+      {/* List */}
       {activeTab === "active" ? (
         <ActiveExamList search={search} items={activeItems} />
       ) : (
@@ -573,6 +574,8 @@ export default function ExamScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [textDraft, setTextDraft] = useState("");
+  const [cameraReady, setCameraReady] = useState(false);
+  const [proctoringBlockedMessage, setProctoringBlockedMessage] = useState<string | null>(null);
   const submitRequestedRef = useRef(false);
 
   const currentQuestion =
@@ -582,7 +585,16 @@ export default function ExamScreen() {
     : {};
   const isJoined =
     activeSession?.status === "joined" || activeSession?.status === "late";
-  const isSyncBlocked = activeSession?.syncStatus === "syncing" || submitting;
+  const audioRecorder = useExamAudioRecorder({
+    required: Boolean(activeSession?.exam.requiresAudioRecording),
+    session: activeSession,
+    student,
+  });
+  const isSyncBlocked =
+    activeSession?.syncStatus === "syncing" ||
+    submitting ||
+    Boolean(proctoringBlockedMessage) ||
+    audioRecorder.status === "blocked";
 
   const persistTextAnswer = useCallback(async () => {
     if (!currentQuestion || !activeSession) return;
@@ -636,7 +648,11 @@ export default function ExamScreen() {
       setSubmitting(true);
       setSyncError(null);
       try {
-        await submitCurrentExam();
+        await submitCurrentExam({
+          beforeSubmit: async () => {
+            await audioRecorder.stop();
+          },
+        });
         router.replace("/result");
       } catch (error) {
         submitRequestedRef.current = false;
@@ -645,8 +661,68 @@ export default function ExamScreen() {
         setSubmitting(false);
       }
     },
-    [persistTextAnswer, router, submitCurrentExam],
+    [audioRecorder, persistTextAnswer, router, submitCurrentExam],
   );
+
+  const handleRecoverProctoring = useCallback(async () => {
+    if (!activeSession || activeSession.status !== "in_progress") {
+      return;
+    }
+
+    setSyncError(null);
+
+    try {
+      const permissionResult = cameraPermission?.granted
+        ? cameraPermission
+        : await requestCameraPermission();
+
+      if (!permissionResult?.granted) {
+        setSyncError("Camera permission is required before the exam can continue.");
+        return;
+      }
+
+      if (!cameraReady) {
+        setSyncError(
+          "The exam camera is still preparing. Wait for the camera card to show Ready.",
+        );
+        return;
+      }
+
+      if (activeSession.exam.requiresAudioRecording) {
+        const prepared = await audioRecorder.prepare();
+        if (!prepared) {
+          setSyncError(
+            audioRecorder.error ??
+              "Microphone recording must be ready before the exam can continue.",
+          );
+          return;
+        }
+
+        const started = await audioRecorder.start();
+        if (!started) {
+          setSyncError(
+            audioRecorder.error ??
+              "Microphone recording must be running before the exam can continue.",
+          );
+          return;
+        }
+      }
+
+      setProctoringBlockedMessage(null);
+      setIntegrityWarning(null);
+    } catch (error) {
+      setSyncError(
+        normalizeApiError(error, "Could not recover exam proctoring."),
+      );
+    }
+  }, [
+    activeSession,
+    audioRecorder,
+    cameraPermission,
+    cameraReady,
+    requestCameraPermission,
+    setIntegrityWarning,
+  ]);
 
   const moveQuestion = async (direction: -1 | 1) => {
     await persistTextAnswer();
@@ -683,6 +759,9 @@ export default function ExamScreen() {
     const subscription = AppState.addEventListener("change", (nextState) => {
       setAppIsActive(nextState === "active");
       if (nextState !== "active" && activeSession?.status === "in_progress") {
+        setProctoringBlockedMessage(
+          "The exam was paused because the app left the foreground. Return to the exam and recover proctoring before continuing.",
+        );
         setIntegrityWarning(
           "The app moved out of the foreground during an active exam.",
         );
@@ -700,6 +779,9 @@ export default function ExamScreen() {
           activeSession.status === "in_progress" &&
           !submitRequestedRef.current
         ) {
+          setProctoringBlockedMessage(
+            "The exam was paused because you left the exam screen.",
+          );
           setIntegrityWarning(
             "You left the exam screen. Stay inside the exam until you submit.",
           );
@@ -708,6 +790,21 @@ export default function ExamScreen() {
       };
     }, [activeSession, logIntegrityEvent, setIntegrityWarning]),
   );
+
+  useEffect(() => {
+    if (audioRecorder.status === "blocked" || audioRecorder.status === "error") {
+      setProctoringBlockedMessage(
+        audioRecorder.error ??
+          "Audio recording stopped unexpectedly. Recover proctoring before continuing.",
+      );
+    }
+  }, [audioRecorder.error, audioRecorder.status]);
+
+  useEffect(() => {
+    return () => {
+      void audioRecorder.stop();
+    };
+  }, [audioRecorder]);
 
   const progressLabel = useMemo(() => {
     if (!activeSession || activeSession.questions.length === 0) return "0/0";
@@ -720,13 +817,11 @@ export default function ExamScreen() {
   if (!hydrated) {
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <Text style={styles.pageTitle}>Шалгалт</Text>
+        <Text style={styles.pageTitle}>Exam</Text>
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyEmoji}>⏳</Text>
-          <Text style={styles.emptyTitle}>Уншиж байна...</Text>
-          <Text style={styles.emptyText}>
-            Шалгалтын мэдээлэл сэргээж байна.
-          </Text>
+          <Text style={styles.emptyEmoji}>Loading</Text>
+          <Text style={styles.emptyTitle}>Loading...</Text>
+          <Text style={styles.emptyText}>Restoring the latest exam state.</Text>
         </View>
       </ScrollView>
     );
@@ -744,14 +839,47 @@ export default function ExamScreen() {
         ? cameraPermission
         : await requestCameraPermission();
       if (!permissionResult?.granted) {
+        setSyncError("Camera permission is required before the exam can start.");
+        return;
+      }
+      if (!cameraReady) {
         setSyncError(
-          "Камерын зөвшөөрөл шаардлагатай. Expo Go build дээр шалгалт эхлэхээс өмнө front camera access зөвшөөрөөд дахин оролдоно уу.",
+          "The exam camera is still preparing. Wait for the camera card to show Ready.",
         );
         return;
       }
-      await startExam();
+
+      const requiresAudioRecording = Boolean(activeSession?.exam.requiresAudioRecording);
+      let audioReady = false;
+
+      if (requiresAudioRecording) {
+        const prepared = await audioRecorder.prepare();
+        if (!prepared) {
+          setSyncError(
+            audioRecorder.error ??
+              "Microphone recording must be ready before the exam can start.",
+          );
+          return;
+        }
+
+        const started = await audioRecorder.start();
+        if (!started) {
+          setSyncError(
+            audioRecorder.error ??
+              "Microphone recording must be running before the exam can start.",
+          );
+          return;
+        }
+        audioReady = true;
+      }
+
+      setProctoringBlockedMessage(null);
+      await startExam({
+        audioReady: requiresAudioRecording ? audioReady : undefined,
+      });
       setRemainingSeconds(computeRemainingSeconds(activeSession.timerEndsAt));
     } catch (error) {
+      await audioRecorder.stop();
       setSyncError(normalizeApiError(error, "Could not start the exam."));
     }
   };
@@ -775,7 +903,7 @@ export default function ExamScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.pageTitle}>Шалгалт</Text>
+      <Text style={styles.pageTitle}>Exam</Text>
 
       <View style={styles.examCard}>
         <View style={styles.examCardTop} />
@@ -789,11 +917,11 @@ export default function ExamScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.examTitle}>{activeSession.exam.title}</Text>
               <Text style={styles.examMeta}>
-                📅{" "}
+                {"Scheduled: "}
                 {formatDateTime(
                   activeSession.exam.scheduledAt ?? activeSession.startedAt,
                 )}{" "}
-                · {activeSession.exam.durationMin} мин
+                · {activeSession.exam.durationMin} min
               </Text>
             </View>
             <View
@@ -811,7 +939,7 @@ export default function ExamScreen() {
                 ]}
               >
                 {activeSession.entryStatus === "late"
-                  ? "Хоцорсон"
+                  ? "Late"
                   : getEntryStatusLabel(activeSession.entryStatus)}
               </Text>
             </View>
@@ -820,13 +948,13 @@ export default function ExamScreen() {
           {!isJoined && (
             <View style={styles.metaRow}>
               <View style={styles.metaChip}>
-                <Text style={styles.metaChipLabel}>Үлдсэн хугацаа</Text>
+                <Text style={styles.metaChipLabel}>Time left</Text>
                 <Text style={styles.metaChipValue}>
                   {formatCountdown(remainingSeconds)}
                 </Text>
               </View>
               <View style={styles.metaChip}>
-                <Text style={styles.metaChipLabel}>Явц</Text>
+                <Text style={styles.metaChipLabel}>Progress</Text>
                 <Text style={styles.metaChipValue}>{progressLabel}</Text>
               </View>
             </View>
@@ -838,36 +966,55 @@ export default function ExamScreen() {
 
           {integrity.warningMessage ? (
             <View style={styles.warningBox}>
-              <Text style={styles.warningText}>
-                ⚠️ {integrity.warningMessage}
-              </Text>
+              <Text style={styles.warningText}>{integrity.warningMessage}</Text>
+            </View>
+          ) : null}
+
+          {proctoringBlockedMessage ? (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>{proctoringBlockedMessage}</Text>
             </View>
           ) : null}
 
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              This build does not capture or upload snapshots. Browser-style
-              local camera proctoring is prepared for a future native build,
-              while app background and screen-blur integrity events continue to
-              log normally.
+              Camera preflight, periodic snapshot evidence, and rolling audio
+              recording are managed from this screen. Proctoring must stay active
+              for the whole exam.
             </Text>
           </View>
 
           {syncError ? <Text style={styles.errorText}>{syncError}</Text> : null}
 
+          <Text style={styles.infoText}>
+            Audio status: {audioRecorder.status}
+            {audioRecorder.lastUploadedAt
+              ? ` · Last upload ${formatDateTime(audioRecorder.lastUploadedAt)}`
+              : ""}
+          </Text>
+
           {isJoined ? (
             <>
+              <MobileProctorCamera
+                captureEnabled={false}
+                isEnabled
+                permissionGranted={!!cameraPermission?.granted}
+                sessionId={activeSession.sessionId}
+                student={student}
+                onCameraReadyChange={setCameraReady}
+                onViolation={logIntegrityEvent}
+              />
               <TouchableOpacity
                 style={styles.primaryBtn}
                 onPress={() => void handleStart()}
               >
-                <Text style={styles.primaryBtnText}>Шалгалт эхлүүлэх</Text>
+                <Text style={styles.primaryBtnText}>Start exam</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.secondaryBtn}
                 onPress={() => void recoverActiveSession()}
               >
-                <Text style={styles.secondaryBtnText}>Шинэчлэх</Text>
+                <Text style={styles.secondaryBtnText}>Refresh session</Text>
               </TouchableOpacity>
             </>
           ) : null}
@@ -875,19 +1022,31 @@ export default function ExamScreen() {
       </View>
 
       {!isJoined ? (
-        <MobileProctorCamera
-          isEnabled={activeSession.status === "in_progress" && appIsActive}
-          permissionGranted={!!cameraPermission?.granted}
-          sessionId={activeSession.sessionId}
-          student={student}
-          onViolation={logIntegrityEvent}
-        />
+        <>
+          <MobileProctorCamera
+            captureEnabled={activeSession.status === "in_progress" && appIsActive}
+            isEnabled={activeSession.status === "in_progress" && appIsActive}
+            permissionGranted={!!cameraPermission?.granted}
+            sessionId={activeSession.sessionId}
+            student={student}
+            onCameraReadyChange={setCameraReady}
+            onViolation={logIntegrityEvent}
+          />
+          {proctoringBlockedMessage ? (
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={() => void handleRecoverProctoring()}
+            >
+              <Text style={styles.secondaryBtnText}>Recover proctoring</Text>
+            </TouchableOpacity>
+          ) : null}
+        </>
       ) : null}
 
       {!isJoined && currentQuestion ? (
         <View style={styles.questionCard}>
           <Text style={styles.questionCounter}>
-            {activeSession.currentQuestionIndex + 1}-р асуулт
+            Question {activeSession.currentQuestionIndex + 1}
           </Text>
           <Text style={styles.questionText}>
             {currentQuestion.questionText}
@@ -932,7 +1091,7 @@ export default function ExamScreen() {
               key={currentQuestion.id}
               multiline
               contextMenuHidden={integrity.capabilities.copyPasteRestricted}
-              placeholder="Хариултаа энд бичнэ үү"
+              placeholder="Write your answer here"
               placeholderTextColor="#BBBFC9"
               style={styles.answerInput}
               value={textDraft}
@@ -954,7 +1113,7 @@ export default function ExamScreen() {
             disabled={activeSession.currentQuestionIndex === 0 || isSyncBlocked}
             onPress={() => void moveQuestion(-1)}
           >
-            <Text style={styles.navBtnText}>← Өмнөх</Text>
+            <Text style={styles.navBtnText}>Previous</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -970,7 +1129,7 @@ export default function ExamScreen() {
             }
             onPress={() => void moveQuestion(1)}
           >
-            <Text style={styles.navBtnText}>Дараах →</Text>
+            <Text style={styles.navBtnText}>Next</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.primaryBtn, isSyncBlocked && styles.navBtnDisabled]}
@@ -978,7 +1137,7 @@ export default function ExamScreen() {
             onPress={() => void handleSubmit(false)}
           >
             <Text style={styles.primaryBtnText}>
-              {submitting ? "Илгээж байна..." : "Шалгалт илгээх"}
+              {submitting ? "Submitting..." : "Submit exam"}
             </Text>
           </TouchableOpacity>
         </View>

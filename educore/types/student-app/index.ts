@@ -54,6 +54,7 @@ export type SessionExam = {
   description?: string | null;
   durationMin: number;
   questionCount?: number;
+  requiresAudioRecording?: boolean;
   enabledCheatDetections?: string[];
   status?: string | null;
   scheduledAt?: string | null;
@@ -147,7 +148,54 @@ export type CheatEventType =
   | 'looking_away'
   | 'looking_down'
   | 'camera_blocked'
+  | 'microphone_permission_denied'
+  | 'audio_recording_interrupted'
+  | 'audio_upload_failed'
   | 'disqualification';
+
+export type CheatEventPayload = {
+  sessionId: string;
+  eventType: CheatEventType;
+  source?: string;
+  confidence?: number;
+  details?: Record<string, string | number | boolean | null>;
+  metadata?: string;
+};
+
+export type SnapshotUploadPayload = {
+  sessionId: string;
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+  capturedAt?: string;
+};
+
+export type SnapshotUploadResponse = {
+  assetUrl: string;
+  expiresAt: string;
+  objectKey: string;
+  uploadHeaders: Record<string, string>;
+  uploadUrl: string;
+};
+
+export type AudioChunkUploadPayload = {
+  sessionId: string;
+  mimeType: string;
+  sequenceNumber: number;
+  chunkStartedAt: string;
+  chunkEndedAt: string;
+  durationMs: number;
+  sizeBytes: number;
+};
+
+export type AudioChunkUploadResponse = {
+  expiresAt: string;
+  objectKey: string;
+  uploadHeaders: Record<string, string>;
+  uploadUrl: string;
+};
+
+export type AudioChunkFinalizePayload = AudioChunkUploadPayload & {
+  objectKey: string;
+};
 
 export type IntegrityCapability = {
   screenshotProtectionSupported: boolean;

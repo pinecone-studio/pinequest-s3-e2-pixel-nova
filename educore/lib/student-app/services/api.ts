@@ -1,11 +1,17 @@
 import type {
   ActiveExamSession,
   AnswerValue,
+  AudioChunkFinalizePayload,
+  AudioChunkUploadPayload,
+  AudioChunkUploadResponse,
   AuthUser,
+  CheatEventPayload,
   CheatEventType,
   JoinSessionResponse,
   SessionDetailResponse,
   SessionResultResponse,
+  SnapshotUploadPayload,
+  SnapshotUploadResponse,
   StudentExamHistoryItem,
   StudentProfile,
   StudentUpcomingExam,
@@ -175,11 +181,24 @@ export const getSessionDetail = async (student: AuthUser, sessionId: string) =>
   apiRequest<SessionDetailResponse>(`/api/sessions/${sessionId}`, { student });
 
 export const startSession = async (student: AuthUser, sessionId: string) =>
+  startSessionWithOptions(student, sessionId);
+
+export const startSessionWithOptions = async (
+  student: AuthUser,
+  sessionId: string,
+  options?: { audioReady?: boolean },
+) =>
   apiRequest<{ sessionId: string; status: string; startedAt: string }>(
     `/api/sessions/${sessionId}/start`,
     {
       method: "POST",
       student,
+      ...(options?.audioReady !== undefined
+        ? {
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ audioReady: options.audioReady }),
+          }
+        : {}),
     },
   );
 
@@ -216,17 +235,56 @@ export const getSessionResult = async (student: AuthUser, sessionId: string) =>
 
 export const reportCheatEvent = async (
   student: AuthUser,
-  session: ActiveExamSession,
-  eventType: CheatEventType,
+  sessionOrPayload: ActiveExamSession | CheatEventPayload,
+  eventType?: CheatEventType,
   metadata?: string,
-) =>
-  apiRequest("/api/cheat/event", {
+) => {
+  const payload =
+    "sessionId" in sessionOrPayload && "eventType" in sessionOrPayload
+      ? sessionOrPayload
+      : {
+          sessionId: sessionOrPayload.sessionId,
+          eventType: eventType as CheatEventType,
+          metadata,
+        };
+
+  return apiRequest("/api/cheat/event", {
     method: "POST",
     student,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: session.sessionId,
-      eventType,
-      metadata,
-    }),
+    body: JSON.stringify(payload),
+  });
+};
+
+export const createSnapshotUploadUrl = async (
+  student: AuthUser,
+  payload: SnapshotUploadPayload,
+) =>
+  apiRequest<SnapshotUploadResponse>("/api/cheat/snapshot-upload-url", {
+    method: "POST",
+    student,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+export const createAudioUploadUrl = async (
+  student: AuthUser,
+  payload: AudioChunkUploadPayload,
+) =>
+  apiRequest<AudioChunkUploadResponse>("/api/cheat/audio-upload-url", {
+    method: "POST",
+    student,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+export const finalizeAudioUpload = async (
+  student: AuthUser,
+  payload: AudioChunkFinalizePayload,
+) =>
+  apiRequest("/api/cheat/audio-chunks", {
+    method: "POST",
+    student,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });

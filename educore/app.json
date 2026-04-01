@@ -11,7 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow PineQuest to access your front camera during exams for proctoring."
+        "NSCameraUsageDescription": "Allow PineQuest to access your front camera during exams for proctoring.",
+        "NSMicrophoneUsageDescription": "Allow PineQuest to record microphone audio during exams when audio proctoring is required."
       }
     },
     "android": {
@@ -23,7 +24,8 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "predictiveBackGestureEnabled": false
     },
@@ -37,7 +39,7 @@
         "expo-camera",
         {
           "cameraPermission": "Allow PineQuest to access your front camera during exams.",
-          "recordAudioAndroid": false
+          "recordAudioAndroid": true
         }
       ],
       [

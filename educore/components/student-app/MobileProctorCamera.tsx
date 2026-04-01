@@ -1,31 +1,101 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { CameraView } from "expo-camera";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
-import { Pill } from '@/components/student-app/ui';
-import { useNativeProctoringCamera } from '@/lib/student-app/hooks/use-native-proctoring-camera';
-import type { AuthUser, CheatEventType } from '@/types/student-app';
+import { Pill } from "@/components/student-app/ui";
+import { uploadSnapshotFromBase64 } from "@/lib/student-app/services/proctoring-media";
+import type { AuthUser, CheatEventType } from "@/types/student-app";
 
 type MobileProctorCameraProps = {
+  captureEnabled: boolean;
   isEnabled: boolean;
   permissionGranted: boolean;
   sessionId?: string;
   student?: AuthUser | null;
+  onCameraReadyChange?: (ready: boolean) => void;
   onViolation?: (eventType: CheatEventType, metadata?: string) => Promise<void> | void;
 };
 
+const SNAPSHOT_INTERVAL_MS = 30_000;
+
 export default function MobileProctorCamera({
+  captureEnabled,
   isEnabled,
   permissionGranted,
   sessionId,
   student,
+  onCameraReadyChange,
   onViolation,
 }: MobileProctorCameraProps) {
-  const { error, events, isSupported, status } = useNativeProctoringCamera({
-    enabled: isEnabled,
-    onViolation,
-    permissionGranted,
-    sessionId,
-    student,
-  });
+  const cameraRef = useRef<CameraView | null>(null);
+  const snapshotTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastSnapshotAt, setLastSnapshotAt] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "uploading" | "error"
+  >("idle");
+
+  const captureSnapshot = useCallback(async () => {
+    if (!cameraRef.current || !student || !sessionId) {
+      return;
+    }
+
+    const picture = await cameraRef.current.takePictureAsync({
+      base64: true,
+      quality: 0.45,
+      skipProcessing: true,
+    });
+
+    if (!picture.base64) {
+      throw new Error("Snapshot capture did not return base64 data.");
+    }
+
+    setUploadStatus("uploading");
+    await uploadSnapshotFromBase64(
+      student,
+      {
+        sessionId,
+        mimeType: picture.format === "png" ? "image/png" : "image/jpeg",
+        capturedAt: new Date().toISOString(),
+      },
+      picture.base64,
+    );
+    setLastSnapshotAt(new Date().toISOString());
+    setUploadStatus("idle");
+  }, [sessionId, student]);
+
+  useEffect(() => {
+    onCameraReadyChange?.(cameraReady);
+  }, [cameraReady, onCameraReadyChange]);
+
+  useEffect(() => {
+    if (!captureEnabled || !cameraReady || !permissionGranted) {
+      if (snapshotTimerRef.current) {
+        clearInterval(snapshotTimerRef.current);
+        snapshotTimerRef.current = null;
+      }
+      return;
+    }
+
+    snapshotTimerRef.current = setInterval(() => {
+      void captureSnapshot().catch((captureError) => {
+        setUploadStatus("error");
+        setError(
+          captureError instanceof Error
+            ? captureError.message
+            : "Could not capture the exam snapshot.",
+        );
+      });
+    }, SNAPSHOT_INTERVAL_MS);
+
+    return () => {
+      if (snapshotTimerRef.current) {
+        clearInterval(snapshotTimerRef.current);
+        snapshotTimerRef.current = null;
+      }
+    };
+  }, [cameraReady, captureEnabled, captureSnapshot, permissionGranted]);
 
   if (!isEnabled) {
     return null;
@@ -50,75 +120,86 @@ export default function MobileProctorCamera({
       <View style={styles.header}>
         <Text style={styles.title}>Exam camera</Text>
         <Pill
-          label={isSupported ? status : 'Native build required'}
-          tone={isSupported ? 'success' : 'warning'}
+          label={cameraReady ? "Ready" : "Starting"}
+          tone={cameraReady ? "success" : "warning"}
         />
       </View>
 
+      <CameraView
+        ref={cameraRef}
+        facing="front"
+        style={styles.preview}
+        onCameraReady={() => {
+          setCameraReady(true);
+          setError(null);
+        }}
+        onMountError={(event) => {
+          setCameraReady(false);
+          setError(event.message);
+          void onViolation?.("camera_blocked", `camera-mount:${event.message}`);
+        }}
+      />
+
       <Text style={styles.status}>
-        Snapshot capture is disabled in this build.
+        {captureEnabled ? "Periodic evidence snapshots are active." : "Camera preflight is active."}
       </Text>
       <Text style={styles.message}>
-        This app is now prepared for local-only proctoring, but actual face detection
-        must run in a native build with frame processors. No snapshots are captured,
-        stored, or uploaded here.
+        The mobile client keeps the front camera ready, uploads periodic still-image
+        evidence during active exams, and remains ready for native local proctoring events.
       </Text>
-      <Text style={styles.message}>
-        The planned on-device detector will flag only `NO_FACE`, `MULTIPLE_FACES`,
-        `LOOKING_AWAY`, and `CAMERA_BLOCKED`, then send small event logs to the
-        backend.
-      </Text>
-
+      {lastSnapshotAt ? (
+        <Text style={styles.message}>Last snapshot uploaded at {lastSnapshotAt}</Text>
+      ) : null}
+      {uploadStatus === "uploading" ? (
+        <Text style={styles.message}>Uploading evidence snapshot...</Text>
+      ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <Text style={styles.debug}>
-        Status: {status} | events: {events.length} | mode: local-only scaffold
-      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFCF5',
+    backgroundColor: "#FFFCF5",
     borderRadius: 24,
     padding: 16,
     gap: 10,
     borderWidth: 1,
-    borderColor: '#E7DDCB',
+    borderColor: "#E7DDCB",
   },
   warningCard: {
-    borderColor: '#D8AA6B',
-    backgroundColor: '#FFF7E8',
+    borderColor: "#D8AA6B",
+    backgroundColor: "#FFF7E8",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: 12,
   },
   title: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#1D2A24',
+    fontWeight: "800",
+    color: "#1D2A24",
+  },
+  preview: {
+    height: 220,
+    borderRadius: 18,
+    overflow: "hidden",
   },
   message: {
     fontSize: 14,
     lineHeight: 21,
-    color: '#5E655D',
+    color: "#5E655D",
   },
   status: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#45604E',
+    fontWeight: "700",
+    color: "#45604E",
   },
   error: {
     fontSize: 13,
     lineHeight: 19,
-    color: '#A14A39',
-  },
-  debug: {
-    fontSize: 12,
-    color: '#7A7A72',
+    color: "#A14A39",
   },
 });

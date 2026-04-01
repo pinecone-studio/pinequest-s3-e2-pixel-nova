@@ -31,25 +31,48 @@ jest.mock("@/lib/student-app/context", () => ({
   useStudentApp: jest.fn(),
 }));
 
+jest.mock("@/lib/student-app/hooks/use-exam-audio-recorder", () => ({
+  useExamAudioRecorder: jest.fn(() => ({
+    error: null,
+    isSupported: true,
+    lastUploadedAt: null,
+    prepare: jest.fn(async () => true),
+    start: jest.fn(async () => true),
+    status: "ready",
+    stop: jest.fn(async () => undefined),
+  })),
+}));
+
 jest.mock("@/components/student-app/MobileProctorCamera", () => ({
   __esModule: true,
   default: ({
+    captureEnabled,
     isEnabled,
+    onCameraReadyChange,
     permissionGranted,
   }: {
+    captureEnabled?: boolean;
     isEnabled: boolean;
+    onCameraReadyChange?: (ready: boolean) => void;
     permissionGranted: boolean;
-  }) =>
-    isEnabled
-      ? // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require("react").createElement(
+  }) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const React = require("react");
+
+    React.useEffect(() => {
+      if (isEnabled && permissionGranted) {
+        onCameraReadyChange?.(true);
+      }
+    }, [isEnabled, onCameraReadyChange, permissionGranted]);
+
+    return isEnabled
+      ? React.createElement(
           "Text",
           null,
-          permissionGranted
-            ? "camera-preview-active"
-            : "camera-preview-blocked",
+          captureEnabled ? "camera-capturing" : "camera-preflight",
         )
-      : null,
+      : null;
+  },
 }));
 
 const mockUseStudentApp = useStudentApp as jest.MockedFunction<
@@ -162,7 +185,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("Уншиж байна...")).toBeTruthy();
+    expect(screen.getByText("Loading...")).toBeTruthy();
     screen.unmount();
   });
 
@@ -171,8 +194,8 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("Шалгалтуудад")).toBeTruthy();
-    expect(screen.getByPlaceholderText("Шалгалт хайх...")).toBeTruthy();
+    expect(screen.getByText("Exams")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Search exams...")).toBeTruthy();
     screen.unmount();
   });
 
@@ -192,10 +215,12 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    fireEvent.press(screen.getByText("Шалгалт эхлүүлэх"));
+    fireEvent.press(screen.getByText("Start exam"));
 
     await waitFor(() => {
-      expect(screen.getByText(/Камерын зөвшөөрөл шаардлагатай/)).toBeTruthy();
+      expect(
+        screen.getByText(/Camera permission is required before the exam can start/),
+      ).toBeTruthy();
     });
     expect(startExam).not.toHaveBeenCalled();
     screen.unmount();
@@ -210,12 +235,8 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(
-      screen.getByText(/This build does not capture or upload snapshots/),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(/background and screen-blur integrity events/),
-    ).toBeTruthy();
+    expect(screen.getByText(/camera-capturing/)).toBeTruthy();
+    expect(screen.getByText(/Audio status:/)).toBeTruthy();
     screen.unmount();
   });
 
@@ -224,7 +245,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.queryByText("Ð¨Ð°Ð»Ð³Ð°Ð»Ñ‚Ð°Ð½Ð´ Ð¾Ñ€Ð¾Ñ…")).toBeNull();
+    expect(screen.queryByText("Open exam")).toBeNull();
     screen.unmount();
   });
 
@@ -233,7 +254,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    fireEvent.press(screen.getByText("Шалгалтын түүх"));
+    fireEvent.press(screen.getByText("History"));
 
     expect(screen.queryByText("91")).toBeNull();
     screen.unmount();
