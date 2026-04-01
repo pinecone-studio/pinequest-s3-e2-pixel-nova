@@ -53,7 +53,10 @@ export default function StudentExamDetailSection({
           : selectedExam.examStartedAt
             ? "Идэвхтэй"
             : "Бэлэн",
-      teacher: teacherName?.trim() || "EduCore баг",
+      teacher:
+        selectedExam.teacherName?.trim() ||
+        teacherName?.trim() ||
+        "Pinecone баг",
       secondaryLabel: locationLabel ? "Анги" : "Өрөө",
       secondaryValue: locationLabel || selectedExam.roomCode || "Нээлттэй",
       dateLabel: formatDate(safeStart.toISOString()),

@@ -3,10 +3,12 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCameraPermissions } from "expo-camera";
 import { Redirect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Alert,
   AppState,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -39,6 +41,9 @@ type ActiveListItem = {
   duration: number;
   status: "active" | "waiting" | "late";
   badgeText: string;
+  className?: string | null;
+  groupName?: string | null;
+  teacherName?: string | null;
 };
 
 type HistoryListItem = {
@@ -168,7 +173,164 @@ function wasLateSubmission(
   return started.getTime() >= scheduled.getTime() + 5 * 60 * 1000;
 }
 
-// Exam list screen (tab = "active" | "history")
+function getMockTeacherName(title: string) {
+  if (title.toLowerCase().includes("english")) return "Г. Сарантуяа";
+  if (title.toLowerCase().includes("мат")) return "Б. Нарантуяа";
+  if (title.toLowerCase().includes("монгол")) return "Д. Оюун";
+  return "Г. Сарантуяа";
+}
+
+function ExamDetailModal({
+  exam,
+  visible,
+  onClose,
+}: {
+  exam: ActiveListItem | null;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  if (!exam) return null;
+
+  const classLabel = [exam.className, exam.groupName]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.detailOverlay}>
+        <SafeAreaView style={styles.detailSheet} edges={["top"]}>
+          <View style={styles.detailTopBar}>
+            <Pressable style={styles.detailBackButton} onPress={onClose}>
+              <Ionicons name="chevron-back" size={22} color="#111827" />
+            </Pressable>
+            <Text style={styles.detailHeaderTitle}>Дэлгэрэнгүй</Text>
+            <View style={styles.detailHeaderSpacer} />
+          </View>
+
+          <ScrollView
+            contentContainerStyle={styles.detailContent}
+            showsVerticalScrollIndicator={false}>
+            <View style={styles.detailHeroCard}>
+              <View style={styles.listCardRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailExamTitle}>{exam.title}</Text>
+                  <Text style={styles.detailExamSub}>Шалгалтын мэдээлэл</Text>
+                </View>
+                <View style={styles.statusPill}>
+                  <Text style={styles.statusPillText}>{exam.badgeText}</Text>
+                </View>
+              </View>
+
+              <View style={styles.detailInfoRow}>
+                <View style={styles.detailInfoChip}>
+                  <View style={styles.detailInfoIcon}>
+                    <Ionicons name="person-outline" size={18} color="#7C8798" />
+                  </View>
+                  <View>
+                    <Text style={styles.detailInfoLabel}>Багш</Text>
+                    <Text style={styles.detailInfoValue}>
+                      {exam.teacherName ?? getMockTeacherName(exam.title)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.detailInfoChip}>
+                  <View style={styles.detailInfoIcon}>
+                    <Ionicons name="school-outline" size={18} color="#7C8798" />
+                  </View>
+                  <View>
+                    <Text style={styles.detailInfoLabel}>Анги</Text>
+                    <Text style={styles.detailInfoValue}>
+                      {classLabel || "10а анги"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.detailSectionCard}>
+              <View style={styles.detailSectionHeader}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={20}
+                  color="#111827"
+                />
+                <Text style={styles.detailSectionTitle}>
+                  Шалгалтын дүрэм ба мэдээлэл
+                </Text>
+              </View>
+
+              <View style={styles.ruleGrid}>
+                <View style={[styles.ruleCard, styles.ruleCardWarning]}>
+                  <Ionicons
+                    name="swap-horizontal-outline"
+                    size={18}
+                    color="#F59E0B"
+                  />
+                  <Text style={styles.ruleTitle}>Change tab</Text>
+                  <Text style={styles.ruleSubtitle}>Cannot change tab.</Text>
+                </View>
+
+                <View style={[styles.ruleCard, styles.ruleCardWarning]}>
+                  <Ionicons name="timer-outline" size={18} color="#F59E0B" />
+                  <Text style={styles.ruleTitle}>Auto Submit</Text>
+                  <Text style={styles.ruleSubtitle}>
+                    Submits when time ends
+                  </Text>
+                </View>
+
+                <View style={[styles.ruleCard, styles.ruleCardDanger]}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={18}
+                    color="#EF4444"
+                  />
+                  <Text style={styles.ruleTitle}>Copy/Paste</Text>
+                  <Text style={styles.ruleSubtitle}>Disabled</Text>
+                </View>
+
+                <View style={[styles.ruleCard, styles.ruleCardDanger]}>
+                  <Ionicons name="camera-outline" size={18} color="#EF4444" />
+                  <Text style={styles.ruleTitle}>Camera</Text>
+                  <Text style={styles.ruleSubtitle}>Required</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.detailSectionCard}>
+              <View style={styles.detailSectionHeader}>
+                <Ionicons name="time-outline" size={20} color="#111827" />
+                <Text style={styles.detailSectionTitle}>Хугацаа</Text>
+              </View>
+
+              <View style={styles.durationHighlight}>
+                <Ionicons name="timer-outline" size={18} color="#3568F5" />
+                <Text style={styles.durationLabel}>Үргэлжлэх хугацаа</Text>
+                <Text style={styles.durationValue}>{exam.duration} минут</Text>
+              </View>
+
+              <View style={styles.scheduleRow}>
+                <View style={[styles.scheduleCard, styles.scheduleCardGreen]}>
+                  <Ionicons name="play-outline" size={18} color="#22C55E" />
+                  <Text style={styles.scheduleLabel}>Эхлэх цаг</Text>
+                  <Text style={styles.scheduleValue}>{exam.time}</Text>
+                </View>
+
+                <View style={styles.scheduleCard}>
+                  <Ionicons name="calendar-outline" size={18} color="#111827" />
+                  <Text style={styles.scheduleLabel}>Огноо</Text>
+                  <Text style={styles.scheduleValue}>{exam.date}</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Exam list screen (tab = "active" | "history") Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function ExamListScreen() {
   const { history, upcomingExams } = useStudentApp();
@@ -210,6 +372,9 @@ function ExamListScreen() {
           time: formatListTime(scheduledAt),
           duration: exam.durationMin,
           status,
+          className: exam.className ?? null,
+          groupName: exam.groupName ?? null,
+          teacherName: getMockTeacherName(exam.title),
           badgeText:
             status === "active"
               ? "Өнөөдөр"
@@ -336,35 +501,30 @@ function ExamListScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+      showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Exams</Text>
 
       {/* Tab switcher */}
       <View style={styles.tabRow}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "active" && styles.tabActive]}
-          onPress={() => setActiveTab("active")}
-        >
+          onPress={() => setActiveTab("active")}>
           <Text
             style={[
               styles.tabText,
               activeTab === "active" && styles.tabTextActive,
-            ]}
-          >
+            ]}>
             Upcoming
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === "history" && styles.tabActive]}
-          onPress={() => setActiveTab("history")}
-        >
+          onPress={() => setActiveTab("history")}>
           <Text
             style={[
               styles.tabText,
               activeTab === "history" && styles.tabTextActive,
-            ]}
-          >
+            ]}>
             History
           </Text>
         </TouchableOpacity>
@@ -400,6 +560,7 @@ function ActiveExamList({
   items: ActiveListItem[];
 }) {
   const router = useRouter();
+  const [selectedExam, setSelectedExam] = useState<ActiveListItem | null>(null);
   const filtered = items.filter((e) =>
     e.title.toLowerCase().includes(search.toLowerCase()),
   );
@@ -461,22 +622,26 @@ function ActiveExamList({
             {exam.status === "active" ? (
               <TouchableOpacity
                 style={styles.upcomingPrimaryButton}
-                onPress={() => router.push("/exam")}
-              >
+                onPress={() => router.push("/exam")}>
                 <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
               </TouchableOpacity>
             ) : (
-              <>
-                <View style={styles.upcomingDivider} />
-                <TouchableOpacity style={styles.upcomingDetailRow}>
+              <View style={styles.upcomingButtonRow}>
+                <TouchableOpacity
+                  style={styles.upcomingDetailButton}
+                  onPress={() => setSelectedExam(exam)}>
                   <Text style={styles.upcomingDetailText}>Дэлгэрэнгүй</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#111827" />
                 </TouchableOpacity>
-              </>
+              </View>
             )}
           </View>
         );
       })}
+      <ExamDetailModal
+        exam={selectedExam}
+        visible={!!selectedExam}
+        onClose={() => setSelectedExam(null)}
+      />
     </>
   );
 }
@@ -516,8 +681,7 @@ function HistoryList({
                   : exam.status === "late"
                     ? styles.statusPillDanger
                     : undefined,
-              ]}
-            >
+              ]}>
               <Text
                 style={[
                   styles.statusPillText,
@@ -526,8 +690,7 @@ function HistoryList({
                     : exam.status === "late"
                       ? styles.statusPillTextDanger
                       : undefined,
-                ]}
-              >
+                ]}>
                 {exam.status === "missed"
                   ? "Өгөөгүй"
                   : exam.status === "late"
@@ -575,7 +738,9 @@ export default function ExamScreen() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [textDraft, setTextDraft] = useState("");
   const [cameraReady, setCameraReady] = useState(false);
-  const [proctoringBlockedMessage, setProctoringBlockedMessage] = useState<string | null>(null);
+  const [proctoringBlockedMessage, setProctoringBlockedMessage] = useState<
+    string | null
+  >(null);
   const submitRequestedRef = useRef(false);
 
   const currentQuestion =
@@ -677,7 +842,9 @@ export default function ExamScreen() {
         : await requestCameraPermission();
 
       if (!permissionResult?.granted) {
-        setSyncError("Camera permission is required before the exam can continue.");
+        setSyncError(
+          "Camera permission is required before the exam can continue.",
+        );
         return;
       }
 
@@ -792,7 +959,10 @@ export default function ExamScreen() {
   );
 
   useEffect(() => {
-    if (audioRecorder.status === "blocked" || audioRecorder.status === "error") {
+    if (
+      audioRecorder.status === "blocked" ||
+      audioRecorder.status === "error"
+    ) {
       setProctoringBlockedMessage(
         audioRecorder.error ??
           "Audio recording stopped unexpectedly. Recover proctoring before continuing.",
@@ -839,7 +1009,9 @@ export default function ExamScreen() {
         ? cameraPermission
         : await requestCameraPermission();
       if (!permissionResult?.granted) {
-        setSyncError("Camera permission is required before the exam can start.");
+        setSyncError(
+          "Camera permission is required before the exam can start.",
+        );
         return;
       }
       if (!cameraReady) {
@@ -849,7 +1021,9 @@ export default function ExamScreen() {
         return;
       }
 
-      const requiresAudioRecording = Boolean(activeSession?.exam.requiresAudioRecording);
+      const requiresAudioRecording = Boolean(
+        activeSession?.exam.requiresAudioRecording,
+      );
       let audioReady = false;
 
       if (requiresAudioRecording) {
@@ -901,8 +1075,7 @@ export default function ExamScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+      showsVerticalScrollIndicator={false}>
       <Text style={styles.pageTitle}>Exam</Text>
 
       <View style={styles.examCard}>
@@ -929,15 +1102,13 @@ export default function ExamScreen() {
                 styles.statusPill,
                 activeSession.entryStatus === "late" &&
                   styles.statusPillWarning,
-              ]}
-            >
+              ]}>
               <Text
                 style={[
                   styles.statusPillText,
                   activeSession.entryStatus === "late" &&
                     styles.statusPillTextWarning,
-                ]}
-              >
+                ]}>
                 {activeSession.entryStatus === "late"
                   ? "Late"
                   : getEntryStatusLabel(activeSession.entryStatus)}
@@ -979,8 +1150,8 @@ export default function ExamScreen() {
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
               Camera preflight, periodic snapshot evidence, and rolling audio
-              recording are managed from this screen. Proctoring must stay active
-              for the whole exam.
+              recording are managed from this screen. Proctoring must stay
+              active for the whole exam.
             </Text>
           </View>
 
@@ -1006,14 +1177,12 @@ export default function ExamScreen() {
               />
               <TouchableOpacity
                 style={styles.primaryBtn}
-                onPress={() => void handleStart()}
-              >
+                onPress={() => void handleStart()}>
                 <Text style={styles.primaryBtnText}>Start exam</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.secondaryBtn}
-                onPress={() => void recoverActiveSession()}
-              >
+                onPress={() => void recoverActiveSession()}>
                 <Text style={styles.secondaryBtnText}>Refresh session</Text>
               </TouchableOpacity>
             </>
@@ -1024,7 +1193,9 @@ export default function ExamScreen() {
       {!isJoined ? (
         <>
           <MobileProctorCamera
-            captureEnabled={activeSession.status === "in_progress" && appIsActive}
+            captureEnabled={
+              activeSession.status === "in_progress" && appIsActive
+            }
             isEnabled={activeSession.status === "in_progress" && appIsActive}
             permissionGranted={!!cameraPermission?.granted}
             sessionId={activeSession.sessionId}
@@ -1035,8 +1206,7 @@ export default function ExamScreen() {
           {proctoringBlockedMessage ? (
             <TouchableOpacity
               style={styles.secondaryBtn}
-              onPress={() => void handleRecoverProctoring()}
-            >
+              onPress={() => void handleRecoverProctoring()}>
               <Text style={styles.secondaryBtnText}>Recover proctoring</Text>
             </TouchableOpacity>
           ) : null}
@@ -1072,14 +1242,12 @@ export default function ExamScreen() {
                     style={[
                       styles.optionButton,
                       selected && styles.optionButtonSelected,
-                    ]}
-                  >
+                    ]}>
                     <Text
                       style={[
                         styles.optionLabel,
                         selected && styles.optionLabelSelected,
-                      ]}
-                    >
+                      ]}>
                       {option.label}. {option.text}
                     </Text>
                   </Pressable>
@@ -1111,8 +1279,7 @@ export default function ExamScreen() {
                 styles.navBtnDisabled,
             ]}
             disabled={activeSession.currentQuestionIndex === 0 || isSyncBlocked}
-            onPress={() => void moveQuestion(-1)}
-          >
+            onPress={() => void moveQuestion(-1)}>
             <Text style={styles.navBtnText}>Previous</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -1127,15 +1294,13 @@ export default function ExamScreen() {
               activeSession.currentQuestionIndex >=
                 activeSession.questions.length - 1 || isSyncBlocked
             }
-            onPress={() => void moveQuestion(1)}
-          >
+            onPress={() => void moveQuestion(1)}>
             <Text style={styles.navBtnText}>Next</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.primaryBtn, isSyncBlocked && styles.navBtnDisabled]}
             disabled={isSyncBlocked}
-            onPress={() => void handleSubmit(false)}
-          >
+            onPress={() => void handleSubmit(false)}>
             <Text style={styles.primaryBtnText}>
               {submitting ? "Submitting..." : "Submit exam"}
             </Text>

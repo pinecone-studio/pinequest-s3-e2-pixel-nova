@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiRequest } from "@/api/client";
 import type { User } from "@/lib/examGuard";
-import type { Exam, Question, Submission } from "../types";
+import type { Exam, Submission } from "../types";
 import { buildAnswerReport } from "./student-exam-helpers";
 import {
   EMPTY_VIOLATIONS,

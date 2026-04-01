@@ -43,7 +43,7 @@ describe("StudentExamsTab", () => {
       />,
     );
 
-    expect(screen.getByText("Start Exam")).toBeInTheDocument();
+    expect(screen.getByText("Шалгалт эхлүүлэх")).toBeInTheDocument();
     expect(
       screen.getByText("Англи хэлний авцын шалгалт"),
     ).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("StudentExamsTab", () => {
     expect(screen.getByText("Г. Сарантуяа")).toBeInTheDocument();
     expect(screen.getByText("AX7K2P")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Start Exam" }));
+    fireEvent.click(screen.getByRole("button", { name: "Шалгалт эхлүүлэх" }));
     expect(onStartExam).toHaveBeenCalledTimes(1);
 
     fireEvent.click(

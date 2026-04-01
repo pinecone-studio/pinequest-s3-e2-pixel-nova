@@ -59,7 +59,7 @@ export default function TeacherStudentsTab({
   onCopyCode,
 }: TeacherStudentsTabProps) {
   const { days, items } = buildScheduleData(exams);
-  const [viewMode, setViewMode] = useState<ViewMode>("calendar");
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [roster, setRoster] = useState<ExamRosterDetail | null>(null);
   const [rosterLoading, setRosterLoading] = useState(false);
@@ -163,9 +163,15 @@ export default function TeacherStudentsTab({
       days
         .map((day, dayIndex) => ({
           label: formatSectionLabel(day),
-          items: items.filter((item) => item.dayIndex === dayIndex),
+          items: items
+            .filter((item) => item.dayIndex === dayIndex)
+            .sort(
+              (left, right) =>
+                right.scheduledDate.getTime() - left.scheduledDate.getTime(),
+            ),
         }))
-        .filter((group) => group.items.length > 0),
+        .filter((group) => group.items.length > 0)
+        .reverse(),
     [days, items],
   );
 
@@ -229,12 +235,12 @@ export default function TeacherStudentsTab({
             Хуваарь нэмэх
           </button>
 
-          <div className="inline-flex items-center gap-1 rounded-[999px] bg-[#dfe8ff] p-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_26px_-24px_rgba(59,130,246,0.5)]">
+          <div className="inline-flex items-center gap-1 rounded-[16px] border border-[#d7e3f4] bg-[#eef4ff] p-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_26px_-24px_rgba(59,130,246,0.5)]">
             <button
               type="button"
               onClick={() => setViewMode("cards")}
               aria-label="Card view"
-              className={`grid h-10 w-10 place-items-center rounded-[16px] transition ${
+              className={`grid h-10 w-10 place-items-center rounded-[10px] transition ${
                 viewMode === "cards"
                   ? "bg-[linear-gradient(180deg,#4f8dff_0%,#2f66ef_100%)] text-white shadow-[0_14px_24px_-18px_rgba(37,99,235,0.9)]"
                   : "bg-transparent text-[#2f66ef] hover:bg-white/75 hover:text-[#1d4ed8]"
@@ -246,7 +252,7 @@ export default function TeacherStudentsTab({
               type="button"
               onClick={() => setViewMode("calendar")}
               aria-label="Calendar view"
-              className={`grid h-10 w-10 place-items-center rounded-[16px] transition ${
+              className={`grid h-10 w-10 place-items-center rounded-[10px] transition ${
                 viewMode === "calendar"
                   ? "bg-[linear-gradient(180deg,#4f8dff_0%,#2f66ef_100%)] text-white shadow-[0_14px_24px_-18px_rgba(37,99,235,0.9)]"
                   : "bg-transparent text-[#2f66ef] hover:bg-white/75 hover:text-[#1d4ed8]"

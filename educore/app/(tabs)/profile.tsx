@@ -193,6 +193,7 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.hero}>
+        <View style={styles.avatarBlurShadow} />
         <View style={styles.avatarShell}>
           {form.avatarUrl ? (
             <Image source={{ uri: form.avatarUrl }} style={styles.avatarImage} />

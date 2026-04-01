@@ -24,27 +24,27 @@ function getParticipantMeta(participant: ExamRosterParticipant) {
     participant.flagCount > 0
   ) {
     return {
-      label: participant.riskLevel === "critical" ? "Critical" : "Risky",
+      label: participant.riskLevel === "critical" ? "Ноцтой" : "Эрсдэлтэй",
       tone: "border-[#ffb8b8] bg-[#fff1f1] text-[#ff5b57]",
       progressTone: "bg-[#b7bcc6]",
     };
   }
   if (participant.riskLevel === "medium") {
     return {
-      label: "Watch",
+      label: "Ажиглах",
       tone: "border-[#ffd5a8] bg-[#fff7ed] text-[#d97706]",
       progressTone: "bg-[#f59e0b]",
     };
   }
   if (participant.status === "submitted" || participant.status === "graded") {
     return {
-      label: "Submitted",
+      label: "Илгээсэн",
       tone: "border-[#bce9ca] bg-[#eefcf3] text-[#22b454]",
       progressTone: "bg-[#22c55e]",
     };
   }
   return {
-    label: participant.status === "late" ? "Late" : "Normal",
+    label: participant.status === "late" ? "Хоцорсон" : "Хэвийн",
     tone: "border-[#bdd2ff] bg-[#eef4ff] text-[#3566ff]",
     progressTone: "bg-[#22c55e]",
   };
@@ -65,9 +65,24 @@ function formatParticipantEvidence(participant: ExamRosterParticipant) {
     typeof participant.joinDistanceMeters === "number"
       ? `${(participant.joinDistanceMeters / 1000).toFixed(1)} км`
       : null;
+  const locationBadge =
+    participant.joinLocationStatus === "inside"
+      ? { label: "Дотор", tone: "bg-emerald-50 text-emerald-700" }
+      : participant.joinLocationStatus === "near_edge"
+        ? { label: "Зааг дээр", tone: "bg-amber-50 text-amber-700" }
+        : participant.joinLocationStatus === "outside"
+          ? { label: "Гадуур", tone: "bg-rose-50 text-rose-700" }
+          : participant.joinLocationStatus === "not_required"
+            ? { label: "Шаардаагүй", tone: "bg-slate-100 text-slate-600" }
+            : null;
 
   if (!participant.latestEvent) {
-    return [locationLabel, distanceLabel, "Зөрчил бүртгэгдээгүй"].filter(Boolean).join(" · ");
+    return {
+      summary: [locationLabel, distanceLabel, "Зөрчил бүртгэгдээгүй"]
+        .filter(Boolean)
+        .join(" · "),
+      locationBadge,
+    };
   }
 
   const sourceLabel =
@@ -77,14 +92,17 @@ function formatParticipantEvidence(participant: ExamRosterParticipant) {
         ? "browser"
         : (participant.latestEvent.eventSource ?? "unknown");
 
-  return [
-    locationLabel,
-    distanceLabel,
-    `${participant.latestEvent.label} · ${sourceLabel}`,
-    `${participant.eventCount} үйлдэл`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  return {
+    summary: [
+      locationLabel,
+      distanceLabel,
+      `${participant.latestEvent.label} · ${sourceLabel}`,
+      `${participant.eventCount} үйлдэл`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    locationBadge,
+  };
 }
 
 function SummaryStatCard({
@@ -134,7 +152,7 @@ function AttendanceDonut({ progress }: { progress: number }) {
   return (
     <div
       className="relative flex h-[96px] w-[96px] items-center justify-center"
-      aria-label={`Attendance ${safeProgress}%`}>
+      aria-label={`Ирц ${safeProgress}%`}>
       <svg width="96" height="96" className="rotate-[-48deg]">
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -259,13 +277,11 @@ export default function TeacherScheduleDetailPanel({
             onClick={onBack}
             className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-[#d7e0ee] bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-[#f8fafc]">
             <ChevronLeft className="size-4" />
-            Back to schedule
+            Хуваарь руу буцах
           </button>
-          <h2 className={sectionTitleClass}>Exam Monitoring</h2>
+          <h2 className={sectionTitleClass}>Шалгалтын хяналт</h2>
           <p className="mt-2 max-w-4xl text-[15px] leading-7 text-slate-500">
-            Live roster status now includes risk level, last suspicious reason,
-            and recent evidence so disqualification decisions stay manual but
-            informed.
+            Оролцогчдын төлөв, эрсдэлийн түвшин, сэжигтэй сүүлийн үйлдэл болон нотолгоог нэг дороос харуулна.
           </p>
         </div>
       </div>
@@ -273,7 +289,7 @@ export default function TeacherScheduleDetailPanel({
       <div className="grid gap-4 xl:grid-cols-4">
         <SummaryStatCard
           icon={<Clipboard className="size-5" />}
-          label="Room code"
+          label="Өрөөний код"
           value={exam.roomCode || "--"}
           tone="neutral"
           action={
@@ -288,19 +304,19 @@ export default function TeacherScheduleDetailPanel({
         />
         <SummaryStatCard
           icon={<CheckCircle2 className="size-5" />}
-          label="Submitted"
+          label="Илгээсэн"
           value={String(attendanceSubmitted)}
           tone="success"
         />
         <SummaryStatCard
           icon={<CalendarDays className="size-5" />}
-          label="Normal"
+          label="Хэвийн"
           value={String(normalCount)}
           tone="primary"
         />
         <SummaryStatCard
           icon={<AlertCircle className="size-5" />}
-          label="Risky"
+          label="Эрсдэлтэй"
           value={String(flaggedCount)}
           tone="danger"
         />
@@ -309,12 +325,12 @@ export default function TeacherScheduleDetailPanel({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="rounded-[32px] border border-[#eadcdc] bg-white shadow-[0_22px_40px_-34px_rgba(15,23,42,0.22)]">
           <div className="grid grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_0.9fr] gap-4 border-b border-[#efdfdf] px-6 py-4 text-[13px] font-medium text-[#a58d8d]">
-            <div>Student</div>
-            <div>Code</div>
-            <div>Score</div>
-            <div>Progress</div>
-            <div>Submitted</div>
-            <div>Status</div>
+            <div>Сурагч</div>
+            <div>Код</div>
+            <div>Оноо</div>
+            <div>Явц</div>
+            <div>Илгээсэн</div>
+            <div>Төлөв</div>
           </div>
           <div className="divide-y divide-[#f4e7e7]">
             {rosterLoading ? (
@@ -334,13 +350,14 @@ export default function TeacherScheduleDetailPanel({
               <div className="px-6 py-8">
                 <TeacherEmptyState
                   icon={<UsersRound className="h-5 w-5" />}
-                  title="No students have joined yet"
-                  description="Joined students will appear here with live progress and risk signals."
+                  title="Одоогоор сурагч нэвтрээгүй байна"
+                  description="Нэвтэрсэн сурагчид энд явц болон эрсдэлийн мэдээлэлтэй харагдана."
                 />
               </div>
             ) : (
               participants.map((participant) => {
                 const meta = getParticipantMeta(participant);
+                const evidence = formatParticipantEvidence(participant);
                 return (
                   <div
                     key={participant.sessionId}
@@ -349,12 +366,21 @@ export default function TeacherScheduleDetailPanel({
                       <div className="font-medium">
                         {participant.studentName}
                       </div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        {formatParticipantEvidence(participant)}
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        {evidence.locationBadge ? (
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${evidence.locationBadge.tone}`}
+                          >
+                            {evidence.locationBadge.label}
+                          </span>
+                        ) : null}
+                        <div className="text-xs text-slate-500">
+                          {evidence.summary}
+                        </div>
                       </div>
                       {participant.lastViolationAt && (
                         <div className="mt-1 text-xs text-slate-400">
-                          Last flagged{" "}
+                          Сүүлд тэмдэглэгдсэн{" "}
                           {formatDateTime(participant.lastViolationAt)}
                         </div>
                       )}
@@ -364,7 +390,7 @@ export default function TeacherScheduleDetailPanel({
                       {participant.score !== null &&
                       participant.score !== undefined
                         ? `${participant.score}/${participant.totalQuestions || "--"}`
-                        : "Not submitted"}
+                        : "Илгээгээгүй"}
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="h-[6px] w-[120px] overflow-hidden rounded-full bg-[#dcefdc]">
@@ -380,7 +406,7 @@ export default function TeacherScheduleDetailPanel({
                     <div className="text-slate-500">
                       {participant.submittedAt
                         ? formatDateTime(participant.submittedAt)
-                        : "Not submitted"}
+                        : "Илгээгээгүй"}
                     </div>
                     <div className="space-y-2">
                       <span
@@ -388,7 +414,7 @@ export default function TeacherScheduleDetailPanel({
                         {meta.label}
                       </span>
                       <div className="text-xs text-slate-500">
-                        Risk {participant.riskLevel} · Score{" "}
+                        Эрсдэл {participant.riskLevel} · Оноо{" "}
                         {participant.violationScore}
                       </div>
                     </div>
@@ -398,14 +424,14 @@ export default function TeacherScheduleDetailPanel({
             )}
           </div>
           <div className="border-t border-[#efdfdf] px-6 py-4 text-sm text-slate-500">
-            Total {expectedCount} students
+            Нийт хүлээгдэж буй сурагч: {expectedCount}
           </div>
         </div>
 
         <div className="space-y-4">
           <SummaryStatCard
             icon={<Clock3 className="size-5" />}
-            label="Time remaining"
+            label="Үлдсэн хугацаа"
             value={countdown}
             tone="neutral"
           />
@@ -413,10 +439,10 @@ export default function TeacherScheduleDetailPanel({
             <div className="flex items-center justify-between gap-5">
               <div className="min-w-0 space-y-3">
                 <div className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Attendance
+                  Ирцийн тойм
                 </div>
                 <div className="text-[14px] text-[#a3a3a3]">
-                  Joined {attendanceJoined} of {expectedCount}
+                  Нэвтэрсэн: {attendanceJoined}/{expectedCount}
                 </div>
               </div>
               <div className="shrink-0">

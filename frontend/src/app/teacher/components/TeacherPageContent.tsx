@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ExamListCard from "./ExamListCard";
-import ExamCreateCard from "./ExamCreateCard";
+import ExamPreviewDialog from "./ExamPreviewDialog";
 import ResultsTab from "./ResultsTab";
 import TeacherStudentsTab from "./TeacherStudentsTab";
 import TeacherXpOverviewCard from "./TeacherXpOverviewCard";
@@ -10,13 +10,51 @@ import { useExamImport } from "../hooks/useExamImport";
 import type { useExamManagement } from "../hooks/useExamManagement";
 import type { useExamStats } from "../hooks/useExamStats";
 import type { useTeacherData } from "../hooks/useTeacherData";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import CreateExamDialogContent from "./CreateExamDialogContent";
-
-const contentCanvasClass =
-  "rounded-[40px] border border-[#dce5ef] bg-white/92 p-6 shadow-[0_35px_60px_-42px_rgba(15,23,42,0.2)] backdrop-blur xl:p-8";
+import { contentCanvasClass } from "../styles";
 
 export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Гүйцэтгэл";
+
+const sanitizeFileName = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9а-яөүё_-]+/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "exam";
+
+const buildExamDownloadText = (exam: TeacherPageContentProps["data"]["exams"][number]) => {
+  const header = [
+    `Шалгалтын нэр: ${exam.title}`,
+    exam.className ? `Анги: ${exam.className}` : null,
+    exam.groupName ? `Бүлэг: ${exam.groupName}` : null,
+    exam.examType ? `Төрөл: ${exam.examType}` : null,
+    exam.description ? `Тайлбар: ${exam.description}` : null,
+    exam.duration ? `Хугацаа: ${exam.duration} минут` : null,
+    `Үүсгэсэн огноо: ${exam.createdAt}`,
+    "",
+    "Асуултууд",
+  ].filter(Boolean);
+
+  const questions =
+    exam.questions.length > 0
+      ? exam.questions.flatMap((question, index) => [
+          `${index + 1}. ${question.text}`,
+          `Төрөл: ${question.type}`,
+          `Оноо: ${question.points ?? 1}`,
+          ...(question.options?.length
+            ? question.options.map(
+                (option, optionIndex) => `  ${optionIndex + 1}) ${option}`,
+              )
+            : []),
+          `Зөв хариулт: ${question.correctAnswer || "-"}`,
+          "",
+        ])
+      : ["Асуулт оруулаагүй байна."];
+
+  return [...header, ...questions].join("\n");
+};
 
 type TeacherPageContentProps = {
   activeTab: TeacherTab;
@@ -45,7 +83,7 @@ function TeacherCreateExamModal({
   data: ReturnType<typeof useTeacherData>;
   management: ReturnType<typeof useExamManagement>;
 }) {
-  const imports = useExamImport({
+  useExamImport({
     setQuestions: management.setQuestions,
     examTitle: management.examTitle,
     setExamTitle: management.setExamTitle,
@@ -64,7 +102,6 @@ function TeacherCreateExamModal({
 
 export default function TeacherPageContent({
   activeTab,
-  setActiveTab,
   onOpenScheduleForm,
   data,
   management,
@@ -74,6 +111,11 @@ export default function TeacherPageContent({
   profileLoading,
 }: TeacherPageContentProps) {
   const [showCreateExamModal, setShowCreateExamModal] = useState(false);
+  const [previewExamId, setPreviewExamId] = useState<string | null>(null);
+  const previewExam =
+    data.loading || !("exams" in data)
+      ? null
+      : data.exams.find((exam) => exam.id === previewExamId) ?? null;
 
   if (data.loading && activeTab !== "Гүйцэтгэл") {
     return <TeacherPageSkeleton />;
@@ -86,9 +128,30 @@ export default function TeacherPageContent({
           exams={data.exams}
           onCopyCode={management.copyCode}
           onCreateExam={() => setShowCreateExamModal(true)}
-          onOpenExam={(examId) => {
-            setActiveTab("Гүйцэтгэл");
-            examStatsState.setSelectedExamId(examId);
+          onOpenExam={(examId) => setPreviewExamId(examId)}
+          onDownloadExam={(examId) => {
+            const exam = data.exams.find((item) => item.id === examId);
+            if (!exam) return;
+
+            const blob = new Blob([buildExamDownloadText(exam)], {
+              type: "text/plain;charset=utf-8",
+            });
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = `${sanitizeFileName(exam.title)}.txt`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            window.URL.revokeObjectURL(url);
+            data.showToast("Шалгалтыг татлаа.");
+          }}
+        />
+        <ExamPreviewDialog
+          exam={previewExam}
+          open={Boolean(previewExam)}
+          onOpenChange={(open) => {
+            if (!open) setPreviewExamId(null);
           }}
         />
         <TeacherCreateExamModal
@@ -103,29 +166,28 @@ export default function TeacherPageContent({
 
   if (activeTab === "Гүйцэтгэл") {
     return (
-      <section className={contentCanvasClass}>
-        <div className="space-y-6">
-          <ResultsTab
-            loading={data.loading}
-            examOptions={examStatsState.examOptions}
-            activeExamId={examStatsState.activeExamId}
-            onSelectExam={examStatsState.setSelectedExamId}
-            examStats={examStatsState.examStats}
-            submissions={examStatsState.activeSubmissions}
-            onSelectSubmission={examStatsState.setSelectedSubmissionId}
-            selectedSubmissionId={examStatsState.selectedSubmissionId}
-            selectedSubmission={examStatsState.selectedSubmission}
-            selectedExam={examStatsState.selectedExam}
-            attendanceStats={attendance.stats}
-            attendanceLoading={attendance.loading}
-            studentProfile={studentProfile as never}
-            profileLoading={profileLoading}
-          />
-          <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
-        </div>
-      </section>
+      <div className="space-y-6">
+        <ResultsTab
+          loading={data.loading}
+          examOptions={examStatsState.examOptions}
+          activeExamId={examStatsState.activeExamId}
+          onSelectExam={examStatsState.setSelectedExamId}
+          examStats={examStatsState.examStats}
+          submissions={examStatsState.activeSubmissions}
+          onSelectSubmission={examStatsState.setSelectedSubmissionId}
+          selectedSubmissionId={examStatsState.selectedSubmissionId}
+          selectedSubmission={examStatsState.selectedSubmission}
+          selectedExam={examStatsState.selectedExam}
+          attendanceStats={attendance.stats}
+          attendanceLoading={attendance.loading}
+          studentProfile={studentProfile as never}
+          profileLoading={profileLoading}
+        />
+        <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
+      </div>
     );
   }
+
 
   return (
     <div className="space-y-6">

@@ -16,6 +16,7 @@ export type StudentTab =
   | "Home"
   | "Exams"
   | "Progress"
+  | "AIInsights"
   | "Profile"
   | "Settings"
   | "Help";
@@ -23,6 +24,7 @@ export type StudentTab =
 export type Exam = {
   id: string;
   title: string;
+  teacherName?: string | null;
   description?: string | null;
   status?: string | null;
   sessionStatus?: string | null;

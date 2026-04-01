@@ -1,6 +1,6 @@
 import type { Exam } from "../types";
-import StudentJoinExamPanel from "./StudentJoinExamPanel";
 import StudentExamDetailSection from "./StudentExamDetailSection";
+import StudentJoinExamPanel from "./StudentJoinExamPanel";
 
 type StudentExamsTabProps = {
   loading: boolean;
@@ -59,7 +59,8 @@ export default function StudentExamsTab({
       teacherName={teacherName}
       onBack={onClearSelection}
       onPrimaryAction={onStartExam}
-      primaryActionLabel="Start Exam"
+      primaryActionLabel="Шалгалт эхлүүлэх"
+      maxWidthClassName="max-w-[1088px]"
     />
   );
 }

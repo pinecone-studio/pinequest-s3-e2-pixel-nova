@@ -38,9 +38,9 @@ describe("TeacherScheduleDetailPanel", () => {
       />,
     );
 
-    expect(screen.getByText("Attendance")).toBeInTheDocument();
-    expect(screen.getByText("Joined 6 of 10")).toBeInTheDocument();
-    expect(screen.getByLabelText("Attendance 60%")).toBeInTheDocument();
+    expect(screen.getByText("Ирцийн тойм")).toBeInTheDocument();
+    expect(screen.getByText("Нэвтэрсэн: 6/10")).toBeInTheDocument();
+    expect(screen.getByLabelText("Ирц 60%")).toBeInTheDocument();
     expect(screen.getByText("60%")).toBeInTheDocument();
   });
 });

@@ -125,4 +125,85 @@ describe("TeacherPageContent", () => {
       screen.getByRole("button", { name: "Close create exam modal" }),
     ).toBeInTheDocument();
   });
+
+  it("opens an exam preview from the exam library instead of switching to results", () => {
+    const setActiveTab = jest.fn();
+
+    render(
+      <TeacherPageContent
+        activeTab="Шалгалтын сан"
+        setActiveTab={setActiveTab}
+        onOpenScheduleForm={() => {}}
+        data={{
+          loading: false,
+          exams: [
+            {
+              id: "exam-1",
+              title: "Математик",
+              description: "10 асуулт",
+              className: "9-р анги",
+              roomCode: "ROOM1",
+              createdAt: "2026-03-30T10:00:00.000Z",
+              scheduledAt: null,
+              questions: [
+                {
+                  id: "q-1",
+                  text: "2 + 2 хэд вэ?",
+                  type: "mcq",
+                  options: ["3", "4", "5", "6"],
+                  correctAnswer: "4",
+                  points: 1,
+                },
+              ],
+            },
+          ],
+          showToast: jest.fn(),
+          currentUser: {
+            id: "teacher-1",
+            username: "Teacher",
+            role: "teacher",
+          },
+        } as never}
+        management={{
+          copyCode: jest.fn(),
+          setQuestions: jest.fn(),
+          examTitle: "",
+          setExamTitle: jest.fn(),
+          questionText: "",
+          setQuestionText: jest.fn(),
+          questionType: "mcq",
+          setQuestionType: jest.fn(),
+          mcqOptions: ["", "", "", ""],
+          setMcqOptions: jest.fn(),
+          questionAnswer: "",
+          setQuestionAnswer: jest.fn(),
+          questionImageUrl: undefined,
+          setQuestionImageUrl: jest.fn(),
+          questionPoints: 1,
+          setQuestionPoints: jest.fn(),
+          questionCorrectIndex: 0,
+          setQuestionCorrectIndex: jest.fn(),
+          questions: [],
+          addQuestion: jest.fn(),
+          removeQuestion: jest.fn(),
+          updateQuestion: jest.fn(),
+          updateQuestionOption: jest.fn(),
+          addQuestionOption: jest.fn(),
+          removeQuestionOption: jest.fn(),
+          saveExam: jest.fn().mockResolvedValue(false),
+          saving: false,
+          hasCurrentUser: true,
+        } as never}
+        examStatsState={{ setSelectedExamId: jest.fn() } as never}
+        attendance={{} as never}
+        studentProfile={null}
+        profileLoading={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Математик харах" }));
+
+    expect(screen.getByText("2 + 2 хэд вэ?")).toBeInTheDocument();
+    expect(setActiveTab).not.toHaveBeenCalled();
+  });
 });

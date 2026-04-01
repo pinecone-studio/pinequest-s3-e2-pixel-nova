@@ -1,6 +1,31 @@
 import { generateId } from "@/lib/examGuard";
 import type { Question } from "./types";
 
+export type RateTone = {
+  border: string;
+  bg: string;
+  text: string;
+  bar: string;
+  label: string;
+};
+
+export const getRateTone = (rate: number): RateTone => {
+  if (rate >= 70)
+    return { border: "border-[#d7e6dd]", bg: "bg-[#f6faf7]", text: "text-[#557565]", bar: "bg-[#8fb7a0]", label: "Ойлгосон" };
+  if (rate >= 45)
+    return { border: "border-[#d9e4f0]", bg: "bg-[#f7fafd]", text: "text-[#5b718b]", bar: "bg-[#9bb5d1]", label: "Бэхжиж байна" };
+  return { border: "border-[#e7dfcf]", bg: "bg-[#fbf8f2]", text: "text-[#8a7654]", bar: "bg-[#d5bf93]", label: "Анхаарах" };
+};
+
+export const VIOLATION_LABELS: Record<string, string> = {
+  tabSwitch: "Таб солих",
+  windowBlur: "Цонх нуух",
+  copyAttempt: "Хуулах",
+  pasteAttempt: "Буулгах",
+  fullscreenExit: "Дэлгэц гарах",
+  keyboardShortcut: "Товчлол",
+};
+
 export const formatDateTime = (value?: string | null) => {
   if (!value) return "—";
   const date = new Date(value);

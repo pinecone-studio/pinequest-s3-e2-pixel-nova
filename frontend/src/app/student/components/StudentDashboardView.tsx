@@ -4,6 +4,7 @@ import type { AuthUser } from "@/lib/backend-auth";
 import type { XpLeaderboardEntry } from "@/api/xp";
 import type { RoleKey } from "@/lib/role-session";
 import StudentHeader from "./StudentHeader";
+import StudentAiInsightsTab from "./StudentAiInsightsTab";
 import StudentDashboardTab from "./StudentDashboardTab";
 import StudentExamsTab from "./StudentExamsTab";
 import StudentHelpTab from "./StudentHelpTab";
@@ -103,6 +104,12 @@ export default function StudentDashboardView({
 }: StudentDashboardViewProps) {
   const resolvedNextLevel = progress.nextLevel ?? progress.levelInfo;
   const currentUser = data.currentUser;
+  const activeTeacherName =
+    teacherUsers.find(
+      (teacher) =>
+        typeof teacher.fullName === "string" &&
+        teacher.fullName.trim().length > 0,
+    )?.fullName ?? null;
   const [homeSelectedExam, setHomeSelectedExam] = useState<Exam | null>(null);
 
   const handleTabChange = (value: StudentTab) => {
@@ -160,11 +167,7 @@ export default function StudentDashboardView({
             studentCount={totalStudents}
             studentHistory={studentHistory}
             termLeaderboardEntries={progress.termLeaderboardEntries}
-            teacherName={
-              typeof teacherUsers[0]?.fullName === "string"
-                ? (teacherUsers[0]?.fullName ?? null)
-                : null
-            }
+            teacherName={activeTeacherName}
             onOpenExamDetail={setHomeSelectedExam}
             onCloseExamDetail={() => setHomeSelectedExam(null)}
             onOpenExams={() => {
@@ -192,11 +195,7 @@ export default function StudentDashboardView({
               exam.setSelectedExam(null);
               exam.setJoinError(null);
             }}
-            teacherName={
-              typeof teacherUsers[0]?.fullName === "string"
-                ? (teacherUsers[0]?.fullName ?? null)
-                : null
-            }
+            teacherName={activeTeacherName}
             studentHistory={studentHistory}
           />
         )}
@@ -208,6 +207,27 @@ export default function StudentDashboardView({
             nextLevel={resolvedNextLevel}
             progressSegments={progress.progressSegments}
             studentHistory={studentHistory}
+          />
+        )}
+
+        {exam.activeTab === "AIInsights" && (
+          <StudentAiInsightsTab
+            currentUserId={data.currentUser?.id ?? null}
+            currentUserName={currentUserName}
+            currentXp={currentXp}
+            currentRank={currentRank}
+            totalStudents={totalStudents}
+            levelInfo={{
+              level: progress.levelInfo.level,
+              name: progress.levelInfo.name,
+              minXP: progress.levelInfo.minXP,
+            }}
+            studentHistory={studentHistory.map((item) => ({
+              examId: item.examId,
+              title: item.title,
+              percentage: item.percentage,
+              date: item.date,
+            }))}
           />
         )}
 

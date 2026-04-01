@@ -25,13 +25,13 @@ const CLIENT_THROTTLE_MS: Partial<Record<string, number>> = {
 };
 
 const WARNING_LABELS: Partial<Record<string, string>> = {
-  COPY_ATTEMPT: "Copy shortcut detected",
-  FULLSCREEN_EXIT: "Fullscreen was exited",
-  KEYBOARD_SHORTCUT: "Suspicious keyboard shortcut detected",
-  PASTE_ATTEMPT: "Paste attempt detected",
-  RIGHT_CLICK: "Right-click is disabled during the exam",
-  TAB_SWITCH: "Tab switch detected",
-  WINDOW_BLUR: "Exam window lost focus",
+  COPY_ATTEMPT: "Хуулах товчлол илэрлээ",
+  FULLSCREEN_EXIT: "Бүтэн дэлгэцийн горимоос гарлаа",
+  KEYBOARD_SHORTCUT: "Сэжигтэй гарын товчлол илэрлээ",
+  PASTE_ATTEMPT: "Буулгах оролдлого илэрлээ",
+  RIGHT_CLICK: "Шалгалтын үеэр баруун товшилт идэвхгүй",
+  TAB_SWITCH: "Таб сольсон үйлдэл илэрлээ",
+  WINDOW_BLUR: "Шалгалтын цонх focus-оо алдлаа",
 };
 
 export const useExamIntegrityMonitor = ({

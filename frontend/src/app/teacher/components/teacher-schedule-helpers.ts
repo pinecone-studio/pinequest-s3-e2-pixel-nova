@@ -21,6 +21,9 @@ export type ScheduleItem = {
   lifecycle: ScheduleLifecycle;
   scheduledDate: Date;
   roomCode: string;
+  expectedStudentsCount: number;
+  locationPolicy: "anywhere" | "school_only";
+  locationLabel?: string | null;
 };
 
 export function startOfDay(date: Date) {
@@ -143,6 +146,9 @@ export function buildScheduleData(exams: Exam[]) {
         lifecycle: resolveScheduleLifecycle(exam, scheduledAt),
         scheduledDate: scheduledAt,
         roomCode: exam.roomCode,
+        expectedStudentsCount: exam.expectedStudentsCount ?? 0,
+        locationPolicy: exam.locationPolicy ?? "anywhere",
+        locationLabel: exam.locationLabel ?? null,
       };
     })
     .filter((item): item is ScheduleItem => Boolean(item));

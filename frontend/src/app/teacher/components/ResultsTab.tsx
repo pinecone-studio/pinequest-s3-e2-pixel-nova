@@ -45,44 +45,45 @@ export default function ResultsTab({
     return (
       <section className="grid gap-4">
         <TeacherCardSkeleton className="min-h-[280px]" rows={4} />
-        <div className="grid gap-4 lg:grid-cols-2">
-          <TeacherCardSkeleton className="min-h-[360px]" rows={5} />
-          <TeacherCardSkeleton className="min-h-[360px]" rows={5} />
-        </div>
         <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
           <TeacherCardSkeleton className="min-h-[340px]" rows={5} />
           <TeacherCardSkeleton className="min-h-[340px]" rows={5} />
         </section>
+        <TeacherCardSkeleton className="min-h-[360px]" rows={5} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TeacherCardSkeleton className="min-h-[280px]" rows={4} />
+          <TeacherCardSkeleton className="min-h-[280px]" rows={4} />
+        </div>
       </section>
     );
   }
 
-  return (
-    <section className="grid gap-4">
-      <ResultsSummaryCard
-        examOptions={examOptions}
-        activeExamId={activeExamId}
-        onSelectExam={onSelectExam}
-        examStats={examStats}
-      />
-      <ResultsCharts examStats={examStats} />
-      <QuestionInsightsPanel examStats={examStats} />
-      <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-        <ResultsSubmissionsList
-          submissions={submissions}
-          onSelect={onSelectSubmission}
-          selectedSubmissionId={selectedSubmissionId}
-        />
-        <ResultsDetailPanel
-          selectedSubmission={selectedSubmission}
-          selectedExam={selectedExam}
-          examStats={examStats}
-          attendanceStats={attendanceStats}
-          attendanceLoading={attendanceLoading}
-          studentProfile={studentProfile}
-          profileLoading={profileLoading}
-        />
-      </section>
-    </section>
-  );
+	return (
+		<section className="grid gap-6">
+			<ResultsSummaryCard
+				examOptions={examOptions}
+				activeExamId={activeExamId}
+				onSelectExam={onSelectExam}
+				examStats={examStats}
+			/>
+			<ResultsCharts examStats={examStats} />
+			<QuestionInsightsPanel examStats={examStats} />
+			<section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+				<ResultsSubmissionsList
+					submissions={submissions}
+					onSelect={onSelectSubmission}
+					selectedSubmissionId={selectedSubmissionId}
+				/>
+				<ResultsDetailPanel
+					selectedSubmission={selectedSubmission}
+					selectedExam={selectedExam}
+					examStats={examStats}
+					attendanceStats={attendanceStats}
+					attendanceLoading={attendanceLoading}
+					studentProfile={studentProfile}
+					profileLoading={profileLoading}
+				/>
+			</section>
+		</section>
+	);
 }
