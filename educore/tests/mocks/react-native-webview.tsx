@@ -1,12 +1,27 @@
 import React from "react";
 import { Text } from "react-native";
 
-export const WebView = ({
-  source,
-  testID,
-}: {
-  source?: { html?: string };
+type MockWebViewProps = {
+  source?: {
+    html?: string;
+  };
   testID?: string;
-}) => (
-  <Text testID={testID ?? "webview"}>{source?.html ?? ""}</Text>
-);
+};
+
+function decodeHtml(value: string) {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&gt;/g, ">")
+    .replace(/&lt;/g, "<")
+    .replace(/&amp;/g, "&");
+}
+
+export function WebView({ source, testID }: MockWebViewProps) {
+  const match = source?.html?.match(/<div id="math-root">([\s\S]*?)<\/div>/);
+  const content = match ? decodeHtml(match[1]) : source?.html ?? "";
+
+  return <Text testID={testID}>{content}</Text>;
+}
+
+export default WebView;
