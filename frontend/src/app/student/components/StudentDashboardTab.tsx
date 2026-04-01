@@ -306,13 +306,15 @@ export default function StudentDashboardTab({
   }, [studentHistory]);
 
   const xpRows = useMemo(() => {
-    const normalizedEntries = termLeaderboardEntries.map((entry) => ({
+    const normalizedEntries = termLeaderboardEntries
+      .map((entry) => ({
       ...entry,
       fullName:
         currentUserId && entry.id === currentUserId
           ? currentUserName
           : entry.fullName,
-    }));
+      }))
+      .sort((left, right) => left.rank - right.rank);
 
     const currentEntry =
       normalizedEntries.find((entry) => entry.id === currentUserId) ??
@@ -326,14 +328,20 @@ export default function StudentDashboardTab({
           }
         : null);
 
-    const topEntries = normalizedEntries.slice(0, 3);
-    const rows = [...topEntries];
-
-    if (currentEntry && !rows.some((entry) => entry.id === currentEntry.id)) {
-      rows.splice(Math.min(2, rows.length), 0, currentEntry);
+    if (!currentEntry) {
+      return normalizedEntries.slice(0, 3);
     }
 
-    return rows.slice(0, 3);
+    const nearestAbove = [...normalizedEntries]
+      .reverse()
+      .find((entry) => entry.rank < currentEntry.rank);
+    const nearestBelow = normalizedEntries.find(
+      (entry) => entry.rank > currentEntry.rank,
+    );
+
+    return [nearestAbove, currentEntry, nearestBelow].filter(
+      (entry): entry is NonNullable<typeof entry> => Boolean(entry),
+    );
   }, [
     currentRank,
     currentUserId,

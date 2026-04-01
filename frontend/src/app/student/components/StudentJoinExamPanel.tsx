@@ -82,20 +82,22 @@ export default function StudentJoinExamPanel({
   }
 
   return (
-    <section className="mx-auto w-full max-w-[1220px] space-y-8">
-      <div className="rounded-[36px] border border-[#dfe5fb] bg-white px-6 py-7 shadow-[0_26px_70px_rgba(80,94,133,0.10)] sm:px-8 sm:py-8">
-        <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,0.95fr)]">
-          <div className="flex min-h-[300px] flex-col justify-center rounded-[30px] bg-white pr-0 xl:pr-6">
-            <div className="text-[15px] font-medium text-[#aeb9d6]">
-              Шалгалтын мэдээлэл
+    <section className="mx-auto w-full max-w-[1272px] space-y-8">
+      <div className="rounded-[36px] border border-[#dfe5fb] bg-white px-6 py-6 shadow-[0_26px_70px_rgba(80,94,133,0.10)] sm:px-8 sm:py-6">
+        <div className="grid items-center gap-8 xl:grid-cols-[496px_minmax(0,1fr)]">
+          <div className="flex min-h-[235px] w-full max-w-[496px] flex-col justify-between rounded-[30px] bg-white pr-0 xl:pr-6">
+            <div>
+              <div className="text-[15px] font-medium text-[#aeb9d6]">
+                Шалгалтын мэдээлэл
+              </div>
+              <h2 className="mt-2 text-[2.35rem] font-semibold tracking-[-0.055em] text-[#5564d9] sm:text-[2.65rem]">
+                Шалгалтад нэвтрэх
+              </h2>
             </div>
-            <h2 className="mt-2 text-[2.35rem] font-semibold tracking-[-0.055em] text-[#5564d9] sm:text-[2.65rem]">
-              Шалгалтад нэвтрэх
-            </h2>
 
-            <div className="mt-7 max-w-[640px] space-y-5">
+            <div className="mt-6 max-w-[496px] min-h-[40x] space-y-4">
               <input
-                className="h-16 w-full rounded-[24px] border border-[#dfe5fb] bg-[#fbfcff] px-6 text-[1.05rem] font-medium text-slate-800 outline-none transition placeholder:text-[#adb7cf] focus:border-[#aab7ff] focus:bg-white"
+                className="h-14 w-full rounded-[20px] border border-[#dfe5fb] bg-[#fbfcff] px-5 text-base font-medium text-slate-800 outline-none transition placeholder:text-[#adb7cf] focus:border-[#aab7ff] focus:bg-white"
                 placeholder="Өрөөний код"
                 value={roomCodeInput}
                 onChange={(event) =>
@@ -105,13 +107,13 @@ export default function StudentJoinExamPanel({
 
               <div className="flex justify-end pt-1">
                 <button
-                  className={`inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#6354ee] to-[#4f4be4] px-7 py-4 text-base font-semibold text-white shadow-[0_20px_42px_rgba(96,84,228,0.28)] transition hover:brightness-105 ${
+                  className={`inline-flex h-11 min-w-[198px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#6354ee] to-[#4f4be4] px-5 text-[15px] font-semibold text-white shadow-[0_20px_42px_rgba(96,84,228,0.28)] transition hover:brightness-105 ${
                     joinLoading ? "opacity-70" : ""
                   }`}
                   onClick={onLookup}
                   disabled={joinLoading}
                 >
-                  <Play className="h-5 w-5" />
+                  <Play className="h-[18px] w-[18px]" />
                   {joinLoading ? "Нэвтэрч байна..." : "Шалгалтад нэвтрэх"}
                 </button>
               </div>
@@ -124,26 +126,26 @@ export default function StudentJoinExamPanel({
             </div>
           </div>
 
-          <div className="rounded-[30px] border border-[#edf1ff] bg-[#f7f8ff] px-6 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-7">
+          <div className="rounded-[30px] border border-[#edf1ff] bg-[#f7f8ff] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-6">
             <div className="flex items-center gap-2.5 text-[1.15rem] font-semibold text-[#4f5fc7]">
               <CircleAlert className="h-5 w-5" />
               Шалгалтын дүрэм ба мэдээлэл
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {infoItems.map((item) => {
                 const Icon = item.icon;
 
                 return (
                   <div
                     key={item.title}
-                    className={`rounded-[18px] border px-5 py-4 ${item.className}`}
+                    className={`flex min-h-[62px] flex-col justify-center rounded-[14px] border px-3.5 py-2.5 ${item.className}`}
                   >
-                    <div className="flex items-center gap-2.5 text-[1rem] font-semibold">
+                    <div className="flex items-center gap-2 text-[0.95rem] font-semibold leading-none">
                       <Icon className={`h-[18px] w-[18px] ${item.iconClassName}`} />
                       {item.title}
                     </div>
-                    <div className="mt-1.5 text-sm text-slate-400">
+                    <div className="mt-1 text-[12px] leading-[1.15] text-slate-400">
                       {item.description}
                     </div>
                   </div>
@@ -152,21 +154,21 @@ export default function StudentJoinExamPanel({
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="mt-8 rounded-[24px] border border-[#e6ecfb] bg-[#f8fbff] p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Info className="h-4 w-4 text-[#62a9ff]" />
-            Эхлэхийн өмнө
-          </div>
-          <ul className="mt-3 space-y-2 text-sm text-slate-500">
-            <li>Шалгалтын дүрэм, хугацаагаа урьдчилан шалгаарай.</li>
-            <li>Бүтэн дэлгэц ба хуулалтын эсрэг хамгаалалт автоматаар асна.</li>
-            <li>Шалгалт эхэлмэгц хариултууд автоматаар хадгалагдана.</li>
-            {selectedExam?.requiresAudioRecording && (
-              <li>Микрофоны хяналтын аудио бичлэг шаардлагатай.</li>
-            )}
-          </ul>
+      <div className="rounded-[24px] border border-[#e6ecfb] bg-[#f8fbff] p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+          <Info className="h-4 w-4 text-[#62a9ff]" />
+          Эхлэхийн өмнө
         </div>
+        <ul className="mt-3 space-y-2 text-sm text-slate-500">
+          <li>Шалгалтын дүрэм, хугацаагаа урьдчилан шалгаарай.</li>
+          <li>Бүтэн дэлгэц ба хуулалтын эсрэг хамгаалалт автоматаар асна.</li>
+          <li>Шалгалт эхэлмэгц хариултууд автоматаар хадгалагдана.</li>
+          {selectedExam?.requiresAudioRecording && (
+            <li>Микрофоны хяналтын аудио бичлэг шаардлагатай.</li>
+          )}
+        </ul>
       </div>
 
       <div className="rounded-[30px] border border-[#e8edf9] bg-white p-6 shadow-[0_22px_55px_rgba(68,84,125,0.08)]">
