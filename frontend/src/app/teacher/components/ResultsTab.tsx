@@ -66,6 +66,7 @@ export default function ResultsTab({
 				onSelectExam={onSelectExam}
 				examStats={examStats}
 			/>
+			<ResultsCharts examStats={examStats} />
 			<QuestionInsightsPanel examStats={examStats} />
 			<section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
 				<ResultsSubmissionsList
@@ -83,7 +84,6 @@ export default function ResultsTab({
 					profileLoading={profileLoading}
 				/>
 			</section>
-			<ResultsCharts examStats={examStats} />
 		</section>
 	);
 }
