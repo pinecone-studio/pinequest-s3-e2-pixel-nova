@@ -5,6 +5,7 @@ import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
 import {
   getStudentResults,
+  getStudentTermRank,
   getStudentTermLeaderboard,
 } from "@/lib/backend-auth";
 import {
@@ -25,6 +26,12 @@ export const useStudentProgress = (currentUser: User | null) => {
   const [rankOverview, setRankOverview] = useState({
     rank: null as number | null,
     totalStudents: 0,
+  });
+  const [termRankOverview, setTermRankOverview] = useState({
+    rank: null as number | null,
+    totalStudents: 0,
+    xp: 0,
+    level: 1,
   });
   const [studentProgress, setStudentProgress] = useState({
     xp: 0,
@@ -61,6 +68,23 @@ export const useStudentProgress = (currentUser: User | null) => {
         setTermLeaderboardEntries(await getStudentTermLeaderboard(currentUser));
       } catch {
         setTermLeaderboardEntries([]);
+      }
+
+      try {
+        const termRank = await getStudentTermRank(currentUser);
+        setTermRankOverview({
+          rank: termRank.rank ?? null,
+          totalStudents: termRank.totalStudents ?? 0,
+          xp: termRank.xp ?? 0,
+          level: termRank.level ?? 1,
+        });
+      } catch {
+        setTermRankOverview({
+          rank: null,
+          totalStudents: 0,
+          xp: 0,
+          level: 1,
+        });
       }
 
       try {
@@ -106,6 +130,7 @@ export const useStudentProgress = (currentUser: User | null) => {
     xpActivities,
     termLeaderboardEntries,
     rankOverview,
+    termRankOverview,
     studentProgress,
     levelInfo,
     nextLevel,

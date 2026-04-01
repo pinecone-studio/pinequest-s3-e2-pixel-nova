@@ -17,7 +17,6 @@ import DesktopExamCameraCard from "./components/DesktopExamCameraCard";
 import DesktopExamAudioCard from "./components/DesktopExamAudioCard";
 import StudentExamView from "./components/StudentExamView";
 import StudentResultView from "./components/StudentResultView";
-import StudentLoadingScreen from "./components/StudentLoadingScreen";
 import { useStudentData } from "./hooks/useStudentData";
 import { useStudentProgress } from "./hooks/useStudentProgress";
 import { useStudentExamState } from "./hooks/useStudentExamState";
@@ -154,13 +153,28 @@ export default function StudentPage() {
     typeof currentUserNameRaw === "string" ? currentUserNameRaw : "";
   const currentRank = progress.rankOverview.rank;
   const currentXp = progress.studentProgress.xp;
+  const showFallbackState =
+    !data.currentUser && !selectedUser && !usersLoading && !data.loading;
 
-  if (!data.currentUser) {
+  if (showFallbackState) {
     return (
-      <StudentLoadingScreen
-        usersLoading={usersLoading}
-        onReload={() => window.location.reload()}
-      />
+      <div className="min-h-screen bg-[#f6f7fd] px-4 pb-10 pt-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1272px] rounded-[28px] border border-[#dfe5fb] bg-white px-6 py-8 text-center shadow-[0_18px_40px_-28px_rgba(79,93,132,0.22)]">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Өгөгдөл ачаалж чадсангүй
+          </h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Backend холболтоо шалгаад дахин ачаалж үзнэ үү.
+          </p>
+          <button
+            className="mt-5 rounded-2xl border border-[#dce6f4] bg-[#f8fbff] px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
+            onClick={() => window.location.reload()}
+            type="button"
+          >
+            Дахин ачаалах
+          </button>
+        </div>
+      </div>
     );
   }
 

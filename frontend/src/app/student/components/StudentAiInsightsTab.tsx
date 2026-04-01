@@ -26,6 +26,7 @@ import {
 } from "./student-ai-insights";
 
 type StudentAiInsightsTabProps = {
+  loading?: boolean;
   currentUserId: string | null;
   currentUserName: string;
   currentXp: number;
@@ -51,7 +52,139 @@ const cardClass =
 
 const getStorageKey = (userId: string | null) => `${STORAGE_PREFIX}:${userId ?? "guest"}`;
 
+function StudentAiInsightsSkeleton() {
+  return (
+    <section aria-label="student-ai-insights-loading" className="space-y-6">
+      <div className="rounded-[32px] border border-[#dfe4ff] bg-[linear-gradient(135deg,#ffffff_0%,#f7f9ff_54%,#eef4ff_100%)] px-5 py-6 shadow-[0_24px_60px_rgba(77,92,148,0.10)] sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="h-7 w-28 animate-pulse rounded-full bg-[#eef2fb]" />
+            <div className="mt-4 h-9 w-72 animate-pulse rounded-full bg-[#e4e7f0]" />
+            <div className="mt-3 h-5 w-[420px] max-w-full animate-pulse rounded-full bg-[#eef2fb]" />
+            <div className="mt-2 h-5 w-[360px] max-w-full animate-pulse rounded-full bg-[#eef2fb]" />
+          </div>
+
+          <div className="w-full max-w-[320px] rounded-[24px] border border-[#d9e2ff] bg-white/90 p-4 shadow-[0_18px_34px_rgba(79,93,132,0.08)]">
+            <div className="h-3 w-28 animate-pulse rounded-full bg-[#eef2fb]" />
+            <div className="mt-3 h-7 w-24 animate-pulse rounded-full bg-[#e4e7f0]" />
+            <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-[#eef2fb]" />
+            <div className="mt-2 h-4 w-5/6 animate-pulse rounded-full bg-[#eef2fb]" />
+            <div className="mt-4 h-10 w-full animate-pulse rounded-2xl bg-[#f4f6fd]" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="rounded-[26px] border border-[#e8ecfb] bg-white/95 px-5 py-5 shadow-[0_18px_40px_rgba(78,93,132,0.07)]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="h-3 w-20 animate-pulse rounded-full bg-[#eef2fb]" />
+                <div className="mt-4 h-8 w-24 animate-pulse rounded-full bg-[#e4e7f0]" />
+                <div className="mt-2 h-4 w-20 animate-pulse rounded-full bg-[#eef2fb]" />
+              </div>
+              <div className="h-12 w-12 animate-pulse rounded-2xl bg-[#eef2fb]" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className={`${cardClass} relative overflow-hidden`}>
+          <div className="h-5 w-36 animate-pulse rounded-full bg-[#e4e7f0]" />
+          <div className="mt-4 h-8 w-3/4 animate-pulse rounded-full bg-[#e4e7f0]" />
+          <div className="mt-3 h-5 w-full animate-pulse rounded-full bg-[#eef2fb]" />
+          <div className="mt-2 h-5 w-11/12 animate-pulse rounded-full bg-[#eef2fb]" />
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-[22px] border border-[#e8ecfb] bg-[#fbfcff] px-4 py-4"
+              >
+                <div className="h-3 w-20 animate-pulse rounded-full bg-[#eef2fb]" />
+                <div className="mt-3 h-8 w-16 animate-pulse rounded-full bg-[#e4e7f0]" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-[22px] border border-[#e8ecfb] bg-white px-4 py-4"
+              >
+                <div className="h-3 w-16 animate-pulse rounded-full bg-[#eef2fb]" />
+                <div className="mt-3 h-6 w-20 animate-pulse rounded-full bg-[#e4e7f0]" />
+                <div className="mt-2 h-4 w-24 animate-pulse rounded-full bg-[#eef2fb]" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-[#e8ecfb] bg-[#fffaf2] px-4 py-4">
+            <div className="h-4 w-24 animate-pulse rounded-full bg-[#eef2fb]" />
+            <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-[#eef2fb]" />
+            <div className="mt-2 h-4 w-4/5 animate-pulse rounded-full bg-[#eef2fb]" />
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <div
+              key={index}
+              className={cardClass}
+            >
+              <div className="h-5 w-28 animate-pulse rounded-full bg-[#e4e7f0]" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, itemIndex) => (
+                  <div
+                    key={itemIndex}
+                    className="flex gap-3 rounded-[18px] border border-[#edf1ff] bg-[#fbfcff] px-4 py-3"
+                  >
+                    <div className="h-8 w-8 animate-pulse rounded-xl bg-[#eef2fb]" />
+                    <div className="flex-1">
+                      <div className="h-4 w-full animate-pulse rounded-full bg-[#e4e7f0]" />
+                      <div className="mt-2 h-4 w-4/5 animate-pulse rounded-full bg-[#eef2fb]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div
+            key={index}
+            className={cardClass}
+          >
+            <div className="h-5 w-28 animate-pulse rounded-full bg-[#e4e7f0]" />
+            <div className="mt-3 h-4 w-3/4 animate-pulse rounded-full bg-[#eef2fb]" />
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 3 }).map((_, itemIndex) => (
+                <div
+                  key={itemIndex}
+                  className="rounded-[20px] border border-[#edf1ff] bg-[#fbfcff] px-4 py-4"
+                >
+                  <div className="h-4 w-28 animate-pulse rounded-full bg-[#e4e7f0]" />
+                  <div className="mt-3 h-2 w-full animate-pulse rounded-full bg-[#eef2fb]" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function StudentAiInsightsTab({
+  loading = false,
   currentUserId,
   currentUserName,
   currentXp,
@@ -80,14 +213,18 @@ export default function StudentAiInsightsTab({
   );
 
   useEffect(() => {
+    if (loading) return;
+
     const timeoutId = window.setTimeout(() => {
       setBucket(getStudentAiInsightBucket());
     }, getMsUntilNextInsightRefresh());
 
     return () => window.clearTimeout(timeoutId);
-  }, [bucket]);
+  }, [bucket, loading]);
 
   useEffect(() => {
+    if (loading) return;
+
     const updateCountdown = () => {
       setRefreshCountdown(
         formatInsightRefreshCountdown(getMsUntilNextInsightRefresh()),
@@ -98,9 +235,11 @@ export default function StudentAiInsightsTab({
     const intervalId = window.setInterval(updateCountdown, 60 * 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [bucket]);
+  }, [bucket, loading]);
 
   useEffect(() => {
+    if (loading) return;
+
     const storageKey = getStorageKey(currentUserId);
     const cached = window.localStorage.getItem(storageKey);
 
@@ -128,18 +267,10 @@ export default function StudentAiInsightsTab({
 
     setSnapshot(nextSnapshot);
     window.localStorage.setItem(storageKey, JSON.stringify(nextSnapshot));
-  }, [bucket, currentRank, currentUserId, currentUserName, currentXp, levelInfo, signature, studentHistory, totalStudents]);
+  }, [bucket, currentRank, currentUserId, currentUserName, currentXp, levelInfo, loading, signature, studentHistory, totalStudents]);
 
-  if (!snapshot) {
-    return (
-      <section className="space-y-6">
-        <div className="h-44 animate-pulse rounded-[32px] border border-[#e8ecfb] bg-white" />
-        <div className="grid gap-5 lg:grid-cols-2">
-          <div className="h-72 animate-pulse rounded-[28px] border border-[#e8ecfb] bg-white" />
-          <div className="h-72 animate-pulse rounded-[28px] border border-[#e8ecfb] bg-white" />
-        </div>
-      </section>
-    );
+  if (loading || !snapshot) {
+    return <StudentAiInsightsSkeleton />;
   }
 
   const generatedDate = new Date(snapshot.generatedAt);
