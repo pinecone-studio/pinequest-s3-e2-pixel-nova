@@ -33,14 +33,13 @@ describe("StudentHeader", () => {
         xp={2450}
         onTabChange={onTabChange}
         onOpenProfile={jest.fn()}
-        onOpenSettings={jest.fn()}
         onOpenHelp={jest.fn()}
-        onToggleTheme={jest.fn()}
       />,
     );
 
     expect(screen.getByText("Educore")).toBeInTheDocument();
     expect(screen.getByText("2.5k XP")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "AI дүгнэлт" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Шалгалт" }));
     expect(onTabChange).toHaveBeenCalledWith("Exams");
@@ -61,9 +60,7 @@ describe("StudentHeader", () => {
         xp={2450}
         onTabChange={jest.fn()}
         onOpenProfile={onOpenProfile}
-        onOpenSettings={jest.fn()}
         onOpenHelp={jest.fn()}
-        onToggleTheme={jest.fn()}
       />,
     );
 
@@ -73,6 +70,8 @@ describe("StudentHeader", () => {
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Дансны цэс нээх" }));
+    expect(screen.queryByRole("button", { name: "Тохиргоо" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Өнгө солих" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Профайл" }));
     expect(onOpenProfile).toHaveBeenCalledTimes(1);
   });

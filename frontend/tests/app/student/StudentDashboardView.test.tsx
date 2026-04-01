@@ -90,13 +90,6 @@ jest.mock(
     },
 );
 jest.mock(
-  "@/app/student/components/StudentPreferencesTab",
-  () =>
-    function StudentPreferencesTabMock() {
-      return null;
-    },
-);
-jest.mock(
   "@/app/student/components/StudentHelpTab",
   () =>
     function StudentHelpTabMock() {
@@ -125,7 +118,6 @@ const createProps = () => ({
     unreadNotificationCount: 0,
     markNotificationRead: jest.fn(),
     markAllNotificationsRead: jest.fn(),
-    setTheme: jest.fn(),
     currentUser: {
       id: "student-1",
       username: "zolboo",

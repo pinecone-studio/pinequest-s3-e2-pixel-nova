@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import StudentProgressTab from "@/app/student/components/StudentProgressTab";
 
 const studentHistory = [
@@ -29,29 +29,53 @@ const studentHistory = [
 ];
 
 describe("StudentProgressTab", () => {
-  it("renders the redesigned progress overview cards and chart sections", () => {
+  it("renders the screenshot-style progress overview", () => {
+    const onOpenAiInsights = jest.fn();
+
     render(
       <StudentProgressTab
         loading={false}
+        currentUserName="Золбоо Бат"
+        currentRank={4}
+        currentXp={2100}
+        currentLevel={12}
         levelInfo={{ level: 4, minXP: 1200 }}
         studentProgress={{ xp: 1480 }}
         nextLevel={{ minXP: 1600 }}
         progressSegments={7}
+        onOpenAiInsights={onOpenAiInsights}
         studentHistory={studentHistory}
       />,
     );
 
     expect(screen.getByText("Миний ахиц")).toBeInTheDocument();
-    expect(screen.getByText("Энэ долоо хоног")).toBeInTheDocument();
-    expect(screen.getByText("Одоогийн түвшин")).toBeInTheDocument();
-    expect(screen.getByText("Дундаж оноо")).toBeInTheDocument();
-    expect(screen.getByText("Сүүлийн дүн")).toBeInTheDocument();
+    expect(screen.getByText("Хичээлийн дүн")).toBeInTheDocument();
+    expect(screen.getByText("Дүгнэлт")).toBeInTheDocument();
+    expect(screen.getByText("AI-ийн ерөнхий дүгнэлт")).toBeInTheDocument();
+    expect(screen.getByText("English")).toBeInTheDocument();
+    expect(screen.getByText("Mathematics")).toBeInTheDocument();
+    expect(screen.getByText("Physics")).toBeInTheDocument();
+    expect(screen.getByText("YOU")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Mathematics/i }));
+
+    expect(screen.getByText("Анхаарах хэрэгтэй")).toBeInTheDocument();
+    expect(screen.getByText("Гүйцэтгэл өндөр сэдэв")).toBeInTheDocument();
+    expect(screen.getByText("Зөвлөгөө")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /AI-ийн ерөнхий дүгнэлт/i }));
+
+    expect(onOpenAiInsights).toHaveBeenCalledTimes(1);
   });
 
   it("renders progress loading skeletons", () => {
     render(
       <StudentProgressTab
         loading={true}
+        currentUserName="Золбоо Бат"
+        currentRank={4}
+        currentXp={2100}
+        currentLevel={12}
         levelInfo={{ level: 4, minXP: 1200 }}
         studentProgress={{ xp: 1480 }}
         nextLevel={{ minXP: 1600 }}

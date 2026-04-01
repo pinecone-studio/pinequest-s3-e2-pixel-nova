@@ -144,19 +144,6 @@ describe("useStudentData", () => {
 		expect(result.current.notifications).toHaveLength(2);
 	});
 
-	it("defaults theme to light", () => {
-		const { result } = renderHook(() => useStudentData(mockUser));
-		expect(result.current.theme).toBe("light");
-	});
-
-	it("allows setting theme to dark", () => {
-		const { result } = renderHook(() => useStudentData(mockUser));
-
-		act(() => result.current.setTheme("dark"));
-
-		expect(result.current.theme).toBe("dark");
-	});
-
 	it("syncs data every 30 seconds when the tab is visible", async () => {
 		const { result } = renderHook(() => useStudentData(mockUser));
 
