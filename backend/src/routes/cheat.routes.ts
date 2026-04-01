@@ -285,6 +285,8 @@ const AUDIO_MIME_TYPES = [
   "audio/webm;codecs=opus",
   "audio/ogg",
   "audio/ogg;codecs=opus",
+  "audio/m4a",
+  "audio/mp4",
 ] as const;
 type AudioMimeType = (typeof AUDIO_MIME_TYPES)[number];
 
@@ -293,6 +295,8 @@ const AUDIO_EXTENSION_MAP: Record<AudioMimeType, string> = {
   "audio/webm;codecs=opus": "webm",
   "audio/ogg": "ogg",
   "audio/ogg;codecs=opus": "ogg",
+  "audio/m4a": "m4a",
+  "audio/mp4": "m4a",
 };
 
 const audioUploadSchema = z.object({
@@ -360,7 +364,7 @@ const parseSnapshotObjectKey = (objectKey: string) => {
 
 const parseAudioObjectKey = (objectKey: string) => {
   const match = objectKey.match(
-    /^cheat-audio\/([^/]+)\/([^/]+)\/[^/]+\.(webm|ogg)$/i,
+    /^cheat-audio\/([^/]+)\/([^/]+)\/[^/]+\.(webm|ogg|m4a)$/i,
   );
 
   if (!match) {
@@ -398,7 +402,15 @@ const inferSnapshotMimeType = (objectKey: string): SnapshotMimeType => {
 };
 
 const inferAudioMimeType = (objectKey: string): AudioMimeType => {
-  return objectKey.endsWith(".ogg") ? "audio/ogg" : "audio/webm";
+  if (objectKey.endsWith(".ogg")) {
+    return "audio/ogg";
+  }
+
+  if (objectKey.endsWith(".m4a")) {
+    return "audio/m4a";
+  }
+
+  return "audio/webm";
 };
 
 const ensureSnapshotSigningConfig = (env: AppEnv["Bindings"]) => {
