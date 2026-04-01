@@ -19,6 +19,7 @@ import {
 
 import MobileProctorCamera from "@/components/student-app/MobileProctorCamera";
 import { useStudentApp } from "@/lib/student-app/context";
+import { useExamAudioRecorder } from "@/lib/student-app/hooks/use-exam-audio-recorder";
 import {
   computeRemainingSeconds,
   formatCountdown,
@@ -28,7 +29,7 @@ import {
 } from "@/lib/student-app/utils";
 import { examStyles as styles } from "@/styles/screens/exam";
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Types Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Types
 
 type TabKey = "active" | "history";
 
@@ -190,7 +191,9 @@ function ExamDetailModal({
 }) {
   if (!exam) return null;
 
-  const classLabel = [exam.className, exam.groupName].filter(Boolean).join(" · ");
+  const classLabel = [exam.className, exam.groupName]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -206,8 +209,7 @@ function ExamDetailModal({
 
           <ScrollView
             contentContainerStyle={styles.detailContent}
-            showsVerticalScrollIndicator={false}
-          >
+            showsVerticalScrollIndicator={false}>
             <View style={styles.detailHeroCard}>
               <View style={styles.listCardRow}>
                 <View style={{ flex: 1 }}>
@@ -248,13 +250,23 @@ function ExamDetailModal({
 
             <View style={styles.detailSectionCard}>
               <View style={styles.detailSectionHeader}>
-                <Ionicons name="information-circle-outline" size={20} color="#111827" />
-                <Text style={styles.detailSectionTitle}>Шалгалтын дүрэм ба мэдээлэл</Text>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={20}
+                  color="#111827"
+                />
+                <Text style={styles.detailSectionTitle}>
+                  Шалгалтын дүрэм ба мэдээлэл
+                </Text>
               </View>
 
               <View style={styles.ruleGrid}>
                 <View style={[styles.ruleCard, styles.ruleCardWarning]}>
-                  <Ionicons name="swap-horizontal-outline" size={18} color="#F59E0B" />
+                  <Ionicons
+                    name="swap-horizontal-outline"
+                    size={18}
+                    color="#F59E0B"
+                  />
                   <Text style={styles.ruleTitle}>Change tab</Text>
                   <Text style={styles.ruleSubtitle}>Cannot change tab.</Text>
                 </View>
@@ -262,11 +274,17 @@ function ExamDetailModal({
                 <View style={[styles.ruleCard, styles.ruleCardWarning]}>
                   <Ionicons name="timer-outline" size={18} color="#F59E0B" />
                   <Text style={styles.ruleTitle}>Auto Submit</Text>
-                  <Text style={styles.ruleSubtitle}>Submits when time ends</Text>
+                  <Text style={styles.ruleSubtitle}>
+                    Submits when time ends
+                  </Text>
                 </View>
 
                 <View style={[styles.ruleCard, styles.ruleCardDanger]}>
-                  <Ionicons name="lock-closed-outline" size={18} color="#EF4444" />
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={18}
+                    color="#EF4444"
+                  />
                   <Text style={styles.ruleTitle}>Copy/Paste</Text>
                   <Text style={styles.ruleSubtitle}>Disabled</Text>
                 </View>
@@ -483,36 +501,31 @@ function ExamListScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.pageTitle}>Шалгалтуудад</Text>
+      showsVerticalScrollIndicator={false}>
+      <Text style={styles.pageTitle}>Exams</Text>
 
       {/* Tab switcher */}
       <View style={styles.tabRow}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "active" && styles.tabActive]}
-          onPress={() => setActiveTab("active")}
-        >
+          onPress={() => setActiveTab("active")}>
           <Text
             style={[
               styles.tabText,
               activeTab === "active" && styles.tabTextActive,
-            ]}
-          >
-            Шалгалтууд
+            ]}>
+            Upcoming
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === "history" && styles.tabActive]}
-          onPress={() => setActiveTab("history")}
-        >
+          onPress={() => setActiveTab("history")}>
           <Text
             style={[
               styles.tabText,
               activeTab === "history" && styles.tabTextActive,
-            ]}
-          >
-            Шалгалтын түүх
+            ]}>
+            History
           </Text>
         </TouchableOpacity>
       </View>
@@ -522,14 +535,14 @@ function ExamListScreen() {
         <Ionicons name="search-outline" size={18} color="#98A2B3" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Шалгалт хайх..."
+          placeholder="Search exams..."
           placeholderTextColor="#AAB0C0"
           value={search}
           onChangeText={setSearch}
         />
       </View>
 
-      {/* List Ã¢â‚¬â€ replace with real data from context when ready */}
+      {/* List */}
       {activeTab === "active" ? (
         <ActiveExamList search={search} items={activeItems} />
       ) : (
@@ -609,16 +622,14 @@ function ActiveExamList({
             {exam.status === "active" ? (
               <TouchableOpacity
                 style={styles.upcomingPrimaryButton}
-                onPress={() => router.push("/exam")}
-              >
+                onPress={() => router.push("/exam")}>
                 <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
               </TouchableOpacity>
             ) : (
               <View style={styles.upcomingButtonRow}>
                 <TouchableOpacity
                   style={styles.upcomingDetailButton}
-                  onPress={() => setSelectedExam(exam)}
-                >
+                  onPress={() => setSelectedExam(exam)}>
                   <Text style={styles.upcomingDetailText}>Дэлгэрэнгүй</Text>
                 </TouchableOpacity>
               </View>
@@ -670,8 +681,7 @@ function HistoryList({
                   : exam.status === "late"
                     ? styles.statusPillDanger
                     : undefined,
-              ]}
-            >
+              ]}>
               <Text
                 style={[
                   styles.statusPillText,
@@ -680,8 +690,7 @@ function HistoryList({
                     : exam.status === "late"
                       ? styles.statusPillTextDanger
                       : undefined,
-                ]}
-              >
+                ]}>
                 {exam.status === "missed"
                   ? "Өгөөгүй"
                   : exam.status === "late"
@@ -728,6 +737,10 @@ export default function ExamScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [textDraft, setTextDraft] = useState("");
+  const [cameraReady, setCameraReady] = useState(false);
+  const [proctoringBlockedMessage, setProctoringBlockedMessage] = useState<
+    string | null
+  >(null);
   const submitRequestedRef = useRef(false);
 
   const currentQuestion =
@@ -737,7 +750,16 @@ export default function ExamScreen() {
     : {};
   const isJoined =
     activeSession?.status === "joined" || activeSession?.status === "late";
-  const isSyncBlocked = activeSession?.syncStatus === "syncing" || submitting;
+  const audioRecorder = useExamAudioRecorder({
+    required: Boolean(activeSession?.exam.requiresAudioRecording),
+    session: activeSession,
+    student,
+  });
+  const isSyncBlocked =
+    activeSession?.syncStatus === "syncing" ||
+    submitting ||
+    Boolean(proctoringBlockedMessage) ||
+    audioRecorder.status === "blocked";
 
   const persistTextAnswer = useCallback(async () => {
     if (!currentQuestion || !activeSession) return;
@@ -791,7 +813,11 @@ export default function ExamScreen() {
       setSubmitting(true);
       setSyncError(null);
       try {
-        await submitCurrentExam();
+        await submitCurrentExam({
+          beforeSubmit: async () => {
+            await audioRecorder.stop();
+          },
+        });
         router.replace("/result");
       } catch (error) {
         submitRequestedRef.current = false;
@@ -800,8 +826,70 @@ export default function ExamScreen() {
         setSubmitting(false);
       }
     },
-    [persistTextAnswer, router, submitCurrentExam],
+    [audioRecorder, persistTextAnswer, router, submitCurrentExam],
   );
+
+  const handleRecoverProctoring = useCallback(async () => {
+    if (!activeSession || activeSession.status !== "in_progress") {
+      return;
+    }
+
+    setSyncError(null);
+
+    try {
+      const permissionResult = cameraPermission?.granted
+        ? cameraPermission
+        : await requestCameraPermission();
+
+      if (!permissionResult?.granted) {
+        setSyncError(
+          "Camera permission is required before the exam can continue.",
+        );
+        return;
+      }
+
+      if (!cameraReady) {
+        setSyncError(
+          "The exam camera is still preparing. Wait for the camera card to show Ready.",
+        );
+        return;
+      }
+
+      if (activeSession.exam.requiresAudioRecording) {
+        const prepared = await audioRecorder.prepare();
+        if (!prepared) {
+          setSyncError(
+            audioRecorder.error ??
+              "Microphone recording must be ready before the exam can continue.",
+          );
+          return;
+        }
+
+        const started = await audioRecorder.start();
+        if (!started) {
+          setSyncError(
+            audioRecorder.error ??
+              "Microphone recording must be running before the exam can continue.",
+          );
+          return;
+        }
+      }
+
+      setProctoringBlockedMessage(null);
+      setIntegrityWarning(null);
+    } catch (error) {
+      setSyncError(
+        normalizeApiError(error, "Could not recover exam proctoring."),
+      );
+    }
+  }, [
+    activeSession,
+    audioRecorder,
+    cameraPermission,
+    cameraReady,
+    requestCameraPermission,
+    setIntegrityWarning,
+  ]);
 
   const moveQuestion = async (direction: -1 | 1) => {
     await persistTextAnswer();
@@ -838,6 +926,9 @@ export default function ExamScreen() {
     const subscription = AppState.addEventListener("change", (nextState) => {
       setAppIsActive(nextState === "active");
       if (nextState !== "active" && activeSession?.status === "in_progress") {
+        setProctoringBlockedMessage(
+          "The exam was paused because the app left the foreground. Return to the exam and recover proctoring before continuing.",
+        );
         setIntegrityWarning(
           "The app moved out of the foreground during an active exam.",
         );
@@ -855,6 +946,9 @@ export default function ExamScreen() {
           activeSession.status === "in_progress" &&
           !submitRequestedRef.current
         ) {
+          setProctoringBlockedMessage(
+            "The exam was paused because you left the exam screen.",
+          );
           setIntegrityWarning(
             "You left the exam screen. Stay inside the exam until you submit.",
           );
@@ -863,6 +957,24 @@ export default function ExamScreen() {
       };
     }, [activeSession, logIntegrityEvent, setIntegrityWarning]),
   );
+
+  useEffect(() => {
+    if (
+      audioRecorder.status === "blocked" ||
+      audioRecorder.status === "error"
+    ) {
+      setProctoringBlockedMessage(
+        audioRecorder.error ??
+          "Audio recording stopped unexpectedly. Recover proctoring before continuing.",
+      );
+    }
+  }, [audioRecorder.error, audioRecorder.status]);
+
+  useEffect(() => {
+    return () => {
+      void audioRecorder.stop();
+    };
+  }, [audioRecorder]);
 
   const progressLabel = useMemo(() => {
     if (!activeSession || activeSession.questions.length === 0) return "0/0";
@@ -875,13 +987,11 @@ export default function ExamScreen() {
   if (!hydrated) {
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <Text style={styles.pageTitle}>Шалгалт</Text>
+        <Text style={styles.pageTitle}>Exam</Text>
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyEmoji}>⏳</Text>
-          <Text style={styles.emptyTitle}>Уншиж байна...</Text>
-          <Text style={styles.emptyText}>
-            Шалгалтын мэдээлэл сэргээж байна.
-          </Text>
+          <Text style={styles.emptyEmoji}>Loading</Text>
+          <Text style={styles.emptyTitle}>Loading...</Text>
+          <Text style={styles.emptyText}>Restoring the latest exam state.</Text>
         </View>
       </ScrollView>
     );
@@ -900,13 +1010,50 @@ export default function ExamScreen() {
         : await requestCameraPermission();
       if (!permissionResult?.granted) {
         setSyncError(
-          "Камерын зөвшөөрөл шаардлагатай. Expo Go build дээр шалгалт эхлэхээс өмнө front camera access зөвшөөрөөд дахин оролдоно уу.",
+          "Camera permission is required before the exam can start.",
         );
         return;
       }
-      await startExam();
+      if (!cameraReady) {
+        setSyncError(
+          "The exam camera is still preparing. Wait for the camera card to show Ready.",
+        );
+        return;
+      }
+
+      const requiresAudioRecording = Boolean(
+        activeSession?.exam.requiresAudioRecording,
+      );
+      let audioReady = false;
+
+      if (requiresAudioRecording) {
+        const prepared = await audioRecorder.prepare();
+        if (!prepared) {
+          setSyncError(
+            audioRecorder.error ??
+              "Microphone recording must be ready before the exam can start.",
+          );
+          return;
+        }
+
+        const started = await audioRecorder.start();
+        if (!started) {
+          setSyncError(
+            audioRecorder.error ??
+              "Microphone recording must be running before the exam can start.",
+          );
+          return;
+        }
+        audioReady = true;
+      }
+
+      setProctoringBlockedMessage(null);
+      await startExam({
+        audioReady: requiresAudioRecording ? audioReady : undefined,
+      });
       setRemainingSeconds(computeRemainingSeconds(activeSession.timerEndsAt));
     } catch (error) {
+      await audioRecorder.stop();
       setSyncError(normalizeApiError(error, "Could not start the exam."));
     }
   };
@@ -928,9 +1075,8 @@ export default function ExamScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={styles.pageTitle}>Шалгалт</Text>
+      showsVerticalScrollIndicator={false}>
+      <Text style={styles.pageTitle}>Exam</Text>
 
       <View style={styles.examCard}>
         <View style={styles.examCardTop} />
@@ -944,11 +1090,11 @@ export default function ExamScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.examTitle}>{activeSession.exam.title}</Text>
               <Text style={styles.examMeta}>
-                📅{" "}
+                {"Scheduled: "}
                 {formatDateTime(
                   activeSession.exam.scheduledAt ?? activeSession.startedAt,
                 )}{" "}
-                · {activeSession.exam.durationMin} мин
+                · {activeSession.exam.durationMin} min
               </Text>
             </View>
             <View
@@ -956,17 +1102,15 @@ export default function ExamScreen() {
                 styles.statusPill,
                 activeSession.entryStatus === "late" &&
                   styles.statusPillWarning,
-              ]}
-            >
+              ]}>
               <Text
                 style={[
                   styles.statusPillText,
                   activeSession.entryStatus === "late" &&
                     styles.statusPillTextWarning,
-                ]}
-              >
+                ]}>
                 {activeSession.entryStatus === "late"
-                  ? "Хоцорсон"
+                  ? "Late"
                   : getEntryStatusLabel(activeSession.entryStatus)}
               </Text>
             </View>
@@ -975,13 +1119,13 @@ export default function ExamScreen() {
           {!isJoined && (
             <View style={styles.metaRow}>
               <View style={styles.metaChip}>
-                <Text style={styles.metaChipLabel}>Үлдсэн хугацаа</Text>
+                <Text style={styles.metaChipLabel}>Time left</Text>
                 <Text style={styles.metaChipValue}>
                   {formatCountdown(remainingSeconds)}
                 </Text>
               </View>
               <View style={styles.metaChip}>
-                <Text style={styles.metaChipLabel}>Явц</Text>
+                <Text style={styles.metaChipLabel}>Progress</Text>
                 <Text style={styles.metaChipValue}>{progressLabel}</Text>
               </View>
             </View>
@@ -993,36 +1137,53 @@ export default function ExamScreen() {
 
           {integrity.warningMessage ? (
             <View style={styles.warningBox}>
-              <Text style={styles.warningText}>
-                ⚠️ {integrity.warningMessage}
-              </Text>
+              <Text style={styles.warningText}>{integrity.warningMessage}</Text>
+            </View>
+          ) : null}
+
+          {proctoringBlockedMessage ? (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>{proctoringBlockedMessage}</Text>
             </View>
           ) : null}
 
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              This build does not capture or upload snapshots. Browser-style
-              local camera proctoring is prepared for a future native build,
-              while app background and screen-blur integrity events continue to
-              log normally.
+              Camera preflight, periodic snapshot evidence, and rolling audio
+              recording are managed from this screen. Proctoring must stay
+              active for the whole exam.
             </Text>
           </View>
 
           {syncError ? <Text style={styles.errorText}>{syncError}</Text> : null}
 
+          <Text style={styles.infoText}>
+            Audio status: {audioRecorder.status}
+            {audioRecorder.lastUploadedAt
+              ? ` · Last upload ${formatDateTime(audioRecorder.lastUploadedAt)}`
+              : ""}
+          </Text>
+
           {isJoined ? (
             <>
+              <MobileProctorCamera
+                captureEnabled={false}
+                isEnabled
+                permissionGranted={!!cameraPermission?.granted}
+                sessionId={activeSession.sessionId}
+                student={student}
+                onCameraReadyChange={setCameraReady}
+                onViolation={logIntegrityEvent}
+              />
               <TouchableOpacity
                 style={styles.primaryBtn}
-                onPress={() => void handleStart()}
-              >
-                <Text style={styles.primaryBtnText}>Шалгалт эхлүүлэх</Text>
+                onPress={() => void handleStart()}>
+                <Text style={styles.primaryBtnText}>Start exam</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.secondaryBtn}
-                onPress={() => void recoverActiveSession()}
-              >
-                <Text style={styles.secondaryBtnText}>Шинэчлэх</Text>
+                onPress={() => void recoverActiveSession()}>
+                <Text style={styles.secondaryBtnText}>Refresh session</Text>
               </TouchableOpacity>
             </>
           ) : null}
@@ -1030,19 +1191,32 @@ export default function ExamScreen() {
       </View>
 
       {!isJoined ? (
-        <MobileProctorCamera
-          isEnabled={activeSession.status === "in_progress" && appIsActive}
-          permissionGranted={!!cameraPermission?.granted}
-          sessionId={activeSession.sessionId}
-          student={student}
-          onViolation={logIntegrityEvent}
-        />
+        <>
+          <MobileProctorCamera
+            captureEnabled={
+              activeSession.status === "in_progress" && appIsActive
+            }
+            isEnabled={activeSession.status === "in_progress" && appIsActive}
+            permissionGranted={!!cameraPermission?.granted}
+            sessionId={activeSession.sessionId}
+            student={student}
+            onCameraReadyChange={setCameraReady}
+            onViolation={logIntegrityEvent}
+          />
+          {proctoringBlockedMessage ? (
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={() => void handleRecoverProctoring()}>
+              <Text style={styles.secondaryBtnText}>Recover proctoring</Text>
+            </TouchableOpacity>
+          ) : null}
+        </>
       ) : null}
 
       {!isJoined && currentQuestion ? (
         <View style={styles.questionCard}>
           <Text style={styles.questionCounter}>
-            {activeSession.currentQuestionIndex + 1}-р асуулт
+            Question {activeSession.currentQuestionIndex + 1}
           </Text>
           <Text style={styles.questionText}>
             {currentQuestion.questionText}
@@ -1068,14 +1242,12 @@ export default function ExamScreen() {
                     style={[
                       styles.optionButton,
                       selected && styles.optionButtonSelected,
-                    ]}
-                  >
+                    ]}>
                     <Text
                       style={[
                         styles.optionLabel,
                         selected && styles.optionLabelSelected,
-                      ]}
-                    >
+                      ]}>
                       {option.label}. {option.text}
                     </Text>
                   </Pressable>
@@ -1087,7 +1259,7 @@ export default function ExamScreen() {
               key={currentQuestion.id}
               multiline
               contextMenuHidden={integrity.capabilities.copyPasteRestricted}
-              placeholder="Хариултаа энд бичнэ үү"
+              placeholder="Write your answer here"
               placeholderTextColor="#BBBFC9"
               style={styles.answerInput}
               value={textDraft}
@@ -1107,9 +1279,8 @@ export default function ExamScreen() {
                 styles.navBtnDisabled,
             ]}
             disabled={activeSession.currentQuestionIndex === 0 || isSyncBlocked}
-            onPress={() => void moveQuestion(-1)}
-          >
-            <Text style={styles.navBtnText}>← Өмнөх</Text>
+            onPress={() => void moveQuestion(-1)}>
+            <Text style={styles.navBtnText}>Previous</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -1123,17 +1294,15 @@ export default function ExamScreen() {
               activeSession.currentQuestionIndex >=
                 activeSession.questions.length - 1 || isSyncBlocked
             }
-            onPress={() => void moveQuestion(1)}
-          >
-            <Text style={styles.navBtnText}>Дараах →</Text>
+            onPress={() => void moveQuestion(1)}>
+            <Text style={styles.navBtnText}>Next</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.primaryBtn, isSyncBlocked && styles.navBtnDisabled]}
             disabled={isSyncBlocked}
-            onPress={() => void handleSubmit(false)}
-          >
+            onPress={() => void handleSubmit(false)}>
             <Text style={styles.primaryBtnText}>
-              {submitting ? "Илгээж байна..." : "Шалгалт илгээх"}
+              {submitting ? "Submitting..." : "Submit exam"}
             </Text>
           </TouchableOpacity>
         </View>

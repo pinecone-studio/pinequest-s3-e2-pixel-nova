@@ -1,5 +1,8 @@
 import {
   apiRequest,
+  createAudioUploadUrl,
+  createSnapshotUploadUrl,
+  finalizeAudioUpload,
   getAuthUsers,
   getMe,
   getSessionDetail,
@@ -10,6 +13,7 @@ import {
   loginWithCode,
   reportCheatEvent,
   startSession,
+  startSessionWithOptions,
   submitSession,
   submitSessionAnswer,
   updateStudentProfile,
@@ -155,6 +159,15 @@ describe('session flow', () => {
     expect(init.method).toBe('POST');
   });
 
+  it('startSessionWithOptions sends audio readiness in the request body', async () => {
+    await startSessionWithOptions(mockStudent, 'sess-1', { audioReady: true });
+
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toContain('/api/sessions/sess-1/start');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({ audioReady: true });
+  });
+
   it('submitSessionAnswer sends answer data', async () => {
     await submitSessionAnswer(mockStudent, 'sess-1', 'q1', {
       selectedOptionId: 'opt-1',
@@ -282,5 +295,72 @@ describe('reportCheatEvent', () => {
     expect(body.sessionId).toBe('sess-1');
     expect(body.eventType).toBe('tab_switch');
     expect(body.metadata).toBe('test');
+  });
+
+  it('sends cheat event when the full payload shape is provided', async () => {
+    await reportCheatEvent(mockStudent, {
+      sessionId: 'sess-1',
+      eventType: 'audio_upload_failed',
+      source: 'mobile_audio',
+      confidence: 0.82,
+      metadata: '{"message":"upload failed"}',
+      details: { message: 'upload failed' },
+    });
+
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0];
+    const body = JSON.parse(init.body);
+    expect(body).toMatchObject({
+      sessionId: 'sess-1',
+      eventType: 'audio_upload_failed',
+      source: 'mobile_audio',
+      confidence: 0.82,
+    });
+  });
+
+  it('creates a snapshot upload URL', async () => {
+    await createSnapshotUploadUrl(mockStudent, {
+      sessionId: 'sess-1',
+      mimeType: 'image/jpeg',
+      capturedAt: '2026-03-01T10:00:00.000Z',
+    });
+
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toContain('/api/cheat/snapshot-upload-url');
+    expect(init.method).toBe('POST');
+  });
+
+  it('creates an audio upload URL', async () => {
+    await createAudioUploadUrl(mockStudent, {
+      sessionId: 'sess-1',
+      mimeType: 'audio/m4a',
+      sequenceNumber: 1,
+      chunkStartedAt: '2026-03-01T10:00:00.000Z',
+      chunkEndedAt: '2026-03-01T10:00:30.000Z',
+      durationMs: 30000,
+      sizeBytes: 1234,
+    });
+
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toContain('/api/cheat/audio-upload-url');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body).sequenceNumber).toBe(1);
+  });
+
+  it('finalizes an uploaded audio chunk', async () => {
+    await finalizeAudioUpload(mockStudent, {
+      sessionId: 'sess-1',
+      objectKey: 'cheat-audio/sess-1/student-1/chunk-1.m4a',
+      mimeType: 'audio/m4a',
+      sequenceNumber: 1,
+      chunkStartedAt: '2026-03-01T10:00:00.000Z',
+      chunkEndedAt: '2026-03-01T10:00:30.000Z',
+      durationMs: 30000,
+      sizeBytes: 1234,
+    });
+
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toContain('/api/cheat/audio-chunks');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body).objectKey).toContain('cheat-audio');
   });
 });

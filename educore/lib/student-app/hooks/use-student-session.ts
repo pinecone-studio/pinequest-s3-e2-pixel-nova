@@ -5,7 +5,7 @@ import {
   getSessionResult,
   joinSession,
   reportCheatEvent,
-  startSession,
+  startSessionWithOptions,
   submitSession,
   submitSessionAnswer,
 } from '../services/api';
@@ -122,12 +122,16 @@ export const useStudentSession = ({
     [setState, student],
   );
 
-  const startExam = useCallback(async () => {
+  const startExam = useCallback(async (options?: { audioReady?: boolean }) => {
     if (!student || !activeSession) {
       throw new Error('No active exam session found.');
     }
 
-    const started = await startSession(student, activeSession.sessionId);
+    const started = await startSessionWithOptions(
+      student,
+      activeSession.sessionId,
+      options,
+    );
 
     setState((current) => ({
       ...current,
@@ -285,7 +289,7 @@ export const useStudentSession = ({
     [activeSession, logIntegrityEvent, setState, student],
   );
 
-  const submitCurrentExam = useCallback(async () => {
+  const submitCurrentExam = useCallback(async (options?: { beforeSubmit?: () => Promise<void> }) => {
     if (!student || !activeSession) {
       throw new Error('No active exam session found.');
     }
@@ -310,6 +314,9 @@ export const useStudentSession = ({
     }));
 
     try {
+      if (options?.beforeSubmit) {
+        await options.beforeSubmit();
+      }
       const submission = await submitSession(student, activeSession.sessionId);
       const result = await getSessionResult(student, activeSession.sessionId);
       const mergedResult = mergeSessionResult(result, submission.xpEarned);

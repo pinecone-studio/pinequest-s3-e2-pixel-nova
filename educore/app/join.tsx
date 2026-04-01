@@ -34,7 +34,7 @@ export default function JoinExamScreen() {
       await joinExam(roomCode);
     } catch (error) {
       setErrorMessage(
-        normalizeApiError(error, "Энэ кодоор шалгалтанд нэгдэж чадсангүй."),
+        normalizeApiError(error, "Could not join an exam with this code."),
       );
     } finally {
       setLoading(false);
@@ -47,16 +47,14 @@ export default function JoinExamScreen() {
       <View style={styles.card}>
         {/* Close button */}
         <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-          <Text style={styles.closeText}>✕</Text>
+          <Text style={styles.closeText}>×</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>
-          Шалгалтанд нэвтрэх кодоо{"\n"}оруулна уу.
-        </Text>
+        <Text style={styles.title}>Enter your exam access code.</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Код оруулах"
+          placeholder="Enter code"
           placeholderTextColor="#BBBFC9"
           autoCapitalize="characters"
           autoCorrect={false}
@@ -79,7 +77,7 @@ export default function JoinExamScreen() {
           }}
         >
           <Text style={styles.gradientBtnText}>
-            {loading ? "Уншиж байна..." : "Нэвтрэх"}
+            {loading ? "Joining..." : "Join exam"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -98,11 +96,10 @@ export default function JoinExamScreen() {
             </View>
 
             <Text style={styles.metaText}>
-              ⏱ {activeSession.exam.durationMin} минут ·{" "}
-              {activeSession.questions.length} асуулт
+              {activeSession.exam.durationMin} min ·{" "}
+              {activeSession.questions.length} questions
             </Text>
             <Text style={styles.metaText}>
-              📅{" "}
               {formatDateTime(
                 activeSession.exam.scheduledAt ?? activeSession.startedAt,
               )}
@@ -110,8 +107,8 @@ export default function JoinExamScreen() {
 
             {activeSession.entryStatus === "late" ? (
               <Text style={styles.warningText}>
-                ⚠️ Та хоцорч орлоо. Үлдсэн хугацаагаа хэмнэхийн тулд шууд
-                эхлүүлнэ үү.
+                You joined late. Start as soon as possible to preserve your
+                remaining time.
               </Text>
             ) : null}
 
@@ -119,14 +116,14 @@ export default function JoinExamScreen() {
               style={styles.gradientBtn}
               onPress={() => router.push("/exam")}
             >
-              <Text style={styles.gradientBtnText}>Шалгалтанд орох</Text>
+              <Text style={styles.gradientBtnText}>Open exam</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.secondaryBtn}
               onPress={() => router.replace("/home")}
             >
-              <Text style={styles.secondaryBtnText}>Нүүр хуудас руу буцах</Text>
+              <Text style={styles.secondaryBtnText}>Back to home</Text>
             </TouchableOpacity>
           </View>
         </View>

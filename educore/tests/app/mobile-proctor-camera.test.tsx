@@ -4,6 +4,7 @@ import { render } from '@testing-library/react-native';
 import MobileProctorCamera from '@/components/student-app/MobileProctorCamera';
 
 const baseProps = {
+  captureEnabled: false,
   isEnabled: true,
   permissionGranted: true,
   sessionId: 'session-1',
@@ -27,13 +28,11 @@ describe('MobileProctorCamera', () => {
     ).toBeTruthy();
   });
 
-  it('shows that snapshot capture is disabled in this build', () => {
+  it('shows camera preflight details when capture is idle', () => {
     const screen = render(<MobileProctorCamera {...baseProps} />);
 
-    expect(screen.getByText(/Snapshot capture is disabled in this build/)).toBeTruthy();
-    expect(
-      screen.getByText(/No snapshots are captured, stored, or uploaded here/),
-    ).toBeTruthy();
-    expect(screen.getByText(/Native build required/)).toBeTruthy();
+    expect(screen.getByText(/Camera preflight is active/)).toBeTruthy();
+    expect(screen.getByText(/The mobile client keeps the front camera ready/)).toBeTruthy();
+    expect(screen.getByText(/Ready|Starting/)).toBeTruthy();
   });
 });
