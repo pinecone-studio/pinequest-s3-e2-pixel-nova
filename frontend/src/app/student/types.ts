@@ -18,7 +18,6 @@ export type StudentTab =
   | "Progress"
   | "AIInsights"
   | "Profile"
-  | "Settings"
   | "Help";
 
 export type Exam = {

@@ -11,6 +11,18 @@ type InsightSubjectSignal = {
   status: "strong" | "focus" | "steady";
 };
 
+type InsightSubjectBreakdown = {
+  label: string;
+  score: number;
+};
+
+export type SubjectInsightDetail = {
+  subject: string;
+  concerns: InsightSubjectBreakdown[];
+  strengths: InsightSubjectBreakdown[];
+  recommendations: string[];
+};
+
 export type StudentAiInsightSnapshot = {
   generatedAt: string;
   signature: string;
@@ -21,6 +33,7 @@ export type StudentAiInsightSnapshot = {
   focusAreas: string[];
   actionPlan: string[];
   subjectSignals: InsightSubjectSignal[];
+  subjectDetails: SubjectInsightDetail[];
   stats: {
     average: number;
     best: number;
@@ -68,6 +81,34 @@ const highPerformanceSuggestions = [
   "Өндөр дүнтэй байгаа сэдвүүд дээрээ тайлбарлаж сурвал мэдлэг чинь бүр батжинa.",
   "Одоо сайн байгаа хэмнэлээ хадгалахын тулд давтлагаа таслахгүй үргэлжлүүл.",
   "Амжилттай байгаа сэдвээ бусад сул сэдэвтэйгээ холбож давтвал илүү тэнцвэртэй болно.",
+];
+
+const subjectTopicPresets: { match: RegExp; strengths: string[]; concerns: string[] }[] = [
+  {
+    match: /(math|мат|алгебр|геометр|тригонометр)/i,
+    strengths: ["Геометр", "Тригонометр", "Функц"],
+    concerns: ["Алгебр", "Матриц", "Тэгшитгэл"],
+  },
+  {
+    match: /(english|англи|vocabulary|reading|grammar|listening)/i,
+    strengths: ["Reading", "Listening", "Grammar"],
+    concerns: ["Vocabulary", "Spelling", "Sentence use"],
+  },
+  {
+    match: /(physics|физик|mechanics|optics)/i,
+    strengths: ["Механик", "Хөдөлгөөн", "Хэмжилт"],
+    concerns: ["Оптик", "Цахилгаан", "Томьёо"],
+  },
+  {
+    match: /(chem|хими|organic|atom|periodic)/i,
+    strengths: ["Атомын бүтэц", "Химийн холбоо", "Урвал"],
+    concerns: ["Тэнцвэржүүлэлт", "Органик", "Томьёо"],
+  },
+  {
+    match: /(history|түүх|нийгэм|social)/i,
+    strengths: ["Ойлголт", "Нэр томьёо", "Он цаг"],
+    concerns: ["Харьцуулалт", "Шалтгаан үр дагавар", "Дэс дараалал"],
+  },
 ];
 
 const normalizeTitle = (value: string) => {
@@ -151,6 +192,47 @@ const buildSubjectSignals = (history: StudentHistoryItem[]): InsightSubjectSigna
       status,
     };
   });
+};
+
+const getSubjectPreset = (subject: string) =>
+  subjectTopicPresets.find((preset) => preset.match.test(subject)) ?? {
+    strengths: ["Ойлголт", "Асуулт тайлбарлалт", "Жишээ бодлого"],
+    concerns: ["Суурь ойлголт", "Нарийн нэр томьёо", "Алдаа засвар"],
+  };
+
+const clampScore = (value: number) => Math.max(20, Math.min(98, Math.round(value)));
+
+const buildSubjectDetail = (
+  subject: InsightSubjectSignal,
+  signature: string,
+): SubjectInsightDetail => {
+  const preset = getSubjectPreset(subject.subject);
+  const seed = hashString(`${signature}:${subject.subject}`);
+  const strengthBase = Math.max(subject.average + 10, 72);
+  const concernBase = Math.min(subject.average - 18, 58);
+
+  const strengths = preset.strengths.slice(0, 2).map((label, index) => ({
+    label,
+    score: clampScore(strengthBase - ((seed + index * 7) % 8)),
+  }));
+
+  const concerns = preset.concerns.slice(0, 2).map((label, index) => ({
+    label,
+    score: clampScore(concernBase + ((seed + index * 5) % 9)),
+  }));
+
+  const recommendations = [
+    `${concerns[0]?.label ?? "Сул сэдэв"}-ийн бодлогуудыг өдөр бүр бага багаар давтаарай.`,
+    `${concerns[1]?.label ?? "Энэ хэсэг"} дээр 5 нэмэлт дасгал хийж баталгаажуулаарай.`,
+    `${strengths[0]?.label ?? "Сайн байгаа сэдэв"} дээрх арга барилаа бусад сэдэв дээр давтаж хэрэглээрэй.`,
+  ];
+
+  return {
+    subject: subject.subject,
+    concerns,
+    strengths,
+    recommendations,
+  };
 };
 
 export const buildStudentAiInsightSignature = ({
@@ -275,6 +357,8 @@ export const buildStudentAiInsight = ({
     encouragements[(seed + examCount + levelInfo.level) % encouragements.length] ??
     encouragements[0];
 
+  const subjectDetails = subjectSignals.map((item) => buildSubjectDetail(item, signature));
+
   return {
     generatedAt: new Date().toISOString(),
     signature,
@@ -285,6 +369,7 @@ export const buildStudentAiInsight = ({
     focusAreas,
     actionPlan,
     subjectSignals,
+    subjectDetails,
     stats: {
       average: averageScore,
       best: bestScore,

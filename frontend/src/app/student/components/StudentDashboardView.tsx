@@ -14,7 +14,6 @@ import StudentAiInsightsTab from "./StudentAiInsightsTab";
 import StudentDashboardTab from "./StudentDashboardTab";
 import StudentExamsTab from "./StudentExamsTab";
 import StudentHelpTab from "./StudentHelpTab";
-import StudentPreferencesTab from "./StudentPreferencesTab";
 import StudentProgressTab from "./StudentProgressTab";
 import StudentSettingsTab from "./StudentSettingsTab";
 import type { Exam, Grade, NotificationItem, StudentTab } from "../types";
@@ -49,7 +48,6 @@ type StudentDataState = {
   unreadNotificationCount: number;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
-  setTheme: Dispatch<SetStateAction<"light" | "dark">>;
   currentUser: { id: string; username: string } | null;
   exams: Exam[];
 };
@@ -195,11 +193,7 @@ export default function StudentDashboardView({
           xp={currentXp}
           onTabChange={handleTabChange}
           onOpenProfile={() => handleTabChange("Profile")}
-          onOpenSettings={() => handleTabChange("Settings")}
           onOpenHelp={() => handleTabChange("Help")}
-          onToggleTheme={() =>
-            data.setTheme((prev) => (prev === "dark" ? "light" : "dark"))
-          }
           roleControl={
             <RoleNavbar
               activeRole={role}
@@ -264,10 +258,15 @@ export default function StudentDashboardView({
         {exam.activeTab === "Progress" && (
           <StudentProgressTab
             loading={showProgressLoading}
+            currentUserName={currentUserName}
+            currentRank={progress.termRankOverview.rank}
+            currentXp={progress.termRankOverview.xp}
+            currentLevel={progress.termRankOverview.level}
             levelInfo={progress.levelInfo}
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}
             progressSegments={progress.progressSegments}
+            onOpenAiInsights={() => handleTabChange("AIInsights")}
             studentHistory={studentHistory}
           />
         )}
@@ -300,8 +299,6 @@ export default function StudentDashboardView({
             username={currentUser.username}
           />
         )}
-
-        {exam.activeTab === "Settings" && <StudentPreferencesTab />}
 
         {exam.activeTab === "Help" && <StudentHelpTab />}
       </div>

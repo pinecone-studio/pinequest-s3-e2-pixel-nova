@@ -154,6 +154,7 @@ export default function StudentPage() {
     typeof currentUserNameRaw === "string" ? currentUserNameRaw : "";
   const currentRank = progress.rankOverview.rank;
   const currentXp = progress.studentProgress.xp;
+  const { refreshProgress } = progress;
   const showFallbackState =
     !data.currentUser && !selectedUser && !usersLoading && !data.loading;
 
@@ -164,12 +165,12 @@ export default function StudentPage() {
     }
 
     lastSyncedSubmissionIdRef.current = submissionId;
-    void progress.refreshProgress();
-  }, [exam.lastSubmission?.id, progress.refreshProgress]);
+    void refreshProgress();
+  }, [exam.lastSubmission?.id, refreshProgress]);
 
   if (showFallbackState) {
     return (
-      <div className="min-h-screen bg-[#f6f7fd] px-4 pb-10 pt-6 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#f6f7fd] px-4 pb-10 pt-6 font-sans sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1272px] rounded-[28px] border border-[#dfe5fb] bg-white px-6 py-8 text-center shadow-[0_18px_40px_-28px_rgba(79,93,132,0.22)]">
           <h2 className="text-lg font-semibold text-slate-900">
             Өгөгдөл ачаалж чадсангүй
@@ -190,7 +191,7 @@ export default function StudentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f7fd] text-foreground">
+    <div className="min-h-screen bg-[#f6f7fd] font-sans text-foreground">
       {data.toast && (
         <div className="fixed right-6 top-6 z-50 rounded-[24px] border border-[#e7e9fb] bg-white/95 px-4 py-3 text-sm font-medium text-slate-700 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.28)] backdrop-blur">
           {data.toast}

@@ -14,7 +14,6 @@ export const useStudentData = (overrideUser?: User | null) => {
   const overrideCreatedAt = overrideUser?.createdAt ?? "";
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(true);
   const [exams, setExams] = useState<Exam[]>([]);
   const [toast, setToast] = useState<string | null>(null);
@@ -130,13 +129,6 @@ export const useStudentData = (overrideUser?: User | null) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-  }, [theme]);
-
   const showToast = useCallback((message: string) => {
     setToast(message);
     setTimeout(() => setToast(null), 3000);
@@ -150,8 +142,6 @@ export const useStudentData = (overrideUser?: User | null) => {
 
   return {
     currentUser,
-    theme,
-    setTheme,
     loading,
     toast,
     exams,
