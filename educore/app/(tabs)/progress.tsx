@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useStudentApp } from "@/lib/student-app/context";
 import { progressStyles as styles } from "@/styles/screens/progress";
@@ -380,11 +381,12 @@ export default function ProgressScreen() {
   ];
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
       <Text style={styles.sectionTitle}>Таны эрэмбэ</Text>
 
       <View style={styles.rankList}>
@@ -413,6 +415,7 @@ export default function ProgressScreen() {
         subject={selectedSubject}
         onClose={() => setSelectedSubject(null)}
       />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

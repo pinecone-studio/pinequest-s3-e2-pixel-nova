@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { InputField } from "@/components/student-app/ui";
 import { useStudentApp } from "@/lib/student-app/context";
@@ -187,11 +188,12 @@ export default function ProfileScreen() {
   const xpProgress = Math.min(1, xp / xpMax);
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.hero}>
         <View style={styles.avatarBlurShadow} />
         <View style={styles.avatarShell}>
@@ -420,6 +422,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

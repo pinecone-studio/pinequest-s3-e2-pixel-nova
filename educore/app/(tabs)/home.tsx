@@ -1,8 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useStudentApp } from "@/lib/student-app/context";
+import { examStyles as detailStyles } from "@/styles/screens/exam";
 import { homeStyles as styles } from "@/styles/screens/home";
 
 type HomeExamCard = {
@@ -14,6 +24,9 @@ type HomeExamCard = {
   status: "active" | "waiting" | "late";
   statusText: string;
   primaryAction: boolean;
+  className?: string | null;
+  groupName?: string | null;
+  teacherName?: string | null;
 };
 
 type CalendarDay = {
@@ -138,6 +151,9 @@ function buildPrimaryCards(
       status: activeSession.entryStatus === "late" ? "late" : "active",
       statusText: activeSession.entryStatus === "late" ? "Хоцорсон" : "Эхэлсэн",
       primaryAction: true,
+      className: null,
+      groupName: null,
+      teacherName: null,
     });
   }
 
@@ -163,6 +179,9 @@ function buildPrimaryCards(
       status: "active",
       statusText: "Өнөөдөр",
       primaryAction: true,
+      className: exam.className,
+      groupName: exam.groupName,
+      teacherName: null,
     });
   }
 
@@ -202,14 +221,178 @@ function buildScheduledCards(
               ? "Өнөөдөр"
               : `${dayDiff} хоног`,
         primaryAction: false,
+        className: exam.className,
+        groupName: exam.groupName,
+        teacherName: null,
       };
     });
+}
+
+function getMockTeacherName(title: string) {
+  if (title.toLowerCase().includes("english")) return "Г. Сарантуяа";
+  if (title.toLowerCase().includes("мат")) return "Б. Нарантуяа";
+  if (title.toLowerCase().includes("монгол")) return "Д. Оюун";
+  return "Г. Сарантуяа";
+}
+
+function HomeExamDetailModal({
+  exam,
+  visible,
+  onClose,
+}: {
+  exam: HomeExamCard | null;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+
+  if (!exam) return null;
+
+  const classLabel = [exam.className, exam.groupName].filter(Boolean).join(" · ");
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={detailStyles.detailOverlay}>
+        <View
+          style={[detailStyles.detailSheet, { paddingTop: Math.max(insets.top, 12) }]}
+        >
+          <View style={detailStyles.detailTopBar}>
+            <Pressable
+              style={detailStyles.detailBackButton}
+              onPress={onClose}
+              hitSlop={12}
+            >
+              <Ionicons name="chevron-back" size={22} color="#111827" />
+            </Pressable>
+            <Text style={detailStyles.detailHeaderTitle}>Дэлгэрэнгүй</Text>
+            <View style={detailStyles.detailHeaderSpacer} />
+          </View>
+
+          <ScrollView
+            contentContainerStyle={detailStyles.detailContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={detailStyles.detailHeroCard}>
+              <View style={detailStyles.listCardRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={detailStyles.detailExamTitle}>{exam.title}</Text>
+                  <Text style={detailStyles.detailExamSub}>Шалгалтын мэдээлэл</Text>
+                </View>
+                <View style={detailStyles.statusPill}>
+                  <Text style={detailStyles.statusPillText}>{exam.statusText}</Text>
+                </View>
+              </View>
+
+              <View style={detailStyles.detailInfoRow}>
+                <View style={detailStyles.detailInfoChip}>
+                  <View style={detailStyles.detailInfoIcon}>
+                    <Ionicons name="person-outline" size={18} color="#7C8798" />
+                  </View>
+                  <View>
+                    <Text style={detailStyles.detailInfoLabel}>Багш</Text>
+                    <Text style={detailStyles.detailInfoValue}>
+                      {exam.teacherName ?? getMockTeacherName(exam.title)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={detailStyles.detailInfoChip}>
+                  <View style={detailStyles.detailInfoIcon}>
+                    <Ionicons name="school-outline" size={18} color="#7C8798" />
+                  </View>
+                  <View>
+                    <Text style={detailStyles.detailInfoLabel}>Анги</Text>
+                    <Text style={detailStyles.detailInfoValue}>
+                      {classLabel || "10а анги"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={detailStyles.detailSectionCard}>
+              <View style={detailStyles.detailSectionHeader}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={20}
+                  color="#111827"
+                />
+                <Text style={detailStyles.detailSectionTitle}>
+                  Шалгалтын дүрэм ба мэдээлэл
+                </Text>
+              </View>
+
+              <View style={detailStyles.ruleGrid}>
+                <View style={[detailStyles.ruleCard, detailStyles.ruleCardWarning]}>
+                  <Ionicons
+                    name="swap-horizontal-outline"
+                    size={18}
+                    color="#F59E0B"
+                  />
+                  <Text style={detailStyles.ruleTitle}>Change tab</Text>
+                  <Text style={detailStyles.ruleSubtitle}>Cannot change tab.</Text>
+                </View>
+
+                <View style={[detailStyles.ruleCard, detailStyles.ruleCardWarning]}>
+                  <Ionicons name="timer-outline" size={18} color="#F59E0B" />
+                  <Text style={detailStyles.ruleTitle}>Auto Submit</Text>
+                  <Text style={detailStyles.ruleSubtitle}>
+                    Submits when time ends
+                  </Text>
+                </View>
+
+                <View style={[detailStyles.ruleCard, detailStyles.ruleCardDanger]}>
+                  <Ionicons name="lock-closed-outline" size={18} color="#EF4444" />
+                  <Text style={detailStyles.ruleTitle}>Copy/Paste</Text>
+                  <Text style={detailStyles.ruleSubtitle}>Disabled</Text>
+                </View>
+
+                <View style={[detailStyles.ruleCard, detailStyles.ruleCardDanger]}>
+                  <Ionicons name="camera-outline" size={18} color="#EF4444" />
+                  <Text style={detailStyles.ruleTitle}>Camera</Text>
+                  <Text style={detailStyles.ruleSubtitle}>Required</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={detailStyles.detailSectionCard}>
+              <View style={detailStyles.detailSectionHeader}>
+                <Ionicons name="time-outline" size={20} color="#111827" />
+                <Text style={detailStyles.detailSectionTitle}>Хугацаа</Text>
+              </View>
+
+              <View style={detailStyles.durationHighlight}>
+                <Ionicons name="timer-outline" size={18} color="#3568F5" />
+                <Text style={detailStyles.durationLabel}>Үргэлжлэх хугацаа</Text>
+                <Text style={detailStyles.durationValue}>{exam.duration}</Text>
+              </View>
+
+              <View style={detailStyles.scheduleRow}>
+                <View style={[detailStyles.scheduleCard, detailStyles.scheduleCardGreen]}>
+                  <Ionicons name="play-outline" size={18} color="#22C55E" />
+                  <Text style={detailStyles.scheduleLabel}>Эхлэх цаг</Text>
+                  <Text style={detailStyles.scheduleValue}>{exam.time}</Text>
+                </View>
+
+                <View style={detailStyles.scheduleCard}>
+                  <Ionicons name="calendar-outline" size={18} color="#111827" />
+                  <Text style={detailStyles.scheduleLabel}>Огноо</Text>
+                  <Text style={detailStyles.scheduleValue}>{exam.date}</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 export default function HomeScreen() {
   const router = useRouter();
   const studentApp = useStudentApp();
   const { dashboardError } = studentApp;
+  const [selectedExam, setSelectedExam] = useState<HomeExamCard | null>(null);
   const now = new Date();
   const calendarDays = buildCalendarWeek(now);
   const examCards = buildPrimaryCards(studentApp, now);
@@ -217,147 +400,62 @@ export default function HomeScreen() {
   const secondaryExams = buildScheduledCards(studentApp);
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.greetingRow}>
-        <Ionicons name={getGreetingIcon()} size={16} color="#F59E0B" />
-        <Text style={styles.greetingText}>{getGreeting()}</Text>
-      </View>
-
-      <View style={styles.calendarCard}>
-        <View style={styles.calendarHeader}>
-          <Ionicons name="arrow-back" size={18} color="#111827" />
-          <Text style={styles.calendarTitle}>{getCalendarLabel(now)}</Text>
-          <Ionicons name="arrow-forward" size={18} color="#111827" />
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.greetingRow}>
+          <Ionicons name={getGreetingIcon()} size={16} color="#F59E0B" />
+          <Text style={styles.greetingText}>{getGreeting()}</Text>
         </View>
-        <View style={styles.calendarWeekRow}>
-          {calendarDays.map((day) => (
-            <View key={day.key} style={styles.calendarDay}>
-              <Text style={styles.calendarDayLabel}>{day.label}</Text>
-              <View
-                style={[
-                  styles.calendarDayCircle,
-                  day.isSelected && styles.calendarDayCircleActive,
-                ]}
-              >
-                <Text
+
+        <View style={styles.calendarCard}>
+          <View style={styles.calendarHeader}>
+            <Ionicons name="arrow-back" size={18} color="#111827" />
+            <Text style={styles.calendarTitle}>{getCalendarLabel(now)}</Text>
+            <Ionicons name="arrow-forward" size={18} color="#111827" />
+          </View>
+          <View style={styles.calendarWeekRow}>
+            {calendarDays.map((day) => (
+              <View key={day.key} style={styles.calendarDay}>
+                <Text style={styles.calendarDayLabel}>{day.label}</Text>
+                <View
                   style={[
-                    styles.calendarDayNumber,
-                    day.isSelected && styles.calendarDayNumberActive,
+                    styles.calendarDayCircle,
+                    day.isSelected && styles.calendarDayCircleActive,
                   ]}
                 >
-                  {day.dayNumber}
-                </Text>
+                  <Text
+                    style={[
+                      styles.calendarDayNumber,
+                      day.isSelected && styles.calendarDayNumberActive,
+                    ]}
+                  >
+                    {day.dayNumber}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.sectionRow}>
-        <Text style={styles.sectionTitle}>Шалгалт өгөх</Text>
-      </View>
-
-      {primaryExam ? (
-        <View style={styles.card}>
-          <View style={styles.cardBody}>
-            <View style={styles.cardRow}>
-              <Text style={styles.examTitle}>{primaryExam.title}</Text>
-              <View
-                style={[
-                  styles.statusPill,
-                  primaryExam.status === "active"
-                    ? styles.statusPillGreen
-                    : primaryExam.status === "late"
-                      ? styles.statusPillRed
-                      : styles.statusPillAmber,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusPillText,
-                    primaryExam.status === "active"
-                      ? styles.statusPillTextGreen
-                      : primaryExam.status === "late"
-                        ? styles.statusPillTextRed
-                        : styles.statusPillTextAmber,
-                  ]}
-                >
-                  {primaryExam.statusText}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.metaTable}>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Өдөр:</Text>
-                <Text style={styles.metaValue}>{primaryExam.date}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Эхлэх цаг:</Text>
-                <Text style={styles.metaValue}>{primaryExam.time}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Үргэлжлэх хугацаа:</Text>
-                <Text style={styles.metaValue}>{primaryExam.duration}</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => router.push("/exam")}
-            >
-              <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
-            </TouchableOpacity>
+            ))}
           </View>
         </View>
-      ) : (
-        <View style={styles.card}>
-          <View style={styles.cardBody}>
-            <Text style={styles.examTitle}>Товлогдсон шалгалт алга</Text>
-            <Text style={styles.examMeta}>
-              Багш шалгалт товлоход энд backend data-аараа шууд харагдана.
-            </Text>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => router.push("/exam")}
-            >
-              <Text style={styles.primaryBtnText}>Шалгалтууд харах</Text>
-            </TouchableOpacity>
-          </View>
+
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Шалгалт өгөх</Text>
         </View>
-      )}
 
-      <View style={styles.sectionRow}>
-        <Text style={styles.sectionTitle}>Дараагийн шалгалтууд</Text>
-        <TouchableOpacity
-          style={styles.sectionLinkRow}
-          onPress={() => router.push("/exam")}
-        >
-          <Text style={styles.sectionLinkMuted}>Бүгд</Text>
-          <Ionicons name="chevron-forward" size={13} color="#9CA3AF" />
-        </TouchableOpacity>
-      </View>
-
-      {secondaryExams.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.nextList}
-        >
-          {secondaryExams.map((exam) => (
-            <View key={exam.id} style={styles.nextCard}>
+        {primaryExam ? (
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
               <View style={styles.cardRow}>
-                <Text style={styles.nextCardTitle}>{exam.title}</Text>
+                <Text style={styles.examTitle}>{primaryExam.title}</Text>
                 <View
                   style={[
                     styles.statusPill,
-                    exam.status === "active"
+                    primaryExam.status === "active"
                       ? styles.statusPillGreen
-                      : exam.status === "late"
+                      : primaryExam.status === "late"
                         ? styles.statusPillRed
                         : styles.statusPillAmber,
                   ]}
@@ -365,43 +463,135 @@ export default function HomeScreen() {
                   <Text
                     style={[
                       styles.statusPillText,
-                      exam.status === "active"
+                      primaryExam.status === "active"
                         ? styles.statusPillTextGreen
-                        : exam.status === "late"
+                        : primaryExam.status === "late"
                           ? styles.statusPillTextRed
                           : styles.statusPillTextAmber,
                     ]}
                   >
-                    {exam.statusText}
+                    {primaryExam.statusText}
                   </Text>
                 </View>
               </View>
 
-              <View style={styles.nextMetaTable}>
-                <View style={styles.nextMetaRow}>
-                  <Text style={styles.nextMetaLabel}>Өдөр:</Text>
-                  <Text style={styles.nextMetaValue}>{exam.date}</Text>
+              <View style={styles.metaTable}>
+                <View style={styles.metaRow}>
+                  <Text style={styles.metaLabel}>Өдөр:</Text>
+                  <Text style={styles.metaValue}>{primaryExam.date}</Text>
                 </View>
-                <View style={styles.nextMetaRow}>
-                  <Text style={styles.nextMetaLabel}>Эхлэх цаг:</Text>
-                  <Text style={styles.nextMetaValue}>{exam.time}</Text>
+                <View style={styles.metaRow}>
+                  <Text style={styles.metaLabel}>Эхлэх цаг:</Text>
+                  <Text style={styles.metaValue}>{primaryExam.time}</Text>
+                </View>
+                <View style={styles.metaRow}>
+                  <Text style={styles.metaLabel}>Үргэлжлэх хугацаа:</Text>
+                  <Text style={styles.metaValue}>{primaryExam.duration}</Text>
                 </View>
               </View>
 
               <TouchableOpacity
-                style={styles.nextPrimaryBtn}
-                onPress={() => router.push("/exam")}
+                style={styles.primaryBtn}
+                onPress={() => router.push("/join")}
               >
-                <Text style={styles.nextPrimaryBtnText}>Дэлгэрэнгүй</Text>
+                <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
               </TouchableOpacity>
             </View>
-          ))}
-        </ScrollView>
-      ) : null}
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.examTitle}>Товлогдсон шалгалт алга</Text>
+              <Text style={styles.examMeta}>
+                Багш шалгалт товлоход энд backend data-аараа шууд харагдана.
+              </Text>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={() => router.push("/exam")}
+              >
+                <Text style={styles.primaryBtnText}>Шалгалтууд харах</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
-      {dashboardError ? (
-        <Text style={styles.errorText}>{dashboardError}</Text>
-      ) : null}
-    </ScrollView>
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Дараагийн шалгалтууд</Text>
+          <TouchableOpacity
+            style={styles.sectionLinkRow}
+            onPress={() => router.push("/exam")}
+          >
+            <Text style={styles.sectionLinkMuted}>Бүгд</Text>
+            <Ionicons name="chevron-forward" size={13} color="#9CA3AF" />
+          </TouchableOpacity>
+        </View>
+
+        {secondaryExams.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.nextList}
+          >
+            {secondaryExams.map((exam) => (
+              <View key={exam.id} style={styles.nextCard}>
+                <View style={styles.cardRow}>
+                  <Text style={styles.nextCardTitle}>{exam.title}</Text>
+                  <View
+                    style={[
+                      styles.statusPill,
+                      exam.status === "active"
+                        ? styles.statusPillGreen
+                        : exam.status === "late"
+                          ? styles.statusPillRed
+                          : styles.statusPillAmber,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusPillText,
+                        exam.status === "active"
+                          ? styles.statusPillTextGreen
+                          : exam.status === "late"
+                            ? styles.statusPillTextRed
+                            : styles.statusPillTextAmber,
+                      ]}
+                    >
+                      {exam.statusText}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.nextMetaTable}>
+                  <View style={styles.nextMetaRow}>
+                    <Text style={styles.nextMetaLabel}>Өдөр:</Text>
+                    <Text style={styles.nextMetaValue}>{exam.date}</Text>
+                  </View>
+                  <View style={styles.nextMetaRow}>
+                    <Text style={styles.nextMetaLabel}>Эхлэх цаг:</Text>
+                    <Text style={styles.nextMetaValue}>{exam.time}</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.nextPrimaryBtn}
+                  onPress={() => setSelectedExam(exam)}
+                >
+                  <Text style={styles.nextPrimaryBtnText}>Дэлгэрэнгүй</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        ) : null}
+
+        {dashboardError ? (
+          <Text style={styles.errorText}>{dashboardError}</Text>
+        ) : null}
+      </ScrollView>
+      <HomeExamDetailModal
+        exam={selectedExam}
+        visible={!!selectedExam}
+        onClose={() => setSelectedExam(null)}
+      />
+    </SafeAreaView>
   );
 }

@@ -6,7 +6,8 @@ export const homeStyles = StyleSheet.create({
     backgroundColor: "#F4F6FB",
   },
   content: {
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingTop: 14,
     paddingBottom: 40,
   },
   greetingRow: {
