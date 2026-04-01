@@ -11,11 +11,6 @@ export const useExamScheduleState = () => {
   const [selectedScheduleExamId, setSelectedScheduleExamId] = useState("");
   const [scheduleExpectedStudentsCount, setScheduleExpectedStudentsCount] =
     useState(0);
-  const [scheduleLocationPolicy, setScheduleLocationPolicy] = useState<"anywhere" | "school_only">("anywhere");
-  const [scheduleLocationLabel, setScheduleLocationLabel] = useState("Сургууль");
-  const [scheduleLocationLatitude, setScheduleLocationLatitude] = useState("");
-  const [scheduleLocationLongitude, setScheduleLocationLongitude] = useState("");
-  const [scheduleAllowedRadiusMeters, setScheduleAllowedRadiusMeters] = useState(3000);
 
   useEffect(() => {
     const examTypeLabel =
@@ -59,15 +54,5 @@ export const useExamScheduleState = () => {
     setSelectedScheduleExamId,
     scheduleExpectedStudentsCount,
     setScheduleExpectedStudentsCount,
-    scheduleLocationPolicy,
-    setScheduleLocationPolicy,
-    scheduleLocationLabel,
-    setScheduleLocationLabel,
-    scheduleLocationLatitude,
-    setScheduleLocationLatitude,
-    scheduleLocationLongitude,
-    setScheduleLocationLongitude,
-    scheduleAllowedRadiusMeters,
-    setScheduleAllowedRadiusMeters,
   };
 };

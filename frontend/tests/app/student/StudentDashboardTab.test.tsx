@@ -10,7 +10,7 @@ const defaultProps = {
       id: "exam-1",
       title: "English Mock Exam",
       description: "Англи хэл",
-      scheduledAt: "2026-03-30T03:00:00.000Z",
+      scheduledAt: "2099-03-30T03:00:00.000Z",
       roomCode: "ROOM01",
       questions: [],
       duration: 40,
@@ -20,7 +20,7 @@ const defaultProps = {
       id: "exam-2",
       title: "Mongolian Literature",
       description: "Монгол хэл",
-      scheduledAt: "2026-03-30T05:00:00.000Z",
+      scheduledAt: "2099-03-30T05:00:00.000Z",
       roomCode: "ROOM02",
       questions: [],
       duration: 40,
@@ -30,7 +30,7 @@ const defaultProps = {
       id: "exam-3",
       title: "Russian Practice",
       description: "Орос хэл",
-      scheduledAt: "2026-03-30T07:00:00.000Z",
+      scheduledAt: "2099-03-30T07:00:00.000Z",
       roomCode: "ROOM03",
       questions: [],
       duration: 40,
@@ -40,7 +40,7 @@ const defaultProps = {
       id: "exam-4",
       title: "Social Studies",
       description: "Нийгэм",
-      scheduledAt: "2026-03-30T09:00:00.000Z",
+      scheduledAt: "2099-03-30T09:00:00.000Z",
       roomCode: "ROOM04",
       questions: [],
       duration: 40,
@@ -158,6 +158,22 @@ describe("StudentDashboardTab", () => {
     expect(screen.getByText("83%")).toBeInTheDocument();
     expect(screen.getAllByText("Нийгэм").length).toBeGreaterThan(0);
     expect(screen.getByText("Таны эрэмбэ")).toBeInTheDocument();
+  });
+
+  it("shows an empty state when there are no upcoming exams", () => {
+    render(
+      <StudentDashboardTab
+        {...defaultProps}
+        exams={defaultProps.exams.map((exam) => ({
+          ...exam,
+          scheduledAt: "2020-03-30T03:00:00.000Z",
+        }))}
+      />,
+    );
+
+    expect(
+      screen.getByText("Одоогоор ирээдүйд болох шалгалтын хуваарь алга."),
+    ).toBeInTheDocument();
   });
 
   it("still renders without a public rank value", () => {

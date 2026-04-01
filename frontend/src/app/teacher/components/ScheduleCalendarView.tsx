@@ -64,16 +64,6 @@ type Props = {
   setScheduleDescription: (v: string) => void;
   scheduleExpectedStudentsCount: number;
   setScheduleExpectedStudentsCount: (v: number) => void;
-  scheduleLocationPolicy: "anywhere" | "school_only";
-  setScheduleLocationPolicy: (v: "anywhere" | "school_only") => void;
-  scheduleLocationLabel: string;
-  setScheduleLocationLabel: (v: string) => void;
-  scheduleLocationLatitude: string;
-  setScheduleLocationLatitude: (v: string) => void;
-  scheduleLocationLongitude: string;
-  setScheduleLocationLongitude: (v: string) => void;
-  scheduleAllowedRadiusMeters: number;
-  setScheduleAllowedRadiusMeters: (v: number) => void;
   durationMinutes: number;
   setDurationMinutes: (v: number) => void;
   onSchedule: () => void;
@@ -97,16 +87,6 @@ export default function ScheduleCalendarView({
   setScheduleDescription,
   scheduleExpectedStudentsCount,
   setScheduleExpectedStudentsCount,
-  scheduleLocationPolicy,
-  setScheduleLocationPolicy,
-  scheduleLocationLabel,
-  setScheduleLocationLabel,
-  scheduleLocationLatitude,
-  setScheduleLocationLatitude,
-  scheduleLocationLongitude,
-  setScheduleLocationLongitude,
-  scheduleAllowedRadiusMeters,
-  setScheduleAllowedRadiusMeters,
   durationMinutes,
   setDurationMinutes,
   onSchedule,
@@ -294,16 +274,6 @@ export default function ScheduleCalendarView({
               setScheduleDescription={setScheduleDescription}
               scheduleExpectedStudentsCount={scheduleExpectedStudentsCount}
               setScheduleExpectedStudentsCount={setScheduleExpectedStudentsCount}
-              scheduleLocationPolicy={scheduleLocationPolicy}
-              setScheduleLocationPolicy={setScheduleLocationPolicy}
-              scheduleLocationLabel={scheduleLocationLabel}
-              setScheduleLocationLabel={setScheduleLocationLabel}
-              scheduleLocationLatitude={scheduleLocationLatitude}
-              setScheduleLocationLatitude={setScheduleLocationLatitude}
-              scheduleLocationLongitude={scheduleLocationLongitude}
-              setScheduleLocationLongitude={setScheduleLocationLongitude}
-              scheduleAllowedRadiusMeters={scheduleAllowedRadiusMeters}
-              setScheduleAllowedRadiusMeters={setScheduleAllowedRadiusMeters}
               durationMinutes={durationMinutes}
               setDurationMinutes={setDurationMinutes}
               onSchedule={() => {

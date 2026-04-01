@@ -27,41 +27,6 @@ export const useStudentJoinExam = () => {
     return () => clearInterval(timer);
   }, [joinError, selectedExam?.scheduledAt]);
 
-  const requestCurrentLocation = useCallback(
-    () =>
-      new Promise<{
-        latitude: number;
-        longitude: number;
-        accuracy?: number;
-      }>((resolve, reject) => {
-        if (typeof window === "undefined" || !navigator.geolocation) {
-          reject(new Error("Энэ төхөөрөмж байршлын мэдээлэл дэмжихгүй байна."));
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          (position) =>
-            resolve({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-            }),
-          () =>
-            reject(
-              new Error(
-                "Энэ шалгалтыг өгөхийн тулд байршлын зөвшөөрлөө идэвхжүүлнэ үү.",
-              ),
-            ),
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
-          },
-        );
-      }),
-    [],
-  );
-
   const handleLookup = useCallback(async () => {
     const code = roomCodeInput.trim().toUpperCase();
     if (!code) {
@@ -70,54 +35,25 @@ export const useStudentJoinExam = () => {
     }
     setJoinLoading(true);
     try {
-      const joinWithLocation = (location?: {
-        latitude: number;
-        longitude: number;
-        accuracy?: number;
-      }) =>
-        apiRequest<{
-          sessionId: string;
-          status: string;
-          sessionStatus?: string;
-          entryStatus?: "on_time" | "late";
-          scheduledAt?: string | null;
-          startedAt?: string | null;
-          exam: {
-            id: string;
-            title: string;
-            durationMin: number;
-            questionCount: number;
-            requiresAudioRecording?: boolean;
-            enabledCheatDetections?: string[];
-          };
-        }>("/api/sessions/join", {
-          method: "POST",
-          body: JSON.stringify({ roomCode: code, location }),
-        });
-
-      let payload;
-      try {
-        payload = await joinWithLocation();
-      } catch (err) {
-        let parsedCode: string | null = null;
-        if (err instanceof Error && err.message) {
-          try {
-            const parsed = JSON.parse(err.message) as {
-              error?: { code?: string };
-            };
-            parsedCode = parsed.error?.code ?? null;
-          } catch {
-            parsedCode = null;
-          }
-        }
-
-        if (parsedCode === "LOCATION_REQUIRED") {
-          const location = await requestCurrentLocation();
-          payload = await joinWithLocation(location);
-        } else {
-          throw err;
-        }
-      }
+      const payload = await apiRequest<{
+        sessionId: string;
+        status: string;
+        sessionStatus?: string;
+        entryStatus?: "on_time" | "late";
+        scheduledAt?: string | null;
+        startedAt?: string | null;
+        exam: {
+          id: string;
+          title: string;
+          durationMin: number;
+          questionCount: number;
+          requiresAudioRecording?: boolean;
+          enabledCheatDetections?: string[];
+        };
+      }>("/api/sessions/join", {
+        method: "POST",
+        body: JSON.stringify({ roomCode: code }),
+      });
       const data = payload;
       setSessionId(data.sessionId);
       setSelectedExam({
@@ -169,6 +105,13 @@ export const useStudentJoinExam = () => {
         setJoinError(
           "Сервертэй холбогдож чадсангүй. Backend ажиллаж байгаа эсэхийг шалгана уу.",
         );
+      } else if (
+        messageText.includes("LOCATION_REQUIRED") ||
+        messageText.includes("LOCATION_OUTSIDE_ALLOWED_AREA")
+      ) {
+        setJoinError(
+          "Энэ шалгалт хуучин байршлын тохиргоотой байна. Багш шинэчилсэн хуваарь үүсгэнэ үү.",
+        );
       } else {
         setJoinError(messageText);
       }
@@ -176,7 +119,7 @@ export const useStudentJoinExam = () => {
     } finally {
       setJoinLoading(false);
     }
-  }, [requestCurrentLocation, roomCodeInput]);
+  }, [roomCodeInput]);
 
   return {
     roomCodeInput,

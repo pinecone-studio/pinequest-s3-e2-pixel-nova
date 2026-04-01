@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import MathText from "@/components/MathText";
 import type { Submission } from "../types";
 
 type AnswerReportItem = {
@@ -33,7 +34,7 @@ export default function StudentResultView({
 
   if (resultPending || !lastSubmission) {
     return (
-      <div className="min-h-screen bg-background text-foreground px-6 py-10">
+      <div className="min-h-screen bg-background px-6 py-10 text-foreground">
         <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="text-lg font-semibold">
             {resultPending ? "Шалгалт дуусахыг хүлээж байна..." : "Дүн боловсруулж байна..."}
@@ -66,7 +67,7 @@ export default function StudentResultView({
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground px-6 py-10">
+    <div className="min-h-screen bg-background px-6 py-10 text-foreground">
       <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Дүнгийн хураангуй</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -91,10 +92,11 @@ export default function StudentResultView({
                 key={item.question.id}
                 className="rounded-xl border border-border bg-muted px-3 py-2"
               >
-                <div className="flex items-center justify-between">
-                  <span>
-                    {idx + 1}. {item.question.text}
-                  </span>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1">
+                    <span>{idx + 1}.</span>
+                    <MathText text={item.question.text} className="flex-1" />
+                  </div>
                   <span
                     className={`text-xs font-semibold ${
                       item.correct
@@ -106,8 +108,12 @@ export default function StudentResultView({
                   </span>
                 </div>
                 {!item.correct && (
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Зөв хариулт: {item.question.correctAnswer}
+                  <div className="mt-1 flex flex-wrap items-start gap-1 text-xs text-muted-foreground">
+                    <span>Зөв хариулт:</span>
+                    <MathText
+                      text={item.question.correctAnswer}
+                      className="inline-flex"
+                    />
                   </div>
                 )}
               </div>

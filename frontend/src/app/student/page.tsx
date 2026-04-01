@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setSessionUser } from "@/lib/examGuard";
 import type { AuthUser } from "@/lib/backend-auth";
@@ -49,6 +49,7 @@ export default function StudentPage() {
     currentUser: data.currentUser,
   });
   const progress = useStudentProgress(data.currentUser);
+  const lastSyncedSubmissionIdRef = useRef<string | null>(null);
 
   useExamIntegrityMonitor({
     view: exam.view,
@@ -155,6 +156,16 @@ export default function StudentPage() {
   const currentXp = progress.studentProgress.xp;
   const showFallbackState =
     !data.currentUser && !selectedUser && !usersLoading && !data.loading;
+
+  useEffect(() => {
+    const submissionId = exam.lastSubmission?.id ?? null;
+    if (!submissionId || submissionId === lastSyncedSubmissionIdRef.current) {
+      return;
+    }
+
+    lastSyncedSubmissionIdRef.current = submissionId;
+    void progress.refreshProgress();
+  }, [exam.lastSubmission?.id, progress.refreshProgress]);
 
   if (showFallbackState) {
     return (

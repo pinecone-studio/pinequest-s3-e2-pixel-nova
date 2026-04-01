@@ -25,18 +25,9 @@ type ExamScheduleCardProps = {
   setScheduleDescription: (value: string) => void;
   scheduleExpectedStudentsCount: number;
   setScheduleExpectedStudentsCount: (value: number) => void;
-  scheduleLocationPolicy: "anywhere" | "school_only";
-  setScheduleLocationPolicy: (value: "anywhere" | "school_only") => void;
-  scheduleLocationLabel: string;
-  setScheduleLocationLabel: (value: string) => void;
-  scheduleLocationLatitude: string;
-  setScheduleLocationLatitude: (value: string) => void;
-  scheduleLocationLongitude: string;
-  setScheduleLocationLongitude: (value: string) => void;
-  scheduleAllowedRadiusMeters: number;
-  setScheduleAllowedRadiusMeters: (value: number) => void;
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
+  scheduling?: boolean;
   onSchedule: () => void;
   onClose?: () => void;
 };
@@ -59,18 +50,9 @@ export default function ExamScheduleCard({
   setScheduleDescription,
   scheduleExpectedStudentsCount,
   setScheduleExpectedStudentsCount,
-  scheduleLocationPolicy,
-  setScheduleLocationPolicy,
-  scheduleLocationLabel,
-  setScheduleLocationLabel,
-  scheduleLocationLatitude,
-  setScheduleLocationLatitude,
-  scheduleLocationLongitude,
-  setScheduleLocationLongitude,
-  scheduleAllowedRadiusMeters,
-  setScheduleAllowedRadiusMeters,
   durationMinutes,
   setDurationMinutes,
+  scheduling = false,
   onSchedule,
   onClose,
 }: ExamScheduleCardProps) {
@@ -97,6 +79,7 @@ export default function ExamScheduleCard({
               type="button"
               className="flex size-8 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100"
               onClick={onClose}
+              disabled={scheduling}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -130,16 +113,6 @@ export default function ExamScheduleCard({
             setScheduleExpectedStudentsCount={setScheduleExpectedStudentsCount}
             scheduleSubjectName={scheduleSubjectName}
             setScheduleSubjectName={setScheduleSubjectName}
-            scheduleLocationPolicy={scheduleLocationPolicy}
-            setScheduleLocationPolicy={setScheduleLocationPolicy}
-            scheduleLocationLabel={scheduleLocationLabel}
-            setScheduleLocationLabel={setScheduleLocationLabel}
-            scheduleLocationLatitude={scheduleLocationLatitude}
-            setScheduleLocationLatitude={setScheduleLocationLatitude}
-            scheduleLocationLongitude={scheduleLocationLongitude}
-            setScheduleLocationLongitude={setScheduleLocationLongitude}
-            scheduleAllowedRadiusMeters={scheduleAllowedRadiusMeters}
-            setScheduleAllowedRadiusMeters={setScheduleAllowedRadiusMeters}
           />
           <ExamScheduleFilePicker
             selectableExams={selectableExams}
@@ -164,16 +137,44 @@ export default function ExamScheduleCard({
               className="min-w-20.5 rounded-[14px] border border-[#dfdfdf] bg-white px-4 py-2.5 text-[14px] font-medium text-[#5b6068] transition hover:bg-[#f8fafc]"
               onClick={onClose}
               type="button"
+              disabled={scheduling}
             >
               Болих
             </button>
           )}
           <button
-            className={`min-w-27.5 rounded-[14px] px-5 py-2.5 text-[14px] ${buttonPrimary}`}
+            className={`inline-flex min-w-27.5 items-center justify-center gap-2 rounded-[14px] px-5 py-2.5 text-[14px] ${buttonPrimary} ${scheduling ? "opacity-80" : ""}`}
             onClick={onSchedule}
             type="button"
+            disabled={scheduling}
           >
-            Хадгалах
+            {scheduling ? (
+              <>
+                <svg
+                  className="size-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    stroke="currentColor"
+                    strokeOpacity="0.28"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M21 12a9 9 0 0 0-9-9"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                Хадгалж байна...
+              </>
+            ) : (
+              "Хадгалах"
+            )}
           </button>
         </div>
       </div>

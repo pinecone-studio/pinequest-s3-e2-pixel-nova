@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getLevel, LEVELS } from "@/lib/examGuard";
 import type { StudentProgress } from "../types";
 import type { User } from "@/lib/examGuard";
@@ -39,77 +39,90 @@ export const useStudentProgress = (currentUser: User | null) => {
     history: [],
   });
 
-  useEffect(() => {
-    if (!currentUser) return;
-    const load = async () => {
-      try {
-        const xpData = await getXpProfile(currentUser);
-        setStudentProgress({
-          xp: xpData.xp,
-          level: xpData.level ?? 1,
-          history: [],
-        });
-        setRankOverview({
-          rank: xpData.rank ?? null,
-          totalStudents: xpData.totalStudents ?? 0,
-        });
-      } catch {
-        setStudentProgress({ xp: 0, level: 1, history: [] });
-        setRankOverview({ rank: null, totalStudents: 0 });
-      }
+  const refreshProgress = useCallback(async () => {
+    if (!currentUser) {
+      setStudentHistory([]);
+      setXpActivities([]);
+      setTermLeaderboardEntries([]);
+      setRankOverview({ rank: null, totalStudents: 0 });
+      setTermRankOverview({
+        rank: null,
+        totalStudents: 0,
+        xp: 0,
+        level: 1,
+      });
+      setStudentProgress({ xp: 0, level: 1, history: [] });
+      return;
+    }
 
-      try {
-        setXpActivities(await getXpHistory(currentUser));
-      } catch {
-        setXpActivities([]);
-      }
+    try {
+      const xpData = await getXpProfile(currentUser);
+      setStudentProgress({
+        xp: xpData.xp,
+        level: xpData.level ?? 1,
+        history: [],
+      });
+      setRankOverview({
+        rank: xpData.rank ?? null,
+        totalStudents: xpData.totalStudents ?? 0,
+      });
+    } catch {
+      setStudentProgress({ xp: 0, level: 1, history: [] });
+      setRankOverview({ rank: null, totalStudents: 0 });
+    }
 
-      try {
-        setTermLeaderboardEntries(await getStudentTermLeaderboard(currentUser));
-      } catch {
-        setTermLeaderboardEntries([]);
-      }
+    try {
+      setXpActivities(await getXpHistory(currentUser));
+    } catch {
+      setXpActivities([]);
+    }
 
-      try {
-        const termRank = await getStudentTermRank(currentUser);
-        setTermRankOverview({
-          rank: termRank.rank ?? null,
-          totalStudents: termRank.totalStudents ?? 0,
-          xp: termRank.xp ?? 0,
-          level: termRank.level ?? 1,
-        });
-      } catch {
-        setTermRankOverview({
-          rank: null,
-          totalStudents: 0,
+    try {
+      setTermLeaderboardEntries(await getStudentTermLeaderboard(currentUser));
+    } catch {
+      setTermLeaderboardEntries([]);
+    }
+
+    try {
+      const termRank = await getStudentTermRank(currentUser);
+      setTermRankOverview({
+        rank: termRank.rank ?? null,
+        totalStudents: termRank.totalStudents ?? 0,
+        xp: termRank.xp ?? 0,
+        level: termRank.level ?? 1,
+      });
+    } catch {
+      setTermRankOverview({
+        rank: null,
+        totalStudents: 0,
+        xp: 0,
+        level: 1,
+      });
+    }
+
+    try {
+      const results = await getStudentResults(currentUser);
+      const history = results.map((item) => {
+        const percentage = item.score ?? 0;
+        return {
+          examId: item.examId,
+          percentage,
           xp: 0,
-          level: 1,
-        });
-      }
-
-      try {
-        const results = await getStudentResults(currentUser);
-        const history = results.map((item) => {
-          const percentage = item.score ?? 0;
-          return {
-            examId: item.examId,
-            percentage,
-            xp: 0,
-            date: item.submittedAt ?? new Date().toISOString(),
-            score: item.earnedPoints ?? 0,
-            totalPoints: item.totalPoints ?? 0,
-            grade: gradeFromPercentage(percentage),
-          };
-        });
-        setStudentHistory(
-          history.sort((a, b) => b.date.localeCompare(a.date)),
-        );
-      } catch {
-        setStudentHistory([]);
-      }
-    };
-    void load();
+          date: item.submittedAt ?? new Date().toISOString(),
+          score: item.earnedPoints ?? 0,
+          totalPoints: item.totalPoints ?? 0,
+          grade: gradeFromPercentage(percentage),
+        };
+      });
+      setStudentHistory(history.sort((a, b) => b.date.localeCompare(a.date)));
+    } catch {
+      setStudentHistory([]);
+    }
   }, [currentUser]);
+
+  useEffect(() => {
+    void refreshProgress();
+  }, [refreshProgress]);
 
   const levelInfo = useMemo(
     () => getLevel(studentProgress.xp),
@@ -135,5 +148,6 @@ export const useStudentProgress = (currentUser: User | null) => {
     levelInfo,
     nextLevel,
     progressSegments,
+    refreshProgress,
   };
 };

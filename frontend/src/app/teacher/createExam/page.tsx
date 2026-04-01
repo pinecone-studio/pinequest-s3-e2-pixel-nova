@@ -44,6 +44,7 @@ const getLocalAuthUsers = (r: RoleKey): AuthUser[] => {
 
 export default function CreateExamPage() {
   const router = useRouter();
+  const [redirectingAfterSave, setRedirectingAfterSave] = useState(false);
   const pendingAppliedRef = useRef(false);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
 
@@ -138,7 +139,10 @@ export default function CreateExamPage() {
 
   const handleSaveExam = async () => {
     const success = await management.saveExam();
-    if (success) router.push("/teacher");
+    if (success) {
+      setRedirectingAfterSave(true);
+      router.push("/teacher");
+    }
   };
 
   return (
@@ -186,7 +190,7 @@ export default function CreateExamPage() {
             addQuestionOption={management.addQuestionOption}
             removeQuestionOption={management.removeQuestionOption}
             saveExam={handleSaveExam}
-            saving={management.saving}
+            saving={management.saving || redirectingAfterSave}
             hasUser={management.hasCurrentUser}
             pdfUseOcr={imports.pdfUseOcr}
             setPdfUseOcr={imports.setPdfUseOcr}

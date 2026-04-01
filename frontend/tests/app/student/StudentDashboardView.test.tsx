@@ -3,9 +3,13 @@ import { useState } from "react";
 import StudentDashboardView from "@/app/student/components/StudentDashboardView";
 import type { StudentTab } from "@/app/student/types";
 
-jest.mock("@/components/RoleNavbar", () => () => (
-  <div data-testid="role-navbar" />
-));
+jest.mock(
+  "@/components/RoleNavbar",
+  () =>
+    function RoleNavbarMock() {
+      return <div data-testid="role-navbar" />;
+    },
+);
 
 jest.mock(
   "@/app/student/components/StudentHeader",
@@ -78,9 +82,27 @@ jest.mock(
       );
     },
 );
-jest.mock("@/app/student/components/StudentSettingsTab", () => () => null);
-jest.mock("@/app/student/components/StudentPreferencesTab", () => () => null);
-jest.mock("@/app/student/components/StudentHelpTab", () => () => null);
+jest.mock(
+  "@/app/student/components/StudentSettingsTab",
+  () =>
+    function StudentSettingsTabMock() {
+      return null;
+    },
+);
+jest.mock(
+  "@/app/student/components/StudentPreferencesTab",
+  () =>
+    function StudentPreferencesTabMock() {
+      return null;
+    },
+);
+jest.mock(
+  "@/app/student/components/StudentHelpTab",
+  () =>
+    function StudentHelpTabMock() {
+      return null;
+    },
+);
 
 const createProps = () => ({
   role: "student" as const,

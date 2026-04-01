@@ -19,9 +19,6 @@ import {
 import {
   buildStudentAiInsight,
   buildStudentAiInsightSignature,
-  formatInsightRefreshCountdown,
-  getMsUntilNextInsightRefresh,
-  getStudentAiInsightBucket,
   type StudentAiInsightSnapshot,
 } from "./student-ai-insights";
 
@@ -193,11 +190,7 @@ export default function StudentAiInsightsTab({
   levelInfo,
   studentHistory,
 }: StudentAiInsightsTabProps) {
-  const [bucket, setBucket] = useState(() => getStudentAiInsightBucket());
   const [snapshot, setSnapshot] = useState<StudentAiInsightSnapshot | null>(null);
-  const [refreshCountdown, setRefreshCountdown] = useState(() =>
-    formatInsightRefreshCountdown(getMsUntilNextInsightRefresh()),
-  );
 
   const signature = useMemo(
     () =>
@@ -214,39 +207,13 @@ export default function StudentAiInsightsTab({
 
   useEffect(() => {
     if (loading) return;
-
-    const timeoutId = window.setTimeout(() => {
-      setBucket(getStudentAiInsightBucket());
-    }, getMsUntilNextInsightRefresh());
-
-    return () => window.clearTimeout(timeoutId);
-  }, [bucket, loading]);
-
-  useEffect(() => {
-    if (loading) return;
-
-    const updateCountdown = () => {
-      setRefreshCountdown(
-        formatInsightRefreshCountdown(getMsUntilNextInsightRefresh()),
-      );
-    };
-
-    updateCountdown();
-    const intervalId = window.setInterval(updateCountdown, 60 * 1000);
-
-    return () => window.clearInterval(intervalId);
-  }, [bucket, loading]);
-
-  useEffect(() => {
-    if (loading) return;
-
     const storageKey = getStorageKey(currentUserId);
     const cached = window.localStorage.getItem(storageKey);
 
     if (cached) {
       try {
         const parsed = JSON.parse(cached) as StudentAiInsightSnapshot;
-        if (parsed.bucket === bucket && parsed.signature === signature) {
+        if (parsed.signature === signature) {
           setSnapshot(parsed);
           return;
         }
@@ -256,7 +223,6 @@ export default function StudentAiInsightsTab({
     }
 
     const nextSnapshot = buildStudentAiInsight({
-      bucket,
       currentUserName,
       levelInfo,
       currentXp,
@@ -267,7 +233,7 @@ export default function StudentAiInsightsTab({
 
     setSnapshot(nextSnapshot);
     window.localStorage.setItem(storageKey, JSON.stringify(nextSnapshot));
-  }, [bucket, currentRank, currentUserId, currentUserName, currentXp, levelInfo, loading, signature, studentHistory, totalStudents]);
+  }, [currentRank, currentUserId, currentUserName, currentXp, levelInfo, loading, signature, studentHistory, totalStudents]);
 
   if (loading || !snapshot) {
     return <StudentAiInsightsSkeleton />;
@@ -372,10 +338,7 @@ export default function StudentAiInsightsTab({
             </div>
             <div className="mt-2 text-lg font-semibold text-slate-900">{generatedLabel}</div>
             <div className="mt-2 text-sm text-slate-500">
-              Энэ дүгнэлт 5 цаг тутам шинэчлэгдэж, ижил өгөгдөлтэй үед ч өөр өнцгөөс зөвлөмж өгнө.
-            </div>
-            <div className="mt-3 rounded-2xl border border-[#e8ecfb] bg-[#fbfcff] px-3 py-2 text-sm font-medium text-slate-600">
-              Дараагийн шинэчлэлт: <span className="text-slate-900">{refreshCountdown}</span>
+              Энэ дүгнэлт чиний шинэ шалгалтын дүн орж ирэх бүрд автоматаар шинэчлэгдэнэ.
             </div>
           </div>
         </div>

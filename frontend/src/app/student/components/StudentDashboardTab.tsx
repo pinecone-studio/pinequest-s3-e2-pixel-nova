@@ -61,6 +61,13 @@ const compareDashboardExams = (left: Exam, right: Exam) => {
   return rightTime - leftTime;
 };
 
+const isUpcomingExam = (exam: Exam, now = Date.now()) => {
+  if (!exam.scheduledAt) return false;
+  const scheduledAt = new Date(exam.scheduledAt).getTime();
+  if (Number.isNaN(scheduledAt)) return false;
+  return scheduledAt >= now;
+};
+
 const formatSlashDate = (value: Date) =>
   value.toLocaleDateString("en-CA").replace(/-/g, "/");
 
@@ -130,7 +137,7 @@ export default function StudentDashboardTab({
   onOpenProgress,
 }: StudentDashboardTabProps) {
   const orderedExams = useMemo(
-    () => [...exams].sort(compareDashboardExams),
+    () => [...exams].filter((exam) => isUpcomingExam(exam)).sort(compareDashboardExams),
     [exams],
   );
 
@@ -603,7 +610,7 @@ export default function StudentDashboardTab({
 
         {upcomingCards.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-[#dfe5fb] bg-white/90 px-5 py-8 text-sm text-slate-400">
-            Одоогоор харагдах шалгалтын хуваарь алга.
+            Одоогоор ирээдүйд болох шалгалтын хуваарь алга.
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
