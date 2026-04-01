@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { useMemo, useState, type ReactNode } from "react";
-import { Bell } from "lucide-react";
 import type { NotificationItem } from "@/lib/notifications";
+import { Bell } from "lucide-react";
 
 export type TeacherNavTab = string;
 
@@ -32,7 +32,6 @@ export default function TeacherHeader({
 }: TeacherHeaderProps) {
   const [open, setOpen] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
-
   const visibleNotifications = useMemo(
     () => (showAllNotifications ? notifications : notifications.slice(0, 3)),
     [notifications, showAllNotifications],
@@ -49,18 +48,19 @@ export default function TeacherHeader({
           <div className="overflow-hidden rounded-xl">
             <Image
               src="/group-web.svg"
-              alt="Pinecone"
+              alt="Educore"
               width={32}
               height={32}
               className="h-8 w-8"
               priority
+              unoptimized
             />
           </div>
-          <span className="text-[15px] font-bold text-slate-900">Pinecone</span>
+          <span className="text-[15px] font-bold text-slate-900">Educore</span>
         </div>
 
         <div className="flex min-w-0 flex-1 justify-center px-2">
-          <nav className="inline-flex items-center gap-1 px-1 py-1">
+          <nav className="inline-flex items-center gap-2 overflow-x-auto rounded-[20px] border border-[#e7edf5] bg-[#fbfcff] px-1.5 py-1.5 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)]">
             {tabs.map((tab) => {
               const isActive = activeTab === tab;
               return (
@@ -68,16 +68,13 @@ export default function TeacherHeader({
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`relative min-w-[110px] cursor-pointer whitespace-nowrap px-4 py-2.5 text-[14px] font-semibold tracking-[-0.01em] transition ${
+                  className={`relative whitespace-nowrap rounded-[14px] px-5 py-2.5 text-sm font-medium transition ${
                     isActive
-                      ? "text-slate-900"
-                      : "text-slate-400 hover:text-slate-700"
+                      ? "bg-[#f5f4ff] text-slate-900 shadow-[inset_0_-2px_0_0_#5c6cff,0_10px_18px_-16px_rgba(92,108,255,0.65)]"
+                      : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                   }`}
                 >
-                  <span className="truncate">{tab}</span>
-                  {isActive ? (
-                    <span className="absolute inset-x-5 bottom-[5px] h-[2.5px] rounded-full bg-[#3b82f6]" />
-                  ) : null}
+                  {tab}
                 </button>
               );
             })}
@@ -109,7 +106,6 @@ export default function TeacherHeader({
                 </span>
               )}
             </button>
-
             <div
               className={`absolute right-0 z-[80] mt-3 w-[320px] origin-top-right rounded-[24px] border border-[#dde5ee] bg-white p-3 shadow-[0_24px_52px_-34px_rgba(15,23,42,0.3)] transition ${
                 open
@@ -120,7 +116,6 @@ export default function TeacherHeader({
               <div className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Мэдэгдлийн төв
               </div>
-
               {notifications.length > 0 && unreadCount > 0 && (
                 <button
                   type="button"
@@ -130,14 +125,18 @@ export default function TeacherHeader({
                   Бүгдийг уншсан болгох
                 </button>
               )}
-
               {notifications.length === 0 && (
                 <div className="rounded-2xl border border-[#dde5ee] bg-[#f8fafc] px-4 py-3 text-sm text-slate-500">
                   Одоогоор мэдэгдэл алга.
                 </div>
               )}
-
-              <div className={showAllNotifications ? "max-h-[420px] overflow-y-auto pr-1" : ""}>
+              <div
+                className={`${
+                  showAllNotifications
+                    ? "max-h-[420px] overflow-y-auto pr-1"
+                    : ""
+                }`}
+              >
                 {visibleNotifications.map((item) => (
                   <button
                     key={item.id}
@@ -177,7 +176,6 @@ export default function TeacherHeader({
                   </button>
                 ))}
               </div>
-
               {notifications.length > 3 && (
                 <button
                   type="button"

@@ -26,6 +26,8 @@ describe("ResultsSummaryCard", () => {
     average: 68,
     passRate: 75,
     submissionCount: 12,
+    cohortSize: 15,
+    absentCount: 3,
     totalPoints: 30,
     correctTotal: 84,
     incorrectTotal: 28,

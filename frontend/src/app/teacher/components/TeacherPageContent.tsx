@@ -165,66 +165,29 @@ export default function TeacherPageContent({
   }
 
   if (activeTab === "Гүйцэтгэл") {
-    const selectedExamTitle = examStatsState.selectedExam?.title ?? "Шалгалт сонгоогүй";
-    const submissionCount = examStatsState.activeSubmissions.length;
     return (
-      <section className={`${contentCanvasClass} overflow-hidden`}>
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-start justify-between gap-4 rounded-[28px] border border-[#e2e9f0] bg-[linear-gradient(180deg,#ffffff_0%,#f7fafd_100%)] px-5 py-5">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                Performance Workspace
-              </div>
-              <h2 className="mt-2 text-[clamp(1.6rem,2vw,2.2rem)] font-semibold tracking-[-0.03em] text-slate-900">
-                Багшийн гүйцэтгэлийн төв
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Дүнгийн тойм, асуултын анализ, сурагчийн дэлгэрэнгүй тайланг нэг орон зайд төвлөрүүллээ.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[20px] border border-[#e2e9f0] bg-white px-4 py-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Идэвхтэй шалгалт
-                </div>
-                <div className="mt-2 text-sm font-semibold text-slate-900">
-                  {selectedExamTitle}
-                </div>
-              </div>
-              <div className="rounded-[20px] border border-[#e2e9f0] bg-white px-4 py-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Илгээлт
-                </div>
-                <div className="mt-2 text-sm font-semibold text-slate-900">
-                  {submissionCount} сурагч
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <ResultsTab
-              loading={data.loading}
-              examOptions={examStatsState.examOptions}
-              activeExamId={examStatsState.activeExamId}
-              onSelectExam={examStatsState.setSelectedExamId}
-              examStats={examStatsState.examStats}
-              submissions={examStatsState.activeSubmissions}
-              onSelectSubmission={examStatsState.setSelectedSubmissionId}
-              selectedSubmissionId={examStatsState.selectedSubmissionId}
-              selectedSubmission={examStatsState.selectedSubmission}
-              selectedExam={examStatsState.selectedExam}
-              attendanceStats={attendance.stats}
-              attendanceLoading={attendance.loading}
-              studentProfile={studentProfile as never}
-              profileLoading={profileLoading}
-            />
-            <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
-          </div>
-        </div>
-      </section>
+      <div className="space-y-6">
+        <ResultsTab
+          loading={data.loading}
+          examOptions={examStatsState.examOptions}
+          activeExamId={examStatsState.activeExamId}
+          onSelectExam={examStatsState.setSelectedExamId}
+          examStats={examStatsState.examStats}
+          submissions={examStatsState.activeSubmissions}
+          onSelectSubmission={examStatsState.setSelectedSubmissionId}
+          selectedSubmissionId={examStatsState.selectedSubmissionId}
+          selectedSubmission={examStatsState.selectedSubmission}
+          selectedExam={examStatsState.selectedExam}
+          attendanceStats={attendance.stats}
+          attendanceLoading={attendance.loading}
+          studentProfile={studentProfile as never}
+          profileLoading={profileLoading}
+        />
+        <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
+      </div>
     );
   }
+
 
   return (
     <div className="space-y-6">

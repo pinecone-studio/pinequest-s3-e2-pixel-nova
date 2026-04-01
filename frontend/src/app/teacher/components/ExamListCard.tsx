@@ -173,10 +173,10 @@ export default function ExamListCard({
 
             <button
               type="button"
-              className="inline-flex h-[49px] w-[192px] shrink-0 items-center justify-center gap-[10px] whitespace-nowrap rounded-[14px] bg-[linear-gradient(180deg,#3f78ff_0%,#2f66ef_100%)] px-[18px] text-[18px] font-semibold leading-6 text-white shadow-[0_14px_24px_-22px_rgba(37,99,235,0.8)] transition hover:brightness-[1.03]"
+              className="inline-flex h-[54px] w-[214px] shrink-0 items-center justify-center gap-[12px] whitespace-nowrap rounded-[16px] bg-[linear-gradient(180deg,#3f78ff_0%,#2f66ef_100%)] px-[20px] text-[18px] font-semibold leading-6 text-white shadow-[0_16px_28px_-22px_rgba(37,99,235,0.82)] transition hover:brightness-[1.03]"
               onClick={onCreateExam}
             >
-              <PlusIcon className="w-5 h-5" />
+              <PlusIcon className="h-6 w-6 shrink-0" strokeWidth={2.3} />
               Шалгалт үүсгэх
             </button>
           </div>

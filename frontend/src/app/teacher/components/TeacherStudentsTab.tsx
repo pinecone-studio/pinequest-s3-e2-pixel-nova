@@ -59,7 +59,7 @@ export default function TeacherStudentsTab({
   onCopyCode,
 }: TeacherStudentsTabProps) {
   const { days, items } = buildScheduleData(exams);
-  const [viewMode, setViewMode] = useState<ViewMode>("calendar");
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [roster, setRoster] = useState<ExamRosterDetail | null>(null);
   const [rosterLoading, setRosterLoading] = useState(false);

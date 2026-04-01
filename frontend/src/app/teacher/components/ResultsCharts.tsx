@@ -6,9 +6,9 @@ type ResultsChartsProps = {
 };
 
 const BAND_TONE: Record<string, { bar: string; bg: string; text: string }> = {
-  high: { bar: "bg-[#8fb7a0]", bg: "bg-[#f6faf7]", text: "text-[#557565]" },
-  mid: { bar: "bg-[#9bb5d1]", bg: "bg-[#f7fafd]", text: "text-[#5b718b]" },
-  low: { bar: "bg-[#d5bf93]", bg: "bg-[#fbf8f2]", text: "text-[#8a7654]" },
+  high: { bar: "bg-[#4f7cff]", bg: "bg-[#eef4ff]", text: "text-[#3f63dd]" },
+  mid: { bar: "bg-[#4f7cff]", bg: "bg-[#eef4ff]", text: "text-[#3f63dd]" },
+  low: { bar: "bg-[#4f7cff]", bg: "bg-[#eef4ff]", text: "text-[#3f63dd]" },
 };
 
 const getBandTone = (label: string) => {
@@ -115,7 +115,49 @@ export default function ResultsCharts({ examStats }: ResultsChartsProps) {
         )}
       </div>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="mt-6 grid gap-3 lg:grid-cols-3">
+        <div className="rounded-[20px] border border-[#d9e6fb] bg-white px-4 py-4">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ангийн дундаж</div>
+          <div className="mt-2 flex items-end justify-between gap-3">
+            <div className="text-3xl font-semibold text-slate-900">{examStats.average}%</div>
+            <div className="text-xs text-slate-500">Нийт дундаж</div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e8eefb]">
+            <div className="h-full rounded-full bg-[#4f7cff]" style={{ width: `${examStats.average}%` }} />
+          </div>
+        </div>
+        <div className="rounded-[20px] border border-[#d9e6fb] bg-white px-4 py-4">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ирц</div>
+          <div className="mt-2 flex items-end justify-between gap-3">
+            <div className="text-3xl font-semibold text-slate-900">{examStats.cohortSize > 0 ? Math.round((examStats.submissionCount / examStats.cohortSize) * 100) : 0}%</div>
+            <div className="text-xs text-slate-500">{examStats.submissionCount}/{examStats.cohortSize}</div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e8eefb]">
+            <div className="h-full rounded-full bg-[#4f7cff]" style={{ width: `${examStats.cohortSize > 0 ? Math.round((examStats.submissionCount / examStats.cohortSize) * 100) : 0}%` }} />
+          </div>
+        </div>
+        <div className="rounded-[20px] border border-[#d9e6fb] bg-white px-4 py-4">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Онооны тархалт</div>
+          <div className="mt-2 flex items-end justify-between gap-3">
+            <div className="text-3xl font-semibold text-slate-900">{dominantBand?.label ?? "—"}</div>
+            <div className="text-xs text-slate-500">Их төвлөрсөн бүс</div>
+          </div>
+          <div className="mt-3 flex gap-1">
+            {examStats.performanceBands.map((band) => {
+              const width = examStats.submissionCount > 0 ? Math.max((band.count / examStats.submissionCount) * 100, 8) : 8;
+              return (
+                <div
+                  key={band.label}
+                  className="h-2 rounded-full bg-[#4f7cff] opacity-70"
+                  style={{ width: `${width}%`, opacity: dominantBand?.label === band.label ? 1 : 0.35 }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[22px] border border-[#d9e6fb] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] px-5 py-5">
           <h3 className="text-sm font-semibold text-slate-900">Сурагчдын онооны тархалт</h3>
           <p className="mt-1 text-xs text-slate-500">Шалгалт өгсөн сурагч бүрийн хувийн онооны хувийг харуулна.</p>
@@ -175,8 +217,8 @@ export default function ResultsCharts({ examStats }: ResultsChartsProps) {
             <div className="mt-2 text-sm leading-6 text-slate-600">{answerInsight}</div>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#e8eef6]">
               <div className="flex h-full w-full">
-                <div className="h-full bg-[#8fb7a0]" style={{ width: `${correctRate}%` }} />
-                <div className="h-full bg-[#c7d1dc]" style={{ width: `${incorrectRate}%` }} />
+                <div className="h-full bg-[#4f7cff]" style={{ width: `${correctRate}%` }} />
+                <div className="h-full bg-[#dbe5ff]" style={{ width: `${incorrectRate}%` }} />
               </div>
             </div>
             <div className="mt-4 grid gap-3">
@@ -192,11 +234,11 @@ export default function ResultsCharts({ examStats }: ResultsChartsProps) {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-[18px] border border-[#d7e6dd] bg-[#f6faf7] px-4 py-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#557565]">Зөв</div>
+                <div className="rounded-[18px] border border-[#d9e6fb] bg-[#eef4ff] px-4 py-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#3f63dd]">Зөв</div>
                   <div className="mt-2 text-xl font-bold text-slate-900">{correctRate}%</div>
                 </div>
-                <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="rounded-[18px] border border-[#d9e6fb] bg-white px-4 py-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Буруу</div>
                   <div className="mt-2 text-xl font-bold text-slate-900">{incorrectRate}%</div>
                 </div>
