@@ -14,6 +14,7 @@ import { LegendDot, ScheduleCard, ScheduleListCard } from "./TeacherScheduleCard
 import type { CopyCodeHandler } from "./RoomCodeCopyButton";
 import TeacherSelect from "./TeacherSelect";
 import TeacherScheduleDetailPanel from "./TeacherScheduleDetailPanel";
+import TeacherEmptyState from "./TeacherEmptyState";
 import {
   HOURS,
   DAY_COLUMN_WIDTH,
@@ -305,6 +306,10 @@ export default function TeacherStudentsTab({
     }
 
     const loadRoster = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
+
       try {
         const nextRoster = await fetchTeacherExamRoster(
           selectedExamId,
@@ -329,9 +334,22 @@ export default function TeacherStudentsTab({
       void loadRoster();
     }, ACTIVE_MONITOR_POLL_MS);
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadRoster();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
     return () => {
       active = false;
       window.clearInterval(timer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
     };
   }, [currentUserId, selectedExamId, shouldPollSelectedExam, shouldUseLiveStream]);
 
@@ -499,13 +517,20 @@ export default function TeacherStudentsTab({
         ) : viewMode === "cards" ? (
           <div className="space-y-7">
             {groupedItems.length === 0 ? (
-              <div className="rounded-[32px] border border-dashed border-[#dce5ef] bg-white px-6 py-16 text-center text-sm text-slate-400">
-                {loading
-                  ? "Хуваарь ачаалж байна..."
-                  : scheduleFilter === "finished"
-                    ? "Дууссан шалгалт алга."
-                    : "Удахгүй болох шалгалт алга."}
-              </div>
+              <TeacherEmptyState
+                icon={<CalendarDays className="size-5" />}
+                title={loading ? "Хуваарь ачаалж байна" : "Хуваарь хоосон байна"}
+                description={
+                  loading
+                    ? "Түр хүлээнэ үү."
+                    : scheduleFilter === "finished"
+                      ? "Дууссан шалгалт алга."
+                      : "Удахгүй болох шалгалт алга."
+                }
+                actionLabel={!loading && scheduleFilter !== "finished" ? "Хуваарь нэмэх" : undefined}
+                onAction={!loading && scheduleFilter !== "finished" ? onAddSchedule : undefined}
+                className="px-6 py-14"
+              />
             ) : (
               groupedItems.map((group) => (
                 <div key={group.label} className="space-y-5">
@@ -605,9 +630,14 @@ export default function TeacherStudentsTab({
 
             {!items.length && !loading && (
               <div className="mt-4 flex items-center justify-center">
-                <div className="rounded-2xl border border-dashed border-[#dce5ef] bg-white/80 px-5 py-3 text-sm text-slate-500 shadow-sm">
-                  Шалгалт алга
-                </div>
+                <TeacherEmptyState
+                  icon={<CalendarDays className="size-5" />}
+                  title="Шалгалт алга"
+                  description="Энэ харагдац дээр харуулах шалгалт одоогоор алга."
+                  actionLabel="Хуваарь нэмэх"
+                  onAction={onAddSchedule}
+                  className="w-full max-w-xl px-6 py-10"
+                />
               </div>
             )}
           </div>

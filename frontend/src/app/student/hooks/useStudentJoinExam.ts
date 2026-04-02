@@ -2,12 +2,56 @@ import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "@/api/client";
 import type { Exam } from "../types";
 
+const STUDENT_JOIN_STATE_KEY = "student:join-state";
+
+const readStoredJoinState = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(STUDENT_JOIN_STATE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      roomCodeInput?: string;
+      sessionId?: string | null;
+      selectedExam?: Exam | null;
+    };
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
 export const useStudentJoinExam = () => {
-  const [roomCodeInput, setRoomCodeInput] = useState("");
+  const [roomCodeInput, setRoomCodeInput] = useState(
+    () => readStoredJoinState()?.roomCodeInput ?? "",
+  );
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinLoading, setJoinLoading] = useState(false);
-  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(
+    () => readStoredJoinState()?.selectedExam ?? null,
+  );
+  const [sessionId, setSessionId] = useState<string | null>(
+    () => readStoredJoinState()?.sessionId ?? null,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (!roomCodeInput && !selectedExam && !sessionId) {
+        window.sessionStorage.removeItem(STUDENT_JOIN_STATE_KEY);
+        return;
+      }
+      window.sessionStorage.setItem(
+        STUDENT_JOIN_STATE_KEY,
+        JSON.stringify({
+          roomCodeInput,
+          sessionId,
+          selectedExam,
+        }),
+      );
+    } catch {
+      // ignore persistence errors
+    }
+  }, [roomCodeInput, selectedExam, sessionId]);
 
   useEffect(() => {
     if (!selectedExam?.scheduledAt) return;

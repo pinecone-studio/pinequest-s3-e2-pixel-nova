@@ -49,6 +49,7 @@ describe("useStudentExamState", () => {
 		mockApiFetch.mockReset();
 		mockUnwrapApi.mockReset();
 		mockBuildAnswerReport.mockReturnValue([]);
+		window.sessionStorage.clear();
 	});
 
 	afterEach(() => jest.useRealTimers());
@@ -70,6 +71,53 @@ describe("useStudentExamState", () => {
 		expect(result.current.lastSubmission).toBeNull();
 		expect(result.current.warning).toBeNull();
 		expect(result.current.violations.tabSwitch).toBe(0);
+	});
+
+	it("restores an ongoing exam session from session storage", () => {
+		window.sessionStorage.setItem(
+			"student:join-state",
+			JSON.stringify({
+				roomCodeInput: "ROOM1",
+				sessionId: "sess-1",
+				selectedExam: {
+					id: "e1",
+					title: "Math",
+					scheduledAt: "2026-04-03T10:00:00.000Z",
+					roomCode: "ROOM1",
+					questions: [],
+					createdAt: "2026-04-03T09:00:00.000Z",
+				},
+			}),
+		);
+		window.sessionStorage.setItem(
+			"student:exam-runtime",
+			JSON.stringify({
+				sessionId: "sess-1",
+				view: "exam",
+				activeExam: {
+					id: "e1",
+					title: "Math",
+					scheduledAt: "2026-04-03T10:00:00.000Z",
+					roomCode: "ROOM1",
+					questions: [],
+					createdAt: "2026-04-03T09:00:00.000Z",
+				},
+				answers: { q1: "A" },
+				currentQuestionIndex: 1,
+				timeLeft: 120,
+			}),
+		);
+
+		const { result } = renderHook(() =>
+			useStudentExamState({ currentUser: mockUser }),
+		);
+
+		expect(result.current.sessionId).toBe("sess-1");
+		expect(result.current.selectedExam?.title).toBe("Math");
+		expect(result.current.view).toBe("exam");
+		expect(result.current.activeExam?.title).toBe("Math");
+		expect(result.current.answers).toEqual({ q1: "A" });
+		expect(result.current.timeLeft).toBe(120);
 	});
 
 	it("sets join error when room code is empty", async () => {

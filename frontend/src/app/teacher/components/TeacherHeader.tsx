@@ -11,6 +11,7 @@ type TeacherHeaderProps = {
   unreadCount: number;
   onMarkRead?: (id: string) => void;
   onMarkAllRead?: () => void;
+  onNotificationAction?: (notification: NotificationItem) => void;
   roleControl?: ReactNode;
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -25,6 +26,7 @@ export default function TeacherHeader({
   unreadCount,
   onMarkRead,
   onMarkAllRead,
+  onNotificationAction,
   roleControl,
   activeTab,
   setActiveTab,
@@ -39,6 +41,18 @@ export default function TeacherHeader({
     () => (showAllNotifications ? notifications : notifications.slice(0, 3)),
     [notifications, showAllNotifications],
   );
+  const getNotificationActionLabel = (item: NotificationItem) => {
+    if (item.type === "student_flagged" || item.type === "student_submitted") {
+      return "Хуваарь руу очих";
+    }
+    if (item.type === "exam_finished" || item.type === "result_published") {
+      return "Аналитик руу очих";
+    }
+    if (item.type === "exam_ending_soon" || item.type === "student_joined") {
+      return "Шалгалт харах";
+    }
+    return null;
+  };
 
   return (
     <header
@@ -146,42 +160,59 @@ export default function TeacherHeader({
                 }`}
               >
                 {visibleNotifications.map((item) => (
-                  <button
+                  <div
                     key={item.id}
-                    className={`mt-2 w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                    className={`mt-2 rounded-2xl border px-4 py-3 text-left text-sm transition ${
                       item.status === "read"
                         ? "border-[#dde5ee] bg-[#f8fafc] text-slate-500"
                         : "border-[#d9e4f0] bg-[#f5f9fd] text-slate-800"
                     }`}
-                    onClick={() => onMarkRead?.(item.id)}
-                    type="button"
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold">{item.title}</div>
-                      <span
-                        className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                          item.severity === "critical"
-                            ? "bg-[#fbf4f4] text-[#9a6868]"
-                            : item.severity === "warning"
-                              ? "bg-[#fbf8f2] text-[#8a7654]"
-                              : item.severity === "success"
-                                ? "bg-[#f6faf7] text-[#557565]"
-                                : "bg-[#f4f8fc] text-[#5b718b]"
-                        }`}
+                    <button
+                      className="w-full text-left"
+                      onClick={() => onMarkRead?.(item.id)}
+                      type="button"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="font-semibold">{item.title}</div>
+                        <span
+                          className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                            item.severity === "critical"
+                              ? "bg-[#fbf4f4] text-[#9a6868]"
+                              : item.severity === "warning"
+                                ? "bg-[#fbf8f2] text-[#8a7654]"
+                                : item.severity === "success"
+                                  ? "bg-[#f6faf7] text-[#557565]"
+                                  : "bg-[#f4f8fc] text-[#5b718b]"
+                          }`}
+                        >
+                          {item.severity}
+                        </span>
+                      </div>
+                      <div className="mt-1">{item.message}</div>
+                      <div className="mt-2 text-xs text-slate-400">
+                        {new Date(item.createdAt).toLocaleString("mn-MN", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </button>
+                    {getNotificationActionLabel(item) ? (
+                      <button
+                        type="button"
+                        className="mt-3 rounded-xl border border-[#d7e3f4] bg-white px-3 py-2 text-xs font-semibold text-[#355cde] transition hover:bg-[#f8fbff]"
+                        onClick={() => {
+                          onMarkRead?.(item.id);
+                          onNotificationAction?.(item);
+                          setOpen(false);
+                        }}
                       >
-                        {item.severity}
-                      </span>
-                    </div>
-                    <div className="mt-1">{item.message}</div>
-                    <div className="mt-2 text-xs text-slate-400">
-                      {new Date(item.createdAt).toLocaleString("mn-MN", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
-                  </button>
+                        {getNotificationActionLabel(item)}
+                      </button>
+                    ) : null}
+                  </div>
                 ))}
               </div>
               {notifications.length > 3 && (

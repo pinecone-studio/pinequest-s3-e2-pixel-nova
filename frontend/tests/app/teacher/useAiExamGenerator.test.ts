@@ -71,6 +71,50 @@ describe("useAiExamGenerator", () => {
     expect(result.current.error).toBe("AI down");
   });
 
+  it("blocks invalid draft requests before calling the API", async () => {
+    const { result } = renderHook(() =>
+      useAiExamGenerator({ teacherId: "teacher-1", showToast: jest.fn() }),
+    );
+
+    act(() => {
+      result.current.updateInput("topic", "ab");
+      result.current.updateInput("questionCount", 99);
+    });
+
+    await act(async () => {
+      await result.current.generateDraft();
+    });
+
+    expect(generateAiExamDraft).not.toHaveBeenCalled();
+    expect(result.current.error).toBe("Гарчиг хамгийн багадаа 3 тэмдэгт байх ёстой.");
+  });
+
+  it("unwraps api envelope errors into a friendly message", async () => {
+    generateAiExamDraft.mockRejectedValue(
+      new Error(
+        JSON.stringify({
+          error: {
+            message: "AI ноорог үүсгэхэд түр алдаа гарлаа.",
+          },
+        }),
+      ),
+    );
+
+    const { result } = renderHook(() =>
+      useAiExamGenerator({ teacherId: "teacher-1", showToast: jest.fn() }),
+    );
+
+    act(() => {
+      result.current.updateInput("topic", "Geometry Basics");
+    });
+
+    await act(async () => {
+      await result.current.generateDraft();
+    });
+
+    expect(result.current.error).toBe("AI ноорог үүсгэхэд түр алдаа гарлаа.");
+  });
+
   it("saves only accepted drafts", async () => {
     saveAcceptedAiDraft.mockResolvedValue({
       id: "run-1",

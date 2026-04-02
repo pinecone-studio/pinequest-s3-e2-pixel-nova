@@ -13,6 +13,7 @@ import { useStudentExamResultState } from "./useStudentExamResultState";
 import { useStudentExamWarnings } from "./useStudentExamWarnings";
 
 const ANSWER_SYNC_DEBOUNCE_MS = 1500;
+const STUDENT_EXAM_RUNTIME_KEY = "student:exam-runtime";
 
 type UseStudentExamSessionParams = {
   currentUser: User | null;
@@ -132,6 +133,24 @@ const clearDraftAnswers = (currentSessionId: string | null) => {
   }
 };
 
+const readStoredRuntimeState = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(STUDENT_EXAM_RUNTIME_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as {
+      sessionId?: string | null;
+      view?: "dashboard" | "exam" | "result";
+      activeExam?: Exam | null;
+      answers?: Record<string, string>;
+      currentQuestionIndex?: number;
+      timeLeft?: number;
+    };
+  } catch {
+    return null;
+  }
+};
+
 const requestDesktopCameraPermission = async () => {
   if (
     typeof window === "undefined" ||
@@ -180,13 +199,28 @@ export const useStudentExamSession = ({
   sessionId,
   setJoinError,
 }: UseStudentExamSessionParams) => {
-  const [view, setView] = useState<"dashboard" | "exam" | "result">("dashboard");
-  const [activeExam, setActiveExam] = useState<Exam | null>(null);
+  const storedRuntimeState = readStoredRuntimeState();
+  const canReuseStoredRuntime =
+    storedRuntimeState?.sessionId &&
+    sessionId &&
+    storedRuntimeState.sessionId === sessionId;
+  const [view, setView] = useState<"dashboard" | "exam" | "result">(
+    canReuseStoredRuntime ? storedRuntimeState?.view ?? "dashboard" : "dashboard",
+  );
+  const [activeExam, setActiveExam] = useState<Exam | null>(
+    canReuseStoredRuntime ? storedRuntimeState?.activeExam ?? null : null,
+  );
   const [startingExam, setStartingExam] = useState(false);
   const [submittingExam, setSubmittingExam] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [answers, setAnswers] = useState<Record<string, string>>(
+    canReuseStoredRuntime ? storedRuntimeState?.answers ?? {} : {},
+  );
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
+    canReuseStoredRuntime ? storedRuntimeState?.currentQuestionIndex ?? 0 : 0,
+  );
+  const [timeLeft, setTimeLeft] = useState<number>(
+    canReuseStoredRuntime ? storedRuntimeState?.timeLeft ?? 0 : 0,
+  );
   const sidebarTimerRef = useRef<number | null>(null);
   const answerFlushTimerRef = useRef<number | null>(null);
   const pendingAnswersRef = useRef<Record<string, string>>({});
@@ -211,6 +245,30 @@ export const useStudentExamSession = ({
     }
     document.body.style.filter = "none";
   }, [view]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (!sessionId || view === "dashboard" || !activeExam) {
+        window.sessionStorage.removeItem(STUDENT_EXAM_RUNTIME_KEY);
+        return;
+      }
+
+      window.sessionStorage.setItem(
+        STUDENT_EXAM_RUNTIME_KEY,
+        JSON.stringify({
+          sessionId,
+          view,
+          activeExam,
+          answers,
+          currentQuestionIndex,
+          timeLeft,
+        }),
+      );
+    } catch {
+      // ignore persistence failures
+    }
+  }, [activeExam, answers, currentQuestionIndex, sessionId, timeLeft, view]);
 
   const clearAnswerFlushTimer = useCallback(() => {
     if (answerFlushTimerRef.current !== null) {
@@ -337,9 +395,6 @@ export const useStudentExamSession = ({
 
     setSubmittingExam(true);
     const report = buildAnswerReport(activeExam, answers);
-    await flushPendingAnswers();
-    await apiRequest(`/api/sessions/${sessionId}/submit`, { method: "POST" });
-
     const examEndAt = (() => {
       const durationMs = (activeExam.duration ?? 45) * 60 * 1000;
       const base = activeExam.finishedAt ?? activeExam.examStartedAt ?? activeExam.scheduledAt ?? null;
@@ -348,12 +403,11 @@ export const useStudentExamSession = ({
       if (Number.isNaN(baseTime)) return null;
       return activeExam.finishedAt ? new Date(baseTime).toISOString() : new Date(baseTime + durationMs).toISOString();
     })();
-
     const pendingSubmission: Submission = {
       id: sessionId,
       examId: activeExam.id,
       studentId: currentUser.id,
-      studentНэр: currentUser.username,
+      studentName: currentUser.username,
       answers: report.map((item) => ({ questionId: item.question.id, selectedAnswer: item.answer, correct: item.correct })),
       score: 0,
       totalPoints: 0,
@@ -365,6 +419,9 @@ export const useStudentExamSession = ({
     };
 
     try {
+      await flushPendingAnswers();
+      await apiRequest(`/api/sessions/${sessionId}/submit`, { method: "POST" });
+
       const result = await apiRequest<SessionResult>(`/api/sessions/${sessionId}/result`);
       clearDraftAnswers(sessionId);
       if (document.fullscreenElement) {
@@ -376,22 +433,28 @@ export const useStudentExamSession = ({
       setResultPending(false);
       setResultReleaseAt(null);
       setView("result");
-      setSubmittingExam(false);
       return;
     } catch (error) {
       const errorCode = getErrorCode(error);
       if (errorCode === "RESULTS_PENDING" || errorCode === "NOT_GRADED") {
         clearDraftAnswers(sessionId);
         setResultPending(true);
-        setResultReleaseAt(examEndAt);
+        setResultReleaseAt(examEndAt ?? activeExam.finishedAt ?? null);
         setAnswerReport([]);
         setLastSubmission(pendingSubmission);
         setView("result");
-        setSubmittingExam(false);
+        return;
       }
+
+      const message = parseErrorMessage(
+        error,
+        "Шалгалт илгээх үед алдаа гарлаа. Дахин оролдоно уу.",
+      );
+      showWarning(message);
+    } finally {
+      setSubmittingExam(false);
     }
-    setSubmittingExam(false);
-  }, [activeExam, answers, currentUser, flushPendingAnswers, sessionId, submittingExam, violations, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt]);
+  }, [activeExam, answers, currentUser, flushPendingAnswers, sessionId, showWarning, submittingExam, violations, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt]);
 
   const terminateExam = useCallback((reason: string) => {
     showWarning("Шалгалт зогсоолоо.");
@@ -435,6 +498,13 @@ export const useStudentExamSession = ({
       document.exitFullscreen?.().catch(() => null);
     }
     document.body.style.filter = "none";
+    if (typeof window !== "undefined") {
+      try {
+        window.sessionStorage.removeItem(STUDENT_EXAM_RUNTIME_KEY);
+      } catch {
+        // ignore persistence failures
+      }
+    }
   }, [clearAnswerFlushTimer, sessionId, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt, setViolations]);
 
   useEffect(() => {

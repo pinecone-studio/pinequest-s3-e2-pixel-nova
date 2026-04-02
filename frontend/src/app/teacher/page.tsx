@@ -218,6 +218,17 @@ export default function TeacherPage() {
     window.sessionStorage.setItem(TEACHER_ACTIVE_TAB_STORAGE_KEY, activeTab);
   }, [activeTab]);
 
+  const handleNotificationAction = (notification: {
+    type: string;
+  }) => {
+    const nextTab =
+      notification.type === "exam_finished" ||
+      notification.type === "result_published"
+        ? "Шалгалтын аналитик"
+        : "Хуваарь";
+    setActiveTab(nextTab);
+  };
+
   useEffect(() => {
     let cancelled = false;
     const loadUsers = async () => {
@@ -389,6 +400,7 @@ export default function TeacherPage() {
         unreadCount={data.unreadNotificationCount}
         onMarkRead={data.markNotificationRead}
         onMarkAllRead={data.markAllNotificationsRead}
+        onNotificationAction={handleNotificationAction}
         activeTab={activeTab}
         setActiveTab={(tab) => handleTabChange(tab as TeacherTab)}
         loadingTab={pendingTabLoading}
