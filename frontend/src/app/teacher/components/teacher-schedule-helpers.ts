@@ -40,8 +40,12 @@ export function formatDayLabel(date: Date) {
 
 export function formatSectionLabel(date: Date) {
   const today = startOfDay(new Date());
-  const sameDay = startOfDay(date).getTime() === today.getTime();
-  return `${date.getMonth() + 1} сарын ${date.getDate()}${sameDay ? " (Өнөөдөр)" : ""}`;
+  const diffDays = Math.round(
+    (startOfDay(date).getTime() - today.getTime()) / DAY_MS,
+  );
+  const suffix =
+    diffDays === 0 ? " (Өнөөдөр)" : diffDays === 1 ? " (Маргааш)" : diffDays === -1 ? " (Өчигдөр)" : "";
+  return `${date.getMonth() + 1} сарын ${date.getDate()}${suffix}`;
 }
 
 export function formatDateValue(date: Date) {
@@ -57,23 +61,32 @@ function resolveScheduleLifecycle(exam: Exam, scheduledAt: Date): ScheduleLifecy
     return "finished";
   }
 
-  if (exam.status === "active" || exam.status === "in_progress") {
-    return "active";
-  }
-
   const now = Date.now();
   const startTime = scheduledAt.getTime();
   const endTime = startTime + (exam.duration ?? 45) * 60 * 1000;
-
-  if (startTime <= now && now < endTime) {
-    return "active";
-  }
 
   if (endTime <= now) {
     return "finished";
   }
 
+  if (exam.status === "active" || exam.status === "in_progress") {
+    return "active";
+  }
+
+  if (startTime <= now && now < endTime) {
+    return "active";
+  }
+
   return "scheduled";
+}
+
+function stripScheduleDescriptors(value: string) {
+  return value
+    .replace(/заавал\s*судлах/giu, "")
+    .replace(/сонгон\s*судлал/giu, "")
+    .replace(/сонгон\s*судлах/giu, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function normalizeSubjectName(value?: string | null) {
@@ -160,6 +173,38 @@ function inferSubjectName(exam: Exam) {
   return "Тодорхойгүй";
 }
 
+function normalizeClassTitle(value?: string | null) {
+  const primaryValue = value
+    ?.split(",")
+    .map((item) => item.trim())
+    .find(Boolean);
+
+  if (!primaryValue) return null;
+
+  const cleaned = stripScheduleDescriptors(primaryValue);
+
+  if (!cleaned) return null;
+
+  return /анги/iu.test(cleaned) ? cleaned : `${cleaned} анги`;
+}
+
+function extractClassTitle(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+
+  const match = trimmed.match(/(\d{1,2}\s*[A-Za-zА-Яа-яӨөҮүЁё])/u);
+  if (!match) return null;
+
+  return normalizeClassTitle(match[1]);
+}
+
+export function getExamScheduleLifecycle(exam: Exam): ScheduleLifecycle | null {
+  if (!exam.scheduledAt) return null;
+  const scheduledAt = new Date(exam.scheduledAt);
+  if (Number.isNaN(scheduledAt.getTime())) return null;
+  return resolveScheduleLifecycle(exam, scheduledAt);
+}
+
 export function buildScheduleData(exams: Exam[]) {
   const looksLikeClassLabel = (value: string) =>
     /^(\d{1,2}\s*[A-Za-zА-Яа-яӨөҮүЁё]+)(\s*,\s*\d{1,2}\s*[A-Za-zА-Яа-яӨөҮүЁё]+)*$/u.test(
@@ -169,12 +214,20 @@ export function buildScheduleData(exams: Exam[]) {
   const resolveTitle = (exam: Exam) => {
     const title = exam.title?.trim() || "";
     const description = exam.description?.trim() || "";
+    const classTitle =
+      normalizeClassTitle(exam.className) ??
+      extractClassTitle(title) ??
+      extractClassTitle(description);
 
-    if (description && looksLikeClassLabel(title)) {
-      return description;
+    if (classTitle) {
+      return classTitle;
     }
 
-    return title || description || "Шалгалт";
+    if (description && looksLikeClassLabel(title)) {
+      return stripScheduleDescriptors(description) || "Шалгалт";
+    }
+
+    return stripScheduleDescriptors(title || description || "Шалгалт") || "Шалгалт";
   };
 
   const scheduled = exams

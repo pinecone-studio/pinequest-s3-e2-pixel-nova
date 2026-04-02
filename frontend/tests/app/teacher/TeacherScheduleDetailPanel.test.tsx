@@ -1,6 +1,14 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import { getExamAudioChunks } from "@/api/cheat";
 import TeacherScheduleDetailPanel from "@/app/teacher/components/TeacherScheduleDetailPanel";
 import type { Exam, ExamRosterDetail } from "@/app/teacher/types";
+
+jest.mock("@/api/cheat", () => ({
+  getExamAudioChunks: jest.fn().mockResolvedValue([]),
+}));
+
+const mockGetExamAudioChunks =
+  getExamAudioChunks as jest.MockedFunction<typeof getExamAudioChunks>;
 
 describe("TeacherScheduleDetailPanel", () => {
   const exam: Exam = {
@@ -25,6 +33,11 @@ describe("TeacherScheduleDetailPanel", () => {
     finishedAt: null,
     participants: [],
   };
+
+  beforeEach(() => {
+    mockGetExamAudioChunks.mockReset();
+    mockGetExamAudioChunks.mockResolvedValue([]);
+  });
 
   it("renders the monitoring summary cards with real roster totals", () => {
     render(
@@ -127,5 +140,114 @@ describe("TeacherScheduleDetailPanel", () => {
 
     expect(screen.getByText("Шалгалт дуусахад")).toBeInTheDocument();
     expect(screen.getByText("Дууссан")).toBeInTheDocument();
+  });
+
+  it("shows a simple audio listening panel when recording is enabled", async () => {
+    mockGetExamAudioChunks.mockImplementation(async (sessionId) => {
+      if (sessionId === "session-1") {
+        return [
+          {
+            id: "chunk-1",
+            sessionId,
+            examId: "exam-1",
+            studentId: "student-1",
+            objectKey: "audio/session-1/chunk-1.webm",
+            mimeType: "audio/webm",
+            sequenceNumber: 0,
+            chunkStartedAt: "2026-03-30T03:02:00.000Z",
+            chunkEndedAt: "2026-03-30T03:02:20.000Z",
+            uploadedAt: "2026-03-30T03:02:25.000Z",
+            durationMs: 20_000,
+            sizeBytes: 1024,
+            assetUrl: "https://example.com/audio-1.webm",
+          },
+        ];
+      }
+
+      return [];
+    });
+
+    render(
+      <TeacherScheduleDetailPanel
+        exam={{
+          ...exam,
+          requiresAudioRecording: true,
+        }}
+        roster={{
+          ...roster,
+          participants: [
+            {
+              sessionId: "session-1",
+              studentId: "student-1",
+              studentName: "Г. Хулан",
+              studentCode: "34344534",
+              status: "graded",
+              answeredCount: 28,
+              totalQuestions: 30,
+              progressPercent: 100,
+              submittedAt: "2026-03-30T03:40:00.000Z",
+              startedAt: "2026-03-30T03:00:00.000Z",
+              flagCount: 0,
+              isFlagged: false,
+              violationScore: 0,
+              riskLevel: "low",
+              lastViolationAt: null,
+              topViolationType: null,
+              eventCount: 0,
+              latestEvent: null,
+              countByType: {},
+              score: 28,
+            },
+            {
+              sessionId: "session-2",
+              studentId: "student-2",
+              studentName: "А. Ануужин",
+              studentCode: "34344535",
+              status: "submitted",
+              answeredCount: 20,
+              totalQuestions: 30,
+              progressPercent: 70,
+              submittedAt: "2026-03-30T03:30:00.000Z",
+              startedAt: "2026-03-30T03:05:00.000Z",
+              flagCount: 0,
+              isFlagged: false,
+              violationScore: 0,
+              riskLevel: "low",
+              lastViolationAt: null,
+              topViolationType: null,
+              eventCount: 0,
+              latestEvent: null,
+              countByType: {},
+              score: 20,
+            },
+          ],
+        }}
+        rosterLoading={false}
+        attendanceJoined={6}
+        attendanceSubmitted={2}
+        onBack={() => {}}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockGetExamAudioChunks).toHaveBeenCalledWith("session-1");
+      expect(mockGetExamAudioChunks).toHaveBeenCalledWith("session-2");
+    });
+
+    expect(screen.getByText("Дуу хураагуур")).toBeInTheDocument();
+    expect(screen.getByText("Сурагчийн дуу бичлэг")).toBeInTheDocument();
+    expect(screen.getByText("Г. Хулан")).toBeInTheDocument();
+
+    await screen.findByText("1 бичлэг бэлэн");
+
+    expect(
+      screen.getAllByRole("button", { name: /Г. Хулан · 1 бичлэг/i }).length,
+    ).toBeGreaterThan(0);
+    await screen.findByText("Бичлэг #1");
+    expect(screen.getByText("20 сек")).toBeInTheDocument();
+    expect(screen.getByText("Тусдаа нээх")).toHaveAttribute(
+      "href",
+      "https://example.com/audio-1.webm",
+    );
   });
 });

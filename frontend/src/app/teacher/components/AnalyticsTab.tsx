@@ -297,7 +297,7 @@ export default function AnalyticsTab({
 			</div>
 
 			{/* Right column — XP starts at 86px from header */}
-			<div className="flex w-[421px] shrink-0 flex-col justify-between pt-[43.5px]">
+			<div className="flex w-[421px] shrink-0 flex-col gap-[34px] pt-[43.5px]">
 				{/* XP Leaderboard */}
 				<div className="flex h-[318px] flex-col rounded-[28px] border border-[#e2e9f0] bg-white px-8 pb-4 pt-6 shadow-[0_16px_36px_-34px_rgba(15,23,42,0.18)]">
 					<h2 className="text-[17px] font-semibold leading-7 tracking-[-0.02em] text-[#20232d]">
@@ -341,13 +341,15 @@ export default function AnalyticsTab({
 				</div>
 
 				{/* Insight card */}
-				<div className="mt-auto pt-[41px]">
-					<div className="rounded-2xl border border-[#FFA705] bg-white p-5">
-						<div className="flex items-center gap-2">
-							<AlarmClockIcon className="size-4 text-[#FFA705]" />
-							<h2 className="text-sm font-semibold text-slate-800">Гол анхаарах зүйл</h2>
+				<div>
+					<div className="min-h-[225px] rounded-[30px] border border-[#FFA705] bg-white px-[34px] pb-[30px] pt-[28px] shadow-[0_16px_34px_-30px_rgba(15,23,42,0.16)]">
+						<div className="flex items-center gap-3">
+							<AlarmClockIcon className="size-[18px] text-[#FFA705]" />
+							<h2 className="text-[17px] font-semibold tracking-[-0.02em] text-slate-800">
+								Гол анхаарах зүйл
+							</h2>
 						</div>
-						<div className="mt-3 text-sm leading-6 text-slate-700">
+						<div className="mt-[18px] text-[17px] leading-[1.6] text-slate-800">
 							{insight ? (
 								<>
 									<span className="font-bold">{insight}</span>
