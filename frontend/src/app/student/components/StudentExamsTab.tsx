@@ -10,6 +10,7 @@ type StudentExamsTabProps = {
   joinError: string | null;
   onLookup: () => void;
   selectedExam: Exam | null;
+  startingExam: boolean;
   onStartExam: () => void;
   onClearSelection: () => void;
   teacherName?: string | null;
@@ -32,6 +33,7 @@ export default function StudentExamsTab({
   joinError,
   onLookup,
   selectedExam,
+  startingExam,
   onStartExam,
   onClearSelection,
   teacherName,
@@ -59,7 +61,8 @@ export default function StudentExamsTab({
       teacherName={teacherName}
       onBack={onClearSelection}
       onPrimaryAction={onStartExam}
-      primaryActionLabel="Шалгалт эхлүүлэх"
+      primaryActionLabel={startingExam ? "Starting exam..." : "Шалгалт эхлүүлэх"}
+      primaryActionDisabled={startingExam}
       maxWidthClassName="max-w-[1088px]"
     />
   );

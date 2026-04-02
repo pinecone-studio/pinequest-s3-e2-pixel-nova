@@ -257,6 +257,7 @@ export default function StudentPage() {
             answers={exam.answers}
             onUpdateAnswer={exam.updateAnswer}
             onSelectMcq={exam.selectMcqAnswer}
+            submitting={exam.submittingExam}
             onPrev={exam.goPrev}
             onNext={exam.goNext}
             onSubmit={() => exam.submitExam(false)}

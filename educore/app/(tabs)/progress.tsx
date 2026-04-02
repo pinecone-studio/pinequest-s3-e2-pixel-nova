@@ -318,7 +318,8 @@ function SubjectCard({
 }
 
 export default function ProgressScreen() {
-  const { availableUsers, progressSummary, student } = useStudentApp();
+  const { availableUsers, dashboardLoading, progressSummary, student } =
+    useStudentApp();
   const [selectedSubject, setSelectedSubject] = useState<SubjectScore | null>(null);
 
   const rankedUsers = useMemo(
@@ -388,6 +389,15 @@ export default function ProgressScreen() {
         showsVerticalScrollIndicator={false}
       >
       <Text style={styles.sectionTitle}>Таны эрэмбэ</Text>
+
+      {dashboardLoading ? (
+        <View style={styles.rankCard}>
+          <Text style={styles.rankName}>Refreshing progress...</Text>
+          <Text style={styles.rankLevel}>
+            Updating leaderboard and latest performance details.
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.rankList}>
         {rankItems.map((item) => (

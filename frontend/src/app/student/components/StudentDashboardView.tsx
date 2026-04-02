@@ -38,6 +38,7 @@ type StudentExamState = {
   joinError: string | null;
   handleLookup: () => void;
   selectedExam: Exam | null;
+  startingExam: boolean;
   startExam: () => void;
   setSelectedExam: (value: Exam | null) => void;
   setJoinError: Dispatch<SetStateAction<string | null>>;
@@ -247,6 +248,7 @@ export default function StudentDashboardView({
             joinError={exam.joinError}
             onLookup={exam.handleLookup}
             selectedExam={exam.selectedExam}
+            startingExam={exam.startingExam}
             onStartExam={exam.startExam}
             onClearSelection={() => {
               exam.setSelectedExam(null);
