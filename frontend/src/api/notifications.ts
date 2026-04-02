@@ -90,7 +90,20 @@ export const openNotificationsLiveStream = (
   userId?: string | null,
 ) => {
   const controller = new AbortController();
-  const { userId: sessionUserId, userRole, userName } = getApiUserContext(role);
+  const fallbackContext = {
+    userId: userId ?? role,
+    userRole: role,
+    userName: role === "teacher" ? "Teacher" : "Student",
+  } as const;
+  const context =
+    typeof getApiUserContext === "function"
+      ? getApiUserContext(role)
+      : fallbackContext;
+  const sessionUserId = context?.userId || fallbackContext.userId;
+  const userRole = context?.userRole || fallbackContext.userRole;
+  const userName = context?.userName || fallbackContext.userName;
+  const apiBaseUrl =
+    typeof API_BASE_URL === "string" ? API_BASE_URL : "";
   const headers = new Headers();
   headers.set("Accept", "text/event-stream");
   headers.set("x-user-id", userId ?? sessionUserId);
@@ -99,7 +112,7 @@ export const openNotificationsLiveStream = (
 
   void (async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/notifications/live`, {
+      const response = await fetch(`${apiBaseUrl}/api/notifications/live`, {
         headers,
         signal: controller.signal,
         cache: "no-store",
