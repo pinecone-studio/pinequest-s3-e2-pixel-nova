@@ -98,53 +98,6 @@ export default function ExamScheduleMetaFields({
           onChange={(event) => setScheduleDescription(event.target.value)}
         />
       </label>
-
-      <div className="grid gap-3 rounded-[22px] border border-[#e5ebf3] bg-[#fbfcff] p-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-start">
-        <div className="grid gap-1">
-          <span className="text-[16px] font-semibold text-black">
-            Шалгалт өгөх сурагчдын тоо
-          </span>
-          <p className="text-[12px] leading-5 text-slate-500">
-            Энэ тоогоор шалгалтын ирц болон ангийн дундажийг тооцно. Өгөөгүй
-            сурагчдыг ирцээс хасагдсан, дундажид 0 гэж үзнэ.
-          </p>
-        </div>
-
-        <label className="grid gap-2">
-          <span className="text-[14px] font-medium text-slate-900">
-            Хүлээгдэж буй сурагч
-          </span>
-          <input
-            type="number"
-            min={0}
-            max={500}
-            step={1}
-            value={scheduleExpectedStudentsCount}
-            onChange={(event) =>
-              setScheduleExpectedStudentsCount(
-                Math.max(0, Number(event.target.value) || 0),
-              )
-            }
-            className="min-h-[52px] rounded-2xl border border-[#d5dfeb] bg-white px-4 text-base font-medium text-slate-900 outline-none transition focus:border-[#2563eb] focus:ring-4 focus:ring-[#dbeafe]"
-          />
-          <div className="flex flex-wrap gap-2">
-            {[15, 20, 30, 40].map((count) => (
-              <button
-                key={count}
-                type="button"
-                onClick={() => setScheduleExpectedStudentsCount(count)}
-                className={`rounded-full border px-3 py-1 text-[12px] font-medium transition ${
-                  scheduleExpectedStudentsCount === count
-                    ? "border-[#bfdbfe] bg-[#eff6ff] text-[#2563eb]"
-                    : "border-[#d5dfeb] bg-white text-slate-500 hover:bg-slate-50"
-                }`}
-              >
-                {count} сурагч
-              </button>
-            ))}
-          </div>
-        </label>
-      </div>
     </>
   );
 }
