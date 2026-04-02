@@ -13,6 +13,7 @@ export type ScheduleLifecycle = "scheduled" | "active" | "finished";
 export type ScheduleItem = {
   id: string;
   title: string;
+  subjectName?: string | null;
   subtitle?: string;
   dayIndex: number;
   startMinutes: number;
@@ -73,6 +74,90 @@ function resolveScheduleLifecycle(exam: Exam, scheduledAt: Date): ScheduleLifecy
   }
 
   return "scheduled";
+}
+
+function normalizeSubjectName(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+
+  const lower = trimmed.toLowerCase();
+  if (lower === "ерөнхий" || lower === "general") {
+    return null;
+  }
+
+  return trimmed;
+}
+
+function inferSubjectName(exam: Exam) {
+  const explicitSubject = normalizeSubjectName(exam.subjectName);
+  if (explicitSubject) return explicitSubject;
+
+  const searchableText = [
+    exam.title,
+    exam.description,
+    exam.examType,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (!searchableText) {
+    return "Тодорхойгүй";
+  }
+
+  const subjectRules = [
+    {
+      label: "Англи хэл",
+      keywords: [
+        "english",
+        "vocabulary",
+        "grammar",
+        "listening",
+        "reading",
+        "writing",
+        "speaking",
+        "tense",
+        "present perfect",
+        "past participle",
+      ],
+    },
+    {
+      label: "Математик",
+      keywords: [
+        "math",
+        "mathematics",
+        "algebra",
+        "geometry",
+        "equation",
+        "function",
+        "calculus",
+      ],
+    },
+    {
+      label: "Монгол хэл",
+      keywords: ["монгол", "mongolian", "essay", "зохион бичлэг", "найруулга"],
+    },
+    {
+      label: "Физик",
+      keywords: ["physics", "force", "motion", "energy", "electromagnetic"],
+    },
+    {
+      label: "Хими",
+      keywords: ["chemistry", "chemical", "atom", "molecule", "reaction"],
+    },
+    {
+      label: "Түүх",
+      keywords: ["history", "historical", "war", "empire", "revolution"],
+    },
+  ] as const;
+
+  for (const rule of subjectRules) {
+    if (rule.keywords.some((keyword) => searchableText.includes(keyword))) {
+      return rule.label;
+    }
+  }
+
+  return "Тодорхойгүй";
 }
 
 export function buildScheduleData(exams: Exam[]) {
@@ -143,9 +228,8 @@ export function buildScheduleData(exams: Exam[]) {
       return {
         id: exam.id,
         title: resolveTitle(exam),
-        subtitle: [exam.className, exam.groupName, exam.description]
-          .filter(Boolean)
-          .join(" · "),
+        subjectName: inferSubjectName(exam),
+        subtitle: [exam.className, exam.groupName].filter(Boolean).join(" · "),
         dayIndex,
         startMinutes:
           scheduledAt.getHours() * 60 +

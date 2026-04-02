@@ -39,6 +39,118 @@ const enabledCheatDetectionsSchema = z
   .min(1)
   .optional();
 
+const normalizeSubjectName = (value?: string | null) => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+};
+
+const ensureDefaultSubjectId = async (db: ReturnType<typeof getDb>) => {
+  let existing:
+    | {
+        id: string;
+      }
+    | undefined;
+  try {
+    [existing] = await db
+      .select({
+        id: subjects.id,
+      })
+      .from(subjects)
+      .where(eq(subjects.code, "GENERAL"))
+      .limit(1);
+  } catch {
+    existing = undefined;
+  }
+
+  if (existing) return existing.id;
+
+  const id = newId();
+  const now = new Date().toISOString();
+
+  try {
+    await db.insert(subjects).values({
+      id,
+      name: "Ерөнхий",
+      code: "GENERAL",
+      description: "Анхдагч ерөнхий хичээл",
+      createdAt: now,
+      updatedAt: now,
+    });
+  } catch {
+    try {
+      await db.insert(subjects).values({
+        id,
+        name: "Ерөнхий",
+        code: "GENERAL",
+      });
+    } catch {
+      const [fallbackExisting] = await db
+        .select({
+          id: subjects.id,
+        })
+        .from(subjects)
+        .where(eq(subjects.code, "GENERAL"))
+        .limit(1);
+      if (fallbackExisting) return fallbackExisting.id;
+      throw new Error("Default subject creation failed");
+    }
+  }
+
+  return id;
+};
+
+const resolveExamSubjectId = async (
+  db: ReturnType<typeof getDb>,
+  subjectId?: string,
+  subjectName?: string | null,
+) => {
+  if (subjectId) {
+    const [existing] = await db
+      .select({ id: subjects.id })
+      .from(subjects)
+      .where(eq(subjects.id, subjectId))
+      .limit(1);
+
+    if (existing?.id) return existing.id;
+  }
+
+  const normalizedSubjectName = normalizeSubjectName(subjectName);
+  if (normalizedSubjectName) {
+    const [existingByName] = await db
+      .select({ id: subjects.id })
+      .from(subjects)
+      .where(sql`lower(${subjects.name}) = lower(${normalizedSubjectName})`)
+      .limit(1);
+
+    if (existingByName?.id) return existingByName.id;
+
+    const id = newId();
+    const now = new Date().toISOString();
+
+    try {
+      await db.insert(subjects).values({
+        id,
+        name: normalizedSubjectName,
+        code: `CUSTOM_${id.slice(0, 8).toUpperCase()}`,
+        description: `${normalizedSubjectName} хичээл`,
+        createdAt: now,
+        updatedAt: now,
+      });
+      return id;
+    } catch {
+      const [createdSubject] = await db
+        .select({ id: subjects.id })
+        .from(subjects)
+        .where(sql`lower(${subjects.name}) = lower(${normalizedSubjectName})`)
+        .limit(1);
+
+      if (createdSubject?.id) return createdSubject.id;
+    }
+  }
+
+  return ensureDefaultSubjectId(db);
+};
+
 const mapExamForResponse = <
   T extends {
     enabledCheatDetections?: string | null;
@@ -63,6 +175,7 @@ examRoutes.post(
     "json",
     z.object({
       subjectId: z.string().optional(),
+      subjectName: z.string().optional(),
       title: z.string(),
       description: z.string().optional(),
       examType: z.string().optional(),
@@ -81,70 +194,11 @@ examRoutes.post(
       const body = c.req.valid("json");
       const teacherId = c.get("user").id;
       const db = getDb(c.env.educore);
-
-      const ensureDefaultSubject = async () => {
-        let existing:
-          | {
-              id: string;
-            }
-          | undefined;
-        try {
-          [existing] = await db
-            .select({
-              id: subjects.id,
-            })
-            .from(subjects)
-            .where(eq(subjects.code, "GENERAL"))
-            .limit(1);
-        } catch {
-          existing = undefined;
-        }
-        if (existing) return existing.id;
-        const id = newId();
-        const now = new Date().toISOString();
-        try {
-          await db.insert(subjects).values({
-            id,
-            name: "Ерөнхий",
-            code: "GENERAL",
-            description: "Анхдагч ерөнхий хичээл",
-            createdAt: now,
-            updatedAt: now,
-          });
-        } catch {
-          try {
-            await db.insert(subjects).values({
-              id,
-              name: "Ерөнхий",
-              code: "GENERAL",
-            });
-          } catch {
-            const [fallbackExisting] = await db
-              .select({
-                id: subjects.id,
-              })
-              .from(subjects)
-              .where(eq(subjects.code, "GENERAL"))
-              .limit(1);
-            if (fallbackExisting) return fallbackExisting.id;
-            throw new Error("Default subject creation failed");
-          }
-        }
-        return id;
-      };
-
-      const resolveSubjectId = async () => {
-        if (!body.subjectId) return ensureDefaultSubject();
-        const [existing] = await db
-          .select({ id: subjects.id })
-          .from(subjects)
-          .where(eq(subjects.id, body.subjectId))
-          .limit(1);
-        if (existing?.id) return existing.id;
-        return ensureDefaultSubject();
-      };
-
-      const subjectId = await resolveSubjectId();
+      const subjectId = await resolveExamSubjectId(
+        db,
+        body.subjectId,
+        body.subjectName,
+      );
 
       const id = newId();
       const now = new Date().toISOString();
@@ -313,6 +367,12 @@ examRoutes.get("/:examId", async (c) => {
       return notFound(c, "Exam");
     }
 
+    const [subject] = await db
+      .select({ name: subjects.name })
+      .from(subjects)
+      .where(eq(subjects.id, exam.subjectId))
+      .limit(1);
+
     const examQuestions = await db
       .select()
       .from(questions)
@@ -331,6 +391,7 @@ examRoutes.get("/:examId", async (c) => {
 
     return success(c, {
       ...mapExamForResponse(exam),
+      subjectName: subject?.name ?? null,
       questions: questionsWithOptions,
     });
   } catch (err) {
@@ -356,6 +417,7 @@ examRoutes.put(
       passScore: z.number().int().min(0).max(100).optional(),
       shuffleQuestions: z.boolean().optional(),
       subjectId: z.string().optional(),
+      subjectName: z.string().optional(),
       requiresAudioRecording: z.boolean().optional(),
       enabledCheatDetections: enabledCheatDetectionsSchema,
     }),
@@ -389,6 +451,11 @@ examRoutes.put(
         );
       }
 
+      const nextSubjectId =
+        body.subjectId !== undefined || body.subjectName !== undefined
+          ? await resolveExamSubjectId(db, body.subjectId, body.subjectName)
+          : undefined;
+
       await db
         .update(exams)
         .set({
@@ -413,7 +480,7 @@ examRoutes.put(
           ...(body.requiresAudioRecording !== undefined && {
             requiresAudioRecording: body.requiresAudioRecording,
           }),
-          ...(body.subjectId !== undefined && { subjectId: body.subjectId }),
+          ...(nextSubjectId !== undefined && { subjectId: nextSubjectId }),
           ...(body.enabledCheatDetections !== undefined && {
             enabledCheatDetections: serializeEnabledCheatDetections(
               body.enabledCheatDetections,

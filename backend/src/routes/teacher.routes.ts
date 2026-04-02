@@ -3,6 +3,7 @@ import {
   getDb,
   students,
   exams,
+  subjects,
   examSessions,
   cheatEvents,
   questions,
@@ -504,6 +505,7 @@ teacherRoutes.get("/exams/summary", async (c) => {
       examType: exams.examType,
       className: exams.className,
       groupName: exams.groupName,
+      subjectName: subjects.name,
       scheduledAt: exams.scheduledAt,
       startedAt: exams.startedAt,
       finishedAt: exams.finishedAt,
@@ -522,6 +524,7 @@ teacherRoutes.get("/exams/summary", async (c) => {
       submissionCount: sql<number>`(select count(*) from exam_sessions where exam_sessions.exam_id = ${exams.id} and exam_sessions.status = 'graded')`,
     })
     .from(exams)
+    .leftJoin(subjects, eq(exams.subjectId, subjects.id))
     .where(eq(exams.teacherId, teacherId))
     .orderBy(desc(exams.createdAt));
 

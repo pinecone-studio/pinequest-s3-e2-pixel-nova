@@ -43,6 +43,9 @@ export function ScheduleCard({
           border: "border-t-[4px] border-t-[#ffb14a]",
           dot: "elective" as const,
         };
+  const secondaryLabel = item.subjectName
+    ? `${item.subjectName} · ${formatTimeRange(item.scheduledDate, item.duration)}`
+    : formatTimeRange(item.scheduledDate, item.duration);
 
   return (
     <button
@@ -64,8 +67,8 @@ export function ScheduleCard({
           <div className="line-clamp-2 text-[13px] font-semibold leading-5 text-[#2e2e2e]">
             {item.title}
           </div>
-          <div className="mt-1 text-[11px] leading-4 text-[#a3a3a3]">
-            {formatTimeRange(item.scheduledDate, item.duration)}
+          <div className="mt-1 line-clamp-1 text-[11px] leading-4 text-[#a3a3a3]">
+            {secondaryLabel}
           </div>
         </div>
       </div>
@@ -115,9 +118,19 @@ export function ScheduleListCard({
       <div className="relative flex h-full flex-col">
         <div className="space-y-5">
           <div className="flex items-start justify-between gap-4">
-            <h3 className="min-h-[64px] max-w-[64%] text-[26px] font-semibold leading-[31px] tracking-[-0.03em] text-black break-words">
-              {item.title}
-            </h3>
+            <div className="max-w-[64%]">
+              <h3 className="min-h-[64px] text-[26px] font-semibold leading-[31px] tracking-[-0.03em] text-black break-words">
+                {item.title}
+              </h3>
+              {item.subjectName ? (
+                <div className="mt-3 inline-flex max-w-full items-center rounded-full border border-[#e4e7ec] bg-[#f8f9fb] px-3 py-1.5 text-[13px] font-semibold leading-4 text-[#4b5563]">
+                  <span className="shrink-0 text-[#7b8494]">Хичээл:</span>
+                  <span className="ml-1 truncate text-[#2f3743]">
+                    {item.subjectName}
+                  </span>
+                </div>
+              ) : null}
+            </div>
             <div className="mt-1 flex shrink-0 flex-col items-end gap-2">
               <span
                 className={`rounded-full px-3 py-1.5 text-[12px] font-semibold leading-4 ${tagTone}`}

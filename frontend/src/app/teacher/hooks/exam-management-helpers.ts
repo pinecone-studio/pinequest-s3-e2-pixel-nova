@@ -14,6 +14,7 @@ export const toSyncQuestions = (sourceQuestions: Question[]) =>
 export const buildLocalExam = (params: {
   title: string;
   description?: string | null;
+  subjectName?: string | null;
   examType?: string | null;
   className?: string | null;
   groupName?: string | null;
@@ -29,6 +30,7 @@ export const buildLocalExam = (params: {
   remote?: {
     id: string;
     description?: string | null;
+    subjectName?: string | null;
     examType?: string | null;
     className?: string | null;
     groupName?: string | null;
@@ -54,6 +56,7 @@ export const buildLocalExam = (params: {
     id: remote?.id ?? generateId(),
     title: payload.title,
     description: remote?.description ?? payload.description ?? null,
+    subjectName: remote?.subjectName ?? payload.subjectName ?? null,
     examType: remote?.examType ?? payload.examType ?? null,
     className: remote?.className ?? payload.className ?? null,
     groupName: remote?.groupName ?? payload.groupName ?? null,

@@ -50,6 +50,7 @@ type TeacherExamSummary = {
   id: string;
   title: string;
   description?: string | null;
+  subjectName?: string | null;
   examType?: string | null;
   className?: string | null;
   groupName?: string | null;
@@ -102,6 +103,7 @@ export const fetchTeacherExams = async (
     id: exam.id,
     title: exam.title,
     description: exam.description ?? null,
+    subjectName: exam.subjectName ?? null,
     examType: exam.examType ?? null,
     className: exam.className ?? null,
     groupName: exam.groupName ?? null,
@@ -156,6 +158,7 @@ export const fetchTeacherExamDetail = async (
     id: exam.id,
     title: exam.title,
     description: exam.description ?? null,
+    subjectName: exam.subjectName ?? null,
     examType: exam.examType ?? null,
     className: exam.className ?? null,
     groupName: exam.groupName ?? null,
@@ -300,6 +303,50 @@ type LeaderboardItem = {
         name?: string;
         icon?: string;
       };
+};
+
+type TeacherOverviewResponse = {
+  totalClasses: number;
+  totalStudents: number;
+  weeklySubmissions: number;
+  totalSubmissions: number;
+  monthlyData: {
+    month: string;
+    avgScore: number | null;
+    passRate: number | null;
+    count: number;
+  }[];
+};
+
+export type ExamAnalyticsSummaryResponse = {
+  averageScore: number | null;
+  highestScore: number | null;
+  lowestScore: number | null;
+  passRate: number;
+  totalStudents: number;
+  flaggedCount: number;
+};
+
+export const fetchTeacherOverview = async (
+  teacherId?: string,
+): Promise<TeacherOverviewResponse> => {
+  return apiRequest<TeacherOverviewResponse>("/api/analytics/teacher-overview", {
+    roleOverride: "teacher",
+    userIdOverride: teacherId,
+  });
+};
+
+export const fetchExamAnalyticsSummary = async (
+  examId: string,
+  teacherId?: string,
+): Promise<ExamAnalyticsSummaryResponse> => {
+  return apiRequest<ExamAnalyticsSummaryResponse>(
+    `/api/analytics/exam/${examId}/summary`,
+    {
+      roleOverride: "teacher",
+      userIdOverride: teacherId,
+    },
+  );
 };
 
 export const fetchXpLeaderboard = async (): Promise<XpLeaderboardEntry[]> => {

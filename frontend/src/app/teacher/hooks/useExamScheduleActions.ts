@@ -126,10 +126,13 @@ export const useExamScheduleActions = ({
       sourceExam?.title?.trim() ||
       scheduleSubjectName.trim() ||
       scheduleTitle.trim();
+    const resolvedSubjectName =
+      sourceExam?.subjectName?.trim() || scheduleSubjectName.trim() || null;
 
     let newExam = buildLocalExam({
       title: resolvedTitle,
       description: scheduleDescription,
+      subjectName: resolvedSubjectName,
       examType: scheduleExamType,
       className: scheduleClassName,
       groupName: scheduleGroupName,
@@ -149,6 +152,7 @@ export const useExamScheduleActions = ({
       const syncedExam = await syncExamToBackend(currentUser, {
         title: resolvedTitle,
         description: scheduleDescription || sourceExam?.description || "",
+        subjectName: resolvedSubjectName,
         examType: scheduleExamType || sourceExam?.examType || "",
         className: scheduleClassName,
         groupName: scheduleGroupName,
@@ -161,6 +165,7 @@ export const useExamScheduleActions = ({
       newExam = buildLocalExam({
         title: resolvedTitle,
         description: scheduleDescription || sourceExam?.description || "",
+        subjectName: resolvedSubjectName,
         examType: scheduleExamType || sourceExam?.examType || "",
         className: scheduleClassName,
         groupName: scheduleGroupName,

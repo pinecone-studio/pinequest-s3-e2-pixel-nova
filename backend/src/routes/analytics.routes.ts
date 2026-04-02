@@ -271,4 +271,91 @@ analyticsRoutes.get("/exam/:examId/summary", async (c) => {
   });
 });
 
+// GET /teacher-overview — Stats + monthly trends for the analytics tab
+analyticsRoutes.get("/teacher-overview", async (c) => {
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  // Unique classes
+  const classRows = await db
+    .select({ className: exams.className })
+    .from(exams)
+    .where(and(eq(exams.teacherId, user.id), sql`${exams.className} IS NOT NULL AND ${exams.className} != ''`))
+    .groupBy(exams.className);
+  const totalClasses = classRows.length;
+
+  // Unique students across all exams
+  const [studentRow] = await db
+    .select({ cnt: sql<number>`count(distinct ${examSessions.studentId})` })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .where(eq(exams.teacherId, user.id));
+  const totalStudents = Number(studentRow?.cnt ?? 0);
+
+  // Submissions in last 7 days
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 19).replace("T", " ");
+  const [weeklyRow] = await db
+    .select({ cnt: count() })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .where(
+      and(
+        eq(exams.teacherId, user.id),
+        sql`${examSessions.status} IN ('submitted', 'graded')`,
+        sql`${examSessions.submittedAt} >= ${sevenDaysAgoStr}`,
+      ),
+    );
+  const weeklySubmissions = Number(weeklyRow?.cnt ?? 0);
+
+  // Total submissions
+  const [totalRow] = await db
+    .select({ cnt: count() })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .where(
+      and(
+        eq(exams.teacherId, user.id),
+        sql`${examSessions.status} IN ('submitted', 'graded')`,
+      ),
+    );
+  const totalSubmissions = Number(totalRow?.cnt ?? 0);
+
+  // Monthly averages — last 12 months
+  const monthlyRows = await db
+    .select({
+      month: sql<string>`strftime('%Y-%m', ${examSessions.submittedAt})`,
+      avgScore: sql<number | null>`avg(case when ${examSessions.totalPoints} > 0 then ${examSessions.score} * 100.0 / ${examSessions.totalPoints} else ${examSessions.score} end)`,
+      cnt: count(),
+      passCount: sql<number>`sum(case when ${examSessions.totalPoints} > 0 and ${examSessions.score} * 100.0 / ${examSessions.totalPoints} >= 60 then 1 when (${examSessions.totalPoints} = 0 or ${examSessions.totalPoints} is null) and ${examSessions.score} >= 60 then 1 else 0 end)`,
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .where(
+      and(
+        eq(exams.teacherId, user.id),
+        sql`${examSessions.status} IN ('submitted', 'graded')`,
+        sql`${examSessions.submittedAt} IS NOT NULL`,
+      ),
+    )
+    .groupBy(sql`strftime('%Y-%m', ${examSessions.submittedAt})`)
+    .orderBy(sql`strftime('%Y-%m', ${examSessions.submittedAt})`);
+
+  const monthlyData = monthlyRows.map((row) => ({
+    month: row.month,
+    avgScore: row.avgScore !== null ? Math.round(Number(row.avgScore)) : null,
+    passRate: row.cnt > 0 ? Math.round((Number(row.passCount) / row.cnt) * 100) : null,
+    count: row.cnt,
+  }));
+
+  return success(c, {
+    totalClasses,
+    totalStudents,
+    weeklySubmissions,
+    totalSubmissions,
+    monthlyData,
+  });
+});
+
 export default analyticsRoutes;

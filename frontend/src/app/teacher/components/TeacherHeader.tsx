@@ -2,6 +2,7 @@ import Image from "next/image";
 import { useMemo, useState, type ReactNode } from "react";
 import type { NotificationItem } from "@/lib/notifications";
 import { Bell } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 export type TeacherNavTab = string;
 
@@ -13,6 +14,7 @@ type TeacherHeaderProps = {
   roleControl?: ReactNode;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  loadingTab?: string | null;
   tabs: readonly string[];
   contentWidthClass?: string;
   outerPaddingClass?: string;
@@ -26,6 +28,7 @@ export default function TeacherHeader({
   roleControl,
   activeTab,
   setActiveTab,
+  loadingTab = null,
   tabs,
   contentWidthClass = "max-w-[1380px]",
   outerPaddingClass = "px-4 py-2 sm:px-6 lg:px-8",
@@ -63,18 +66,23 @@ export default function TeacherHeader({
           <nav className="inline-flex items-center gap-2 overflow-x-auto rounded-[20px] border border-[#e7edf5] bg-[#fbfcff] px-1.5 py-1.5 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)]">
             {tabs.map((tab) => {
               const isActive = activeTab === tab;
+              const isLoading = loadingTab === tab;
               return (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
+                  disabled={Boolean(loadingTab) && !isLoading}
                   className={`relative whitespace-nowrap rounded-[14px] px-5 py-2.5 text-sm font-medium transition ${
                     isActive
                       ? "bg-[#f5f4ff] text-slate-900 shadow-[inset_0_-2px_0_0_#5c6cff,0_10px_18px_-16px_rgba(92,108,255,0.65)]"
                       : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
-                  }`}
+                  } ${isLoading ? "cursor-progress" : ""}`}
                 >
-                  {tab}
+                  <span className="inline-flex items-center gap-2">
+                    {isLoading && <Spinner className="size-3.5 text-[#5c6cff]" />}
+                    {tab}
+                  </span>
                 </button>
               );
             })}

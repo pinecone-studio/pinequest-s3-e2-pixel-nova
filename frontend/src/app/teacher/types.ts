@@ -15,6 +15,7 @@ export type Exam = {
   title: string;
   status?: string;
   description?: string | null;
+  subjectName?: string | null;
   examType?: string | null;
   className?: string | null;
   groupName?: string | null;
