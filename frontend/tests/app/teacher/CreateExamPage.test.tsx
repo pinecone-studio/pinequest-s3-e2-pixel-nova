@@ -204,7 +204,7 @@ describe("CreateExamPage", () => {
       screen.getByRole("heading", { name: "Шалгалт үүсгэх" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Шалгалт хадгалах" }),
+      screen.getByRole("button", { name: "Үргэлжлүүлэх" }),
     ).toBeInTheDocument();
     expect(acceptDraft).not.toHaveBeenCalled();
     expect(setExamTitle).not.toHaveBeenCalled();
