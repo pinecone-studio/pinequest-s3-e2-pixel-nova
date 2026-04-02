@@ -798,6 +798,9 @@ function HistoryList({
   );
 }
 export default function ExamScreen() {
+  const params = useLocalSearchParams<{
+    autoStart?: string | string[];
+  }>();
   const router = useRouter();
   const {
     activeSession,
@@ -831,6 +834,7 @@ export default function ExamScreen() {
     string | null
   >(null);
   const submitRequestedRef = useRef(false);
+  const autoStartAttemptedRef = useRef(false);
 
   const currentQuestion =
     activeSession?.questions[activeSession.currentQuestionIndex] ?? null;
@@ -839,6 +843,9 @@ export default function ExamScreen() {
     : {};
   const isJoined =
     activeSession?.status === "joined" || activeSession?.status === "late";
+  const autoStartRequested = Array.isArray(params.autoStart)
+    ? params.autoStart[0] === "1"
+    : params.autoStart === "1";
   const audioRecorder = useExamAudioRecorder({
     required: Boolean(activeSession?.exam.requiresAudioRecording),
     session: activeSession,
@@ -1082,36 +1089,9 @@ export default function ExamScreen() {
     return `${activeSession.currentQuestionIndex + 1}/${activeSession.questions.length}`;
   }, [activeSession]);
 
-  if (!student) return <Redirect href="/" />;
+  const handleStart = useCallback(async () => {
+    if (!activeSession) return;
 
-  // No active session → show exam list with tabs
-  if (!hydrated) {
-    return (
-      <SafeAreaView style={styles.screen} edges={["top"]}>
-          <ScrollView
-            style={styles.screen}
-            contentContainerStyle={styles.content}
-          >
-            <Text style={styles.pageTitle}>Шалгалт</Text>
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyEmoji}>⏳</Text>
-              <Text style={styles.emptyTitle}>Ачааллаж байна...</Text>
-              <Text style={styles.emptyText}>
-                Сүүлийн шалгалтын төлөвийг сэргээж байна.
-              </Text>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-    );
-  }
-
-  if (!activeSession) {
-    return <ExamListScreen />;
-  }
-
-  // ── Active / joined session ────────────────────────────────────────────────
-
-  const handleStart = async () => {
     setStartingExam(true);
     try {
       const permissionResult = cameraPermission?.granted
@@ -1131,7 +1111,7 @@ export default function ExamScreen() {
       }
 
       const requiresAudioRecording = Boolean(
-        activeSession?.exam.requiresAudioRecording,
+        activeSession.exam.requiresAudioRecording,
       );
       let audioReady = false;
 
@@ -1167,7 +1147,64 @@ export default function ExamScreen() {
     } finally {
       setStartingExam(false);
     }
-  };
+  }, [
+    activeSession,
+    audioRecorder,
+    cameraPermission,
+    cameraReady,
+    requestCameraPermission,
+    startExam,
+  ]);
+
+  useEffect(() => {
+    if (!autoStartRequested || !activeSession || !isJoined) {
+      autoStartAttemptedRef.current = false;
+      return;
+    }
+
+    if (!cameraReady || startingExam || autoStartAttemptedRef.current) {
+      return;
+    }
+
+    autoStartAttemptedRef.current = true;
+    void handleStart();
+  }, [
+    activeSession,
+    autoStartRequested,
+    cameraReady,
+    handleStart,
+    isJoined,
+    startingExam,
+  ]);
+
+  if (!student) return <Redirect href="/" />;
+
+  // No active session → show exam list with tabs
+  if (!hydrated) {
+    return (
+      <SafeAreaView style={styles.screen} edges={["top"]}>
+          <ScrollView
+            style={styles.screen}
+            contentContainerStyle={styles.content}
+          >
+            <Text style={styles.pageTitle}>Шалгалт</Text>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyEmoji}>⏳</Text>
+              <Text style={styles.emptyTitle}>Ачааллаж байна...</Text>
+              <Text style={styles.emptyText}>
+                Сүүлийн шалгалтын төлөвийг сэргээж байна.
+              </Text>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+    );
+  }
+
+  if (!activeSession) {
+    return <ExamListScreen />;
+  }
+
+  // ── Active / joined session ────────────────────────────────────────────────
 
   const saveMcqAnswer = async (optionId: string) => {
     if (!currentQuestion) return;
