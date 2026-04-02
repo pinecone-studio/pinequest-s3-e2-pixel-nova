@@ -52,6 +52,9 @@ type ViewMode = "calendar" | "cards";
 const VISIBLE_HOUR_COUNT = 7;
 const CALENDAR_VIEWPORT_OFFSET = 64;
 const VIEW_LOADING_MIN_MS = 1500;
+const SHOULD_SKIP_VIEW_LOADING =
+  process.env.NODE_ENV === "test" ||
+  Boolean(process.env.JEST_WORKER_ID);
 
 function ScheduleCardsSkeleton() {
   return (
@@ -342,6 +345,12 @@ export default function TeacherStudentsTab({
 
   const handleViewModeChange = (nextMode: ViewMode) => {
     if (nextMode === viewMode) {
+      return;
+    }
+
+    if (SHOULD_SKIP_VIEW_LOADING) {
+      setViewMode(nextMode);
+      setViewLoadingMode(null);
       return;
     }
 

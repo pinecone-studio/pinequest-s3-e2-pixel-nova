@@ -7,7 +7,7 @@ type TeacherPageSkeletonProps = {
 function ScheduleTabSkeleton() {
   return (
     <section
-      aria-label="Teacher schedule loading"
+      aria-label="Teacher page loading"
       className="mx-auto w-full max-w-[1260px] px-4 pb-8 pt-8 md:px-6 xl:px-0"
     >
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
@@ -57,7 +57,7 @@ function ScheduleTabSkeleton() {
 function ExamLibrarySkeleton() {
   return (
     <section
-      aria-label="Teacher exam library loading"
+      aria-label="Teacher page loading"
       className="grid w-full gap-0 bg-white xl:grid-cols-[248px_minmax(0,1fr)]"
     >
       <aside className="min-h-[calc(100vh-59px)] border-r border-[#ececec] bg-white pr-[12px] pt-[16px]">
@@ -121,7 +121,7 @@ function ExamLibrarySkeleton() {
 function AnalyticsTabSkeleton() {
   return (
     <section
-      aria-label="Teacher analytics loading"
+      aria-label="Teacher page loading"
       className="mx-auto w-full max-w-[1380px] px-4 pt-[42.5px] pb-8 sm:px-6 lg:px-8"
     >
       <div className="flex gap-[46px]">
