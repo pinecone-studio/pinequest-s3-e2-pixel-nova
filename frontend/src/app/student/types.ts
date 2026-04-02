@@ -68,7 +68,8 @@ export type Submission = {
   id: string;
   examId: string;
   studentId: string;
-  studentНэр: string;
+  studentName: string;
+  studentНэр?: string;
   answers: { questionId: string; selectedAnswer: string; correct: boolean }[];
   score: number;
   totalPoints: number;
