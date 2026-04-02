@@ -98,7 +98,11 @@ describe("StudentDashboardTab", () => {
     expect(screen.getAllByText("Англи хэл").length).toBeGreaterThan(0);
     expect(screen.getByText("Монгол хэл")).toBeInTheDocument();
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
-    expect(screen.getAllByText("Сурагч").length).toBe(2);
+    const maskedStudents = screen.getAllByText("Сурагч");
+    expect(maskedStudents).toHaveLength(2);
+    maskedStudents.forEach((studentLabel) => {
+      expect(studentLabel).toHaveClass("blur-[1px]");
+    });
     expect(screen.queryByText("Бат")).not.toBeInTheDocument();
     expect(screen.queryByText("Сараа")).not.toBeInTheDocument();
     expect(screen.getByText("YOU")).toBeInTheDocument();

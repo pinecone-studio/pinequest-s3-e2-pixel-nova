@@ -124,9 +124,9 @@ export default function ScheduleCalendarView({
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-2xl bg-[#f97316] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(249,115,22,0.55)] transition hover:bg-[#ea6c0a]"
+          className="flex items-center gap-2 rounded-2xl bg-[#f97316]  py-2.5 text-sm  font-semibold text-white w-[185px] h-[49px] transition hover:bg-[#ea6c0a]"
         >
-          <span className="text-base leading-none">+</span>
+          <span className="text-base leading-none ">+</span>
           Хуваарь нэмэх
         </button>
       </div>

@@ -42,8 +42,8 @@ describe("StudentProgressTab", () => {
         nextLevel={{ minXP: 1600 }}
         progressSegments={7}
         subjectInsights={{
-          Mathematics: {
-            subject: "Mathematics",
+          Математик: {
+            subject: "Математик",
             average: 88,
             concerns: [
               { label: "Алгебр", score: 42 },
@@ -83,12 +83,12 @@ describe("StudentProgressTab", () => {
     expect(screen.getByText("Хичээлийн дүн")).toBeInTheDocument();
     expect(screen.getByText("Дүгнэлт")).toBeInTheDocument();
     expect(screen.getByText("AI-ийн ерөнхий дүгнэлт")).toBeInTheDocument();
-    expect(screen.getByText("English")).toBeInTheDocument();
-    expect(screen.getByText("Mathematics")).toBeInTheDocument();
-    expect(screen.getByText("Physics")).toBeInTheDocument();
+    expect(screen.getByText("Англи хэл")).toBeInTheDocument();
+    expect(screen.getByText("Математик")).toBeInTheDocument();
+    expect(screen.getByText("Физик")).toBeInTheDocument();
     expect(screen.getByText("YOU")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Mathematics/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Математик/i }));
 
     expect(screen.getByText("Анхаарах хэрэгтэй")).toBeInTheDocument();
     expect(screen.getByText("Гүйцэтгэл өндөр сэдэв")).toBeInTheDocument();

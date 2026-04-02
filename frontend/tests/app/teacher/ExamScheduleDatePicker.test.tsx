@@ -52,6 +52,9 @@ describe("ExamScheduleDatePicker", () => {
     expect(
       screen.getByRole("button", { name: "today" }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("schedule-calendar-content")).toHaveClass(
+      "justify-center",
+    );
 
     expect(lastFromDate).toBeDefined();
     expect(lastFromDate?.getFullYear()).toBe(2026);

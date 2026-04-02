@@ -16,6 +16,8 @@ import { buildStudentAiInsight } from "./student-ai-insights";
 import {
   average,
   buildFallbackSubjectInsightDetail,
+  getSubjectLabelAliases,
+  localizeSubjectLabel,
   type SubjectInsightDetail,
   toSubjectLabel,
 } from "./student-progress-insights";
@@ -146,7 +148,7 @@ export default function StudentProgressTab({
     currentUserName,
     levelInfo: {
       level: currentLevel || levelInfo.level,
-      name: `Level ${currentLevel || levelInfo.level}`,
+      name: `Түвшин ${currentLevel || levelInfo.level}`,
       minXP: levelInfo.minXP,
     },
     currentXp,
@@ -208,6 +210,16 @@ export default function StudentProgressTab({
 
   const closeSubjectDetail = () => setSelectedSubject(null);
   const closeAiSummary = () => setAiSummaryOpen(false);
+  const resolveSubjectInsight = (subject: string) => {
+    for (const alias of getSubjectLabelAliases(subject)) {
+      const insight = subjectInsights[alias];
+      if (insight) {
+        return insight;
+      }
+    }
+
+    return null;
+  };
 
   if (loading) {
     return (
@@ -348,7 +360,7 @@ export default function StudentProgressTab({
                 type="button"
                 onClick={() =>
                   setSelectedSubject(
-                    subjectInsights[item.subject] ??
+                    resolveSubjectInsight(item.subject) ??
                       buildFallbackSubjectInsightDetail(
                         item.subject,
                         item.percentage,
@@ -439,7 +451,7 @@ export default function StudentProgressTab({
                     id="student-subject-ai-title"
                     className="text-[2rem] font-semibold tracking-[-0.05em]"
                   >
-                    {selectedSubject.subject}
+                    {localizeSubjectLabel(selectedSubject.subject)}
                   </h3>
 
                   <button
@@ -581,7 +593,7 @@ export default function StudentProgressTab({
                         strongSubjects.map((item, index) => (
                           <div key={item.subject}>
                             <span className="font-semibold text-[#58c47b]">
-                              {index + 1}. {item.subject} ({item.percentage}%)
+                              {index + 1}. {localizeSubjectLabel(item.subject)} ({item.percentage}%)
                             </span>{" "}
                             <span>{getStrengthRemark(item.percentage)}</span>
                           </div>
@@ -607,7 +619,7 @@ export default function StudentProgressTab({
                         focusSubjects.map((item, index) => (
                           <div key={item.subject}>
                             <span className="font-semibold text-[#f0a63c]">
-                              {index + 1}. {item.subject} ({item.percentage}%)
+                              {index + 1}. {localizeSubjectLabel(item.subject)} ({item.percentage}%)
                             </span>{" "}
                             <span>{getFocusRemark(item.percentage)}</span>
                           </div>

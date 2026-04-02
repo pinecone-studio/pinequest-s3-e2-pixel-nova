@@ -1,3 +1,5 @@
+import { localizeSubjectLabel, toSubjectLabel } from "./student-progress-insights";
+
 type StudentHistoryItem = {
   examId: string;
   title: string;
@@ -91,8 +93,8 @@ const subjectTopicPresets: { match: RegExp; strengths: string[]; concerns: strin
   },
   {
     match: /(english|англи|vocabulary|reading|grammar|listening)/i,
-    strengths: ["Reading", "Listening", "Grammar"],
-    concerns: ["Vocabulary", "Spelling", "Sentence use"],
+    strengths: ["Унших", "Сонсох", "Дүрэм"],
+    concerns: ["Үгийн сан", "Үсэглэлт", "Өгүүлбэрийн хэрэглээ"],
   },
   {
     match: /(physics|физик|mechanics|optics)/i,
@@ -114,14 +116,7 @@ const subjectTopicPresets: { match: RegExp; strengths: string[]; concerns: strin
 const normalizeTitle = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return "Ерөнхий сэдэв";
-
-  const withoutNoise = trimmed
-    .replace(/[_-]+/g, " ")
-    .replace(/\b(test|exam|mock|practice|final|quiz)\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return withoutNoise || trimmed;
+  return toSubjectLabel(trimmed);
 };
 
 const hashString = (value: string) => {
@@ -228,7 +223,7 @@ const buildSubjectDetail = (
   ];
 
   return {
-    subject: subject.subject,
+    subject: localizeSubjectLabel(subject.subject),
     concerns,
     strengths,
     recommendations,
