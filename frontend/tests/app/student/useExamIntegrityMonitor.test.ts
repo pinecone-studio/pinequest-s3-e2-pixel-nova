@@ -45,7 +45,7 @@ describe("useExamIntegrityMonitor", () => {
     expect(showWarning).toHaveBeenCalledWith("Таб сольсон үйлдэл илэрлээ");
   });
 
-  it("throttles repeated fullscreen exits inside the client cooldown", () => {
+  it("throttles repeated window blur violations inside the client cooldown", () => {
     const logViolation = jest.fn();
     const showWarning = jest.fn();
 
@@ -58,14 +58,14 @@ describe("useExamIntegrityMonitor", () => {
     );
 
     act(() => {
-      document.dispatchEvent(new Event("fullscreenchange"));
-      document.dispatchEvent(new Event("fullscreenchange"));
+      window.dispatchEvent(new Event("blur"));
+      window.dispatchEvent(new Event("blur"));
     });
 
     expect(logViolation).toHaveBeenCalledTimes(1);
     expect(logViolation).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: "FULLSCREEN_EXIT",
+        type: "WINDOW_BLUR",
       }),
     );
   });
