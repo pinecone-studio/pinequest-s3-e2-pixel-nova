@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -12,16 +13,61 @@ import {
 import { useStudentApp } from "@/lib/student-app/context";
 import { normalizeApiError } from "@/lib/student-app/utils";
 
+type JoinGuideStep = {
+  key: string;
+  title: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  tone: "primary" | "warning" | "danger";
+};
+
+const JOIN_GUIDE_STEPS: JoinGuideStep[] = [
+  {
+    key: "camera",
+    title: "Камер нээх",
+    description:
+      "Камер асаалттай байх ёстой. Нүүр тань тод, бүтэн харагдаж байх шаардлагатай.",
+    icon: "camera-outline",
+    tone: "primary",
+  },
+  {
+    key: "submit",
+    title: "Шалгалт илгээгдэх",
+    description:
+      "Хугацаа дуусах үед таны оруулсан хариулт системд автоматаар илгээгдэнэ.",
+    icon: "paper-plane-outline",
+    tone: "primary",
+  },
+  {
+    key: "switch",
+    title: "Дэлгэц солих",
+    description:
+      "Цонх солих болон өөр апп руу гарах үйлдлийг зөрчил гэж тооцно.",
+    icon: "swap-horizontal-outline",
+    tone: "warning",
+  },
+  {
+    key: "copy",
+    title: "Copy Paste хийх",
+    description:
+      "Шалгалтын үед текстийг copy эсвэл paste хийх боломжгүй.",
+    icon: "copy-outline",
+    tone: "danger",
+  },
+];
+
 export default function JoinExamScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ roomCode?: string | string[] }>();
   const { activeSession, joinExam, student } = useStudentApp();
   const prefilledRoomCode = Array.isArray(params.roomCode)
-    ? params.roomCode[0] ?? ""
-    : params.roomCode ?? activeSession?.roomCode ?? "";
+    ? (params.roomCode[0] ?? "")
+    : (params.roomCode ?? activeSession?.roomCode ?? "");
   const [roomCode, setRoomCode] = useState(prefilledRoomCode);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [guideStepIndex, setGuideStepIndex] = useState<number | null>(null);
+  const [joinedRoomCode, setJoinedRoomCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!prefilledRoomCode) return;
@@ -32,64 +78,152 @@ export default function JoinExamScreen() {
     return <Redirect href="/" />;
   }
 
+  const currentGuideStep =
+    guideStepIndex !== null ? JOIN_GUIDE_STEPS[guideStepIndex] : null;
+  const activeGuideIndex = guideStepIndex ?? 0;
+
   const handleJoin = async () => {
+    const normalizedCode = roomCode.trim().toUpperCase();
+    if (!normalizedCode || loading) return;
+
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      await joinExam(roomCode);
-      router.replace("/exam");
+      await joinExam(normalizedCode);
+      setJoinedRoomCode(normalizedCode);
+      setGuideStepIndex(0);
     } catch (error) {
       setErrorMessage(
-        normalizeApiError(error, "Could not join an exam with this code."),
+        normalizeApiError(error, "Шалгалтад нэгдэж чадсангүй."),
       );
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGuideNext = () => {
+    if (guideStepIndex === null) return;
+
+    if (guideStepIndex >= JOIN_GUIDE_STEPS.length - 1) {
+      router.replace({
+        pathname: "/exam",
+        params: {
+          roomCode: joinedRoomCode ?? roomCode.trim().toUpperCase(),
+          autoStart: "1",
+        },
+      });
+      return;
+    }
+
+    setGuideStepIndex((current) =>
+      current === null ? 0 : Math.min(current + 1, JOIN_GUIDE_STEPS.length - 1),
+    );
+  };
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-          <Text style={styles.closeText}>x</Text>
-        </TouchableOpacity>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={
+        currentGuideStep ? styles.guideScreenContent : styles.formScreenContent
+      }
+    >
+      {currentGuideStep ? (
+        <View style={styles.guideScreen}>
+          <View style={styles.guideContent}>
+            <View style={styles.guideVisualWrap}>
+              <View
+                style={[
+                  styles.guideIconBubble,
+                  currentGuideStep.tone === "warning" &&
+                    styles.guideIconBubbleWarning,
+                  currentGuideStep.tone === "danger" &&
+                    styles.guideIconBubbleDanger,
+                ]}
+              >
+                <Ionicons
+                  name={currentGuideStep.icon}
+                  size={72}
+                  color={
+                    currentGuideStep.tone === "warning"
+                      ? "#B45309"
+                      : currentGuideStep.tone === "danger"
+                        ? "#DC2626"
+                        : "#3568F5"
+                  }
+                />
+              </View>
+            </View>
 
-        <Text style={styles.title}>Enter your exam access code.</Text>
+            <View style={styles.guideTextBlock}>
+              <Text style={styles.guideTitle}>{currentGuideStep.title}</Text>
+              <Text style={styles.guideDescription}>
+                {currentGuideStep.description}
+              </Text>
+            </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Enter code"
-          placeholderTextColor="#BBBFC9"
-          autoCapitalize="characters"
-          autoCorrect={false}
-          value={roomCode}
-          onChangeText={setRoomCode}
-        />
+            <View style={styles.guideFooter}>
+              <View style={styles.guideDots}>
+                {JOIN_GUIDE_STEPS.map((step, index) => (
+                  <View
+                    key={step.key}
+                    style={[
+                      styles.guideDot,
+                      index === activeGuideIndex && styles.guideDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
 
-        <Text style={styles.helperText}>
-          Enter the code your teacher shared with you.
-        </Text>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={handleGuideNext}
+              >
+                <Text style={styles.primaryBtnText}>
+                  {activeGuideIndex >= JOIN_GUIDE_STEPS.length - 1
+                    ? "Start"
+                    : "Цааш"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.formScreen}>
+          <Text style={styles.title}>Шалгалтын кодоо оруулна уу.</Text>
 
-        {errorMessage ? (
-          <Text style={styles.errorText}>{errorMessage}</Text>
-        ) : null}
+          <TextInput
+            style={styles.input}
+            placeholder="Код оруулах"
+            placeholderTextColor="#BBBFC9"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            value={roomCode}
+            onChangeText={setRoomCode}
+          />
 
-        <TouchableOpacity
-          style={[
-            styles.primaryBtn,
-            (!roomCode.trim() || loading) && styles.btnDisabled,
-          ]}
-          disabled={!roomCode.trim() || loading}
-          onPress={() => {
-            void handleJoin();
-          }}
-        >
-          <Text style={styles.primaryBtnText}>
-            {loading ? "Joining..." : "Join exam"}
+          <Text style={styles.helperText}>
+            Багшийн өгсөн кодыг оруулаад шалгалтдаа орно уу.
           </Text>
-        </TouchableOpacity>
-      </View>
+
+          {errorMessage ? (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          ) : null}
+
+          <TouchableOpacity
+            style={[
+              styles.primaryBtn,
+              (!roomCode.trim() || loading) && styles.btnDisabled,
+            ]}
+            disabled={!roomCode.trim() || loading}
+            onPress={() => void handleJoin()}
+          >
+            <Text style={styles.primaryBtnText}>
+              {loading ? "Нэвтэрч байна..." : "Шалгалтад нэгдэх"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -97,67 +231,56 @@ export default function JoinExamScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F2F4F7",
+    backgroundColor: "#FFFFFF",
   },
-  content: {
+  formScreenContent: {
     flexGrow: 1,
     justifyContent: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 32,
   },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+  guideScreenContent: {
+    flexGrow: 1,
   },
-  closeBtn: {
-    position: "absolute",
-    top: 12,
-    right: 16,
-    width: 32,
-    height: 32,
-    alignItems: "center",
+  formScreen: {
+    flex: 1,
     justifyContent: "center",
+    gap: 14,
   },
-  closeText: {
-    fontSize: 18,
-    color: "#98A2B3",
-    fontWeight: "600",
+  guideScreen: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 24,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
     color: "#111827",
     textAlign: "center",
-    marginTop: 16,
-    marginBottom: 24,
-    lineHeight: 30,
+    lineHeight: 32,
   },
   input: {
     borderWidth: 1.5,
     borderColor: "#D9E0EE",
-    borderRadius: 14,
+    borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
     color: "#111827",
-    marginBottom: 12,
+    backgroundColor: "#FFFFFF",
   },
   helperText: {
     fontSize: 13,
     color: "#667085",
     textAlign: "center",
-    marginBottom: 10,
+    lineHeight: 20,
   },
   errorText: {
     color: "#DC2626",
     fontSize: 13,
     textAlign: "center",
-    marginBottom: 8,
   },
   primaryBtn: {
     backgroundColor: "#3568F5",
@@ -172,5 +295,71 @@ const styles = StyleSheet.create({
   },
   btnDisabled: {
     opacity: 0.45,
+  },
+  guideContent: {
+    flex: 1,
+    justifyContent: "space-between",
+    gap: 24,
+    minHeight: 640,
+  },
+  guideVisualWrap: {
+    flex: 1,
+    minHeight: 300,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  guideIconBubble: {
+    width: 200,
+    height: 200,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF4FF",
+    borderWidth: 1,
+    borderColor: "#C7D8FF",
+  },
+  guideIconBubbleWarning: {
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FCD9A8",
+  },
+  guideIconBubbleDanger: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+  },
+  guideTextBlock: {
+    gap: 12,
+  },
+  guideTitle: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: "800",
+    color: "#3568F5",
+    textAlign: "center",
+  },
+  guideDescription: {
+    fontSize: 15,
+    lineHeight: 23,
+    color: "#374151",
+    textAlign: "center",
+    paddingHorizontal: 12,
+  },
+  guideFooter: {
+    gap: 18,
+  },
+  guideDots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  guideDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#D6D9E4",
+  },
+  guideDotActive: {
+    width: 22,
+    backgroundColor: "#3568F5",
   },
 });

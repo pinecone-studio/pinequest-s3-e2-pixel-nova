@@ -31,7 +31,9 @@ import {
   formatCountdown,
   normalizeApiError,
 } from "@/lib/student-app/utils";
-import { examStyles as styles } from "@/styles/screens/exam";
+import { examStyles } from "@/styles/screens/exam";
+
+const styles = examStyles as typeof examStyles & Record<string, any>;
 
 // Types
 
@@ -45,9 +47,12 @@ type ActiveListItem = {
   duration: number;
   status: "active" | "waiting" | "late";
   badgeText: string;
+  roomCode?: string | null;
+  canJoin: boolean;
   className?: string | null;
   groupName?: string | null;
   teacherName?: string | null;
+  sortTime: number;
 };
 
 type HistoryListItem = {
@@ -59,6 +64,7 @@ type HistoryListItem = {
   duration: number;
   score: number | null;
   status: "graded" | "missed" | "late";
+  statusText: string;
   sortTime: number;
 };
 
@@ -154,6 +160,37 @@ function getActiveExamStatus(
   return "waiting";
 }
 
+function canJoinExam(
+  scheduledAt: string | null | undefined,
+  rawStatus: string | null | undefined,
+  now: Date,
+) {
+  const start = getExamStartDate(scheduledAt);
+
+  if (!start) {
+    return rawStatus === "active";
+  }
+
+  const nowTime = now.getTime();
+  const startTime = start.getTime();
+
+  return (
+    nowTime >= startTime - 5 * 60 * 1000 &&
+    nowTime <= startTime + 10 * 60 * 1000
+  );
+}
+
+function getActiveBadgeText(
+  status: ActiveListItem["status"],
+  daysUntilExam: number | null,
+) {
+  if (status === "active") return "Эхэлсэн";
+  if (status === "late") return "Хоцорсон";
+  if (daysUntilExam === null) return "Товлогдсон";
+  if (daysUntilExam <= 0) return "Өнөөдөр";
+  return `${daysUntilExam} хоног`;
+}
+
 function getHistoryDurationMinutes(
   startedAt?: string | null,
   submittedAt?: string | null,
@@ -187,40 +224,6 @@ function getMockTeacherName(title: string) {
   if (title.toLowerCase().includes("мат")) return "Б. Нарантуяа";
   if (title.toLowerCase().includes("монгол")) return "Д. Оюун";
   return "Г. Сарантуяа";
-}
-
-function formatExamDateTime(value?: string | null) {
-  const date = formatListDate(value);
-  const time = formatListTime(value);
-
-  if (date === "----/--/--" && time === "--:--") {
-    return "Мэдээлэл алга";
-  }
-
-  return `${date} ${time}`;
-}
-
-function getAudioStatusLabel(status: string) {
-  switch (status) {
-    case "idle":
-      return "Бэлэн биш";
-    case "preparing":
-      return "Бэлдэж байна";
-    case "ready":
-      return "Бэлэн";
-    case "recording":
-      return "Бичиж байна";
-    case "uploading":
-      return "Илгээж байна";
-    case "blocked":
-      return "Хаагдсан";
-    case "error":
-      return "Алдаа гарсан";
-    case "stopped":
-      return "Зогссон";
-    default:
-      return status;
-  }
 }
 
 function ExamDetailModal({
@@ -301,57 +304,6 @@ function ExamDetailModal({
 
             <View style={styles.detailSectionCard}>
               <View style={styles.detailSectionHeader}>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={20}
-                  color="#111827"
-                />
-                <Text style={styles.detailSectionTitle}>
-                  Шалгалтын дүрэм ба мэдээлэл
-                </Text>
-              </View>
-
-              <View style={styles.ruleGrid}>
-                <View style={[styles.ruleCard, styles.ruleCardWarning]}>
-                  <Ionicons
-                    name="swap-horizontal-outline"
-                    size={18}
-                    color="#F59E0B"
-                  />
-                  <Text style={styles.ruleTitle}>Таб солих</Text>
-                  <Text style={styles.ruleSubtitle}>
-                    Шалгалтын үед таб солих боломжгүй.
-                  </Text>
-                </View>
-
-                <View style={[styles.ruleCard, styles.ruleCardWarning]}>
-                  <Ionicons name="timer-outline" size={18} color="#F59E0B" />
-                  <Text style={styles.ruleTitle}>Автоматаар илгээнэ</Text>
-                  <Text style={styles.ruleSubtitle}>
-                    Хугацаа дуусмагц автоматаар илгээгдэнэ.
-                  </Text>
-                </View>
-
-                <View style={[styles.ruleCard, styles.ruleCardDanger]}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={18}
-                    color="#EF4444"
-                  />
-                  <Text style={styles.ruleTitle}>Хуулах, буулгах</Text>
-                  <Text style={styles.ruleSubtitle}>Идэвхгүй</Text>
-                </View>
-
-                <View style={[styles.ruleCard, styles.ruleCardDanger]}>
-                  <Ionicons name="camera-outline" size={18} color="#EF4444" />
-                  <Text style={styles.ruleTitle}>Камер</Text>
-                  <Text style={styles.ruleSubtitle}>Шаардлагатай</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.detailSectionCard}>
-              <View style={styles.detailSectionHeader}>
                 <Ionicons name="time-outline" size={20} color="#111827" />
                 <Text style={styles.detailSectionTitle}>Хугацаа</Text>
               </View>
@@ -387,15 +339,27 @@ function ExamDetailModal({
 
 function ExamListScreen() {
   const { tab } = useLocalSearchParams<{ tab?: string | string[] }>();
-  const { dashboardLoading, history, upcomingExams } = useStudentApp();
+  const { dashboardLoading, history, upcomingExams, refreshDashboard } =
+    useStudentApp();
   const [activeTab, setActiveTab] = useState<TabKey>(getRequestedTab(tab));
   const [search, setSearch] = useState("");
   const [now, setNow] = useState(() => new Date());
   const attemptedExamIds = new Set(history.map((item) => item.examId));
+  const completedExamIds = new Set(
+    history
+      .filter((item) => item.status === "graded" || item.status === "submitted")
+      .map((item) => item.examId),
+  );
 
   useEffect(() => {
     setActiveTab(getRequestedTab(tab));
   }, [tab]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshDashboard();
+    }, [refreshDashboard]),
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -405,8 +369,8 @@ function ExamListScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const activeItemsFromBackend: ActiveListItem[] = upcomingExams.flatMap(
-    (exam) => {
+  const activeItems: ActiveListItem[] = upcomingExams
+    .flatMap((exam) => {
       const scheduledAt = exam.scheduledAt ?? exam.startedAt;
       const scheduledDate = parseListDate(scheduledAt);
       const end = getExamEndDate(scheduledAt, exam.durationMin);
@@ -414,7 +378,7 @@ function ExamListScreen() {
         getActiveExamStatus(scheduledAt, exam.status, now) ?? "waiting";
       const daysUntilExam = getDaysUntilExam(scheduledAt, now);
 
-      if (status === "late" || !scheduledDate) {
+      if (!scheduledDate || completedExamIds.has(exam.examId)) {
         return [];
       }
 
@@ -430,23 +394,19 @@ function ExamListScreen() {
           time: formatListTime(scheduledAt),
           duration: exam.durationMin,
           status,
+          badgeText: getActiveBadgeText(status, daysUntilExam),
+          roomCode: exam.roomCode,
+          canJoin:
+            Boolean(exam.roomCode) &&
+            canJoinExam(scheduledAt, exam.status, now),
           className: exam.className ?? null,
           groupName: exam.groupName ?? null,
           teacherName: getMockTeacherName(exam.title),
-          badgeText:
-            status === "active"
-              ? "Өнөөдөр"
-              : daysUntilExam === null
-                ? "Товлогдсон"
-                : daysUntilExam <= 0
-                  ? "Өнөөдөр"
-                  : `${daysUntilExam} хоног`,
+          sortTime: scheduledDate.getTime(),
         },
       ];
-    },
-  );
-
-  const activeItems = activeItemsFromBackend;
+    })
+    .sort((left, right) => left.sortTime - right.sortTime);
 
   const realHistoryItems: HistoryListItem[] = history.flatMap((item) => {
     const scheduledDate = parseListDate(item.scheduledAt ?? item.startedAt);
@@ -482,6 +442,12 @@ function ExamListScreen() {
         duration: getHistoryDurationMinutes(item.startedAt, item.submittedAt),
         score: item.score,
         status: derivedStatus,
+        statusText:
+          derivedStatus === "missed"
+            ? "Өгөөгүй"
+            : derivedStatus === "late"
+              ? "Хоцорсон"
+              : "Өгсөн",
         sortTime: completedDate?.getTime() ?? 0,
       },
     ];
@@ -512,6 +478,7 @@ function ExamListScreen() {
         duration: exam.durationMin,
         score: null,
         status: "late",
+        statusText: "Хоцорсон",
         sortTime: sortBase,
       },
     ];
@@ -540,6 +507,7 @@ function ExamListScreen() {
           duration: exam.durationMin,
           score: null,
           status: "missed",
+          statusText: "Өгөөгүй",
           sortTime: end.getTime(),
         },
       ];
@@ -567,9 +535,12 @@ function ExamListScreen() {
         {dashboardLoading ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyEmoji}>⏳</Text>
-            <Text style={styles.emptyTitle}>Шалгалтуудыг шинэчилж байна...</Text>
+            <Text style={styles.emptyTitle}>
+              Шалгалтуудыг шинэчилж байна...
+            </Text>
             <Text style={styles.emptyText}>
-              Одоогийн шалгалт, дараагийн шалгалт, түүхийн мэдээллийг шинэчилж байна.
+              Одоогийн шалгалт, дараагийн шалгалт, түүхийн мэдээллийг шинэчилж
+              байна.
             </Text>
           </View>
         ) : null}
@@ -658,15 +629,15 @@ function ActiveExamList({
         const pillStyle =
           exam.status === "active"
             ? styles.statusPill
-            : exam.status === "waiting"
+            : exam.status === "late"
               ? [styles.statusPill, styles.statusPillWarning]
-              : [styles.statusPill, styles.statusPillDanger];
+              : [styles.statusPill, styles.statusPillNeutral];
         const pillTextStyle =
           exam.status === "active"
             ? styles.statusPillText
-            : exam.status === "waiting"
+            : exam.status === "late"
               ? [styles.statusPillText, styles.statusPillTextWarning]
-              : [styles.statusPillText, styles.statusPillTextDanger];
+              : [styles.statusPillText, styles.statusPillTextNeutral];
 
         return (
           <View key={exam.id} style={styles.upcomingCard}>
@@ -694,10 +665,15 @@ function ActiveExamList({
                 </Text>
               </View>
             </View>
-            {exam.status === "active" ? (
+            {exam.canJoin ? (
               <TouchableOpacity
                 style={styles.upcomingPrimaryButton}
-                onPress={() => router.push("/exam")}
+                onPress={() =>
+                  router.push({
+                    pathname: "/join",
+                    params: exam.roomCode ? { roomCode: exam.roomCode } : {},
+                  })
+                }
               >
                 <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
               </TouchableOpacity>
@@ -777,11 +753,7 @@ function HistoryList({
                       : undefined,
                 ]}
               >
-                {exam.status === "missed"
-                  ? "Өгөөгүй"
-                  : exam.status === "late"
-                    ? "Хоцорсон"
-                    : "Өгсөн"}
+                {exam.statusText}
               </Text>
             </View>
           </View>
@@ -798,6 +770,9 @@ function HistoryList({
   );
 }
 export default function ExamScreen() {
+  const params = useLocalSearchParams<{
+    autoStart?: string | string[];
+  }>();
   const router = useRouter();
   const {
     activeSession,
@@ -831,6 +806,8 @@ export default function ExamScreen() {
     string | null
   >(null);
   const submitRequestedRef = useRef(false);
+  const autoStartAttemptedRef = useRef(false);
+  const autoStartPermissionRequestedRef = useRef(false);
 
   const currentQuestion =
     activeSession?.questions[activeSession.currentQuestionIndex] ?? null;
@@ -839,6 +816,11 @@ export default function ExamScreen() {
     : {};
   const isJoined =
     activeSession?.status === "joined" || activeSession?.status === "late";
+  const autoStartRequested = Array.isArray(params.autoStart)
+    ? params.autoStart[0] === "1"
+    : params.autoStart === "1";
+  const shouldAutoStart = isJoined;
+  const showAutoStartPreflight = isJoined;
   const audioRecorder = useExamAudioRecorder({
     required: Boolean(activeSession?.exam.requiresAudioRecording),
     session: activeSession,
@@ -849,6 +831,32 @@ export default function ExamScreen() {
     submitting ||
     Boolean(proctoringBlockedMessage) ||
     audioRecorder.status === "blocked";
+  const isObjectiveQuestion =
+    currentQuestion?.type === "multiple_choice" ||
+    currentQuestion?.type === "true_false";
+  const isTextEntryQuestion =
+    currentQuestion?.type === "short_answer" ||
+    currentQuestion?.type === "essay" ||
+    currentQuestion?.type === "text";
+  const hasCurrentAnswer = currentQuestion
+    ? isObjectiveQuestion
+      ? Boolean(currentAnswer.selectedOptionId)
+      : isTextEntryQuestion
+        ? Boolean(
+            (textDraft || currentAnswer.textAnswer || "").trim().length > 0,
+          )
+        : true
+    : false;
+  const isLastQuestion = activeSession
+    ? activeSession.currentQuestionIndex >= activeSession.questions.length - 1
+    : false;
+  const primaryActionLabel = submitting
+    ? "Илгээж байна..."
+    : isLastQuestion
+      ? "Илгээх"
+      : "Үргэлжлүүлэх";
+  const primaryActionDisabled =
+    isSyncBlocked || !currentQuestion || !hasCurrentAnswer;
 
   const persistTextAnswer = useCallback(async () => {
     if (!currentQuestion || !activeSession) return;
@@ -998,6 +1006,23 @@ export default function ExamScreen() {
     setCurrentQuestionIndex(activeSession.currentQuestionIndex + direction);
   };
 
+  const handlePrimaryAction = useCallback(async () => {
+    if (!currentQuestion || primaryActionDisabled) return;
+
+    if (isLastQuestion) {
+      await handleSubmit(false);
+      return;
+    }
+
+    await moveQuestion(1);
+  }, [
+    currentQuestion,
+    handleSubmit,
+    isLastQuestion,
+    moveQuestion,
+    primaryActionDisabled,
+  ]);
+
   useEffect(() => {
     setRemainingSeconds(
       computeRemainingSeconds(activeSession?.timerEndsAt ?? null),
@@ -1030,9 +1055,7 @@ export default function ExamScreen() {
         setProctoringBlockedMessage(
           "Апп арын төлөв рүү шилжсэн тул шалгалтыг түр зогсоолоо. Буцаж орж, хяналтыг сэргээсний дараа үргэлжлүүлнэ үү.",
         );
-        setIntegrityWarning(
-          "Шалгалтын үед апп дэлгэцнээс гарсан байна.",
-        );
+        setIntegrityWarning("Шалгалтын үед апп дэлгэцнээс гарсан байна.");
         void logIntegrityEvent("tab_hidden", `app-state:${nextState}`);
       }
     });
@@ -1076,42 +1099,9 @@ export default function ExamScreen() {
       void audioRecorder.stop();
     };
   }, [audioRecorder]);
+  const handleStart = useCallback(async () => {
+    if (!activeSession) return;
 
-  const progressLabel = useMemo(() => {
-    if (!activeSession || activeSession.questions.length === 0) return "0/0";
-    return `${activeSession.currentQuestionIndex + 1}/${activeSession.questions.length}`;
-  }, [activeSession]);
-
-  if (!student) return <Redirect href="/" />;
-
-  // No active session → show exam list with tabs
-  if (!hydrated) {
-    return (
-      <SafeAreaView style={styles.screen} edges={["top"]}>
-          <ScrollView
-            style={styles.screen}
-            contentContainerStyle={styles.content}
-          >
-            <Text style={styles.pageTitle}>Шалгалт</Text>
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyEmoji}>⏳</Text>
-              <Text style={styles.emptyTitle}>Ачааллаж байна...</Text>
-              <Text style={styles.emptyText}>
-                Сүүлийн шалгалтын төлөвийг сэргээж байна.
-              </Text>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-    );
-  }
-
-  if (!activeSession) {
-    return <ExamListScreen />;
-  }
-
-  // ── Active / joined session ────────────────────────────────────────────────
-
-  const handleStart = async () => {
     setStartingExam(true);
     try {
       const permissionResult = cameraPermission?.granted
@@ -1131,7 +1121,7 @@ export default function ExamScreen() {
       }
 
       const requiresAudioRecording = Boolean(
-        activeSession?.exam.requiresAudioRecording,
+        activeSession.exam.requiresAudioRecording,
       );
       let audioReady = false;
 
@@ -1167,7 +1157,110 @@ export default function ExamScreen() {
     } finally {
       setStartingExam(false);
     }
-  };
+  }, [
+    activeSession,
+    audioRecorder,
+    cameraPermission,
+    cameraReady,
+    requestCameraPermission,
+    startExam,
+  ]);
+
+  useEffect(() => {
+    if (!shouldAutoStart || !activeSession || !isJoined) {
+      autoStartAttemptedRef.current = false;
+      autoStartPermissionRequestedRef.current = false;
+      return;
+    }
+
+    if (
+      cameraPermission?.granted ||
+      startingExam ||
+      autoStartPermissionRequestedRef.current
+    ) {
+      return;
+    }
+
+    autoStartPermissionRequestedRef.current = true;
+
+    void (async () => {
+      try {
+        const permissionResult = await requestCameraPermission();
+        if (!permissionResult?.granted) {
+          setSyncError(
+            "Шалгалтыг эхлүүлэхийн өмнө камерын зөвшөөрөл шаардлагатай.",
+          );
+        }
+      } catch (error) {
+        setSyncError(
+          normalizeApiError(error, "Камерын зөвшөөрөл шалгаж чадсангүй."),
+        );
+      }
+    })();
+  }, [
+    activeSession,
+    shouldAutoStart,
+    cameraPermission?.granted,
+    isJoined,
+    requestCameraPermission,
+    startingExam,
+  ]);
+
+  useEffect(() => {
+    if (!shouldAutoStart || !activeSession || !isJoined) {
+      autoStartAttemptedRef.current = false;
+      return;
+    }
+
+    if (
+      !cameraPermission?.granted ||
+      !cameraReady ||
+      startingExam ||
+      autoStartAttemptedRef.current
+    ) {
+      return;
+    }
+
+    autoStartAttemptedRef.current = true;
+    void handleStart();
+  }, [
+    activeSession,
+    shouldAutoStart,
+    cameraPermission?.granted,
+    cameraReady,
+    handleStart,
+    isJoined,
+    startingExam,
+  ]);
+
+  if (!student) return <Redirect href="/" />;
+
+  // No active session → show exam list with tabs
+  if (!hydrated) {
+    return (
+      <SafeAreaView style={styles.screen} edges={["top"]}>
+        <ScrollView
+          style={styles.screen}
+          contentContainerStyle={styles.content}
+        >
+          <Text style={styles.pageTitle}>Шалгалт</Text>
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>⏳</Text>
+            <Text style={styles.emptyTitle}>Ачааллаж байна...</Text>
+            <Text style={styles.emptyText}>
+              Сүүлийн шалгалтын төлөвийг сэргээж байна.
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (!activeSession) {
+    return <ExamListScreen />;
+  }
+
+  // ── Active / joined session ────────────────────────────────────────────────
 
   const saveMcqAnswer = async (optionId: string) => {
     if (!currentQuestion) return;
@@ -1191,202 +1284,199 @@ export default function ExamScreen() {
       >
         {isJoined ? (
           <>
-            <Text style={styles.pageTitle}>Шалгалтууд</Text>
-
-            <View style={styles.tabRow}>
-              <View style={[styles.tab, styles.tabActive]}>
-                <Text style={[styles.tabText, styles.tabTextActive]}>
-                  Шалгалтууд
-                </Text>
-              </View>
-              <View style={styles.tab}>
-                <Text style={styles.tabText}>Шалгалтын түүх</Text>
-              </View>
-            </View>
-
-            <View style={styles.searchBar}>
-              <Ionicons name="search-outline" size={18} color="#98A2B3" />
-              <Text style={styles.searchPlaceholderText}>Шалгалт хайх...</Text>
-            </View>
-
-            <View style={styles.upcomingCard}>
-              <View style={styles.listCardRow}>
-                <Text style={styles.upcomingCardTitle}>
-                  {activeSession.exam.title}
-                </Text>
-                <View
-                  style={[
-                    styles.statusPill,
-                    activeSession.entryStatus === "late" &&
-                      styles.statusPillWarning,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusPillText,
-                      activeSession.entryStatus === "late" &&
-                        styles.statusPillTextWarning,
-                    ]}
-                  >
-                    {activeSession.entryStatus === "late"
-                      ? "Хоцорсон"
-                      : "Эхэлсэн"}
+            {showAutoStartPreflight ? (
+              <View style={styles.preflightWrap}>
+                <View style={styles.preflightCard}>
+                  <View style={styles.preflightIcon}>
+                    <Ionicons name="shield-checkmark-outline" size={42} color="#3568F5" />
+                  </View>
+                  <Text style={styles.preflightTitle}>Шалгалтыг бэлдэж байна...</Text>
+                  <Text style={styles.preflightText}>
+                    {startingExam
+                      ? "Камер, микрофон болон шалгалтын хамгаалалтыг идэвхжүүлж байна."
+                      : cameraPermission?.granted
+                        ? "Камер бэлэн болмогц шалгалт автоматаар эхэлнэ."
+                        : "Камерын зөвшөөрлийг шалгаж байна."}
                   </Text>
+
+                  <View style={styles.preflightMeta}>
+                    <Text style={styles.preflightMetaLabel}>Шалгалт</Text>
+                    <Text style={styles.preflightMetaValue}>
+                      {activeSession.exam.title}
+                    </Text>
+                  </View>
+
+                  {syncError ? (
+                    <Text style={styles.errorText}>{syncError}</Text>
+                  ) : null}
+                  {proctoringBlockedMessage ? (
+                    <Text style={styles.errorText}>{proctoringBlockedMessage}</Text>
+                  ) : null}
+
+                  {(syncError || proctoringBlockedMessage) && !startingExam ? (
+                    <TouchableOpacity
+                      style={styles.upcomingPrimaryButton}
+                      onPress={() => void handleStart()}
+                    >
+                      <Text style={styles.primaryBtnText}>Дахин оролдох</Text>
+                    </TouchableOpacity>
+                  ) : null}
+
+                  <MobileProctorCamera
+                    captureEnabled={false}
+                    headless
+                    isEnabled
+                    permissionGranted={!!cameraPermission?.granted}
+                    sessionId={activeSession.sessionId}
+                    student={student}
+                    onCameraReadyChange={setCameraReady}
+                    onViolation={logIntegrityEvent}
+                  />
                 </View>
               </View>
+            ) : (
+              <>
+                <Text style={styles.pageTitle}>Шалгалтууд</Text>
 
-              <View style={styles.upcomingMetaGroup}>
-                <View style={styles.upcomingMetaRow}>
-                  <Text style={styles.upcomingMetaLabel}>Өдөр:</Text>
-                  <Text style={styles.upcomingMetaValue}>
-                    {formatListDate(
-                      activeSession.exam.scheduledAt ?? activeSession.startedAt,
-                    )}
-                  </Text>
+                <View style={styles.tabRow}>
+                  <View style={[styles.tab, styles.tabActive]}>
+                    <Text style={[styles.tabText, styles.tabTextActive]}>
+                      Шалгалтууд
+                    </Text>
+                  </View>
+                  <View style={styles.tab}>
+                    <Text style={styles.tabText}>Шалгалтын түүх</Text>
+                  </View>
                 </View>
-                <View style={styles.upcomingMetaRow}>
-                  <Text style={styles.upcomingMetaLabel}>Эхэлсэн цаг:</Text>
-                  <Text style={styles.upcomingMetaValue}>
-                    {formatListTime(
-                      activeSession.exam.scheduledAt ?? activeSession.startedAt,
-                    )}
-                  </Text>
+
+                <View style={styles.searchBar}>
+                  <Ionicons name="search-outline" size={18} color="#98A2B3" />
+                  <Text style={styles.searchPlaceholderText}>Шалгалт хайх...</Text>
                 </View>
-                <View style={styles.upcomingMetaRow}>
-                  <Text style={styles.upcomingMetaLabel}>
-                    Үргэлжилсэн хугацаа:
-                  </Text>
-                  <Text style={styles.upcomingMetaValue}>
-                    {activeSession.exam.durationMin} минут
-                  </Text>
+
+                <View style={styles.upcomingCard}>
+                  <View style={styles.listCardRow}>
+                    <Text style={styles.upcomingCardTitle}>
+                      {activeSession.exam.title}
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        activeSession.entryStatus === "late" &&
+                          styles.statusPillWarning,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusPillText,
+                          activeSession.entryStatus === "late" &&
+                            styles.statusPillTextWarning,
+                        ]}
+                      >
+                        {activeSession.entryStatus === "late"
+                          ? "Хоцорсон"
+                          : "Эхэлсэн"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.upcomingMetaGroup}>
+                    <View style={styles.upcomingMetaRow}>
+                      <Text style={styles.upcomingMetaLabel}>Өдөр:</Text>
+                      <Text style={styles.upcomingMetaValue}>
+                        {formatListDate(
+                          activeSession.exam.scheduledAt ?? activeSession.startedAt,
+                        )}
+                      </Text>
+                    </View>
+                    <View style={styles.upcomingMetaRow}>
+                      <Text style={styles.upcomingMetaLabel}>Эхэлсэн цаг:</Text>
+                      <Text style={styles.upcomingMetaValue}>
+                        {formatListTime(
+                          activeSession.exam.scheduledAt ?? activeSession.startedAt,
+                        )}
+                      </Text>
+                    </View>
+                    <View style={styles.upcomingMetaRow}>
+                      <Text style={styles.upcomingMetaLabel}>
+                        Үргэлжилсэн хугацаа:
+                      </Text>
+                      <Text style={styles.upcomingMetaValue}>
+                        {activeSession.exam.durationMin} минут
+                      </Text>
+                    </View>
+                  </View>
+
+                  {syncError ? (
+                    <Text style={styles.errorText}>{syncError}</Text>
+                  ) : null}
+                  {proctoringBlockedMessage ? (
+                    <Text style={styles.errorText}>{proctoringBlockedMessage}</Text>
+                  ) : null}
+
+                  <View style={styles.upcomingButtonRow}>
+                    <TouchableOpacity
+                      style={styles.upcomingPrimaryButton}
+                      onPress={() => void handleStart()}
+                    >
+                      <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <MobileProctorCamera
+                    captureEnabled={false}
+                    headless
+                    isEnabled
+                    permissionGranted={!!cameraPermission?.granted}
+                    sessionId={activeSession.sessionId}
+                    student={student}
+                    onCameraReadyChange={setCameraReady}
+                    onViolation={logIntegrityEvent}
+                  />
                 </View>
-              </View>
-
-              {syncError ? (
-                <Text style={styles.errorText}>{syncError}</Text>
-              ) : null}
-              {proctoringBlockedMessage ? (
-                <Text style={styles.errorText}>{proctoringBlockedMessage}</Text>
-              ) : null}
-
-              <View style={styles.upcomingButtonRow}>
-                <TouchableOpacity
-                  style={styles.upcomingPrimaryButton}
-                  onPress={() => void handleStart()}
-                >
-                  <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
-                </TouchableOpacity>
-              </View>
-
-              <MobileProctorCamera
-                captureEnabled={false}
-                headless
-                isEnabled
-                permissionGranted={!!cameraPermission?.granted}
-                sessionId={activeSession.sessionId}
-                student={student}
-                onCameraReadyChange={setCameraReady}
-                onViolation={logIntegrityEvent}
-              />
-            </View>
+              </>
+            )}
           </>
         ) : (
-          <View style={styles.examCard}>
-            <View style={styles.examCardTop} />
-            <View style={styles.examCardBody}>
-              <View style={styles.examCardRow}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {activeSession.exam.title.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.examTitle}>
-                    {activeSession.exam.title}
-                  </Text>
-                  <Text style={styles.examMeta}>
-                    {"Товлогдсон: "}
-                    {formatExamDateTime(
-                      activeSession.exam.scheduledAt ?? activeSession.startedAt,
-                    )}{" "}
-                    · {activeSession.exam.durationMin} минут
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.statusPill,
-                    activeSession.entryStatus === "late" &&
-                      styles.statusPillWarning,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusPillText,
-                      activeSession.entryStatus === "late" &&
-                        styles.statusPillTextWarning,
-                    ]}
-                  >
-                    {activeSession.entryStatus === "late"
-                      ? "Хоцорч орсон"
-                      : "Цагтаа"}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.metaRow}>
-                <View style={styles.metaChip}>
-                  <Text style={styles.metaChipLabel}>Үлдсэн хугацаа</Text>
-                  <Text style={styles.metaChipValue}>
-                    {formatCountdown(remainingSeconds)}
-                  </Text>
-                </View>
-                <View style={styles.metaChip}>
-                  <Text style={styles.metaChipLabel}>Явц</Text>
-                  <Text style={styles.metaChipValue}>{progressLabel}</Text>
-                </View>
-              </View>
-
-              {activeSession.syncMessage ? (
-                <Text style={styles.warningText}>
-                  {activeSession.syncMessage}
-                </Text>
-              ) : null}
-
-              {integrity.warningMessage ? (
-                <View style={styles.warningBox}>
-                  <Text style={styles.warningText}>
-                    {integrity.warningMessage}
-                  </Text>
-                </View>
-              ) : null}
-
-              {proctoringBlockedMessage ? (
-                <View style={styles.warningBox}>
-                  <Text style={styles.warningText}>
-                    {proctoringBlockedMessage}
-                  </Text>
-                </View>
-              ) : null}
-
-              <View style={styles.infoBox}>
-                <Text style={styles.infoText}>
-                  Камерын урьдчилсан шалгалт, хугацаат зураг, тасралтгүй аудио
-                  бичлэг энэ дэлгэцээс удирдагдана. Шалгалтын турш хяналт
-                  идэвхтэй байх ёстой.
+          <View style={styles.activeExamLayout}>
+            <View style={styles.activeExamHeader}>
+              <View style={styles.activeExamHeading}>
+                <Text style={styles.activeExamTitle}>{activeSession.exam.title}</Text>
+                <Text style={styles.activeExamSubtitle}>
+                  Асуултуудаа сайн уншиж танилцаад тайван бөглөөрэй.
                 </Text>
               </View>
-
-              {syncError ? (
-                <Text style={styles.errorText}>{syncError}</Text>
-              ) : null}
-
-              <Text style={styles.infoText}>
-                Аудио төлөв: {getAudioStatusLabel(audioRecorder.status)}
-                {audioRecorder.lastUploadedAt
-                  ? ` · Сүүлд илгээсэн: ${formatExamDateTime(audioRecorder.lastUploadedAt)}`
-                  : ""}
-              </Text>
+              <View style={styles.examTimerBadge}>
+                <Ionicons name="time-outline" size={18} color="#111827" />
+                <Text style={styles.examTimerBadgeText}>
+                  {formatCountdown(remainingSeconds)}
+                </Text>
+              </View>
             </View>
+
+            {activeSession.syncMessage ? (
+              <Text style={styles.subtleStatusText}>
+                {activeSession.syncMessage}
+              </Text>
+            ) : null}
+
+            {integrity.warningMessage ? (
+              <View style={styles.warningBox}>
+                <Text style={styles.warningText}>
+                  {integrity.warningMessage}
+                </Text>
+              </View>
+            ) : null}
+
+            {proctoringBlockedMessage ? (
+              <View style={styles.warningBox}>
+                <Text style={styles.warningText}>
+                  {proctoringBlockedMessage}
+                </Text>
+              </View>
+            ) : null}
+
+            {syncError ? <Text style={styles.errorText}>{syncError}</Text> : null}
           </View>
         )}
 
@@ -1396,6 +1486,7 @@ export default function ExamScreen() {
               captureEnabled={
                 activeSession.status === "in_progress" && appIsActive
               }
+              headless
               isEnabled={activeSession.status === "in_progress" && appIsActive}
               permissionGranted={!!cameraPermission?.granted}
               sessionId={activeSession.sessionId}
@@ -1461,14 +1552,7 @@ export default function ExamScreen() {
                         selected && styles.optionButtonSelected,
                       ]}
                     >
-                      <View
-                        style={{
-                          alignItems: "flex-start",
-                          flexDirection: "row",
-                          flexWrap: "wrap",
-                          gap: 4,
-                        }}
-                      >
+                      <View style={styles.optionContent}>
                         <Text
                           style={[
                             styles.optionLabel,
@@ -1517,47 +1601,35 @@ export default function ExamScreen() {
 
         {!isJoined ? (
           <View style={styles.footerActions}>
-            <TouchableOpacity
-              style={[
-                styles.navBtn,
-                (activeSession.currentQuestionIndex === 0 || isSyncBlocked) &&
-                  styles.navBtnDisabled,
-              ]}
-              disabled={
-                activeSession.currentQuestionIndex === 0 || isSyncBlocked
-              }
-              onPress={() => void moveQuestion(-1)}
-            >
-              <Text style={styles.navBtnText}>Өмнөх</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.navBtn,
-                (activeSession.currentQuestionIndex >=
-                  activeSession.questions.length - 1 ||
-                  isSyncBlocked) &&
-                  styles.navBtnDisabled,
-              ]}
-              disabled={
-                activeSession.currentQuestionIndex >=
-                  activeSession.questions.length - 1 || isSyncBlocked
-              }
-              onPress={() => void moveQuestion(1)}
-            >
-              <Text style={styles.navBtnText}>Дараах</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.primaryBtn,
-                isSyncBlocked && styles.navBtnDisabled,
-              ]}
-              disabled={isSyncBlocked}
-              onPress={() => void handleSubmit(false)}
-            >
-              <Text style={styles.primaryBtnText}>
-                {submitting ? "Илгээж байна..." : "Шалгалт илгээх"}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.questionFooterRow}>
+              {activeSession.currentQuestionIndex > 0 ? (
+                <TouchableOpacity
+                  style={[
+                    styles.navIconBtn,
+                    isSyncBlocked && styles.navBtnDisabled,
+                  ]}
+                  disabled={isSyncBlocked}
+                  onPress={() => void moveQuestion(-1)}
+                >
+                  <Ionicons name="arrow-back" size={18} color="#3568F5" />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.footerSpacer} />
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.questionPrimaryBtn,
+                  primaryActionDisabled && styles.questionPrimaryBtnDisabled,
+                ]}
+                disabled={primaryActionDisabled}
+                onPress={() => void handlePrimaryAction()}
+              >
+                <Text style={styles.questionPrimaryBtnText}>
+                  {primaryActionLabel}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : null}
       </ScrollView>

@@ -1,10 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useStudentApp } from "@/lib/student-app/context";
 import { homeStyles as styles } from "@/styles/screens/home";
+
+type HomeExamStatus =
+  | "active"
+  | "waiting"
+  | "late"
+  | "missed"
+  | "completed";
 
 type HomeExamCard = {
   id: string;
@@ -12,7 +20,7 @@ type HomeExamCard = {
   date: string;
   time: string;
   duration: string;
-  status: "active" | "waiting" | "late" | "missed";
+  status: HomeExamStatus;
   statusText: string;
   canJoin: boolean;
   canViewDetail: boolean;
@@ -20,6 +28,15 @@ type HomeExamCard = {
   className?: string | null;
   groupName?: string | null;
   teacherName?: string | null;
+  sortTime: number;
+};
+
+const HOME_EXAM_STATUS_ORDER: Record<HomeExamStatus, number> = {
+  active: 0,
+  waiting: 1,
+  late: 2,
+  missed: 3,
+  completed: 4,
 };
 
 type CalendarDay = {
@@ -27,6 +44,7 @@ type CalendarDay = {
   label: string;
   dayNumber: number;
   isSelected: boolean;
+  date: Date;
 };
 
 function getGreeting() {
@@ -91,6 +109,16 @@ function parseDateSafe(value?: string | null) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function addDays(base: Date, days: number) {
+  const next = new Date(base);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function startOfDay(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+}
+
 function isSameDay(left: Date, right: Date) {
   return (
     left.getFullYear() === right.getFullYear() &&
@@ -99,14 +127,18 @@ function isSameDay(left: Date, right: Date) {
   );
 }
 
+function isPastCalendarDay(value: Date, now: Date) {
+  return startOfDay(value).getTime() < startOfDay(now).getTime();
+}
+
 function getCalendarLabel(date: Date) {
   return `${date.getMonth() + 1} сар ${date.getFullYear()}`;
 }
 
-function buildCalendarWeek(now: Date): CalendarDay[] {
+function buildCalendarWeek(weekDate: Date, selectedDate: Date): CalendarDay[] {
   const labels = ["Ня", "Да", "Мя", "Лх", "Пү", "Ба", "Бя"];
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay());
+  const weekStart = new Date(weekDate);
+  weekStart.setDate(weekDate.getDate() - weekDate.getDay());
 
   return Array.from({ length: 7 }, (_, index) => {
     const day = new Date(weekStart);
@@ -116,68 +148,215 @@ function buildCalendarWeek(now: Date): CalendarDay[] {
       key: day.toISOString(),
       label: labels[index],
       dayNumber: day.getDate(),
-      isSelected: isSameDay(day, now),
+      isSelected: isSameDay(day, selectedDate),
+      date: day,
     };
   });
 }
 
-function buildPrimaryCards(
+function wasLateSubmission(
+  scheduledAt?: string | null,
+  startedAt?: string | null,
+) {
+  const scheduled = parseDateSafe(scheduledAt);
+  const started = parseDateSafe(startedAt);
+
+  if (!scheduled || !started) return false;
+
+  return started.getTime() >= scheduled.getTime() + 5 * 60 * 1000;
+}
+
+function getHistoryDurationMinutes(
+  startedAt?: string | null,
+  submittedAt?: string | null,
+) {
+  if (!startedAt || !submittedAt) return 0;
+
+  const start = new Date(startedAt).getTime();
+  const end = new Date(submittedAt).getTime();
+
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) {
+    return 0;
+  }
+
+  return Math.max(1, Math.round((end - start) / (60 * 1000)));
+}
+
+function getStatusText(
+  status: HomeExamStatus,
+  selectedDate: Date,
+  now: Date,
+) {
+  switch (status) {
+    case "active":
+      return "Эхэлсэн";
+    case "waiting":
+      return isSameDay(selectedDate, now) ? "Хүлээгдэж буй" : "Товлогдсон";
+    case "late":
+      return "Хоцорсон";
+    case "missed":
+      return "Ороогүй";
+    case "completed":
+      return "Өгсөн";
+  }
+}
+
+function getUpcomingExamStatus(
+  scheduledAt: string | null | undefined,
+  rawStatus: string | null | undefined,
+  selectedDate: Date,
+  now: Date,
+): Exclude<HomeExamStatus, "completed"> {
+  const scheduledDate = parseDateSafe(scheduledAt);
+  if (!scheduledDate) return "waiting";
+
+  if (!isSameDay(selectedDate, now)) {
+    return isPastCalendarDay(selectedDate, now) ? "missed" : "waiting";
+  }
+
+  const startTime = scheduledDate.getTime();
+  const nowTime = now.getTime();
+  const onTimeDeadline = startTime + 5 * 60 * 1000;
+  const lateDeadline = startTime + 10 * 60 * 1000;
+
+  if (nowTime > lateDeadline) return "missed";
+  if (nowTime > onTimeDeadline) return "late";
+  if (rawStatus === "active" || nowTime >= startTime) return "active";
+  return "waiting";
+}
+
+function canJoinUpcomingExam(
+  scheduledAt: string | null | undefined,
+  selectedDate: Date,
+  now: Date,
+) {
+  if (!isSameDay(selectedDate, now)) return false;
+  const scheduledDate = parseDateSafe(scheduledAt);
+  if (!scheduledDate) return false;
+
+  const startTime = scheduledDate.getTime();
+  const nowTime = now.getTime();
+
+  return (
+    nowTime >= startTime - 5 * 60 * 1000 &&
+    nowTime <= startTime + 10 * 60 * 1000
+  );
+}
+
+function getHistoryExamStatus(
+  status: string,
+  scheduledAt: string | null,
+  startedAt: string | null,
+  selectedDate: Date,
+  now: Date,
+): Extract<HomeExamStatus, "late" | "missed" | "completed"> | null {
+  if (wasLateSubmission(scheduledAt, startedAt)) return "late";
+  if (status === "graded" || status === "submitted") return "completed";
+  if (status === "late") return "late";
+  if (isPastCalendarDay(selectedDate, now)) return "missed";
+  return null;
+}
+
+function getTeacherName(title: string) {
+  if (title.toLowerCase().includes("english")) return "Г. Сарантуяа";
+  if (title.toLowerCase().includes("мат")) return "Б. Нарантуяа";
+  if (title.toLowerCase().includes("монгол")) return "Д. Оюун";
+  return "Г. Сарантуяа";
+}
+
+function buildPrimaryCardsForDate(
   studentApp: ReturnType<typeof useStudentApp>,
+  selectedDate: Date,
   now: Date,
 ): HomeExamCard[] {
-  const { activeSession, upcomingExams } = studentApp;
+  const { activeSession, history, upcomingExams } = studentApp;
   const cards: HomeExamCard[] = [];
+  const coveredExamIds = new Set<string>();
 
   if (activeSession) {
     const scheduledAt =
       activeSession.exam.scheduledAt ?? activeSession.startedAt;
+    const scheduledDate = parseDateSafe(scheduledAt);
+
+    if (
+      scheduledDate &&
+      isSameDay(scheduledDate, selectedDate) &&
+      !coveredExamIds.has(activeSession.exam.id)
+    ) {
+      const status: HomeExamStatus =
+        activeSession.entryStatus === "late" ? "late" : "active";
+
+      cards.push({
+        id: activeSession.sessionId,
+        title: activeSession.exam.title,
+        date: formatDateLabel(scheduledAt),
+        time: formatTimeLabel(scheduledAt),
+        duration: `${activeSession.exam.durationMin} минут`,
+        status,
+        statusText: getStatusText(status, selectedDate, now),
+        canJoin: true,
+        canViewDetail: false,
+        roomCode: activeSession.roomCode,
+        className: null,
+        groupName: null,
+        teacherName: getTeacherName(activeSession.exam.title),
+        sortTime: scheduledDate.getTime(),
+      });
+      coveredExamIds.add(activeSession.exam.id);
+    }
+  }
+
+  for (const item of history) {
+    const scheduledAt = item.scheduledAt ?? item.startedAt ?? item.submittedAt;
+    const scheduledDate = parseDateSafe(scheduledAt);
+    if (!scheduledDate || !isSameDay(scheduledDate, selectedDate)) continue;
+
+    const status = getHistoryExamStatus(
+      item.status,
+      item.scheduledAt,
+      item.startedAt,
+      selectedDate,
+      now,
+    );
+    if (!status) continue;
+
+    const timeSource = item.submittedAt ?? item.startedAt ?? item.scheduledAt;
+    const sortTime =
+      parseDateSafe(timeSource)?.getTime() ?? scheduledDate.getTime();
 
     cards.push({
-      id: activeSession.sessionId,
-      title: activeSession.exam.title,
-      date: formatDateLabel(scheduledAt),
-      time: formatTimeLabel(scheduledAt),
-      duration: `${activeSession.exam.durationMin} минут`,
-      status: activeSession.entryStatus === "late" ? "late" : "active",
-      statusText: activeSession.entryStatus === "late" ? "Хоцорсон" : "Өнөөдөр",
-      canJoin: true,
-      canViewDetail: false,
-      roomCode: activeSession.roomCode,
+      id: item.sessionId,
+      title: item.title,
+      date: formatDateLabel(item.scheduledAt ?? timeSource),
+      time: formatTimeLabel(timeSource),
+      duration: `${getHistoryDurationMinutes(item.startedAt, item.submittedAt)} минут`,
+      status,
+      statusText: getStatusText(status, selectedDate, now),
+      canJoin: false,
+      canViewDetail: true,
+      roomCode: null,
       className: null,
       groupName: null,
-      teacherName: null,
+      teacherName: getTeacherName(item.title),
+      sortTime,
     });
+    coveredExamIds.add(item.examId);
   }
 
   for (const exam of upcomingExams) {
     const scheduledAt = exam.scheduledAt ?? exam.startedAt;
-    if (!scheduledAt) continue;
+    if (!scheduledAt || coveredExamIds.has(exam.examId)) continue;
 
     const scheduledDate = parseDateSafe(scheduledAt);
-    const isToday = scheduledDate !== null && isSameDay(scheduledDate, now);
-    if (!isToday) continue;
-    if (cards.some((card) => card.id === exam.examId)) continue;
+    if (!scheduledDate || !isSameDay(scheduledDate, selectedDate)) continue;
 
-    const startTime = scheduledDate?.getTime() ?? null;
-    const nowTime = now.getTime();
-    const joinWindowStartsAt =
-      startTime !== null ? startTime - 5 * 60 * 1000 : null;
-    const onTimeDeadline =
-      startTime !== null ? startTime + 5 * 60 * 1000 : null;
-    const lateDeadline = startTime !== null ? startTime + 10 * 60 * 1000 : null;
-    const hasStarted =
-      exam.status === "active" || (startTime !== null && startTime <= nowTime);
-    const isLateWindow =
-      onTimeDeadline !== null &&
-      lateDeadline !== null &&
-      nowTime > onTimeDeadline &&
-      nowTime <= lateDeadline;
-    const isMissed = lateDeadline !== null && nowTime > lateDeadline;
-    const canJoinNormally =
-      joinWindowStartsAt !== null &&
-      lateDeadline !== null &&
-      nowTime >= joinWindowStartsAt &&
-      nowTime <= lateDeadline;
+    const status = getUpcomingExamStatus(
+      scheduledAt,
+      exam.status,
+      selectedDate,
+      now,
+    );
+    const canJoin = canJoinUpcomingExam(scheduledAt, selectedDate, now);
 
     cards.push({
       id: exam.examId,
@@ -185,24 +364,28 @@ function buildPrimaryCards(
       date: formatDateLabel(scheduledAt),
       time: formatTimeLabel(scheduledAt),
       duration: `${exam.durationMin} минут`,
-      status: isMissed
-        ? "missed"
-        : isLateWindow
-          ? "late"
-          : hasStarted
-            ? "active"
-            : "waiting",
-      statusText: isMissed ? "Өгөөгүй" : isLateWindow ? "Хоцорсон" : "Өнөөдөр",
-      canJoin: canJoinNormally,
-      canViewDetail: !canJoinNormally && !isMissed,
+      status,
+      statusText: getStatusText(status, selectedDate, now),
+      canJoin: canJoin && status !== "missed",
+      canViewDetail: true,
       roomCode: exam.roomCode,
       className: exam.className,
       groupName: exam.groupName,
-      teacherName: null,
+      teacherName: getTeacherName(exam.title),
+      sortTime: scheduledDate.getTime(),
     });
   }
 
-  return cards;
+  return cards.sort((left, right) => {
+    if (left.sortTime !== right.sortTime) {
+      return left.sortTime - right.sortTime;
+    }
+
+    return (
+      HOME_EXAM_STATUS_ORDER[left.status] -
+      HOME_EXAM_STATUS_ORDER[right.status]
+    );
+  });
 }
 
 function buildScheduledCards(
@@ -243,16 +426,10 @@ function buildScheduledCards(
         roomCode: exam.roomCode,
         className: exam.className,
         groupName: exam.groupName,
-        teacherName: null,
+        teacherName: getTeacherName(exam.title),
+        sortTime: parseDateSafe(scheduledAt)?.getTime() ?? 0,
       } satisfies HomeExamCard;
     });
-}
-
-function getTeacherName(title: string) {
-  if (title.toLowerCase().includes("english")) return "Г. Сарантуяа";
-  if (title.toLowerCase().includes("мат")) return "Б. Нарантуяа";
-  if (title.toLowerCase().includes("монгол")) return "Д. Оюун";
-  return "Г. Сарантуяа";
 }
 
 function openExamDetail(
@@ -278,9 +455,20 @@ export default function HomeScreen() {
   const router = useRouter();
   const studentApp = useStudentApp();
   const { dashboardError } = studentApp;
-  const now = new Date();
-  const calendarDays = buildCalendarWeek(now);
-  const examCards = buildPrimaryCards(studentApp, now);
+  const [now, setNow] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [calendarDate, setCalendarDate] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const calendarDays = buildCalendarWeek(calendarDate, selectedDate);
+  const examCards = buildPrimaryCardsForDate(studentApp, selectedDate, now);
   const secondaryExams = buildScheduledCards(studentApp);
 
   return (
@@ -297,13 +485,38 @@ export default function HomeScreen() {
 
         <View style={styles.calendarCard}>
           <View style={styles.calendarHeader}>
-            <Ionicons name="arrow-back" size={18} color="#111827" />
-            <Text style={styles.calendarTitle}>{getCalendarLabel(now)}</Text>
-            <Ionicons name="arrow-forward" size={18} color="#111827" />
+            <TouchableOpacity
+              onPress={() => {
+                setCalendarDate((current) => addDays(current, -7));
+                setSelectedDate((current) => addDays(current, -7));
+              }}
+              hitSlop={10}
+            >
+              <Ionicons name="arrow-back" size={18} color="#111827" />
+            </TouchableOpacity>
+            <Text style={styles.calendarTitle}>
+              {getCalendarLabel(calendarDate)}
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setCalendarDate((current) => addDays(current, 7));
+                setSelectedDate((current) => addDays(current, 7));
+              }}
+              hitSlop={10}
+            >
+              <Ionicons name="arrow-forward" size={18} color="#111827" />
+            </TouchableOpacity>
           </View>
           <View style={styles.calendarWeekRow}>
             {calendarDays.map((day) => (
-              <View key={day.key} style={styles.calendarDay}>
+              <TouchableOpacity
+                key={day.key}
+                style={styles.calendarDay}
+                onPress={() => {
+                  setSelectedDate(day.date);
+                  setCalendarDate(day.date);
+                }}
+              >
                 <Text style={styles.calendarDayLabel}>{day.label}</Text>
                 <View
                   style={[
@@ -320,7 +533,7 @@ export default function HomeScreen() {
                     {day.dayNumber}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -330,11 +543,15 @@ export default function HomeScreen() {
         </View>
 
         {examCards.length > 0 ? (
-          examCards.map((exam) => (
-            <View key={exam.id} style={styles.card}>
-              <View style={styles.cardBody}>
-                <View style={styles.cardRow}>
-                  <Text style={styles.examTitle}>{exam.title}</Text>
+          examCards.map((exam) => {
+            const isPastSelectedDate = isPastCalendarDay(selectedDate, now);
+            const showDetailButton =
+              !isPastSelectedDate && (exam.canViewDetail || !exam.canJoin);
+
+            return (
+              <View key={exam.id} style={styles.upcomingCard}>
+                <View style={styles.listCardRow}>
+                  <Text style={styles.upcomingCardTitle}>{exam.title}</Text>
                   <View
                     style={[
                       styles.statusPill,
@@ -342,7 +559,9 @@ export default function HomeScreen() {
                         ? styles.statusPillGreen
                         : exam.status === "late" || exam.status === "missed"
                           ? styles.statusPillRed
-                          : styles.statusPillAmber,
+                          : exam.status === "completed"
+                            ? styles.statusPillBlue
+                            : styles.statusPillAmber,
                     ]}
                   >
                     <Text
@@ -352,7 +571,9 @@ export default function HomeScreen() {
                           ? styles.statusPillTextGreen
                           : exam.status === "late" || exam.status === "missed"
                             ? styles.statusPillTextRed
-                            : styles.statusPillTextAmber,
+                            : exam.status === "completed"
+                              ? styles.statusPillTextBlue
+                              : styles.statusPillTextAmber,
                       ]}
                     >
                       {exam.statusText}
@@ -360,24 +581,26 @@ export default function HomeScreen() {
                   </View>
                 </View>
 
-                <View style={styles.metaTable}>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>Өдөр:</Text>
-                    <Text style={styles.metaValue}>{exam.date}</Text>
+                <View style={styles.upcomingMetaGroup}>
+                  <View style={styles.upcomingMetaRow}>
+                    <Text style={styles.upcomingMetaLabel}>Өдөр:</Text>
+                    <Text style={styles.upcomingMetaValue}>{exam.date}</Text>
                   </View>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>Эхлэх цаг:</Text>
-                    <Text style={styles.metaValue}>{exam.time}</Text>
+                  <View style={styles.upcomingMetaRow}>
+                    <Text style={styles.upcomingMetaLabel}>Эхэлсэн цаг:</Text>
+                    <Text style={styles.upcomingMetaValue}>{exam.time}</Text>
                   </View>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.metaLabel}>Үргэлжлэх хугацаа:</Text>
-                    <Text style={styles.metaValue}>{exam.duration}</Text>
+                  <View style={styles.upcomingMetaRow}>
+                    <Text style={styles.upcomingMetaLabel}>
+                      Үргэлжилсэн хугацаа:
+                    </Text>
+                    <Text style={styles.upcomingMetaValue}>{exam.duration}</Text>
                   </View>
                 </View>
 
                 {exam.canJoin ? (
                   <TouchableOpacity
-                    style={styles.primaryBtn}
+                    style={styles.upcomingPrimaryButton}
                     onPress={() =>
                       router.push({
                         pathname: "/join",
@@ -389,23 +612,32 @@ export default function HomeScreen() {
                   >
                     <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
                   </TouchableOpacity>
-                ) : exam.canViewDetail ? (
-                  <TouchableOpacity
-                    style={styles.primaryBtn}
-                    onPress={() => openExamDetail(router, exam)}
-                  >
-                    <Text style={styles.primaryBtnText}>Дэлгэрэнгүй</Text>
-                  </TouchableOpacity>
+                ) : showDetailButton ? (
+                  <View style={styles.upcomingButtonRow}>
+                    <View style={styles.upcomingDivider} />
+                    <TouchableOpacity
+                      style={styles.upcomingDetailButton}
+                      onPress={() => openExamDetail(router, exam)}
+                    >
+                      <Text style={styles.upcomingDetailText}>Дэлгэрэнгүй</Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={24}
+                        color="#111827"
+                        style={styles.upcomingDetailArrow}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 ) : null}
               </View>
-            </View>
-          ))
+            );
+          })
         ) : (
           <View style={styles.card}>
             <View style={styles.emptyStateCardBody}>
               <View style={styles.emptyStateButton}>
                 <Text style={styles.emptyStateButtonText}>
-                  Товлогдсон шалгалт байхгүй байна
+                  Сонгосон өдөр шалгалт байхгүй байна
                 </Text>
               </View>
             </View>
