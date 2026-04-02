@@ -21,8 +21,11 @@ import {
   type RoleKey,
 } from "@/lib/role-session";
 import { updateExam } from "@/api/exams";
+import { disqualifySession, warnStudentSession } from "@/api/cheat";
+import type { NotificationItem } from "@/lib/notifications";
 import { DEFAULT_ENABLED_CHEAT_DETECTIONS } from "@/lib/exam-cheat-detections";
 import TeacherHeader from "./components/TeacherHeader";
+import TeacherCheatAlertModal from "./components/TeacherCheatAlertModal";
 import TeacherPageContent, {
   type TeacherTab,
 } from "./components/TeacherPageContent";
@@ -143,13 +146,29 @@ export default function TeacherPage() {
     null,
   );
   const [profileLoading, setProfileLoading] = useState(false);
+  const [cheatAlertQueue, setCheatAlertQueue] = useState<NotificationItem[]>([]);
+  const [cheatActionBusy, setCheatActionBusy] = useState(false);
   const tabLoadingTimerRef = useRef<number | null>(null);
+  const queuedAlertIdsRef = useRef<Set<string>>(new Set());
 
   const sessionUser = useMemo(
     () => (selectedUser ? buildSessionUser(selectedUser) : null),
     [selectedUser],
   );
-  const data = useTeacherData(sessionUser);
+  const data = useTeacherData(sessionUser, {
+    onIncomingNotification: (notification) => {
+      if (notification.type !== "student_flagged" || notification.status !== "unread") {
+        return;
+      }
+
+      if (queuedAlertIdsRef.current.has(notification.id)) {
+        return;
+      }
+
+      queuedAlertIdsRef.current.add(notification.id);
+      setCheatAlertQueue((prev) => [...prev, notification]);
+    },
+  });
   const management = useExamManagement({
     exams: data.exams,
     setExams: data.setExams,
@@ -303,6 +322,66 @@ export default function TeacherPage() {
     setSelectedCheatDetections([]);
     setSelectedRequiresAudioRecording(false);
     setSavingCheatDetections(false);
+  };
+
+  const activeCheatAlert = cheatAlertQueue[0] ?? null;
+
+  const dismissCheatAlert = async (notificationId?: string) => {
+    if (!notificationId) return;
+    await data.markNotificationRead(notificationId);
+    queuedAlertIdsRef.current.delete(notificationId);
+    setCheatAlertQueue((prev) => prev.filter((item) => item.id !== notificationId));
+  };
+
+  const handleWarnStudent = async () => {
+    if (!activeCheatAlert?.sessionId || !data.currentUser || cheatActionBusy) return;
+
+    setCheatActionBusy(true);
+    try {
+      const metadata = activeCheatAlert.metadata as
+        | { studentName?: string; reason?: string }
+        | undefined;
+      const studentName = metadata?.studentName || "Сурагч";
+      const reason = metadata?.reason || "зөрчил";
+      await warnStudentSession(
+        activeCheatAlert.sessionId,
+        `${studentName}, шалгалтын журам зөрчсөн тул анхаарна уу. (${reason})`,
+        data.currentUser,
+      );
+      await dismissCheatAlert(activeCheatAlert.id);
+      data.showToast("Сануулга суралцагч руу илгээгдлээ.");
+    } catch (error) {
+      data.showToast(
+        error instanceof Error ? error.message : "Сануулга илгээж чадсангүй.",
+      );
+    } finally {
+      setCheatActionBusy(false);
+    }
+  };
+
+  const handleDisqualifyStudent = async () => {
+    if (!activeCheatAlert?.sessionId || !data.currentUser || cheatActionBusy) return;
+
+    setCheatActionBusy(true);
+    try {
+      const metadata = activeCheatAlert.metadata as
+        | { studentName?: string; reason?: string }
+        | undefined;
+      const reason = metadata?.reason || "Cheat event detected";
+      await disqualifySession(
+        activeCheatAlert.sessionId,
+        `Teacher disqualified the student after ${reason}.`,
+        data.currentUser,
+      );
+      await dismissCheatAlert(activeCheatAlert.id);
+      data.showToast("Суралцагчийг шалгалтаас чөлөөллөө.");
+    } catch (error) {
+      data.showToast(
+        error instanceof Error ? error.message : "Суралцагчийг чөлөөлж чадсангүй.",
+      );
+    } finally {
+      setCheatActionBusy(false);
+    }
   };
 
   const openScheduleForm = () => {
@@ -495,6 +574,19 @@ export default function TeacherPage() {
         onChange={setSelectedCheatDetections}
         onClose={closeCheatDetectionDialog}
         onSave={saveCheatDetectionSettings}
+      />
+      <TeacherCheatAlertModal
+        notification={activeCheatAlert}
+        busy={cheatActionBusy}
+        onClose={() => {
+          void dismissCheatAlert(activeCheatAlert?.id);
+        }}
+        onDisqualify={() => {
+          void handleDisqualifyStudent();
+        }}
+        onWarn={() => {
+          void handleWarnStudent();
+        }}
       />
     </div>
   );

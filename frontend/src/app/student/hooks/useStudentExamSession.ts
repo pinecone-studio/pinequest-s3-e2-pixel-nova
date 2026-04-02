@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiRequest } from "@/api/client";
+import { openNotificationsLiveStream } from "@/api/notifications";
 import type { User } from "@/lib/examGuard";
 import type { Exam, Submission } from "../types";
 import { buildAnswerReport } from "./student-exam-helpers";
@@ -224,6 +225,7 @@ export const useStudentExamSession = ({
   const sidebarTimerRef = useRef<number | null>(null);
   const answerFlushTimerRef = useRef<number | null>(null);
   const pendingAnswersRef = useRef<Record<string, string>>({});
+  const disqualificationHandledRef = useRef(false);
   const { violations, setViolations, warning, showWarning, logViolation } =
     useStudentExamWarnings(sessionId, activeExam?.enabledCheatDetections);
   const {
@@ -460,6 +462,47 @@ export const useStudentExamSession = ({
     showWarning("Шалгалт зогсоолоо.");
     void submitExam(true, true, reason);
   }, [showWarning, submitExam]);
+
+  useEffect(() => {
+    disqualificationHandledRef.current = false;
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (view !== "exam" || !currentUser || !sessionId) {
+      return;
+    }
+
+    const stopStream = openNotificationsLiveStream(
+      "student",
+      {
+        onMessage: (notification) => {
+          if (notification.sessionId !== sessionId) {
+            return;
+          }
+
+          if (notification.type === "teacher_warning") {
+            showWarning(notification.message);
+            return;
+          }
+
+          if (
+            notification.type === "exam_disqualified" &&
+            !disqualificationHandledRef.current
+          ) {
+            disqualificationHandledRef.current = true;
+            terminateExam(
+              notification.message || "Teacher disqualified this exam session.",
+            );
+          }
+        },
+      },
+      currentUser.id,
+    );
+
+    return () => {
+      stopStream();
+    };
+  }, [currentUser, sessionId, showWarning, terminateExam, view]);
 
   const updateAnswer = (questionIdOrValue: string, maybeValue?: string) => {
     if (!activeExam) return;

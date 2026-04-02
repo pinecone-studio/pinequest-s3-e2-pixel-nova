@@ -10,6 +10,8 @@ export type NotificationType =
   | "student_joined"
   | "student_submitted"
   | "student_flagged"
+  | "teacher_warning"
+  | "exam_disqualified"
   | "exam_ending_soon"
   | "exam_finished"
   | "exam_unlocked"
@@ -224,6 +226,14 @@ const buildTeacherCopy = {
     title: "Шалгалт дууслаа",
     message: `${title} шалгалтын хугацаа дууслаа.`,
   }),
+  teacherWarning: (message: string) => ({
+    title: "Ð¡Ð°Ð½ÑƒÑƒÐ»Ð³Ð°",
+    message,
+  }),
+  examDisqualified: (reason: string) => ({
+    title: "Ð¨Ð°Ð»Ð³Ð°Ð»Ñ‚Ð°Ð°Ñ Ñ‡Ó©Ð»Ó©Ó©Ð»Ó©Ð²",
+    message: reason,
+  }),
 };
 
 const buildStudentCopy = {
@@ -246,6 +256,14 @@ const buildStudentCopy = {
   resultPublished: (title: string) => ({
     title: "Дүн гарлаа",
     message: `${title} шалгалтын дүнг харах боломжтой боллоо.`,
+  }),
+  teacherWarning: (message: string) => ({
+    title: "Ð¡Ð°Ð½ÑƒÑƒÐ»Ð³Ð°",
+    message,
+  }),
+  examDisqualified: (reason: string) => ({
+    title: "Ð¨Ð°Ð»Ð³Ð°Ð»Ñ‚Ð°Ð°Ñ Ñ‡Ó©Ð»Ó©Ó©Ð»Ó©Ð²",
+    message: reason,
   }),
 };
 
@@ -311,6 +329,8 @@ export const notifyTeacherStudentFlagged = async (
   studentName: string,
   reason: string,
   severity: NotificationSeverity = "warning",
+  eventType?: string | null,
+  eventSource?: string | null,
 ) =>
   publishNotification(db, {
     userId: teacherId,
@@ -322,8 +342,13 @@ export const notifyTeacherStudentFlagged = async (
     examId,
     sessionId,
     studentId,
-    dedupeKey: `student_flagged:${sessionId}:${reason}:${Math.floor(Date.now() / 120000)}`,
-    metadata: { studentName, reason },
+    dedupeKey: `student_flagged:${sessionId}:${eventType ?? reason}:${Math.floor(Date.now() / 120000)}`,
+    metadata: {
+      studentName,
+      reason,
+      eventType: eventType ?? null,
+      eventSource: eventSource ?? null,
+    },
   });
 
 export const notifyStudentLateEntry = async (
@@ -365,6 +390,47 @@ export const notifyStudentSubmissionSaved = async (
     dedupeKey: `submission_saved:${sessionId}:${bucket}`,
   });
 };
+
+export const notifyStudentTeacherWarning = async (
+  db: AppDb,
+  studentId: string,
+  examId: string,
+  sessionId: string,
+  teacherName: string,
+  message: string,
+) =>
+  publishNotification(db, {
+    userId: studentId,
+    role: "student",
+    type: "teacher_warning",
+    severity: "warning",
+    title: buildStudentCopy.teacherWarning(message).title,
+    message: buildStudentCopy.teacherWarning(message).message,
+    examId,
+    sessionId,
+    dedupeKey: `teacher_warning:${sessionId}:${Math.floor(Date.now() / 30000)}`,
+    metadata: { teacherName, message },
+  });
+
+export const notifyStudentExamDisqualified = async (
+  db: AppDb,
+  studentId: string,
+  examId: string,
+  sessionId: string,
+  reason: string,
+) =>
+  publishNotification(db, {
+    userId: studentId,
+    role: "student",
+    type: "exam_disqualified",
+    severity: "critical",
+    title: buildStudentCopy.examDisqualified(reason).title,
+    message: buildStudentCopy.examDisqualified(reason).message,
+    examId,
+    sessionId,
+    dedupeKey: `exam_disqualified:${sessionId}`,
+    metadata: { reason },
+  });
 
 const syncTeacherExamWindowNotifications = async (
   db: AppDb,

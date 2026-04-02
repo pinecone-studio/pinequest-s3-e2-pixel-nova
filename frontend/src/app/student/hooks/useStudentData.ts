@@ -137,6 +137,7 @@ export const useStudentData = (overrideUser?: User | null) => {
   const notificationsState = useNotifications({
     role: "student",
     userId: overrideUserId,
+    enableLive: false,
     onToast: showToast,
   });
 
