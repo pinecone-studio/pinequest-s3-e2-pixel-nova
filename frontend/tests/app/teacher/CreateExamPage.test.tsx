@@ -13,8 +13,13 @@ const consumePendingCreateExamDraft = jest.fn<
   PendingCreateExamDraft | null,
   []
 >(() => null);
+const consumePendingCreateExamFile = jest.fn();
 const setExamTitle = jest.fn();
 const setQuestions = jest.fn();
+const handlePdfUpload = jest.fn();
+const handleImageUpload = jest.fn();
+const handleDocxUpload = jest.fn();
+const setImportTextCount = jest.fn();
 const acceptDraft = jest
   .fn()
   .mockResolvedValue({ id: "run-1", status: "accepted" });
@@ -70,6 +75,8 @@ jest.mock("@/lib/examGuard", () => ({
 
 jest.mock("@/app/teacher/create-exam-dialog-state", () => ({
   consumePendingCreateExamDraft: () => consumePendingCreateExamDraft(),
+  consumePendingCreateExamFile: (...args: unknown[]) =>
+    consumePendingCreateExamFile(...args),
 }));
 
 jest.mock("@/app/teacher/hooks/useTeacherData", () => ({
@@ -123,7 +130,7 @@ jest.mock("@/app/teacher/hooks/useExamImport", () => ({
     importMcqCount: 0,
     setImportMcqCount: jest.fn(),
     importTextCount: 5,
-    setImportTextCount: jest.fn(),
+    setImportTextCount,
     importOpenCount: 0,
     setImportOpenCount: jest.fn(),
     shuffleImportedQuestions: false,
@@ -134,9 +141,9 @@ jest.mock("@/app/teacher/hooks/useExamImport", () => ({
     importError: null,
     importLoading: false,
     importLoadingLabel: null,
-    handlePdfUpload: jest.fn(),
-    handleImageUpload: jest.fn(),
-    handleDocxUpload: jest.fn(),
+    handlePdfUpload,
+    handleImageUpload,
+    handleDocxUpload,
   }),
 }));
 
@@ -178,9 +185,14 @@ describe("CreateExamPage", () => {
   beforeEach(() => {
     push.mockReset();
     consumePendingCreateExamDraft.mockReset();
+    consumePendingCreateExamFile.mockReset();
     consumePendingCreateExamDraft.mockReturnValue(null);
     setExamTitle.mockReset();
     setQuestions.mockReset();
+    handlePdfUpload.mockReset();
+    handleImageUpload.mockReset();
+    handleDocxUpload.mockReset();
+    setImportTextCount.mockReset();
     acceptDraft.mockClear();
     generateDraft.mockClear();
   });
@@ -189,13 +201,11 @@ describe("CreateExamPage", () => {
     render(<CreateExamPage />);
 
     expect(
-      screen.getByRole("button", { name: "AI ашиглан үүсгэх" }),
+      screen.getByRole("heading", { name: "Шалгалт үүсгэх" }),
     ).toBeInTheDocument();
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: "Use Draft" }),
-      ).not.toBeInTheDocument();
-    });
+    expect(
+      screen.getByRole("button", { name: "Шалгалт хадгалах" }),
+    ).toBeInTheDocument();
     expect(acceptDraft).not.toHaveBeenCalled();
     expect(setExamTitle).not.toHaveBeenCalled();
     expect(setQuestions).not.toHaveBeenCalled();
@@ -205,12 +215,29 @@ describe("CreateExamPage", () => {
     consumePendingCreateExamDraft.mockReturnValue({
       mode: "manual",
       examTitle: "Dialog exam title",
+      questions: [
+        {
+          text: "What is 2 + 2?",
+          type: "open",
+          correctAnswer: "4",
+          points: 1,
+        },
+      ],
     });
 
     render(<CreateExamPage />);
 
     await waitFor(() => {
       expect(setExamTitle).toHaveBeenCalledWith("Dialog exam title");
+      expect(setQuestions).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            text: "What is 2 + 2?",
+            correctAnswer: "4",
+            points: 1,
+          }),
+        ]),
+      );
     });
   });
 
@@ -247,6 +274,32 @@ describe("CreateExamPage", () => {
           expect.objectContaining({ id: "q1", text: "What is a cell?" }),
         ]),
       );
+    });
+  });
+
+  it("rehydrates a pending pdf file and passes it to the import flow", async () => {
+    const pendingFile = new File(["fake pdf content"], "chapter-1.pdf", {
+      type: "application/pdf",
+    });
+    consumePendingCreateExamFile.mockResolvedValue(pendingFile);
+    consumePendingCreateExamDraft.mockReturnValue({
+      mode: "pdf",
+      examTitle: "",
+      importMcqCount: 2,
+      importTextCount: 3,
+      importOpenCount: 1,
+      fileId: "pending-file-1",
+    });
+
+    render(<CreateExamPage />);
+
+    await waitFor(() => {
+      expect(consumePendingCreateExamFile).toHaveBeenCalledWith("pending-file-1");
+      expect(handlePdfUpload).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "chapter-1.pdf" }),
+        { preserveTitle: true },
+      );
+      expect(setImportTextCount).toHaveBeenCalledWith(3);
     });
   });
 });

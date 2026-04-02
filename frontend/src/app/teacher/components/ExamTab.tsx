@@ -76,6 +76,8 @@ type ExamTabProps = {
   setAnswerKeyPage: (value: number | "last") => void;
   importMcqCount: number;
   setImportMcqCount: (value: number) => void;
+  importTextCount: number;
+  setImportTextCount: (value: number) => void;
   importOpenCount: number;
   setImportOpenCount: (value: number) => void;
   shuffleImportedQuestions: boolean;
@@ -86,9 +88,9 @@ type ExamTabProps = {
   importError: string | null;
   importLoading: boolean;
   importLoadingLabel: string | null;
-  onPdfUpload: (file: File) => void;
-  onImageUpload: (file: File) => void;
-  onDocxUpload: (file: File) => void;
+  onPdfUpload: (file: File, options?: { preserveTitle?: boolean }) => void;
+  onImageUpload: (file: File, options?: { preserveTitle?: boolean }) => void;
+  onDocxUpload: (file: File, options?: { preserveTitle?: boolean }) => void;
   exams: Exam[];
   notifications: NotificationItem[];
   onMarkNotificationRead: (id: string) => void;
@@ -137,7 +139,9 @@ export default function ExamTab(props: ExamTabProps) {
           scheduleDescription={props.scheduleDescription}
           setScheduleDescription={props.setScheduleDescription}
           scheduleExpectedStudentsCount={props.scheduleExpectedStudentsCount}
-          setScheduleExpectedStudentsCount={props.setScheduleExpectedStudentsCount}
+          setScheduleExpectedStudentsCount={
+            props.setScheduleExpectedStudentsCount
+          }
           durationMinutes={props.durationMinutes}
           setDurationMinutes={props.setDurationMinutes}
           onSchedule={props.onSchedule}
@@ -175,6 +179,8 @@ export default function ExamTab(props: ExamTabProps) {
           setAnswerKeyPage={props.setAnswerKeyPage}
           importMcqCount={props.importMcqCount}
           setImportMcqCount={props.setImportMcqCount}
+          importTextCount={props.importTextCount}
+          setImportTextCount={props.setImportTextCount}
           importOpenCount={props.importOpenCount}
           setImportOpenCount={props.setImportOpenCount}
           shuffleImportedQuestions={props.shuffleImportedQuestions}
@@ -188,6 +194,8 @@ export default function ExamTab(props: ExamTabProps) {
           onPdfUpload={props.onPdfUpload}
           onImageUpload={props.onImageUpload}
           onDocxUpload={props.onDocxUpload}
+          aiFlowStatus={"loading"}
+          aiFlowTopic={""}
         />
       </section>
       <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
