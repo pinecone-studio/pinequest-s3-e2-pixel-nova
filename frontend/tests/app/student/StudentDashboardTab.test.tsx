@@ -105,8 +105,9 @@ describe("StudentDashboardTab", () => {
     });
     expect(screen.queryByText("Бат")).not.toBeInTheDocument();
     expect(screen.queryByText("Сараа")).not.toBeInTheDocument();
-    expect(screen.getByText("YOU")).toBeInTheDocument();
-    expect(screen.getByText("300xp")).toBeInTheDocument();
+    expect(screen.getByText("ТА")).toBeInTheDocument();
+    expect(screen.getByText("300 оноо")).toBeInTheDocument();
+    expect(screen.getByText("2.4 мян.")).toHaveClass("blur-none");
     expect(screen.queryByText("Топ")).not.toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
   });
@@ -182,7 +183,7 @@ describe("StudentDashboardTab", () => {
     render(<StudentDashboardTab {...defaultProps} currentRank={null} />);
 
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
-    expect(screen.getByText("300xp")).toBeInTheDocument();
+    expect(screen.getByText("300 оноо")).toBeInTheDocument();
   });
 
   it("orders leaderboard rows by XP even if incoming ranks are stale", () => {
@@ -203,7 +204,7 @@ describe("StudentDashboardTab", () => {
 
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("45")).toBeInTheDocument();
-    expect(screen.queryByText("25xp")).not.toBeInTheDocument();
+    expect(screen.queryByText("25 оноо")).not.toBeInTheDocument();
   });
 
   it("renders exam detail inline when a home exam is selected", () => {
@@ -214,8 +215,8 @@ describe("StudentDashboardTab", () => {
       />,
     );
 
-    expect(screen.getByText("Start Exam")).toBeInTheDocument();
-    expect(screen.getByText("English Mock Exam")).toBeInTheDocument();
+    expect(screen.getByText("Шалгалт эхлүүлэх")).toBeInTheDocument();
+    expect(screen.getByText("Англи хэл туршилтын шалгалт")).toBeInTheDocument();
     expect(screen.getByText("Англи хэл")).toBeInTheDocument();
     expect(screen.getByText("ROOM01")).toBeInTheDocument();
   });

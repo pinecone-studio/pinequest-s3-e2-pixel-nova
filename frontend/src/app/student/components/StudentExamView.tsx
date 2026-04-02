@@ -5,6 +5,8 @@ import MongolianText from "@/components/MongolianText";
 import { hasTraditionalMongolian } from "@/lib/mongolian-script";
 import { formatTimer } from "../utils";
 import type { Exam, Violations } from "../types";
+import { localizeExamTitle } from "./student-exams-helpers";
+import { localizeRiskLevel } from "./student-ui-text";
 
 type StudentExamViewProps = {
   activeExam: Exam | null;
@@ -211,7 +213,9 @@ export default function StudentExamView({
 
       <header className="flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
         <div className="font-semibold">
-          {activeExam ? activeExam.title : "Шалгалтын өрөө"}
+          {activeExam
+            ? localizeExamTitle(activeExam.title, activeExam.description)
+            : "Шалгалтын өрөө"}
         </div>
         <div className="text-lg font-semibold">{formatTimer(timeLeft)}</div>
         <div className="text-sm text-muted-foreground">
@@ -220,7 +224,7 @@ export default function StudentExamView({
         </div>
         <div className="flex gap-2 text-xs">
           <span className="rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
-            Эрсдэл: {violations.riskLevel ?? "low"}
+            Эрсдэл: {localizeRiskLevel(violations.riskLevel)}
           </span>
           <span className="rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
             Таб: {violations.tabSwitch}
@@ -321,7 +325,7 @@ export default function StudentExamView({
         </button>
         {submitting && (
           <div className="w-full text-right text-xs font-medium text-slate-500 sm:w-auto sm:self-center">
-            Submitting exam...
+            Шалгалтыг илгээж байна...
           </div>
         )}
       </div>

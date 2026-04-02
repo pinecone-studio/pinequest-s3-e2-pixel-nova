@@ -139,7 +139,7 @@ const requestDesktopCameraPermission = async () => {
     !navigator.mediaDevices?.getUserMedia
   ) {
     throw new Error(
-      "Desktop web camera ашиглахын тулд secure browser environment шаардлагатай.",
+      "Ширээний төхөөрөмжөөс камер ашиглахын тулд аюулгүй хөтчийн орчин шаардлагатай.",
     );
   }
 
@@ -162,7 +162,7 @@ const requestDesktopMicrophonePermission = async () => {
     !navigator.mediaDevices?.getUserMedia
   ) {
     throw new Error(
-      "Desktop microphone recording requires a secure browser environment.",
+      "Ширээний төхөөрөмжөөс микрофоны бичлэг ашиглахын тулд аюулгүй хөтчийн орчин шаардлагатай.",
     );
   }
 

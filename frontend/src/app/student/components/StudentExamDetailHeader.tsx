@@ -60,7 +60,7 @@ export default function StudentExamDetailHeader({
   return (
     <div className="relative">
       <button
-        aria-label="Go back to exam list"
+        aria-label="Шалгалтын жагсаалт руу буцах"
         className="mb-4 grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#eef1f7] bg-white text-slate-500 shadow-sm transition hover:border-[#d8dff0] hover:text-slate-700 sm:absolute sm:left-[-56px] sm:top-1 sm:mb-0"
         onClick={onBack}
       >

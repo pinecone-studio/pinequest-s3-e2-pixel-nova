@@ -7,6 +7,10 @@ import {
 import Image from "next/image";
 import { useState, type FocusEvent, type ReactNode } from "react";
 import type { NotificationItem, StudentTab } from "../types";
+import {
+  formatCompactStudentPoints,
+  localizeStudentText,
+} from "./student-ui-text";
 
 const primaryTabs = ["Home", "Exams", "Progress"] as const;
 const tabLabels: Record<(typeof primaryTabs)[number], string> = {
@@ -44,16 +48,6 @@ const closeOnBlur =
     setter(false);
   };
 
-const formatCompactXp = (value: number) => {
-  if (value >= 1000) {
-    const compact =
-      value >= 10000 ? Math.round(value / 1000) : Math.round(value / 100) / 10;
-    return `${compact.toString().replace(/\.0$/, "")}k XP`;
-  }
-
-  return `${value.toLocaleString()} XP`;
-};
-
 export default function StudentHeader({
   activeTab,
   currentUserName,
@@ -72,33 +66,38 @@ export default function StudentHeader({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="rounded-[32px] border border-[#e5e9fb]  bg-white px-4 py-4 shadow-[0_18px_44px_rgba(77,93,138,0.08)] sm:px-6">
-      <div className="flex flex-wrap items-center gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center xl:gap-6">
-        <div className="flex min-w-[220px] items-center gap-3 py-2 xl:justify-self-start">
-          <div className="overflow-hidden rounded-xl">
+    <header className="w-full rounded-[36px] border border-[#e7ebfb] bg-white px-6 shadow-[0_20px_48px_rgba(77,93,138,0.07)] lg:h-[80px] lg:px-8">
+      <div className="flex h-full flex-wrap items-center gap-4 lg:grid lg:grid-cols-[minmax(200px,1fr)_auto_minmax(200px,1fr)] lg:items-center lg:gap-6">
+
+        {/* ── Logo ── */}
+        <div className="flex min-w-[180px] shrink-0 items-center gap-3 lg:justify-self-start">
+          <div className="overflow-hidden rounded-[14px]">
             <Image
               src="/group-web.svg"
-              alt="Pinecone"
-              width={32}
-              height={32}
-              className="h-8 w-8"
+              alt="Educore"
+              width={40}
+              height={40}
+              className="h-10 w-10"
               priority
             />
           </div>
-          <span className="text-[15px] font-bold text-slate-900">Educore</span>
+          <span className="text-[1rem] font-semibold tracking-[-0.03em] text-slate-900">
+            Educore
+          </span>
         </div>
 
-        <nav className="order-3 mx-auto grid h-[54px] w-full max-w-[276px] grid-cols-3 items-center gap-1 rounded-[28px] border border-[#e7edf5] bg-[#fbfcff] p-1 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)] xl:order-none xl:justify-self-center">
+        {/* ── Navigation pill ── */}
+        <nav className="order-3 mx-auto grid h-[50px] w-full max-w-[380px] shrink-0 grid-cols-3 items-center gap-[3px] rounded-[25px] border border-[#e2e8fb] bg-[#f5f7ff] p-[3px] lg:order-none lg:justify-self-center">
           {primaryTabs.map((tab) => {
             const selected = activeTab === tab;
             return (
               <button
                 key={tab}
                 type="button"
-                className={`relative flex h-full min-w-0 items-center justify-center whitespace-nowrap rounded-[24px] px-2 text-[15px] font-medium tracking-[-0.02em] transition ${
+                className={`relative flex h-full min-w-0 items-center justify-center whitespace-nowrap rounded-[22px] px-3 text-[14px] font-medium tracking-[-0.015em] transition-all duration-150 ${
                   selected
-                    ? "bg-white text-slate-900 shadow-[inset_0_-3px_0_0_#5c6cff,0_14px_24px_-18px_rgba(92,108,255,0.65)]"
-                    : "text-[#8fa0c2] hover:bg-slate-50 hover:text-slate-700"
+                    ? "bg-white text-slate-900 shadow-[inset_0_-2.5px_0_0_#5c6cff,0_10px_20px_-16px_rgba(92,108,255,0.55)]"
+                    : "text-[#94a3b8] hover:bg-white/60 hover:text-slate-600"
                 }`}
                 onClick={() => onTabChange(tab)}
               >
@@ -108,10 +107,13 @@ export default function StudentHeader({
           })}
         </nav>
 
-        <div className="order-2 ml-auto flex items-center gap-2 xl:order-none xl:ml-0 xl:justify-self-end">
-          <div className="hidden items-center gap-2 rounded-full border border-[#ffe6d4] bg-[#fff5ec] px-4 py-2 text-[13px] font-semibold text-[#ef8c46] sm:flex">
+        {/* ── Right actions ── */}
+        <div className="order-2 ml-auto flex shrink-0 items-center gap-2.5 lg:order-none lg:ml-0 lg:justify-self-end">
+
+          {/* XP badge */}
+          <div className="hidden h-[38px] items-center gap-1.5 rounded-full border border-[#fddcbb] bg-[#fff7ef] px-4 text-[13px] font-semibold text-[#f39a4a] sm:flex">
             <svg
-              className="h-4 w-4"
+              className="h-[15px] w-[15px]"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -121,9 +123,10 @@ export default function StudentHeader({
             >
               <path d="m13 2-7 12h5l-1 8 8-13h-5l0-7Z" />
             </svg>
-            {formatCompactXp(xp)}
+            {formatCompactStudentPoints(xp)}
           </div>
 
+          {/* Notification bell */}
           <div
             className="relative"
             tabIndex={0}
@@ -131,19 +134,20 @@ export default function StudentHeader({
           >
             <button
               aria-label="Мэдэгдэл нээх"
-              className="relative grid h-11 w-11 place-items-center rounded-full border border-[#e4e8fb] bg-white text-slate-500 transition hover:border-[#cfd8ff] hover:text-slate-700"
+              className="relative grid h-[44px] w-[44px] place-items-center rounded-full border border-[#e4e8fb] bg-white text-slate-400 transition hover:border-[#cfd8ff] hover:text-slate-600"
               onClick={() => setNotificationsOpen((prev) => !prev)}
             >
-              <Bell className="h-4 w-4" />
+              <Bell className="h-[17px] w-[17px]" />
               {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#ff8a3d] px-1 text-[10px] font-semibold text-white">
+                <span className="absolute -right-0.5 -top-0.5 grid h-[22px] min-w-[22px] place-items-center rounded-full bg-[#f39a4a] px-1 text-[10px] font-bold text-white">
                   {unreadCount}
                 </span>
               )}
             </button>
 
+            {/* Notifications dropdown */}
             <div
-              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-80 rounded-[28px] border border-[#eceefb] bg-white/98 p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] backdrop-blur transition ${
+              className={`absolute right-0 top-[calc(100%+0.6rem)] z-30 w-80 rounded-[24px] border border-[#eceefb] bg-white/98 p-4 shadow-[0_24px_60px_rgba(41,54,88,0.16)] backdrop-blur transition-all duration-200 ${
                 notificationsOpen
                   ? "translate-y-0 opacity-100"
                   : "pointer-events-none translate-y-2 opacity-0"
@@ -166,16 +170,16 @@ export default function StudentHeader({
               {notifications.length > 0 && unreadCount > 0 && (
                 <button
                   type="button"
-                  className="mt-3 rounded-2xl border border-[#eceefb] bg-[#fafbff] px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
+                  className="mt-3 rounded-xl border border-[#eceefb] bg-[#fafbff] px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white"
                   onClick={onMarkAllNotificationsRead}
                 >
                   Бүгдийг уншсан болгох
                 </button>
               )}
 
-              <div className="mt-4 space-y-2">
+              <div className="mt-3 space-y-2">
                 {notifications.length === 0 && (
-                  <div className="rounded-[22px] border border-dashed border-[#e5e7f4] bg-[#fafbff] px-4 py-5 text-sm text-slate-400">
+                  <div className="rounded-[18px] border border-dashed border-[#e5e7f4] bg-[#fafbff] px-4 py-5 text-sm text-slate-400">
                     Шинэ мэдэгдэл алга.
                   </div>
                 )}
@@ -185,7 +189,7 @@ export default function StudentHeader({
                     key={item.id}
                     type="button"
                     onClick={() => onMarkNotificationRead(item.id)}
-                    className={`w-full rounded-[22px] border px-4 py-3 text-left ${
+                    className={`w-full rounded-[18px] border px-4 py-3 text-left transition ${
                       item.status === "read"
                         ? "border-[#efeef8] bg-[#fafbff]"
                         : "border-[#d7d2ff] bg-white"
@@ -193,7 +197,7 @@ export default function StudentHeader({
                   >
                     <div className="flex items-start gap-3">
                       <span
-                        className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                        className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
                           item.severity === "critical"
                             ? "bg-red-500"
                             : item.severity === "warning"
@@ -205,10 +209,10 @@ export default function StudentHeader({
                       />
                       <div>
                         <div className="text-sm font-semibold text-slate-800">
-                          {item.title}
+                          {localizeStudentText(item.title)}
                         </div>
-                        <div className="mt-1 text-sm font-medium text-slate-700">
-                          {item.message}
+                        <div className="mt-0.5 text-sm text-slate-600">
+                          {localizeStudentText(item.message)}
                         </div>
                         <div className="mt-1 text-xs text-slate-400">
                           {new Date(item.createdAt).toLocaleString("mn-MN", {
@@ -226,6 +230,7 @@ export default function StudentHeader({
             </div>
           </div>
 
+          {/* User menu */}
           <div
             className="relative"
             tabIndex={0}
@@ -233,38 +238,37 @@ export default function StudentHeader({
           >
             <button
               aria-label="Дансны цэс нээх"
-              className="flex items-center gap-2 rounded-full border border-[#e4e8fb] bg-white px-2 py-1.5 shadow-[0_10px_24px_rgba(77,93,138,0.08)] transition hover:border-[#cfd8ff]"
+              className="flex h-[44px] items-center gap-2 rounded-full border border-[#e4e8fb] bg-white pl-1.5 pr-3 shadow-[0_8px_20px_rgba(77,93,138,0.08)] transition hover:border-[#cfd8ff]"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#7b67ff] to-[#9a7dff] text-sm font-semibold text-white">
+              <span className="grid h-[34px] w-[34px] place-items-center rounded-full bg-gradient-to-br from-[#7b67ff] to-[#9a7dff] text-[13px] font-semibold text-white">
                 {currentUserInitials}
               </span>
               <ChevronDown
-                className={`hidden h-4 w-4 text-slate-400 transition sm:block ${
+                className={`hidden h-[15px] w-[15px] text-slate-400 transition-transform duration-200 sm:block ${
                   menuOpen ? "rotate-180" : ""
                 }`}
               />
             </button>
 
+            {/* User dropdown */}
             <div
-              className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 w-[min(26rem,calc(100vw-2rem))] rounded-[28px] border border-[#eceefb] bg-white/98 p-4 shadow-[0_30px_70px_rgba(41,54,88,0.18)] backdrop-blur transition ${
+              className={`absolute right-0 top-[calc(100%+0.6rem)] z-30 w-[min(24rem,calc(100vw-2rem))] rounded-[24px] border border-[#eceefb] bg-white/98 p-4 shadow-[0_24px_60px_rgba(41,54,88,0.16)] backdrop-blur transition-all duration-200 ${
                 menuOpen
                   ? "translate-y-0 opacity-100"
                   : "pointer-events-none translate-y-2 opacity-0"
               }`}
             >
-              <div className="rounded-[22px] bg-gradient-to-r from-[#f4f6ff] via-[#faf5ff] to-[#fff6f0] p-4">
-                <div className="text-sm text-slate-400">
-                  Нэвтэрсэн хэрэглэгч
-                </div>
-                <div className="mt-1 text-base font-semibold text-slate-900">
+              <div className="rounded-[18px] bg-gradient-to-r from-[#f4f6ff] via-[#faf5ff] to-[#fff6f0] p-4">
+                <div className="text-xs text-slate-400">Нэвтэрсэн хэрэглэгч</div>
+                <div className="mt-0.5 text-sm font-semibold text-slate-900">
                   {currentUserName}
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <button
-                  className="flex items-center gap-2 rounded-[20px] border border-[#eceefb] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
+                  className="flex items-center gap-2 rounded-[16px] border border-[#eceefb] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
                   onClick={() => {
                     onOpenProfile();
                     setMenuOpen(false);
@@ -274,7 +278,7 @@ export default function StudentHeader({
                   Профайл
                 </button>
                 <button
-                  className="flex items-center gap-2 rounded-[20px] border border-[#eceefb] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
+                  className="flex items-center gap-2 rounded-[16px] border border-[#eceefb] bg-[#fafbff] px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-[#d7d2ff] hover:bg-white"
                   onClick={() => {
                     onOpenHelp();
                     setMenuOpen(false);
@@ -286,7 +290,7 @@ export default function StudentHeader({
               </div>
 
               {roleControl && (
-                <div className="mt-4 rounded-[22px] border border-[#eceefb] bg-[#fafbff] p-3">
+                <div className="mt-3 rounded-[18px] border border-[#eceefb] bg-[#fafbff] p-3">
                   {roleControl}
                 </div>
               )}

@@ -21,6 +21,7 @@ import {
   type SubjectInsightDetail,
   toSubjectLabel,
 } from "./student-progress-insights";
+import { formatCompactStudentPoints } from "./student-ui-text";
 
 type StudentProgressTabProps = {
   loading?: boolean;
@@ -53,16 +54,6 @@ const scoreColors = [
 ] as const;
 
 const progressTrackClass = "bg-[#edf2ff]";
-
-const formatCompactXp = (value: number) => {
-  if (value >= 1000) {
-    const compact =
-      value >= 10000 ? Math.round(value / 1000) : Math.round(value / 100) / 10;
-    return `${compact.toString().replace(/\.0$/, "")}k`;
-  }
-
-  return value.toLocaleString();
-};
 
 const getDisplayName = (value: string) => value.trim().split(/\s+/)[0] || value;
 
@@ -112,7 +103,7 @@ export default function StudentProgressTab({
 
   const averageScore = average(studentHistory.map((item) => item.percentage));
   const xpToNext = Math.max(nextLevel.minXP - studentProgress.xp, 0);
-  const aiSummaryLabel = `AI-ийн ерөнхий дүгнэлт. Дараагийн түвшин хүртэл ${xpToNext} XP үлдсэн.`;
+  const aiSummaryLabel = `Хиймэл оюуны ерөнхий дүгнэлт. Дараагийн түвшин хүртэл ${xpToNext} оноо үлдсэн.`;
 
   const subjectSummaries = Array.from(
     orderedHistory.reduce(
@@ -317,11 +308,11 @@ export default function StudentProgressTab({
                     {getDisplayName(currentUserName)}
                   </div>
                   <span className="rounded-full bg-[#5f70ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
-                    YOU
+                    ТА
                   </span>
                 </div>
                 <div className="mt-1 text-[11px] text-slate-400">
-                  Lvl {currentLevel || levelInfo.level}
+                  Түвшин {currentLevel || levelInfo.level}
                 </div>
               </div>
               <div className="flex items-center gap-1 text-[14px] font-semibold text-[#4a66ef]">
@@ -336,7 +327,7 @@ export default function StudentProgressTab({
                 >
                   <path d="m13 2-7 12h5l-1 8 8-13h-5l0-7Z" />
                 </svg>
-                {formatCompactXp(currentXp)}
+                {formatCompactStudentPoints(currentXp)}
               </div>
             </div>
           </div>
@@ -425,7 +416,7 @@ export default function StudentProgressTab({
             <div className="flex items-center gap-3 text-[#3e6ef5]">
               <Sparkles className="h-5 w-5 shrink-0" strokeWidth={2} />
               <span className="text-[1rem] font-medium leading-6 tracking-[-0.02em]">
-                AI-ийн ерөнхий дүгнэлт
+                Хиймэл оюуны ерөнхий дүгнэлт
               </span>
             </div>
             <ChevronRight className="h-5 w-5 shrink-0 text-[#3e6ef5]" strokeWidth={2.4} />
@@ -564,13 +555,13 @@ export default function StudentProgressTab({
                       id="student-ai-summary-title"
                       className="text-[1.1rem] font-semibold tracking-[-0.04em]"
                     >
-                      AI-ийн ерөнхий дүгнэлт
+                      Хиймэл оюуны ерөнхий дүгнэлт
                     </h3>
                   </div>
 
                   <button
                     type="button"
-                    aria-label="AI-ийн ерөнхий дүгнэлт popup хаах"
+                    aria-label="Хиймэл оюуны ерөнхий дүгнэлт popup хаах"
                     onClick={closeAiSummary}
                     className="grid h-11 w-11 place-items-center rounded-full text-slate-700 transition hover:bg-slate-50"
                   >

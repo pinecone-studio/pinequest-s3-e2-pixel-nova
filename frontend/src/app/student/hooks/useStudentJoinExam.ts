@@ -103,7 +103,7 @@ export const useStudentJoinExam = () => {
         messageText.toLowerCase().includes("failed to fetch")
       ) {
         setJoinError(
-          "Сервертэй холбогдож чадсангүй. Backend ажиллаж байгаа эсэхийг шалгана уу.",
+          "Сервертэй холбогдож чадсангүй. Сервер ажиллаж байгаа эсэхийг шалгана уу.",
         );
       } else if (
         messageText.includes("LOCATION_REQUIRED") ||

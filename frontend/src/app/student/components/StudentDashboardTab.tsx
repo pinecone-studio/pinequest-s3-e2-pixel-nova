@@ -4,6 +4,7 @@ import type { XpLeaderboardEntry } from "@/api/xp";
 import type { Exam } from "../types";
 import StudentExamDetailSection from "./StudentExamDetailSection";
 import { formatClock, subjectFromExam } from "./student-exams-helpers";
+import { formatCompactStudentPoints } from "./student-ui-text";
 
 type StudentDashboardTabProps = {
   loading: boolean;
@@ -70,16 +71,6 @@ const isUpcomingExam = (exam: Exam, now = Date.now()) => {
 
 const formatSlashDate = (value: Date) =>
   value.toLocaleDateString("en-CA").replace(/-/g, "/");
-
-const formatCompactXp = (value: number) => {
-  if (value >= 1000) {
-    const compact =
-      value >= 10000 ? Math.round(value / 1000) : Math.round(value / 100) / 10;
-    return `${compact.toString().replace(/\.0$/, "")}k`;
-  }
-
-  return value.toLocaleString();
-};
 
 const getDisplayName = (value: string) => value.trim().split(/\s+/)[0] || value;
 
@@ -374,7 +365,7 @@ export default function StudentDashboardTab({
         teacherName={teacherName}
         onBack={onCloseExamDetail}
         onPrimaryAction={onOpenExams}
-        primaryActionLabel="Start Exam"
+        primaryActionLabel="Шалгалт эхлүүлэх"
         maxWidthClassName="max-w-[720px]"
       />
     );
@@ -509,24 +500,26 @@ export default function StudentDashboardTab({
                         </div>
                         {isCurrentUser ? (
                           <span className="rounded-full bg-[#5f70ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
-                            YOU
+                            ТА
                           </span>
                         ) : null}
                       </div>
                       <div className="mt-0.5 text-[11px] text-slate-400">
-                        Lvl {entry.level}
+                        Түвшин {entry.level}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-0.5">
                       {isCurrentUser && xpGapToAbove !== null ? (
                         <div className="flex items-center gap-1 text-[11px] font-semibold text-[#62c980]">
                           <ArrowUp className="h-3.5 w-3.5" />
-                          {xpGapToAbove}xp
+                          {xpGapToAbove} оноо
                         </div>
                       ) : null}
                       <div
                         className={`flex items-center gap-1 text-[14px] font-semibold ${
-                          isCurrentUser ? "text-[#4a66ef]" : "text-slate-300"
+                          isCurrentUser
+                            ? "text-[#4a66ef]"
+                            : "text-slate-400 blur-none"
                         }`}
                       >
                         <svg
@@ -540,7 +533,7 @@ export default function StudentDashboardTab({
                         >
                           <path d="m13 2-7 12h5l-1 8 8-13h-5l0-7Z" />
                         </svg>
-                        {formatCompactXp(entry.xp)}
+                        {formatCompactStudentPoints(entry.xp)}
                       </div>
                     </div>
                   </RowTag>
@@ -548,7 +541,7 @@ export default function StudentDashboardTab({
               })
             ) : (
               <div className="rounded-[20px] border border-dashed border-[#dfe5fb] bg-[#fbfcff] px-4 py-5 text-sm text-slate-400">
-                XP жагсаалт удахгүй харагдана.
+                Онооны жагсаалт удахгүй харагдана.
               </div>
             )}
           </div>

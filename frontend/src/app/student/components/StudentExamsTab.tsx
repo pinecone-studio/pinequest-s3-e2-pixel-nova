@@ -61,7 +61,7 @@ export default function StudentExamsTab({
       teacherName={teacherName}
       onBack={onClearSelection}
       onPrimaryAction={onStartExam}
-      primaryActionLabel={startingExam ? "Starting exam..." : "Шалгалт эхлүүлэх"}
+      primaryActionLabel={startingExam ? "Шалгалт эхлүүлж байна..." : "Шалгалт эхлүүлэх"}
       primaryActionDisabled={startingExam}
       maxWidthClassName="max-w-[1088px]"
     />

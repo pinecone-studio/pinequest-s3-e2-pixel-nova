@@ -141,7 +141,7 @@ export default function StudentAiInsightsTab({
       <div className="rounded-[32px] border border-[#dfe4ff] bg-white px-5 py-5 shadow-[0_20px_56px_rgba(77,92,148,0.10)] sm:px-6">
         <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-[#3564ea]">
           <Sparkles className="h-5 w-5" />
-          AI-ийн ерөнхий дүгнэлт
+          Хиймэл оюуны ерөнхий дүгнэлт
         </div>
 
         <h2 className="mt-5 max-w-[860px] text-[2rem] font-semibold tracking-[-0.05em] leading-[1.35] text-slate-900">
@@ -177,7 +177,7 @@ export default function StudentAiInsightsTab({
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className={infoCardClass}>
-            <div className="text-sm text-slate-400">XP эрэмбэ</div>
+            <div className="text-sm text-slate-400">Онооны эрэмбэ</div>
             <div className="mt-3 text-[1.1rem] font-semibold text-slate-900">{rankLabel}</div>
             <div className="mt-2 text-sm text-slate-400">
               Одоогийн түвшин: {levelInfo.name}
