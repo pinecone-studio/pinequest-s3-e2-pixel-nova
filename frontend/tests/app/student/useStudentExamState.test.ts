@@ -194,7 +194,11 @@ describe("useStudentExamState", () => {
 
 		expect(result.current.warning).toBe("Test warning");
 
-		act(() => jest.advanceTimersByTime(3000));
+		act(() => jest.advanceTimersByTime(5000));
+
+		expect(result.current.warning).toBe("Test warning");
+
+		act(() => jest.advanceTimersByTime(1000));
 
 		expect(result.current.warning).toBeNull();
 	});
