@@ -35,7 +35,7 @@ import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { pageShellClass } from "./styles";
 import type { Exam } from "./types";
 
-const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
+const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Шалгалтын аналитик"] as const;
 const TAB_LOADING_MIN_MS = 4000;
 const TEACHER_ACTIVE_TAB_STORAGE_KEY = "teacher:active-tab";
 
@@ -119,7 +119,7 @@ export default function TeacherPage() {
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
-  const [activeTab, setActiveTab] = useState<TeacherTab>("Гүйцэтгэл");
+  const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын аналитик");
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showCheatDetectionDialog, setShowCheatDetectionDialog] =
     useState(false);
@@ -162,7 +162,7 @@ export default function TeacherPage() {
   });
   const attendance = useExamAttendanceStats(examStatsState.activeExamId);
   const isExamLibraryTab = activeTab === "Шалгалтын сан";
-  const isAnalyticsTab = activeTab === "Гүйцэтгэл";
+  const isAnalyticsTab = activeTab === "Шалгалтын аналитик";
   const mainClassName = isExamLibraryTab
     ? "w-full"
     : isAnalyticsTab

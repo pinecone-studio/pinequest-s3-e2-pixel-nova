@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ExamListCard from "./ExamListCard";
 import ExamPreviewDialog from "./ExamPreviewDialog";
-import TeacherAnalyticsDashboardTab from "./TeacherAnalyticsDashboardTab";
+import AnalyticsTab from "./AnalyticsTab";
 import TeacherStudentsTab from "./TeacherStudentsTab";
 import TeacherPageSkeleton from "./TeacherPageSkeleton";
 import type { useExamAttendanceStats } from "../hooks/useExamAttendanceStats";
@@ -12,7 +12,7 @@ import type { useTeacherData } from "../hooks/useTeacherData";
 import { Dialog } from "@/components/ui/dialog";
 import CreateExamDialogContent from "./CreateExamDialogContent";
 
-export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Гүйцэтгэл";
+export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Шалгалтын аналитик";
 
 const sanitizeFileName = (value: string) =>
   value
@@ -121,7 +121,7 @@ export default function TeacherPageContent({
   const skeletonVariant =
     activeTab === "Шалгалтын сан"
       ? "examLibrary"
-      : activeTab === "Гүйцэтгэл"
+      : activeTab === "Шалгалтын аналитик"
         ? "analytics"
         : "schedule";
 
@@ -172,11 +172,13 @@ export default function TeacherPageContent({
     );
   }
 
-  if (activeTab === "Гүйцэтгэл") {
+  if (activeTab === "Шалгалтын аналитик") {
     return (
-      <TeacherAnalyticsDashboardTab
-        loading={data.loading}
-        analytics={examStatsState.dashboardAnalytics}
+      <AnalyticsTab
+        teacherId={data.currentUser?.id ?? null}
+        exams={data.exams}
+        fallbackXpLeaderboard={examStatsState.xpLeaderboard}
+        fallbackExamStats={examStatsState.examStats}
       />
     );
   }
