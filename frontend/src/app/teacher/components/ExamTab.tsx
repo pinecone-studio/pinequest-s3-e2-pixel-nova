@@ -139,7 +139,9 @@ export default function ExamTab(props: ExamTabProps) {
           scheduleDescription={props.scheduleDescription}
           setScheduleDescription={props.setScheduleDescription}
           scheduleExpectedStudentsCount={props.scheduleExpectedStudentsCount}
-          setScheduleExpectedStudentsCount={props.setScheduleExpectedStudentsCount}
+          setScheduleExpectedStudentsCount={
+            props.setScheduleExpectedStudentsCount
+          }
           durationMinutes={props.durationMinutes}
           setDurationMinutes={props.setDurationMinutes}
           onSchedule={props.onSchedule}
@@ -192,6 +194,8 @@ export default function ExamTab(props: ExamTabProps) {
           onPdfUpload={props.onPdfUpload}
           onImageUpload={props.onImageUpload}
           onDocxUpload={props.onDocxUpload}
+          aiFlowStatus={"loading"}
+          aiFlowTopic={""}
         />
       </section>
       <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
