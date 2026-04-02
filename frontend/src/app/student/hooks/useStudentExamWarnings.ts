@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiRequest } from "@/api/client";
 import { isCheatDetectionEnabled } from "@/lib/exam-cheat-detections";
 import type { Violations } from "../types";
@@ -15,15 +15,30 @@ export function useStudentExamWarnings(
   sessionId: string | null,
   enabledCheatDetections?: string[] | null,
 ) {
+  const warningTimerRef = useRef<number | null>(null);
   const [violations, setViolations] = useState<Violations>({
     ...EMPTY_VIOLATIONS,
   });
   const [warning, setWarning] = useState<string | null>(null);
 
   const showWarning = (message: string) => {
+    if (warningTimerRef.current !== null) {
+      window.clearTimeout(warningTimerRef.current);
+    }
     setWarning(message);
-    setTimeout(() => setWarning(null), 3000);
+    warningTimerRef.current = window.setTimeout(() => {
+      setWarning(null);
+      warningTimerRef.current = null;
+    }, 6000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (warningTimerRef.current !== null) {
+        window.clearTimeout(warningTimerRef.current);
+      }
+    };
+  }, []);
 
   const logViolation = (input: string | ViolationInput) => {
     const { confidence, details, source = "browser", type } =

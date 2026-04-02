@@ -9,6 +9,7 @@ import type {
   AiGeneratedDraft,
   QuestionInsight,
   Submission,
+  TeacherDashboardAnalytics,
   XpLeaderboardEntry,
 } from "../types";
 
@@ -372,6 +373,15 @@ export const fetchXpLeaderboard = async (): Promise<XpLeaderboardEntry[]> => {
       nextLevelXp: 0,
       lastActivity: null,
     };
+  });
+};
+
+export const fetchTeacherDashboardAnalytics = async (
+  teacherId?: string,
+): Promise<TeacherDashboardAnalytics> => {
+  return apiRequest<TeacherDashboardAnalytics>("/api/analytics/dashboard", {
+    roleOverride: "teacher",
+    userIdOverride: teacherId,
   });
 };
 

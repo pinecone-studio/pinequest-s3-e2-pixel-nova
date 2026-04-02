@@ -184,24 +184,24 @@ export default function StudentExamView({
   return (
     <div className="min-h-screen bg-background px-6 py-8 text-foreground">
       {warning && (
-        <div className="fixed right-6 top-6 z-50 max-w-[360px]">
-          <div className="overflow-hidden rounded-[24px] border border-[#ffcfb8] bg-white shadow-[0_24px_48px_-28px_rgba(249,115,22,0.35)]">
-            <div className="flex items-start gap-3 px-4 py-4">
-              <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#fff4ed] text-[#f97316]">
-                <AlertTriangle className="size-5" />
+        <div className="fixed right-6 top-6 z-50 max-w-[420px]">
+          <div className="overflow-hidden rounded-[28px] border border-[#ffc9a8] bg-white shadow-[0_28px_64px_-28px_rgba(249,115,22,0.42)]">
+            <div className="flex items-start gap-4 px-5 py-5">
+              <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#fff1e8] text-[#f97316]">
+                <AlertTriangle className="size-6" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">
+                <p className="text-base font-semibold text-slate-900">
                   Анхааруулга илэрлээ
                 </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">{warning}</p>
-                <p className="mt-2 text-xs text-[#f97316]">
+                <p className="mt-2 text-[15px] leading-7 text-slate-600">{warning}</p>
+                <p className="mt-3 text-sm font-medium text-[#f97316]">
                   Дахин давтагдвал шалгалт автоматаар дуусна.
                 </p>
               </div>
             </div>
-            <div className="h-1 w-full bg-[#ffe4d4]">
-              <div className="h-full w-2/3 bg-[#f97316]" />
+            <div className="h-1.5 w-full bg-[#ffe4d4]">
+              <div className="h-full w-3/4 bg-[#f97316]" />
             </div>
           </div>
         </div>
@@ -244,7 +244,7 @@ export default function StudentExamView({
         </div>
       </div>
 
-      <div className="mt-6 grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+      <div className="mt-6 grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
           {(activeExam?.questions ?? []).map((question, index) => (
             <div

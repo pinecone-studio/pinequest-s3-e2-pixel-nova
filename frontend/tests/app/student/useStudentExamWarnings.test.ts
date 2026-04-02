@@ -65,4 +65,28 @@ describe("useStudentExamWarnings", () => {
 
     expect(result.current.violations.riskLevel).toBe("low");
   });
+
+  it("keeps warnings visible longer before clearing them", () => {
+    const { result } = renderHook(() =>
+      useStudentExamWarnings("session-1", ["copy_paste"]),
+    );
+
+    act(() => {
+      result.current.showWarning("Тест анхааруулга");
+    });
+
+    expect(result.current.warning).toBe("Тест анхааруулга");
+
+    act(() => {
+      jest.advanceTimersByTime(5000);
+    });
+
+    expect(result.current.warning).toBe("Тест анхааруулга");
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.warning).toBeNull();
+  });
 });

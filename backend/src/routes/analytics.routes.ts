@@ -7,9 +7,10 @@ import {
   questions,
   studentAnswers,
   options,
+  students,
 } from "../db";
 import type { AppEnv } from "../types";
-import { success, notFound, error } from "../utils/response";
+import { success, notFound } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 
@@ -17,6 +18,126 @@ const analyticsRoutes = new Hono<AppEnv>();
 
 // Apply auth + teacher role globally
 analyticsRoutes.use("*", authMiddleware, requireRole("teacher"));
+
+const buildFallbackInsight = (params: {
+  weakestQuestionText: string | null;
+  weakestCorrectRate: number | null;
+  weakestExamTitle: string | null;
+  highRiskCount: number;
+  totalStudents: number;
+}) => {
+  const {
+    weakestQuestionText,
+    weakestCorrectRate,
+    weakestExamTitle,
+    highRiskCount,
+    totalStudents,
+  } = params;
+
+  if (weakestQuestionText) {
+    const topicLabel = weakestQuestionText.length > 84
+      ? `${weakestQuestionText.slice(0, 84).trim()}...`
+      : weakestQuestionText;
+    return {
+      title: "Гол анхаарах зүйл",
+      summary: `${
+        weakestExamTitle ? `"${weakestExamTitle}" шалгалтад ` : ""
+      }"${topicLabel}" асуултын гүйцэтгэл хамгийн сул байна${
+        typeof weakestCorrectRate === "number"
+          ? ` (${weakestCorrectRate}% зөв)`
+          : ""
+      }. Энэ агуулгыг богино жишээ, давтлага даалгавраар бататгахыг зөвлөж байна.`,
+      source: "fallback",
+    };
+  }
+
+  if (highRiskCount > 0) {
+    return {
+      title: "Гол анхаарах зүйл",
+      summary: `${totalStudents} сурагчийн дундаас ${highRiskCount} нь өндөр эрсдэлийн дохио өгсөн байна. Дүрэм, шалгалтын орчны зааврыг дахин тодруулж өгөх нь зүйтэй.`,
+      source: "fallback",
+    };
+  }
+
+  return {
+    title: "Гол анхаарах зүйл",
+    summary: "Сүүлийн өгөгдлөөс томоохон эрсдэл илрээгүй байна. Дараагийн алхам болгож дундаж оноо сул байгаа сэдвүүд дээр богино давтлага төлөвлөөрэй.",
+    source: "fallback",
+  };
+};
+
+const generateDashboardInsight = async (
+  ai: Ai | undefined,
+  params: {
+    weakestQuestionText: string | null;
+    weakestCorrectRate: number | null;
+    weakestExamTitle: string | null;
+    highRiskCount: number;
+    totalStudents: number;
+  },
+) => {
+  const fallback = buildFallbackInsight(params);
+
+  if (!ai) {
+    return fallback;
+  }
+
+  try {
+    const response = await ai.run("@cf/meta/llama-3.1-8b-instruct" as any, {
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an educational analytics assistant. Return JSON only with keys title and summary. Write in Mongolian. Keep summary under 320 characters and practical for a teacher.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            weakestQuestionText: params.weakestQuestionText,
+            weakestCorrectRate: params.weakestCorrectRate,
+            weakestExamTitle: params.weakestExamTitle,
+            highRiskCount: params.highRiskCount,
+            totalStudents: params.totalStudents,
+          }),
+        },
+      ],
+      max_tokens: 220,
+      temperature: 0.2,
+    });
+
+    const text =
+      typeof response === "string"
+        ? response
+        : typeof response === "object" && response !== null && "response" in response
+          ? String((response as { response?: string }).response ?? "")
+          : "";
+    const normalized = text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    const start = normalized.indexOf("{");
+    const end = normalized.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) {
+      return fallback;
+    }
+    const parsed = JSON.parse(normalized.slice(start, end + 1)) as {
+      title?: string;
+      summary?: string;
+    };
+
+    if (!parsed.summary?.trim()) {
+      return fallback;
+    }
+
+    return {
+      title: parsed.title?.trim() || fallback.title,
+      summary: parsed.summary.trim(),
+      source: "ai",
+    };
+  } catch {
+    return fallback;
+  }
+};
 
 // GET /dashboard — Teacher dashboard overview
 analyticsRoutes.get("/dashboard", async (c) => {
@@ -38,6 +159,14 @@ analyticsRoutes.get("/dashboard", async (c) => {
     .where(eq(exams.teacherId, user.id));
   const totalStudents = uniqueStudentsResult?.count ?? 0;
 
+  const [classCountResult] = await db
+    .select({
+      count: sql<number>`count(distinct nullif(trim(${exams.className}), ''))`,
+    })
+    .from(exams)
+    .where(eq(exams.teacherId, user.id));
+  const totalClasses = classCountResult?.count ?? 0;
+
   // Count active exams
   const [activeExamsResult] = await db
     .select({ count: count() })
@@ -49,6 +178,26 @@ analyticsRoutes.get("/dashboard", async (c) => {
       )
     );
   const activeExams = activeExamsResult?.count ?? 0;
+
+  const [submissionCountResult] = await db
+    .select({ count: count() })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .where(eq(exams.teacherId, user.id));
+  const totalSubmissions = submissionCountResult?.count ?? 0;
+
+  const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const [lastSevenDaysResult] = await db
+    .select({ count: count() })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .where(
+      and(
+        eq(exams.teacherId, user.id),
+        sql`coalesce(${examSessions.submittedAt}, ${examSessions.createdAt}) >= ${sevenDaysAgoIso}`,
+      ),
+    );
+  const lastSevenDaysSubmissions = lastSevenDaysResult?.count ?? 0;
 
   // Get 5 most recent exams with student count and average score
   const recentExams = await db
@@ -76,11 +225,155 @@ analyticsRoutes.get("/dashboard", async (c) => {
     averageScore: exam.averageScore !== null ? Math.round(exam.averageScore * 100) / 100 : null,
   }));
 
+  const teacherStudents = await db
+    .select({
+      studentId: students.id,
+      fullName: students.fullName,
+      xp: students.xp,
+      level: students.level,
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .innerJoin(students, eq(examSessions.studentId, students.id))
+    .where(eq(exams.teacherId, user.id))
+    .groupBy(students.id)
+    .orderBy(desc(students.xp), students.fullName);
+
+  const anonymizedXpLeaderboard = teacherStudents.slice(0, 3).map((student, index) => ({
+    rank: index + 1,
+    studentId: student.studentId,
+    displayName: `Сурагч ${index + 1}`,
+    xp: Number(student.xp ?? 0),
+    level: Number(student.level ?? 1),
+  }));
+
+  const monthlyRows = await db
+    .select({
+      submittedAt: examSessions.submittedAt,
+      createdAt: examSessions.createdAt,
+      score: examSessions.score,
+      totalPoints: examSessions.totalPoints,
+      xp: students.xp,
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .innerJoin(students, eq(examSessions.studentId, students.id))
+    .where(eq(exams.teacherId, user.id));
+
+  const monthlyMap = new Map<
+    string,
+    {
+      label: string;
+      scoreTotal: number;
+      scoreCount: number;
+      xpTotal: number;
+      xpCount: number;
+    }
+  >();
+
+  for (const row of monthlyRows) {
+    const dateValue = row.submittedAt ?? row.createdAt;
+    if (!dateValue) continue;
+    const parsed = new Date(dateValue);
+    if (Number.isNaN(parsed.getTime())) continue;
+    const monthKey = `${parsed.getUTCFullYear()}-${String(parsed.getUTCMonth() + 1).padStart(2, "0")}`;
+    const label = new Intl.DateTimeFormat("mn-MN", {
+      month: "short",
+      timeZone: "UTC",
+    }).format(parsed);
+    const bucket = monthlyMap.get(monthKey) ?? {
+      label,
+      scoreTotal: 0,
+      scoreCount: 0,
+      xpTotal: 0,
+      xpCount: 0,
+    };
+
+    const rawScore = Number(row.score ?? 0);
+    const totalPoints = Number(row.totalPoints ?? 0);
+    const normalizedScore =
+      totalPoints > 0
+        ? Math.max(0, Math.min(100, Math.round((rawScore / totalPoints) * 100)))
+        : Math.max(0, Math.min(100, Math.round(rawScore)));
+
+    bucket.scoreTotal += normalizedScore;
+    bucket.scoreCount += 1;
+    bucket.xpTotal += Number(row.xp ?? 0);
+    bucket.xpCount += 1;
+    monthlyMap.set(monthKey, bucket);
+  }
+
+  const scoreTrend = [...monthlyMap.entries()]
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .slice(-6)
+    .map(([, bucket]) => ({
+      label: bucket.label,
+      averageScore:
+        bucket.scoreCount > 0 ? Math.round(bucket.scoreTotal / bucket.scoreCount) : 0,
+      averageXp: bucket.xpCount > 0 ? Math.round(bucket.xpTotal / bucket.xpCount) : 0,
+    }));
+
+  const weakestQuestionRows = await db
+    .select({
+      questionText: questions.questionText,
+      examTitle: exams.title,
+      correctCount: sql<number>`sum(case when ${studentAnswers.isCorrect} = 1 then 1 else 0 end)`,
+      totalAnswers: count(studentAnswers.id),
+    })
+    .from(questions)
+    .innerJoin(exams, eq(questions.examId, exams.id))
+    .leftJoin(studentAnswers, eq(studentAnswers.questionId, questions.id))
+    .leftJoin(examSessions, eq(studentAnswers.sessionId, examSessions.id))
+    .where(eq(exams.teacherId, user.id))
+    .groupBy(questions.id)
+    .orderBy(
+      sql`case when count(${studentAnswers.id}) > 0 then (cast(sum(case when ${studentAnswers.isCorrect} = 1 then 1 else 0 end) as real) / count(${studentAnswers.id})) else 1 end asc`,
+      desc(questions.orderIndex),
+    )
+    .limit(1);
+
+  const weakestQuestion = weakestQuestionRows[0];
+  const weakestCorrectRate =
+    weakestQuestion && Number(weakestQuestion.totalAnswers ?? 0) > 0
+      ? Math.round(
+          (Number(weakestQuestion.correctCount ?? 0) /
+            Number(weakestQuestion.totalAnswers ?? 0)) *
+            100,
+        )
+      : null;
+
+  const [highRiskResult] = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .where(
+      and(
+        eq(exams.teacherId, user.id),
+        sql`${examSessions.riskLevel} in ('high', 'critical')`,
+      ),
+    );
+
+  const aiInsight = await generateDashboardInsight(c.env.AI, {
+    weakestQuestionText: weakestQuestion?.questionText ?? null,
+    weakestCorrectRate,
+    weakestExamTitle: weakestQuestion?.examTitle ?? null,
+    highRiskCount: Number(highRiskResult?.count ?? 0),
+    totalStudents: Number(totalStudents ?? 0),
+  });
+
   return success(c, {
+    totalClasses,
     totalExams,
     totalStudents,
     activeExams,
+    totalSubmissions,
+    lastSevenDaysSubmissions,
     recentExams: formattedRecentExams,
+    xpLeaderboard: anonymizedXpLeaderboard,
+    scoreTrend,
+    aiInsight,
   });
 });
 

@@ -37,7 +37,7 @@ import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { pageShellClass } from "./styles";
 import type { Exam } from "./types";
 
-const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Шалгалтын аналитик"] as const;
+const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл"] as const;
 const TAB_LOADING_MIN_MS = 4000;
 const TEACHER_ACTIVE_TAB_STORAGE_KEY = "teacher:active-tab";
 
@@ -62,7 +62,7 @@ function TeacherScheduleModal({
       onClick={() => {
         if (!management.scheduling) onClose();
       }}>
-      <div className="mx-auto flex min-h-screen w-full max-w-184 items-center justify-center py-4 sm:py-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-[820px] items-center justify-center py-4 sm:py-8">
         <div
           className="flex w-full justify-center transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
           onClick={(event) => event.stopPropagation()}>
@@ -115,7 +115,7 @@ export default function TeacherPage() {
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
-  const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын аналитик");
+  const [activeTab, setActiveTab] = useState<TeacherTab>("Гүйцэтгэл");
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showCheatDetectionDialog, setShowCheatDetectionDialog] =
     useState(false);
@@ -158,7 +158,7 @@ export default function TeacherPage() {
   });
   const attendance = useExamAttendanceStats(examStatsState.activeExamId);
   const isExamLibraryTab = activeTab === "Шалгалтын сан";
-  const isAnalyticsTab = activeTab === "Шалгалтын аналитик";
+  const isAnalyticsTab = activeTab === "Гүйцэтгэл";
   const mainClassName = isExamLibraryTab
     ? "w-full"
     : isAnalyticsTab
@@ -414,7 +414,6 @@ export default function TeacherPage() {
           className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}>
           <TeacherPageContent
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
             loadingTab={pendingTabLoading}
             onOpenScheduleForm={() => setShowScheduleForm(true)}
             data={data}

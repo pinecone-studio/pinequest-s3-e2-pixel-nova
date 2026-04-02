@@ -16,7 +16,6 @@ type MonitorParams = {
 const IDLE_TIMEOUT_MS = 60_000;
 const CLIENT_THROTTLE_MS: Partial<Record<string, number>> = {
   COPY_ATTEMPT: 2_000,
-  FULLSCREEN_EXIT: 4_000,
   KEYBOARD_SHORTCUT: 4_000,
   PASTE_ATTEMPT: 2_000,
   RIGHT_CLICK: 2_000,
@@ -26,7 +25,6 @@ const CLIENT_THROTTLE_MS: Partial<Record<string, number>> = {
 
 const WARNING_LABELS: Partial<Record<string, string>> = {
   COPY_ATTEMPT: "Хуулах товчлол илэрлээ",
-  FULLSCREEN_EXIT: "Бүтэн дэлгэцийн горимоос гарлаа",
   KEYBOARD_SHORTCUT: "Сэжигтэй гарын товчлол илэрлээ",
   PASTE_ATTEMPT: "Буулгах оролдлого илэрлээ",
   RIGHT_CLICK: "Шалгалтын үеэр баруун товшилт идэвхгүй",
@@ -104,12 +102,6 @@ export const useExamIntegrityMonitor = ({
       trigger("RIGHT_CLICK");
     };
 
-    const onFullscreenChange = () => {
-      if (!document.fullscreenElement) {
-        trigger("FULLSCREEN_EXIT");
-      }
-    };
-
     const onResize = () => {
       trigger("SUSPICIOUS_RESIZE", {
         innerHeight: window.innerHeight,
@@ -151,7 +143,6 @@ export const useExamIntegrityMonitor = ({
     document.addEventListener("copy", onCopy);
     document.addEventListener("paste", onPaste);
     document.addEventListener("contextmenu", onContextMenu);
-    document.addEventListener("fullscreenchange", onFullscreenChange);
     window.addEventListener("resize", onResize);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("mousemove", markActivity);
@@ -168,7 +159,6 @@ export const useExamIntegrityMonitor = ({
       document.removeEventListener("copy", onCopy);
       document.removeEventListener("paste", onPaste);
       document.removeEventListener("contextmenu", onContextMenu);
-      document.removeEventListener("fullscreenchange", onFullscreenChange);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("mousemove", markActivity);

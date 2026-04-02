@@ -299,9 +299,6 @@ export const useStudentExamSession = ({
         pendingAnswersRef.current = {};
         writeDraftAnswers(sessionId, restoredAnswers);
         setViolations({ ...EMPTY_VIOLATIONS });
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen().catch(() => null);
-        }
         setJoinError?.(null);
         setView("exam");
       } catch (error) {

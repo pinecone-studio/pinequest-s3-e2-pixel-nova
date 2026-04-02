@@ -105,6 +105,34 @@ describe("StudentExamView", () => {
     expect(screen.getByText("desktop-camera-panel")).toBeInTheDocument();
   });
 
+  it("renders a larger warning card copy for violations", () => {
+    render(
+      <StudentExamView
+        activeExam={exam}
+        warning="Таб сольсон үйлдэл илэрлээ"
+        timeLeft={120}
+        currentQuestionIndex={0}
+        setCurrentQuestionIndex={jest.fn()}
+        violations={violations}
+        answers={{}}
+        onUpdateAnswer={jest.fn()}
+        onSelectMcq={jest.fn()}
+        onPrev={jest.fn()}
+        onNext={jest.fn()}
+        onSubmit={jest.fn()}
+        onExit={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Анхааруулга илэрлээ")).toBeInTheDocument();
+    expect(
+      screen.getByText("Таб сольсон үйлдэл илэрлээ"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Дахин давтагдвал шалгалт автоматаар дуусна."),
+    ).toBeInTheDocument();
+  });
+
   it("renders latex question and option content through MathText", () => {
     render(
       <StudentExamView
