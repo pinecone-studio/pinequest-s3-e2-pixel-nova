@@ -16,6 +16,7 @@ import StudentExamsTab from "./StudentExamsTab";
 import StudentHelpTab from "./StudentHelpTab";
 import StudentProgressTab from "./StudentProgressTab";
 import StudentSettingsTab from "./StudentSettingsTab";
+import type { SubjectInsightDetail } from "./student-progress-insights";
 import type { Exam, Grade, NotificationItem, StudentTab } from "../types";
 
 type StudentHistoryItem = {
@@ -64,6 +65,7 @@ type StudentProgressState = {
     level: number;
     history: StudentHistoryItem[];
   };
+  subjectInsights: Record<string, SubjectInsightDetail>;
   nextLevel: { level: number; name: string; minXP: number } | null;
   progressSegments: number;
   termLeaderboardEntries: XpLeaderboardEntry[];
@@ -266,7 +268,7 @@ export default function StudentDashboardView({
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}
             progressSegments={progress.progressSegments}
-            onOpenAiInsights={() => handleTabChange("AIInsights")}
+            subjectInsights={progress.subjectInsights}
             studentHistory={studentHistory}
           />
         )}

@@ -5,11 +5,20 @@ import {
   ChevronRight,
   CircleAlert,
   Lightbulb,
+  Medal,
   Sparkles,
+  Star,
+  Target,
   TrendingUp,
-  Trophy,
   X,
 } from "lucide-react";
+import { buildStudentAiInsight } from "./student-ai-insights";
+import {
+  average,
+  buildFallbackSubjectInsightDetail,
+  type SubjectInsightDetail,
+  toSubjectLabel,
+} from "./student-progress-insights";
 
 type StudentProgressTabProps = {
   loading?: boolean;
@@ -21,7 +30,7 @@ type StudentProgressTabProps = {
   studentProgress: { xp: number };
   nextLevel: { minXP: number };
   progressSegments: number;
-  onOpenAiInsights?: () => void;
+  subjectInsights?: Record<string, SubjectInsightDetail>;
   studentHistory: {
     examId: string;
     title: string;
@@ -33,14 +42,6 @@ type StudentProgressTabProps = {
   }[];
 };
 
-type SubjectInsightDetail = {
-  subject: string;
-  average: number;
-  concerns: { label: string; score: number }[];
-  strengths: { label: string; score: number }[];
-  recommendations: string[];
-};
-
 const scoreColors = [
   "bg-[#59c58d]",
   "bg-[#5a68ef]",
@@ -50,39 +51,6 @@ const scoreColors = [
 ] as const;
 
 const progressTrackClass = "bg-[#edf2ff]";
-
-const subjectTopicPresets: { match: RegExp; strengths: string[]; concerns: string[] }[] = [
-  {
-    match: /(math|мат|алгебр|геометр|тригонометр)/i,
-    strengths: ["Геометр", "Тригонометр", "Функц"],
-    concerns: ["Алгебр", "Матриц", "Тэгшитгэл"],
-  },
-  {
-    match: /(english|англи|vocabulary|reading|grammar|listening)/i,
-    strengths: ["Reading", "Listening", "Grammar"],
-    concerns: ["Vocabulary", "Spelling", "Sentence use"],
-  },
-  {
-    match: /(physics|физик|mechanics|optics)/i,
-    strengths: ["Механик", "Хөдөлгөөн", "Хэмжилт"],
-    concerns: ["Оптик", "Цахилгаан", "Томьёо"],
-  },
-  {
-    match: /(chem|хими|organic|atom|periodic)/i,
-    strengths: ["Атомын бүтэц", "Химийн холбоо", "Урвал"],
-    concerns: ["Тэнцвэржүүлэлт", "Органик", "Томьёо"],
-  },
-  {
-    match: /(history|түүх|нийгэм|social)/i,
-    strengths: ["Ойлголт", "Нэр томьёо", "Он цаг"],
-    concerns: ["Харьцуулалт", "Шалтгаан үр дагавар", "Дэс дараалал"],
-  },
-];
-
-const average = (values: number[]) =>
-  values.length
-    ? Math.round(values.reduce((sum, item) => sum + item, 0) / values.length)
-    : 0;
 
 const formatCompactXp = (value: number) => {
   if (value >= 1000) {
@@ -96,75 +64,28 @@ const formatCompactXp = (value: number) => {
 
 const getDisplayName = (value: string) => value.trim().split(/\s+/)[0] || value;
 
-const clampScore = (value: number) => Math.max(20, Math.min(98, Math.round(value)));
-
-const getSubjectPreset = (subject: string) =>
-  subjectTopicPresets.find((preset) => preset.match.test(subject)) ?? {
-    strengths: ["Ойлголт", "Жишээ бодлого", "Сэдэв холболт"],
-    concerns: ["Суурь ойлголт", "Алдаа засвар", "Нэмэлт давтлага"],
-  };
-
-const buildSubjectInsightDetail = (
-  subject: string,
-  averagePercentage: number,
-): SubjectInsightDetail => {
-  const preset = getSubjectPreset(subject);
-  const strengthBase = Math.max(averagePercentage + 10, 72);
-  const concernBase = Math.min(averagePercentage - 18, 58);
-
-  const strengths = preset.strengths.slice(0, 2).map((label, index) => ({
-    label,
-    score: clampScore(strengthBase - index * 4),
-  }));
-
-  const concerns = preset.concerns.slice(0, 2).map((label, index) => ({
-    label,
-    score: clampScore(concernBase + index * 7),
-  }));
-
-  return {
-    subject,
-    average: averagePercentage,
-    concerns,
-    strengths,
-    recommendations: [
-      `${concerns[0]?.label ?? "Сул сэдэв"}-ийн дасгалуудыг өдөр бүр бага багаар давтаарай.`,
-      `${concerns[1]?.label ?? "Энэ хэсэг"} дээр 5 нэмэлт бодлого ажиллаад баталгаажуулаарай.`,
-      `${strengths[0]?.label ?? "Сайн байгаа сэдэв"} дээрх арга барилаа бусад сэдэв дээр туршаад үзээрэй.`,
-    ],
-  };
-};
-
-const toSubjectLabel = (value: string) => {
-  const cleaned = value
-    .replace(/[_-]+/g, " ")
-    .replace(/\bхэлний\b/gi, "хэл")
-    .replace(/\bявцын\b/gi, "")
-    .replace(/\bавцын\b/gi, "")
-    .replace(/\bшалгалт\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  const englishStopWords = new Set([
-    "exam",
-    "final",
-    "midterm",
-    "quiz",
-    "reading",
-    "mock",
-    "practice",
-    "test",
-  ]);
-
-  const filteredWords = cleaned
-    .split(/\s+/)
-    .filter((word) => !englishStopWords.has(word.toLowerCase()));
-
-  if (filteredWords.length === 0) {
-    return cleaned || "Хичээл";
+const getStrengthRemark = (score: number) => {
+  if (score >= 90) {
+    return "Маш сайн гүйцэтгэл үзүүлж байна. Ойлголт баттай байна.";
   }
 
-  return filteredWords.slice(0, 2).join(" ");
+  if (score >= 80) {
+    return "Тогтвортой өндөр оноо авч байгаа нь сайн суурьтайг харуулж байна.";
+  }
+
+  return "Дундажаас дээш гүйцэтгэлтэй, бага зэрэг сайжруулбал илүү ахиц гарна.";
+};
+
+const getFocusRemark = (score: number) => {
+  if (score < 70) {
+    return "Хамгийн сул үзүүлэлттэй байна, илүү анхаарч ажиллах шаардлагатай.";
+  }
+
+  if (score < 80) {
+    return "Зарим ойлголт дээр алдаа гарч байгаа тул давтлага хэрэгтэй.";
+  }
+
+  return "Бусад сэдвээс арай доогуур тул тогтвортой давтлага нэмээрэй.";
 };
 
 export default function StudentProgressTab({
@@ -177,10 +98,11 @@ export default function StudentProgressTab({
   studentProgress,
   nextLevel,
   progressSegments,
-  onOpenAiInsights,
+  subjectInsights = {},
   studentHistory,
 }: StudentProgressTabProps) {
   const [selectedSubject, setSelectedSubject] = useState<SubjectInsightDetail | null>(null);
+  const [aiSummaryOpen, setAiSummaryOpen] = useState(false);
   const orderedHistory = [...studentHistory].sort(
     (left, right) =>
       new Date(right.date).getTime() - new Date(left.date).getTime(),
@@ -220,9 +142,27 @@ export default function StudentProgressTab({
   const trendDelta =
     orderedHistory.length >= 4 ? recentAverage - previousAverage : 0;
   const stableAverage = averageScore || recentAverage || previousAverage;
-  const focusGap = weakestSubject
-    ? Math.max(stableAverage - weakestSubject.percentage, 0)
-    : 0;
+  const aiSnapshot = buildStudentAiInsight({
+    currentUserName,
+    levelInfo: {
+      level: currentLevel || levelInfo.level,
+      name: `Level ${currentLevel || levelInfo.level}`,
+      minXP: levelInfo.minXP,
+    },
+    currentXp,
+    currentRank,
+    totalStudents: 0,
+    studentHistory: orderedHistory.map((item) => ({
+      examId: item.examId,
+      title: item.title,
+      percentage: item.percentage,
+      date: item.date,
+    })),
+  });
+  const strongSubjects = subjectSummaries.slice(0, 3);
+  const focusSubjects = [...subjectSummaries]
+    .sort((left, right) => left.percentage - right.percentage)
+    .slice(0, Math.min(2, subjectSummaries.length));
 
   const insightCards = [
     {
@@ -233,40 +173,41 @@ export default function StudentProgressTab({
           : trendDelta < 0
             ? `Таны дундаж дүн өмнөх шалгалтуудаас ${Math.abs(trendDelta)}% буурсан байна.`
             : `Таны дундаж дүн тогтвортой ${stableAverage}% байна.`,
-      className:
-        "border-[#dff3e7] bg-[#ecfbf2] text-[#64c47f]",
+      accent: "#57c773",
+      borderColor: "#d7f0de",
+      iconStrokeWidth: 2.1,
     },
     {
-      icon: Sparkles,
-      message: weakestSubject
-        ? `Энэ улиралд та ${weakestSubject.subject}-ийн хичээл дээр дунджаасаа ${focusGap}% доор байна.`
-        : "Сул байгаа хичээлийн зөвлөмж энд харагдана.",
-      className:
-        "border-[#e6dcff] bg-[#f2ecff] text-[#7f56eb]",
+      icon: Medal,
+      message: bestSubject
+        ? `Энэ улиралд та ${bestSubject.subject}-ийн хичээл дээр шилдэг үзүүлэлттэй байна.`
+        : "Таны онцгой сайн ахиц энд харагдана.",
+      accent: "#8a63ff",
+      borderColor: "#eadcff",
+      iconStrokeWidth: 1.9,
     },
     {
-      icon: Trophy,
+      icon: Star,
       message: bestSubject
         ? `Таны хамгийн сайн хичээл ${bestSubject.subject} байна.`
         : "Хамгийн сайн үзүүлэлттэй хичээл энд гарна.",
-      className:
-        "border-[#d9e6ff] bg-[#eaf1ff] text-[#4d7aef]",
+      accent: "#4d79ff",
+      borderColor: "#d9e4ff",
+      iconStrokeWidth: 2,
     },
     {
-      icon: Lightbulb,
+      icon: Target,
       message: weakestSubject
         ? `${weakestSubject.subject} хичээлд илүү анхаарал тавиарай.`
         : "Дараагийн анхаарах хичээлийн зөвлөмж энд гарна.",
-      className:
-        "border-[#f6e5aa] bg-[#fff5d8] text-[#eea53d]",
+      accent: "#f1a12d",
+      borderColor: "#f7e1bd",
+      iconStrokeWidth: 2,
     },
   ] as const;
 
-  const handleOpenAiInsights = () => {
-    onOpenAiInsights?.();
-  };
-
   const closeSubjectDetail = () => setSelectedSubject(null);
+  const closeAiSummary = () => setAiSummaryOpen(false);
 
   if (loading) {
     return (
@@ -407,7 +348,11 @@ export default function StudentProgressTab({
                 type="button"
                 onClick={() =>
                   setSelectedSubject(
-                    buildSubjectInsightDetail(item.subject, item.percentage),
+                    subjectInsights[item.subject] ??
+                      buildFallbackSubjectInsightDetail(
+                        item.subject,
+                        item.percentage,
+                      ),
                   )
                 }
                 className="w-full rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-3.5 text-left shadow-[0_10px_24px_-24px_rgba(79,93,132,0.2)] transition hover:border-[#c7d7ff] hover:shadow-[0_16px_32px_-28px_rgba(79,93,132,0.28)]"
@@ -432,9 +377,9 @@ export default function StudentProgressTab({
           )}
         </div>
 
-        <div className="space-y-3.5">
-          <h3 className="flex items-center gap-2 text-[1.75rem] font-semibold tracking-[-0.045em] text-slate-900">
-            <Lightbulb className="h-5 w-5 text-[#f0a63c]" />
+        <div className="w-full max-w-[616px] space-y-5 lg:justify-self-end">
+          <h3 className="flex items-center gap-3 text-[1.88rem] font-semibold tracking-[-0.05em] text-slate-900">
+            <Lightbulb className="h-6 w-6 text-[#f0a63c]" strokeWidth={1.9} />
             Дүгнэлт
           </h3>
 
@@ -444,12 +389,17 @@ export default function StudentProgressTab({
             return (
               <div
                 key={item.message}
-                className={`flex items-center gap-3 rounded-[18px] border px-4 py-3.5 text-[0.98rem] font-semibold leading-6 shadow-[0_10px_24px_-28px_rgba(79,93,132,0.28)] ${item.className}`}
+                className="flex min-h-[75px] items-start gap-3.5 rounded-[22px] border bg-white px-5 py-[18px] text-[1.02rem] font-medium leading-[1.45] tracking-[-0.015em] transition-colors"
+                style={{
+                  borderColor: item.borderColor,
+                  color: item.accent,
+                }}
               >
-                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/60">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div>{item.message}</div>
+                <Icon
+                  className="mt-0.5 h-[23px] w-[23px] shrink-0"
+                  strokeWidth={item.iconStrokeWidth}
+                />
+                <div className="pt-[1px]">{item.message}</div>
               </div>
             );
           })}
@@ -457,18 +407,16 @@ export default function StudentProgressTab({
           <button
             type="button"
             aria-label={aiSummaryLabel}
-            onClick={handleOpenAiInsights}
-            className="flex w-full items-center justify-between rounded-[18px] border border-[#cfdcff] bg-white px-4 py-3.5 text-left shadow-[0_10px_24px_-24px_rgba(79,93,132,0.2)] transition hover:border-[#bfcfff] hover:shadow-[0_16px_32px_-28px_rgba(79,93,132,0.28)]"
+            onClick={() => setAiSummaryOpen(true)}
+            className="flex min-h-[75px] w-full items-center justify-between rounded-[22px] border border-[#d8e2ff] bg-white px-5 py-[18px] text-left transition-colors hover:border-[#c9d8ff] hover:bg-[#fbfcff]"
           >
-            <div className="flex items-center gap-3 text-[#2d63ea]">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-[#eff3ff]">
-                <Sparkles className="h-[18px] w-[18px]" strokeWidth={1.9} />
-              </div>
-              <span className="text-[0.98rem] font-semibold leading-6">
+            <div className="flex items-center gap-3.5 text-[#3e6ef5]">
+              <Sparkles className="h-[23px] w-[23px] shrink-0" strokeWidth={2} />
+              <span className="text-[1.02rem] font-medium leading-6 tracking-[-0.015em]">
                 AI-ийн ерөнхий дүгнэлт
               </span>
             </div>
-            <ChevronRight className="h-5 w-5 shrink-0 text-[#2d63ea]" strokeWidth={2.4} />
+            <ChevronRight className="h-[25px] w-[25px] shrink-0 text-[#3e6ef5]" strokeWidth={2.35} />
           </button>
         </div>
       </div>
@@ -483,53 +431,29 @@ export default function StudentProgressTab({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="student-subject-ai-title"
-                className="mx-auto w-full max-w-[920px] overflow-hidden rounded-[32px] border border-[#d8defb] bg-[#f8faff] shadow-[0_30px_90px_rgba(32,40,68,0.28)]"
+                className="mx-auto w-full max-w-[610px] overflow-hidden rounded-[34px] border border-[#d8defb] bg-white shadow-[0_34px_90px_rgba(32,40,68,0.3)]"
                 onClick={(event) => event.stopPropagation()}
               >
-                <div className="border-b border-[#e6ebff] bg-white px-6 py-6 sm:px-7">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="inline-flex items-center gap-2 rounded-full bg-[#eef2ff] px-3 py-1 text-xs font-semibold text-[#4f69ef]">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        Хичээлийн AI тайлбар
-                      </div>
-                      <h3
-                        id="student-subject-ai-title"
-                        className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-900"
-                      >
-                        {selectedSubject.subject}
-                      </h3>
-                      <p className="mt-2 max-w-2xl text-[1rem] leading-8 text-slate-500">
-                        Энэ сэдвийн хүчтэй болон анхаарах хэсгүүдийг website-д тохирсон
-                        нэгтгэлээр харуулж байна.
-                      </p>
-                    </div>
+                <div className="flex items-center justify-between gap-4 bg-[#4568ed] px-6 py-6 text-white sm:px-7">
+                  <h3
+                    id="student-subject-ai-title"
+                    className="text-[2rem] font-semibold tracking-[-0.05em]"
+                  >
+                    {selectedSubject.subject}
+                  </h3>
 
-                    <button
-                      type="button"
-                      aria-label="Хичээлийн дүн popup хаах"
-                      onClick={closeSubjectDetail}
-                      className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#dce3ff] bg-white text-slate-500 transition hover:border-[#cbd6ff] hover:text-slate-700"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <div className="rounded-full bg-[#eef2ff] px-3 py-1.5 text-sm font-semibold text-[#4f69ef]">
-                      Сэдвийн дундаж {selectedSubject.average}%
-                    </div>
-                    <div className="rounded-full bg-white px-3 py-1.5 text-sm font-medium text-slate-500 ring-1 ring-inset ring-[#e4e8fb]">
-                      {selectedSubject.concerns.length} анхаарах цэг
-                    </div>
-                    <div className="rounded-full bg-white px-3 py-1.5 text-sm font-medium text-slate-500 ring-1 ring-inset ring-[#e4e8fb]">
-                      {selectedSubject.strengths.length} давуу тал
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    aria-label="Хичээлийн дүн popup хаах"
+                    onClick={closeSubjectDetail}
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10"
+                  >
+                    <X className="h-7 w-7" strokeWidth={2.2} />
+                  </button>
                 </div>
 
-                <div className="grid gap-5 p-6 sm:p-7 xl:grid-cols-2">
-                  <section className="rounded-[24px] border border-[#ffe0df] bg-[#fff5f4] px-5 py-5">
+                <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+                  <section className="rounded-[24px] border border-[#ffd9d5] bg-white px-5 py-5">
                     <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-slate-900">
                       <CircleAlert className="h-5 w-5 text-[#ef5d52]" />
                       Анхаарах хэрэгтэй
@@ -541,22 +465,24 @@ export default function StudentProgressTab({
                             <div className="text-[1rem] font-medium text-slate-600">
                               {item.label}
                             </div>
-                            <div className="text-[1rem] font-semibold text-[#ef5d52]">
-                              {item.score}%
+                            <div className="flex items-center gap-4">
+                              <div className="h-2.5 w-[96px] overflow-hidden rounded-full bg-[#f7d8d7]">
+                                <div
+                                  className="h-full rounded-full bg-[#ef5d52]"
+                                  style={{ width: `${item.score}%` }}
+                                />
+                              </div>
+                              <div className="min-w-[52px] text-right text-[1rem] font-semibold text-[#ef5d52]">
+                                {item.score}%
+                              </div>
                             </div>
-                          </div>
-                          <div className="h-2.5 overflow-hidden rounded-full bg-[#f7d8d7]">
-                            <div
-                              className="h-full rounded-full bg-[#ef5d52]"
-                              style={{ width: `${item.score}%` }}
-                            />
                           </div>
                         </div>
                       ))}
                     </div>
                   </section>
 
-                  <section className="rounded-[24px] border border-[#d8f2e5] bg-[#eefcf5] px-5 py-5">
+                  <section className="rounded-[24px] border border-[#d8f2e5] bg-white px-5 py-5">
                     <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-slate-900">
                       <CheckCircle2 className="h-5 w-5 text-[#47be85]" />
                       Гүйцэтгэл өндөр сэдэв
@@ -568,41 +494,164 @@ export default function StudentProgressTab({
                             <div className="text-[1rem] font-medium text-slate-600">
                               {item.label}
                             </div>
-                            <div className="text-[1rem] font-semibold text-[#47be85]">
-                              {item.score}%
+                            <div className="flex items-center gap-4">
+                              <div className="h-2.5 w-[96px] overflow-hidden rounded-full bg-[#cfeede]">
+                                <div
+                                  className="h-full rounded-full bg-[#47be85]"
+                                  style={{ width: `${item.score}%` }}
+                                />
+                              </div>
+                              <div className="min-w-[52px] text-right text-[1rem] font-semibold text-[#47be85]">
+                                {item.score}%
+                              </div>
                             </div>
-                          </div>
-                          <div className="h-2.5 overflow-hidden rounded-full bg-[#cfeede]">
-                            <div
-                              className="h-full rounded-full bg-[#47be85]"
-                              style={{ width: `${item.score}%` }}
-                            />
                           </div>
                         </div>
                       ))}
                     </div>
                   </section>
 
-                  <section className="rounded-[24px] border border-[#f7e7c3] bg-[#fff8eb] px-5 py-5 xl:col-span-2">
+                  <section className="rounded-[24px] border border-[#f7e7c3] bg-[#fff8eb] px-5 py-5">
                     <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-slate-900">
                       <Lightbulb className="h-5 w-5 text-[#f0a63c]" />
                       Зөвлөгөө
                     </div>
-                    <div className="mt-5 grid gap-3 lg:grid-cols-3">
-                      {selectedSubject.recommendations.map((item, index) => (
-                        <div
-                          key={item}
-                          className="rounded-[18px] border border-[#f4e2ba] bg-white/65 px-4 py-4"
-                        >
-                          <div className="text-sm font-semibold text-[#d89b34]">
-                            Алхам {index + 1}
-                          </div>
-                          <p className="mt-2 text-[0.98rem] leading-7 text-slate-600">
-                            {item}
-                          </p>
+                    <div className="mt-4 space-y-3 text-[1rem] leading-8 text-slate-500">
+                      {selectedSubject.recommendations.map((item) => (
+                        <div key={item} className="flex items-start gap-3">
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#f0a63c]" />
+                          <p>{item}</p>
                         </div>
                       ))}
                     </div>
+                  </section>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+
+      {aiSummaryOpen && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/50 px-4 py-8 backdrop-blur-sm"
+              onClick={closeAiSummary}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="student-ai-summary-title"
+                className="mx-auto w-full max-w-[620px] rounded-[34px] border border-[#dde3ff] bg-white p-6 shadow-[0_34px_90px_rgba(32,40,68,0.3)] sm:p-8"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3 text-[#4869ef]">
+                    <Sparkles className="h-6 w-6" strokeWidth={2} />
+                    <h3
+                      id="student-ai-summary-title"
+                      className="text-[1.1rem] font-semibold tracking-[-0.04em]"
+                    >
+                      AI-ийн ерөнхий дүгнэлт
+                    </h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label="AI-ийн ерөнхий дүгнэлт popup хаах"
+                    onClick={closeAiSummary}
+                    className="grid h-11 w-11 place-items-center rounded-full text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <X className="h-8 w-8" strokeWidth={2} />
+                  </button>
+                </div>
+
+                <h4 className="mt-5 text-[2rem] font-semibold leading-[1.32] tracking-[-0.05em] text-slate-900">
+                  {aiSnapshot.headline}
+                </h4>
+
+                <div className="mt-6 space-y-4">
+                  <section className="rounded-[24px] border border-[#cfeeda] bg-[#fbfffc] px-5 py-5">
+                    <div className="flex items-center gap-2 text-[1.05rem] font-semibold text-[#58c47b]">
+                      <CheckCircle2 className="h-5 w-5" />
+                      Сайн байгаа хэсэг
+                    </div>
+                    <div className="mt-4 space-y-2.5 text-[1rem] leading-8 text-slate-700">
+                      {strongSubjects.length > 0 ? (
+                        strongSubjects.map((item, index) => (
+                          <div key={item.subject}>
+                            <span className="font-semibold text-[#58c47b]">
+                              {index + 1}. {item.subject} ({item.percentage}%)
+                            </span>{" "}
+                            <span>{getStrengthRemark(item.percentage)}</span>
+                          </div>
+                        ))
+                      ) : (
+                        aiSnapshot.strengths.slice(0, 3).map((item, index) => (
+                          <div key={item}>
+                            <span className="font-semibold text-[#58c47b]">{index + 1}.</span>{" "}
+                            <span>{item}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="rounded-[24px] border border-[#f8ddb0] bg-[#fffdf8] px-5 py-5">
+                    <div className="flex items-center gap-2 text-[1.05rem] font-semibold text-[#f0a63c]">
+                      <CircleAlert className="h-5 w-5" />
+                      Анхаарах хэсэг
+                    </div>
+                    <div className="mt-4 space-y-2.5 text-[1rem] leading-8 text-slate-700">
+                      {focusSubjects.length > 0 ? (
+                        focusSubjects.map((item, index) => (
+                          <div key={item.subject}>
+                            <span className="font-semibold text-[#f0a63c]">
+                              {index + 1}. {item.subject} ({item.percentage}%)
+                            </span>{" "}
+                            <span>{getFocusRemark(item.percentage)}</span>
+                          </div>
+                        ))
+                      ) : (
+                        aiSnapshot.focusAreas.slice(0, 2).map((item, index) => (
+                          <div key={item}>
+                            <span className="font-semibold text-[#f0a63c]">{index + 1}.</span>{" "}
+                            <span>{item}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-4 text-center shadow-[0_10px_24px_-26px_rgba(79,93,132,0.22)]">
+                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#4965ee]">
+                        {aiSnapshot.stats.average}%
+                      </div>
+                      <div className="mt-1 text-[0.98rem] text-slate-400">Дундаж оноо</div>
+                    </div>
+                    <div className="rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-4 text-center shadow-[0_10px_24px_-26px_rgba(79,93,132,0.22)]">
+                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#4965ee]">
+                        {aiSnapshot.stats.best}%
+                      </div>
+                      <div className="mt-1 text-[0.98rem] text-slate-400">Хамгийн өндөр</div>
+                    </div>
+                    <div className="rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-4 text-center shadow-[0_10px_24px_-26px_rgba(79,93,132,0.22)]">
+                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#4965ee]">
+                        {aiSnapshot.stats.examCount}
+                      </div>
+                      <div className="mt-1 text-[0.98rem] text-slate-400">Өгсөн шалгалт</div>
+                    </div>
+                  </div>
+
+                  <section className="rounded-[22px] border border-[#d9e4ff] bg-white px-5 py-5 shadow-[0_10px_24px_-26px_rgba(79,93,132,0.18)]">
+                    <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-[#4965ee]">
+                      <Lightbulb className="h-5 w-5" />
+                      Өнөөдрийн урам
+                    </div>
+                    <p className="mt-3 text-[1rem] leading-8 text-[#5c75d9]">
+                      {aiSnapshot.encouragement}
+                    </p>
                   </section>
                 </div>
               </div>

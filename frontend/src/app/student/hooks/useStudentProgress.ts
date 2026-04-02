@@ -4,6 +4,7 @@ import type { StudentProgress } from "../types";
 import type { User } from "@/lib/examGuard";
 import { gradeFromPercentage } from "../utils";
 import {
+  getStudentResult,
   getStudentResults,
   getStudentTermRank,
   getStudentTermLeaderboard,
@@ -14,11 +15,20 @@ import {
   type XpActivity,
   type XpLeaderboardEntry,
 } from "@/api/xp";
+import {
+  average,
+  buildBackendSubjectInsightDetail,
+  type SubjectInsightDetail,
+  toSubjectLabel,
+} from "../components/student-progress-insights";
 
 export const useStudentProgress = (currentUser: User | null) => {
   const [studentHistory, setStudentHistory] = useState<
     StudentProgress[string]["history"]
   >([]);
+  const [subjectInsights, setSubjectInsights] = useState<
+    Record<string, SubjectInsightDetail>
+  >({});
   const [xpActivities, setXpActivities] = useState<XpActivity[]>([]);
   const [termLeaderboardEntries, setTermLeaderboardEntries] = useState<
     XpLeaderboardEntry[]
@@ -42,6 +52,7 @@ export const useStudentProgress = (currentUser: User | null) => {
   const refreshProgress = useCallback(async () => {
     if (!currentUser) {
       setStudentHistory([]);
+      setSubjectInsights({});
       setXpActivities([]);
       setTermLeaderboardEntries([]);
       setRankOverview({ rank: null, totalStudents: 0 });
@@ -106,6 +117,7 @@ export const useStudentProgress = (currentUser: User | null) => {
         const percentage = item.score ?? 0;
         return {
           examId: item.examId,
+          title: item.title,
           percentage,
           xp: 0,
           date: item.submittedAt ?? new Date().toISOString(),
@@ -115,8 +127,63 @@ export const useStudentProgress = (currentUser: User | null) => {
         };
       });
       setStudentHistory(history.sort((a, b) => b.date.localeCompare(a.date)));
+
+      const details = await Promise.all(
+        results.map(async (item) => {
+          try {
+            const detail = await getStudentResult(item.sessionId, currentUser);
+            return {
+              title: item.title,
+              score: item.score ?? 0,
+              detail,
+            };
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      const grouped = new Map<
+        string,
+        {
+          percentages: number[];
+          answers: NonNullable<(typeof details)[number]>["detail"]["answers"];
+        }
+      >();
+
+      details.forEach((item) => {
+        if (!item) return;
+        const subject = toSubjectLabel(item.title);
+        const current = grouped.get(subject) ?? { percentages: [], answers: [] };
+        grouped.set(subject, {
+          percentages: [...current.percentages, item.score],
+          answers: [
+            ...current.answers,
+            ...item.detail.answers.map((answer) => ({
+              ...answer,
+              sessionId: item.detail.sessionId,
+              examTitle: item.detail.title,
+              submittedAt: item.detail.submittedAt ?? item.submittedAt ?? null,
+            })),
+          ],
+        });
+      });
+
+      const nextSubjectInsights = Object.fromEntries(
+        [...grouped.entries()].map(([subject, value]) => [
+          subject,
+          buildBackendSubjectInsightDetail(
+            subject,
+            average(value.percentages),
+            value.answers,
+          ),
+        ]),
+      );
+
+      setSubjectInsights(nextSubjectInsights);
     } catch {
       setStudentHistory([]);
+      setSubjectInsights({});
     }
   }, [currentUser]);
 
@@ -140,6 +207,7 @@ export const useStudentProgress = (currentUser: User | null) => {
 
   return {
     studentHistory,
+    subjectInsights,
     xpActivities,
     termLeaderboardEntries,
     rankOverview,

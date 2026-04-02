@@ -30,8 +30,6 @@ const studentHistory = [
 
 describe("StudentProgressTab", () => {
   it("renders the screenshot-style progress overview", () => {
-    const onOpenAiInsights = jest.fn();
-
     render(
       <StudentProgressTab
         loading={false}
@@ -43,7 +41,40 @@ describe("StudentProgressTab", () => {
         studentProgress={{ xp: 1480 }}
         nextLevel={{ minXP: 1600 }}
         progressSegments={7}
-        onOpenAiInsights={onOpenAiInsights}
+        subjectInsights={{
+          Mathematics: {
+            subject: "Mathematics",
+            average: 88,
+            concerns: [
+              { label: "Алгебр", score: 42 },
+              { label: "Тэгшитгэл", score: 55 },
+            ],
+            strengths: [
+              { label: "Геометр", score: 93 },
+              { label: "Функц", score: 87 },
+            ],
+            recommendations: [
+              "Алгебрийн алдаатай бодлогуудыг дахин ажиллаарай.",
+              "Тэгшитгэлийн алхамуудаа тайлбарлаж бичээрэй.",
+              "Геометр дээрх арга барилаа бусад сэдэвт ашиглаарай.",
+            ],
+            examCount: 2,
+            questionCount: 14,
+            accuracy: 88,
+            latestExamTitle: "Mathematics Final Exam",
+            latestSubmittedAt: "2026-01-14T09:00:00.000Z",
+            recentMistakes: [
+              {
+                topic: "Алгебр",
+                questionText: "2x + 5 = 17 тэгшитгэлийг бод.",
+                selectedAnswer: "x = 5",
+                correctAnswer: "x = 6",
+                examTitle: "Mathematics Final Exam",
+                submittedAt: "2026-01-14T09:00:00.000Z",
+              },
+            ],
+          },
+        }}
         studentHistory={studentHistory}
       />,
     );
@@ -65,7 +96,12 @@ describe("StudentProgressTab", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /AI-ийн ерөнхий дүгнэлт/i }));
 
-    expect(onOpenAiInsights).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("dialog", { name: "AI-ийн ерөнхий дүгнэлт" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Сайн байгаа хэсэг")).toBeInTheDocument();
+    expect(screen.getByText("Анхаарах хэсэг")).toBeInTheDocument();
+    expect(screen.getByText("Өнөөдрийн урам")).toBeInTheDocument();
   });
 
   it("renders progress loading skeletons", () => {

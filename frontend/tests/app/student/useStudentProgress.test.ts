@@ -1,5 +1,6 @@
 const mockGetXpProfile = jest.fn();
 const mockGetXpHistory = jest.fn();
+const mockGetStudentResult = jest.fn();
 const mockGetStudentResults = jest.fn();
 const mockGetStudentTermLeaderboard = jest.fn();
 const mockGetStudentTermRank = jest.fn();
@@ -10,6 +11,7 @@ jest.mock("@/api/xp", () => ({
 }));
 
 jest.mock("@/lib/backend-auth", () => ({
+  getStudentResult: (...args: unknown[]) => mockGetStudentResult(...args),
   getStudentResults: (...args: unknown[]) => mockGetStudentResults(...args),
   getStudentTermLeaderboard: (...args: unknown[]) =>
     mockGetStudentTermLeaderboard(...args),
@@ -51,6 +53,7 @@ const mockUser: User = {
 
 const mockResults = [
   {
+    sessionId: "s-e1",
     examId: "e1",
     title: "Math",
     score: 90,
@@ -59,6 +62,7 @@ const mockResults = [
     submittedAt: "2024-06-02",
   },
   {
+    sessionId: "s-e2",
     examId: "e2",
     title: "Science",
     score: 75,
@@ -78,6 +82,61 @@ describe("useStudentProgress", () => {
     });
     mockGetXpHistory.mockResolvedValue([]);
     mockGetStudentResults.mockResolvedValue(mockResults);
+    mockGetStudentResult.mockImplementation((sessionId: string) => {
+      if (sessionId === "s-e1") {
+        return Promise.resolve({
+          sessionId,
+          examId: "e1",
+          title: "Math",
+          score: 90,
+          totalPoints: 100,
+          earnedPoints: 90,
+          submittedAt: "2024-06-02",
+          answers: [
+            {
+              topic: "Алгебр",
+              questionText: "Алгебрийн асуулт",
+              isCorrect: false,
+              points: 50,
+              pointsEarned: 20,
+            },
+            {
+              topic: "Геометр",
+              questionText: "Геометрийн асуулт",
+              isCorrect: true,
+              points: 50,
+              pointsEarned: 46,
+            },
+          ],
+        });
+      }
+
+      return Promise.resolve({
+        sessionId,
+        examId: "e2",
+        title: "Science",
+        score: 75,
+        totalPoints: 100,
+        earnedPoints: 75,
+        submittedAt: "2024-06-01",
+        answers: [
+          {
+            topic: "Туршилт",
+            questionText: "Туршилтын асуулт",
+            isCorrect: true,
+            points: 50,
+            pointsEarned: 38,
+          },
+          {
+            topic: "Томьёо",
+            questionText: "Томьёоны асуулт",
+            isCorrect: false,
+            points: 50,
+            pointsEarned: 24,
+          },
+        ],
+      });
+    });
     mockGetStudentTermLeaderboard.mockResolvedValue([
       { rank: 1, id: "s9", fullName: "Сурагч 1", xp: 300, level: 3 },
       { rank: 2, id: "s1", fullName: "Бат", xp: 120, level: 2 },
@@ -131,6 +190,15 @@ describe("useStudentProgress", () => {
     });
     expect(result.current.termLeaderboardEntries).toHaveLength(2);
     expect(result.current.studentHistory).toHaveLength(2);
+    expect(result.current.studentHistory[0]?.title).toBe("Math");
+    expect(result.current.subjectInsights.Math.strengths[0]?.label).toBe("Геометр");
+    expect(result.current.subjectInsights.Math.concerns[0]?.label).toBe("Алгебр");
+    expect(result.current.subjectInsights.Math.examCount).toBe(1);
+    expect(result.current.subjectInsights.Math.questionCount).toBe(2);
+    expect(result.current.subjectInsights.Math.latestExamTitle).toBe("Math");
+    expect(result.current.subjectInsights.Math.recentMistakes[0]?.questionText).toBe(
+      "Алгебрийн асуулт",
+    );
   });
 
   it("sorts history by date descending", async () => {

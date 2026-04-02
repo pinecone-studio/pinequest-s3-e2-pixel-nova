@@ -136,16 +136,14 @@ export default function StudentPage() {
     () =>
       progress.studentHistory.map((item) => ({
         examId: item.examId,
-        title:
-          data.exams.find((examItem) => examItem.id === item.examId)?.title ??
-          `Шалгалт #${item.examId.slice(-4)}`,
+        title: item.title,
         percentage: item.percentage,
         score: item.score,
         totalPoints: item.totalPoints,
         grade: item.grade,
         date: item.date,
       })),
-    [data.exams, progress.studentHistory],
+    [progress.studentHistory],
   );
 
   const currentUserNameRaw =

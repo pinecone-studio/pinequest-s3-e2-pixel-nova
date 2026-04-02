@@ -136,6 +136,7 @@ const createProps = () => ({
       level: 12,
       history: [],
     },
+    subjectInsights: {},
     nextLevel: {
       level: 13,
       name: "Gold",
