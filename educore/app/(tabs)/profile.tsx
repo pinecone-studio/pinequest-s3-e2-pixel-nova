@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
   Image,
@@ -29,7 +28,7 @@ const emptyProfile: StudentProfile = {
   bio: "",
 };
 
-const defaultAvatarImage = require("../../assets/images/zolbayar-profile.jpg");
+const defaultAvatarImage = require("@/assets/images/zolbayar-profile.jpg");
 
 const editableFields: {
   label: string;
@@ -51,13 +50,6 @@ const editableFields: {
   { label: "Avatar URL", key: "avatarUrl" },
 ];
 
-const getInitials = (value: string) =>
-  value
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("") || "ST";
 
 function FeatureCard({
   icon,
@@ -180,7 +172,6 @@ export default function ProfileScreen() {
   };
 
   const displayName = form.fullName || student?.fullName || "Оюутан";
-  const initials = getInitials(displayName);
   const xp = profile?.xp ?? student?.xp ?? 2300;
   const avatarUri = (form.avatarUrl ?? "").trim();
   const avatarSource = avatarUri ? { uri: avatarUri } : defaultAvatarImage;
@@ -205,89 +196,37 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.profileCardWrapper}>
-          <View pointerEvents="none" style={styles.profileBackdrop}>
-            <LinearGradient
-              colors={["rgba(37,99,235,0.24)", "rgba(191,219,254,0.02)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.backdropOrb, styles.backdropOrbLeft]}
-            />
-          </View>
-          <View pointerEvents="none" style={styles.profileBackdrop}>
-            <LinearGradient
-              colors={["rgba(56,189,248,0.22)", "rgba(255,255,255,0.02)"]}
-              start={{ x: 0.2, y: 0 }}
-              end={{ x: 0.8, y: 1 }}
-              style={[styles.backdropOrb, styles.backdropOrbRight]}
-            />
-          </View>
-
+        {/* Avatar first (behind), card second (in front) — natural DOM order */}
+        <View style={styles.heroWrapper}>
+          {/* Avatar — rendered first, sits behind card */}
           <View style={styles.avatarContainer}>
-            <View style={styles.avatarShadow} />
             <View style={styles.avatarShell}>
-              <Image
-                source={avatarSource}
-                style={[styles.avatarImage, !avatarUri && styles.avatarImageDefault]}
-                resizeMode="cover"
-              />
-              <LinearGradient
-                colors={["transparent", "rgba(255,255,255,0.52)", "rgba(255,255,255,0.92)"]}
-                locations={[0.48, 0.8, 1]}
-                style={styles.avatarBottomFade}
-              />
+              <Image source={avatarSource} style={styles.avatarImage} resizeMode="cover" resizeMethod="scale" />
             </View>
           </View>
 
-          <View style={styles.profileCard}>
-            <BlurView
-              intensity={92}
-              tint="light"
-              experimentalBlurMethod="dimezisBlurView"
-              style={styles.profileCardBlur}
-            />
-            <LinearGradient
-              colors={[
-                "rgba(255,255,255,0.76)",
-                "rgba(255,255,255,0.32)",
-                "rgba(255,255,255,0.62)",
-              ]}
-              start={{ x: 0.1, y: 0 }}
-              end={{ x: 0.9, y: 1 }}
-              style={styles.profileCardHighlight}
-            />
-
-            <View style={styles.profileCardContent}>
-              <View style={styles.cardHandle} />
-
-              <View style={styles.nameCard}>
-                <View style={styles.profileHeader}>
-                  <View style={styles.profileHeaderText}>
-                    <Text style={styles.profileName}>{displayName}</Text>
-                    <Text style={styles.profileRole}>Student</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => setEditorOpen((current) => !current)}
-                  >
-                    <Ionicons name="create-outline" size={18} color="#2563EB" />
-                  </TouchableOpacity>
-                </View>
+          <BlurView intensity={10} tint="light" style={styles.profileCard}>
+            <View style={styles.profileHeader}>
+              <View style={styles.profileHeaderText}>
+                <Text style={styles.profileName}>{displayName}</Text>
               </View>
-
-              <View style={styles.xpSection}>
-                <View style={styles.xpRow}>
-                  <Text style={styles.xpLabel}>Lvl {level}</Text>
-                  <Text style={styles.xpValue}>{xp}xp</Text>
-                </View>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[styles.progressFill, { width: `${xpProgress * 100}%` }]}
-                  />
-                </View>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => setEditorOpen((current) => !current)}
+              >
+                <Ionicons name="create-outline" size={18} color="#2563EB" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.xpSection}>
+              <View style={styles.xpRow}>
+                <Text style={styles.xpLabel}>Lvl {level}</Text>
+                <Text style={styles.xpValue}>{xp}xp</Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${xpProgress * 100}%` }]} />
               </View>
             </View>
-          </View>
+          </BlurView>
         </View>
 
         <View style={styles.featureRow}>
@@ -309,7 +248,7 @@ export default function ProfileScreen() {
             icon="🏆"
             title="Том тархи"
             subtitle="100% авах"
-            bgColor="#FFE3B3"
+            bgColor="rgba(245,158,11,0.3)"
           />
           <AchievementCard
             icon="⚡"
@@ -326,7 +265,7 @@ export default function ProfileScreen() {
           onPress={() => void refreshProfile()}
         >
           <View style={styles.menuIconWrap}>
-            <Ionicons name="bar-chart-outline" size={20} color="#2563EB" />
+            <Ionicons name="bar-chart-outline" size={24} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
             <Text style={styles.menuLabel}>Миний статистик</Text>
@@ -336,12 +275,24 @@ export default function ProfileScreen() {
 
         <View style={styles.menuDivider} />
 
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => setSelectorOpen((current) => !current)}
-        >
+        <TouchableOpacity style={styles.menuItem} onPress={() => void handleSignOut()}>
           <View style={styles.menuIconWrap}>
-            <Ionicons name="swap-horizontal-outline" size={20} color="#2563EB" />
+            <Ionicons name="log-out-outline" size={24} color="#E62B34" />
+          </View>
+          <View style={styles.menuCopy}>
+            <Text style={styles.menuLabelDanger}>Гарах</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Hidden panels for account switcher & code login */}
+      <TouchableOpacity
+        style={styles.menuCard}
+        onPress={() => setSelectorOpen((c) => !c)}
+      >
+        <View style={styles.menuItem}>
+          <View style={styles.menuIconWrap}>
+            <Ionicons name="swap-horizontal-outline" size={24} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
             <Text style={styles.menuLabel}>Student accounts</Text>
@@ -350,35 +301,23 @@ export default function ProfileScreen() {
               {availableUsers.length} хэрэглэгч
             </Text>
           </View>
-        </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
 
-        <View style={styles.menuDivider} />
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => setCodeLoginOpen((current) => !current)}
-        >
+      <TouchableOpacity
+        style={styles.menuCard}
+        onPress={() => setCodeLoginOpen((c) => !c)}
+      >
+        <View style={styles.menuItem}>
           <View style={styles.menuIconWrap}>
-            <Ionicons name="key-outline" size={20} color="#2563EB" />
+            <Ionicons name="key-outline" size={24} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
             <Text style={styles.menuLabel}>Student code login</Text>
             <Text style={styles.menuSub}>Кодоор нэвтрэх</Text>
           </View>
-        </TouchableOpacity>
-
-        <View style={styles.menuDivider} />
-
-        <TouchableOpacity style={styles.menuItem} onPress={() => void handleSignOut()}>
-          <View style={styles.menuIconWrap}>
-            <Ionicons name="log-out-outline" size={20} color="#2563EB" />
-          </View>
-          <View style={styles.menuCopy}>
-            <Text style={styles.menuLabel}>Гарах</Text>
-            <Text style={styles.menuSub}>Дараа дахин уулзъя</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+        </View>
+      </TouchableOpacity>
 
       {selectorOpen && (
         <View style={styles.panelCard}>
