@@ -47,8 +47,8 @@ const subjectTopicPresets: { match: RegExp; strengths: string[]; concerns: strin
   },
   {
     match: /(english|англи|vocabulary|reading|grammar|listening)/i,
-    strengths: ["Reading", "Listening", "Grammar"],
-    concerns: ["Vocabulary", "Spelling", "Sentence use"],
+    strengths: ["Унших", "Сонсох", "Дүрэм"],
+    concerns: ["Үгийн сан", "Үсэглэлт", "Өгүүлбэрийн хэрэглээ"],
   },
   {
     match: /(physics|физик|mechanics|optics)/i,
@@ -67,6 +67,45 @@ const subjectTopicPresets: { match: RegExp; strengths: string[]; concerns: strin
   },
 ];
 
+const subjectLabelPresets: { match: RegExp; label: string }[] = [
+  {
+    match: /(mathematics|math|algebra|geometry|trigonometry|мат|алгебр|геометр|тригонометр)/i,
+    label: "Математик",
+  },
+  {
+    match: /(english|vocabulary|reading|grammar|listening|speaking|англи)/i,
+    label: "Англи хэл",
+  },
+  {
+    match: /(physics|mechanics|optics|физик)/i,
+    label: "Физик",
+  },
+  {
+    match: /(chemistry|chem|organic|atom|periodic|хими)/i,
+    label: "Хими",
+  },
+  {
+    match: /(biology|bio|биологи)/i,
+    label: "Биологи",
+  },
+  {
+    match: /(history|social studies|social|нийгэм|түүх)/i,
+    label: "Нийгэм",
+  },
+  {
+    match: /(mongolian|literature|монгол)/i,
+    label: "Монгол хэл",
+  },
+  {
+    match: /(russian|орос)/i,
+    label: "Орос хэл",
+  },
+  {
+    match: /(geography|газарзүй)/i,
+    label: "Газарзүй",
+  },
+];
+
 export const average = (values: number[]) =>
   values.length
     ? Math.round(values.reduce((sum, item) => sum + item, 0) / values.length)
@@ -80,6 +119,14 @@ const getSubjectPreset = (subject: string) =>
     concerns: ["Суурь ойлголт", "Алдаа засвар", "Нэмэлт давтлага"],
   };
 
+export const localizeSubjectLabel = (value: string) => {
+  const cleaned = value.replace(/\s+/g, " ").trim();
+  if (!cleaned) return "Хичээл";
+
+  const preset = subjectLabelPresets.find((item) => item.match.test(cleaned));
+  return preset?.label ?? cleaned;
+};
+
 export const toSubjectLabel = (value: string) => {
   const cleaned = value
     .replace(/[_-]+/g, " ")
@@ -89,6 +136,11 @@ export const toSubjectLabel = (value: string) => {
     .replace(/\bшалгалт\b/gi, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  const localized = localizeSubjectLabel(cleaned);
+  if (localized !== cleaned) {
+    return localized;
+  }
 
   const englishStopWords = new Set([
     "exam",
@@ -106,10 +158,10 @@ export const toSubjectLabel = (value: string) => {
     .filter((word) => !englishStopWords.has(word.toLowerCase()));
 
   if (filteredWords.length === 0) {
-    return cleaned || "Хичээл";
+    return localizeSubjectLabel(cleaned);
   }
 
-  return filteredWords.slice(0, 2).join(" ");
+  return localizeSubjectLabel(filteredWords.slice(0, 2).join(" "));
 };
 
 const getQuestionTopicLabel = (

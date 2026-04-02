@@ -112,7 +112,10 @@ export default function ExamScheduleDatePicker({
           className="absolute left-0 top-[calc(100%+10px)] z-30 w-full max-w-full overflow-hidden rounded-[24px] border border-[#e5e7eb] bg-white shadow-[0_26px_70px_-42px_rgba(15,23,42,0.38)]"
         >
           <div className="grid gap-0">
-            <div className="p-4 sm:p-5">
+            <div
+              data-testid="schedule-calendar-content"
+              className="flex justify-center p-4 sm:p-5"
+            >
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -131,11 +134,11 @@ export default function ExamScheduleDatePicker({
                       .toLocaleDateString("en-US", { weekday: "short" })
                       .slice(0, 2),
                 }}
-                className="w-full p-0"
+                className="mx-auto p-0"
                 classNames={{
-                  root: "w-full",
-                  months: "w-full",
-                  month: "w-full gap-4",
+                  root: "mx-auto w-fit",
+                  months: "justify-center",
+                  month: "mx-auto gap-4",
                   nav: "absolute inset-x-0 top-0 flex items-center justify-between",
                   button_previous:
                     "flex h-10 w-10 items-center justify-center rounded-xl border border-[#e5e7eb] bg-white text-[#2563EB] shadow-none transition hover:bg-[#eff6ff]",

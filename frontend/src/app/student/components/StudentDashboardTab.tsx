@@ -500,7 +500,9 @@ export default function StudentDashboardTab({
                       <div className="flex items-center gap-2">
                         <div
                           className={`truncate text-[15px] font-semibold ${
-                            isCurrentUser ? "text-[#4965ee]" : "text-slate-300"
+                            isCurrentUser
+                              ? "text-[#4965ee]"
+                              : "text-slate-300 blur-[1px]"
                           }`}
                         >
                           {displayName}
