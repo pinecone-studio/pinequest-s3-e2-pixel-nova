@@ -16,6 +16,16 @@ import { requireRole } from "../middleware/role-guard";
 
 const analyticsRoutes = new Hono<AppEnv>();
 
+const normalizedScorePercent = sql<number | null>`
+  case
+    when ${examSessions.totalPoints} > 0 and ${examSessions.earnedPoints} is not null
+      then ${examSessions.earnedPoints} * 100.0 / ${examSessions.totalPoints}
+    when ${examSessions.totalPoints} > 0 and ${examSessions.score} > 100
+      then ${examSessions.score} * 100.0 / ${examSessions.totalPoints}
+    else ${examSessions.score}
+  end
+`;
+
 // Apply auth + teacher role globally
 analyticsRoutes.use("*", authMiddleware, requireRole("teacher"));
 
@@ -207,7 +217,7 @@ analyticsRoutes.get("/dashboard", async (c) => {
       status: exams.status,
       createdAt: exams.createdAt,
       studentCount: sql<number>`count(distinct ${examSessions.studentId})`,
-      averageScore: sql<number | null>`avg(${examSessions.score})`,
+      averageScore: sql<number | null>`avg(${normalizedScorePercent})`,
     })
     .from(exams)
     .leftJoin(examSessions, eq(exams.id, examSessions.examId))
@@ -534,18 +544,19 @@ analyticsRoutes.get("/exam/:examId/summary", async (c) => {
   // Get score statistics from graded sessions
   const [scoreStats] = await db
     .select({
-      averageScore: sql<number | null>`avg(${examSessions.score})`,
-      highestScore: sql<number | null>`max(${examSessions.score})`,
-      lowestScore: sql<number | null>`min(${examSessions.score})`,
+      averageScore: sql<number | null>`avg(${normalizedScorePercent})`,
+      highestScore: sql<number | null>`max(${normalizedScorePercent})`,
+      lowestScore: sql<number | null>`min(${normalizedScorePercent})`,
       totalStudents: count(),
-      passCount: sql<number>`sum(case when ${examSessions.score} >= ${passScore} then 1 else 0 end)`,
+      passCount: sql<number>`sum(case when ${normalizedScorePercent} >= ${passScore} then 1 else 0 end)`,
       flaggedCount: sql<number>`sum(case when ${examSessions.isFlagged} = 1 then 1 else 0 end)`,
     })
     .from(examSessions)
     .where(
       and(
         eq(examSessions.examId, examId),
-        eq(examSessions.status, "graded")
+        eq(examSessions.status, "graded"),
+        sql`${examSessions.score} IS NOT NULL`,
       )
     );
 
@@ -615,21 +626,22 @@ analyticsRoutes.get("/teacher-overview", async (c) => {
     );
   const totalSubmissions = Number(totalRow?.cnt ?? 0);
 
-  // Monthly averages — last 12 months
+  // Monthly averages for graded sessions only
   const monthlyRows = await db
     .select({
       month: sql<string>`strftime('%Y-%m', ${examSessions.submittedAt})`,
-      avgScore: sql<number | null>`avg(case when ${examSessions.totalPoints} > 0 then ${examSessions.score} * 100.0 / ${examSessions.totalPoints} else ${examSessions.score} end)`,
+      avgScore: sql<number | null>`avg(${normalizedScorePercent})`,
       cnt: count(),
-      passCount: sql<number>`sum(case when ${examSessions.totalPoints} > 0 and ${examSessions.score} * 100.0 / ${examSessions.totalPoints} >= 60 then 1 when (${examSessions.totalPoints} = 0 or ${examSessions.totalPoints} is null) and ${examSessions.score} >= 60 then 1 else 0 end)`,
+      passCount: sql<number>`sum(case when ${normalizedScorePercent} >= 60 then 1 else 0 end)`,
     })
     .from(examSessions)
     .innerJoin(exams, eq(examSessions.examId, exams.id))
     .where(
       and(
         eq(exams.teacherId, user.id),
-        sql`${examSessions.status} IN ('submitted', 'graded')`,
+        eq(examSessions.status, "graded"),
         sql`${examSessions.submittedAt} IS NOT NULL`,
+        sql`${examSessions.score} IS NOT NULL`,
       ),
     )
     .groupBy(sql`strftime('%Y-%m', ${examSessions.submittedAt})`)
@@ -637,7 +649,10 @@ analyticsRoutes.get("/teacher-overview", async (c) => {
 
   const monthlyData = monthlyRows.map((row) => ({
     month: row.month,
-    avgScore: row.avgScore !== null ? Math.round(Number(row.avgScore)) : null,
+    avgScore:
+      row.avgScore !== null
+        ? Math.round(Number(row.avgScore) * 10) / 10
+        : null,
     passRate: row.cnt > 0 ? Math.round((Number(row.passCount) / row.cnt) * 100) : null,
     count: row.cnt,
   }));

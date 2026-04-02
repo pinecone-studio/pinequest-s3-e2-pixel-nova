@@ -157,4 +157,61 @@ describe("analytics routes", () => {
       },
     });
   });
+
+  it("returns teacher overview with current percentage-based monthly data", async () => {
+    queueDbResults(
+      [{ id: "teacher-1", fullName: "Ada Teacher" }],
+      [{ className: "11A" }, { className: "11B" }],
+      [{ cnt: 32 }],
+      [{ cnt: 9 }],
+      [{ cnt: 48 }],
+      [
+        {
+          month: "2026-03",
+          avgScore: 88.63,
+          cnt: 3,
+          passCount: 2,
+        },
+        {
+          month: "2026-04",
+          avgScore: 92,
+          cnt: 1,
+          passCount: 1,
+        },
+      ],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/analytics/teacher-overview",
+      {
+        headers: teacherHeaders(),
+      },
+      workerEnv,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: {
+        totalClasses: 2,
+        totalStudents: 32,
+        weeklySubmissions: 9,
+        totalSubmissions: 48,
+        monthlyData: [
+          {
+            month: "2026-03",
+            avgScore: 88.6,
+            passRate: 67,
+            count: 3,
+          },
+          {
+            month: "2026-04",
+            avgScore: 92,
+            passRate: 100,
+            count: 1,
+          },
+        ],
+      },
+    });
+  });
 });
