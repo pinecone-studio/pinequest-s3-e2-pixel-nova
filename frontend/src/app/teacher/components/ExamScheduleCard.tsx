@@ -28,7 +28,7 @@ type ExamScheduleCardProps = {
   durationMinutes: number;
   setDurationMinutes: (value: number) => void;
   scheduling?: boolean;
-  onSchedule: () => void;
+  onContinue: () => void;
   onClose?: () => void;
 };
 
@@ -53,7 +53,7 @@ export default function ExamScheduleCard({
   durationMinutes,
   setDurationMinutes,
   scheduling = false,
-  onSchedule,
+  onContinue,
   onClose,
 }: ExamScheduleCardProps) {
   const [seconds, setSeconds] = useState("00");
@@ -139,12 +139,12 @@ export default function ExamScheduleCard({
               type="button"
               disabled={scheduling}
             >
-              Болих
+              Буцах
             </button>
           )}
           <button
             className={`inline-flex min-w-27.5 items-center justify-center gap-2 rounded-[14px] px-5 py-2.5 text-[14px] ${buttonPrimary} ${scheduling ? "opacity-80" : ""}`}
-            onClick={onSchedule}
+            onClick={onContinue}
             type="button"
             disabled={scheduling}
           >
@@ -170,10 +170,10 @@ export default function ExamScheduleCard({
                     strokeLinecap="round"
                   />
                 </svg>
-                Хадгалж байна...
+                Үргэлжилж байна...
               </>
             ) : (
-              "Хадгалах"
+              "Үргэлжлүүлэх"
             )}
           </button>
         </div>

@@ -30,11 +30,34 @@ jest.mock("@/app/teacher/components/TeacherHeader", () => {
 
 jest.mock("@/app/teacher/components/ExamScheduleCard", () => ({
   __esModule: true,
-  default: ({ onSchedule }: { onSchedule: () => Promise<void> }) => (
-    <button type="button" onClick={() => void onSchedule()}>
-      Save schedule
+  default: ({ onContinue }: { onContinue: () => void }) => (
+    <button type="button" onClick={onContinue}>
+      Continue schedule
     </button>
   ),
+}));
+
+jest.mock("@/app/teacher/components/TeacherCheatDetectionDialog", () => ({
+  __esModule: true,
+  default: ({
+    open,
+    exam,
+    examTitle,
+    onSave,
+  }: {
+    open: boolean;
+    exam: { title: string } | null;
+    examTitle?: string | null;
+    onSave: () => void;
+  }) =>
+    open ? (
+      <div>
+        <h2>{exam?.title ?? examTitle ?? "Шалгалт"}</h2>
+        <button type="button" onClick={onSave}>
+          Save cheat settings
+        </button>
+      </div>
+    ) : null,
 }));
 
 jest.mock("@/app/teacher/components/TeacherPageContent", () => ({
@@ -113,6 +136,8 @@ jest.mock("@/app/teacher/hooks/useExamManagement", () => ({
   useExamManagement: () => ({
     selectedScheduleExamId: "",
     setSelectedScheduleExamId: jest.fn(),
+    scheduleTitle: "",
+    setScheduleTitle: jest.fn(),
     scheduleDate: "2026-03-31T10:00:00.000Z",
     setScheduleDate: jest.fn(),
     scheduleExamType: "progress",
@@ -167,60 +192,54 @@ describe("TeacherPage", () => {
       createdAt: "2026-03-31T09:00:00.000Z",
       enabledCheatDetections: undefined,
     });
+    mockUpdateExam.mockResolvedValue({
+      id: "exam-1",
+      requiresAudioRecording: false,
+      enabledCheatDetections: ["tab_switching"],
+    } as never);
   });
 
-  it("closes the schedule modal after schedule save succeeds", async () => {
+  it("opens the cheat detection dialog from the schedule form", async () => {
     render(<TeacherPage />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Open schedule" }));
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
+      fireEvent.click(screen.getByRole("button", { name: "Continue schedule" }));
     });
 
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: "Save schedule" }),
-      ).not.toBeInTheDocument();
-    });
-    expect(mockUpdateExam).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("heading", { name: "Шалгалт" }),
+    ).toBeInTheDocument();
   });
 
-  it("keeps the scheduled exam and skips API updates after scheduling", async () => {
+  it("saves the schedule when the cheat detection dialog is confirmed", async () => {
     render(<TeacherPage />);
 
     fireEvent.click(await screen.findByRole("button", { name: "Open schedule" }));
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
+      fireEvent.click(screen.getByRole("button", { name: "Continue schedule" }));
     });
 
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: "Save schedule" }),
-      ).not.toBeInTheDocument();
-    });
-    expect(mockUpdateExam).not.toHaveBeenCalled();
-  });
-
-  it("schedules once without opening any follow-up configuration dialog", async () => {
-    render(<TeacherPage />);
-
-    fireEvent.click(await screen.findByRole("button", { name: "Open schedule" }));
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
+      fireEvent.click(screen.getByRole("button", { name: "Save cheat settings" }));
     });
 
     await waitFor(() => {
-      expect(
-        screen.queryByRole("heading", {
-          name: "Луйврын илрүүлэлтийн тохиргоо",
-        }),
-      ).not.toBeInTheDocument();
-      expect(mockHandleSchedule).toHaveBeenCalledTimes(1);
-      expect(mockUpdateExam).not.toHaveBeenCalled();
-      expect(mockSetExams).not.toHaveBeenCalled();
-      expect(mockShowToast).not.toHaveBeenCalledWith(
-        expect.stringContaining("илрүүлэлтийн тохиргоо"),
-      );
+      expect(screen.queryByRole("button", { name: "Save cheat settings" })).not.toBeInTheDocument();
     });
+
+    expect(mockHandleSchedule).toHaveBeenCalledTimes(1);
+    expect(mockUpdateExam).toHaveBeenCalledWith(
+      "exam-1",
+      expect.objectContaining({
+        requiresAudioRecording: false,
+        enabledCheatDetections: expect.arrayContaining(["tab_switch"]),
+      }),
+      expect.objectContaining({ id: "teacher-1" }),
+    );
+    expect(mockSetExams).toHaveBeenCalledTimes(1);
+    expect(mockShowToast).toHaveBeenCalledWith(
+      expect.stringContaining("Луйврын илрүүлэлтийн тохиргоо хадгалагдлаа."),
+    );
   });
 });

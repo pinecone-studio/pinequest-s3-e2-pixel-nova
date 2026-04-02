@@ -265,8 +265,8 @@ export default function CreateExamPage() {
     })();
   }, [data, generator, imports, management, router, sessionUser?.id]);
 
-  const handleSaveExam = async () => {
-    const success = await management.saveExam();
+  const handleSaveExam = async (overrides?: { title?: string; className?: string }) => {
+    const success = await management.saveExam(overrides);
     if (success) {
       setRedirectingAfterSave(true);
       router.push("/teacher");

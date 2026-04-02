@@ -42,13 +42,13 @@ const TEACHER_ACTIVE_TAB_STORAGE_KEY = "teacher:active-tab";
 function TeacherScheduleModal({
   show,
   onClose,
-  onSchedule,
+  onContinue,
   data,
   management,
 }: {
   show: boolean;
   onClose: () => void;
-  onSchedule: () => Promise<void>;
+  onContinue: () => void;
   data: ReturnType<typeof useTeacherData>;
   management: ReturnType<typeof useExamManagement>;
 }) {
@@ -91,7 +91,7 @@ function TeacherScheduleModal({
             durationMinutes={management.durationMinutes}
             setDurationMinutes={management.setDurationMinutes}
             scheduling={management.scheduling}
-            onSchedule={onSchedule}
+            onContinue={onContinue}
             onClose={onClose}
           />
         </div>
@@ -126,6 +126,9 @@ export default function TeacherPage() {
   const [cheatDetectionExam, setCheatDetectionExam] = useState<Exam | null>(
     null,
   );
+  const [pendingCheatDetectionTitle, setPendingCheatDetectionTitle] = useState<
+    string | null
+  >(null);
   const [selectedCheatDetections, setSelectedCheatDetections] = useState<
     string[]
   >([]);
@@ -285,9 +288,33 @@ export default function TeacherPage() {
   const closeCheatDetectionDialog = () => {
     setShowCheatDetectionDialog(false);
     setCheatDetectionExam(null);
+    setPendingCheatDetectionTitle(null);
     setSelectedCheatDetections([]);
     setSelectedRequiresAudioRecording(false);
     setSavingCheatDetections(false);
+  };
+
+  const openScheduleForm = () => {
+    closeCheatDetectionDialog();
+    setShowScheduleForm(true);
+  };
+
+  const openCheatDetectionDialog = () => {
+    const selectedScheduleExam = data.exams.find(
+      (exam) => exam.id === management.selectedScheduleExamId,
+    );
+    const nextTitle =
+      selectedScheduleExam?.title?.trim() ||
+      management.scheduleTitle.trim() ||
+      management.scheduleSubjectName.trim() ||
+      "Шалгалт";
+
+    closeCheatDetectionDialog();
+    setPendingCheatDetectionTitle(nextTitle);
+    setSelectedCheatDetections([...DEFAULT_ENABLED_CHEAT_DETECTIONS]);
+    setSelectedRequiresAudioRecording(false);
+    setShowScheduleForm(false);
+    setShowCheatDetectionDialog(true);
   };
 
   const handleTabChange = (nextTab: TeacherTab) => {
@@ -309,17 +336,8 @@ export default function TeacherPage() {
     setActiveTab(nextTab);
   };
 
-  const handleScheduleAndConfigure = async () => {
-    const scheduledExam = await management.handleSchedule();
-    if (!scheduledExam) {
-      return;
-    }
-
-    setShowScheduleForm(false);
-  };
-
   const saveCheatDetectionSettings = async () => {
-    if (!data.currentUser || !cheatDetectionExam) {
+    if (!data.currentUser) {
       return;
     }
 
@@ -333,8 +351,24 @@ export default function TeacherPage() {
 
     setSavingCheatDetections(true);
     try {
+      let targetExam = cheatDetectionExam;
+
+      if (!targetExam) {
+        const scheduledExam = await management.handleSchedule();
+        if (!scheduledExam) {
+          return;
+        }
+
+        targetExam = scheduledExam;
+        setCheatDetectionExam(scheduledExam);
+      }
+
+      if (!targetExam) {
+        return;
+      }
+
       const updated = await updateExam(
-        cheatDetectionExam.id,
+        targetExam.id,
         {
           requiresAudioRecording: selectedRequiresAudioRecording,
           enabledCheatDetections: selectedConfig,
@@ -344,7 +378,7 @@ export default function TeacherPage() {
 
       data.setExams(
         data.exams.map((exam) =>
-          exam.id === cheatDetectionExam.id
+          exam.id === targetExam.id
             ? {
                 ...exam,
                 requiresAudioRecording:
@@ -421,7 +455,7 @@ export default function TeacherPage() {
         >
           <TeacherPageContent
             activeTab={activeTab}
-            onOpenScheduleForm={() => setShowScheduleForm(true)}
+            onOpenScheduleForm={openScheduleForm}
             data={data}
             management={management}
             examStatsState={examStatsState}
@@ -434,12 +468,13 @@ export default function TeacherPage() {
       <TeacherScheduleModal
         show={showScheduleForm}
         onClose={() => setShowScheduleForm(false)}
-        onSchedule={handleScheduleAndConfigure}
+        onContinue={openCheatDetectionDialog}
         data={data}
         management={management}
       />
       <TeacherCheatDetectionDialog
         exam={cheatDetectionExam}
+        examTitle={pendingCheatDetectionTitle}
         open={showCheatDetectionDialog}
         saving={savingCheatDetections}
         requiresAudioRecording={selectedRequiresAudioRecording}
