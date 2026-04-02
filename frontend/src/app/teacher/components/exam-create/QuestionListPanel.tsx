@@ -24,10 +24,9 @@ export default function QuestionListPanel({
         return (
           <div
             key={question.id}
-            className={`rounded-[24px] border bg-white p-5 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.16)] ${
-              isMissingCorrect ? "border-amber-300" : "border-[#e7edf5]"
-            }`}
-          >
+            className={`rounded-[24px] border bg-[#e7edf5]/60 p-5 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.16)] ${
+              isMissingCorrect ? "border-amber-300" : "border-[#d9dde6]"
+            }`}>
             <div className="flex items-start justify-between gap-3">
               <div className="text-sm font-semibold text-slate-700">
                 Сурагчийн харагдах байдал
@@ -36,22 +35,19 @@ export default function QuestionListPanel({
                 <button
                   className="rounded-full border border-[#dce5ef] bg-white px-4 py-2 text-xs font-semibold text-slate-500 transition hover:border-[#bfd3ff] hover:text-[#2563eb]"
                   onClick={() => onEdit(index)}
-                  type="button"
-                >
+                  type="button">
                   Засах
                 </button>
                 <button
                   className="grid h-10 w-10 place-items-center rounded-full border border-red-200 bg-white text-red-500 transition hover:bg-red-50"
                   onClick={() => onRemove(question.id)}
-                  type="button"
-                >
+                  type="button">
                   <svg
                     className="h-4 w-4"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                    strokeWidth="2">
                     <path d="M3 6h18" />
                     <path d="M8 6V4h8v2" />
                     <path d="M19 6l-1 14H6L5 6" />
@@ -67,8 +63,7 @@ export default function QuestionListPanel({
                 isMissingCorrect
                   ? "border-amber-200 bg-amber-50/40"
                   : "border-[#ebf0f7] bg-[#fcfdff]"
-              }`}
-            >
+              }`}>
               {question.imageUrl && (
                 <div className="mb-4 overflow-hidden rounded-[16px] border border-[#e7edf5] bg-white p-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

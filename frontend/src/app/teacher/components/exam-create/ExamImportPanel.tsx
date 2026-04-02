@@ -7,6 +7,8 @@ type ExamImportPanelProps = {
   setAnswerKeyPage: (value: number | "last") => void;
   importMcqCount: number;
   setImportMcqCount: (value: number) => void;
+  importTextCount: number;
+  setImportTextCount: (value: number) => void;
   importOpenCount: number;
   setImportOpenCount: (value: number) => void;
   shuffleImportedQuestions: boolean;
@@ -17,9 +19,9 @@ type ExamImportPanelProps = {
   importError: string | null;
   importLoading: boolean;
   importLoadingLabel: string | null;
-  onPdfUpload: (file: File) => void;
-  onImageUpload: (file: File) => void;
-  onDocxUpload: (file: File) => void;
+  onPdfUpload: (file: File, options?: { preserveTitle?: boolean }) => void;
+  onImageUpload: (file: File, options?: { preserveTitle?: boolean }) => void;
+  onDocxUpload: (file: File, options?: { preserveTitle?: boolean }) => void;
 };
 
 export default function ExamImportPanel({
@@ -29,6 +31,8 @@ export default function ExamImportPanel({
   importLoadingLabel,
   importMcqCount,
   setImportMcqCount,
+  importTextCount,
+  setImportTextCount,
   importOpenCount,
   setImportOpenCount,
   shuffleImportedQuestions,
@@ -41,14 +45,21 @@ export default function ExamImportPanel({
   const disabledClass = importLoading ? "pointer-events-none opacity-60" : "";
   const typeControls = [
     {
-      label: "Сонгох",
+      label: "Сонгох тест",
       hint: "MCQ",
       value: importMcqCount,
       setValue: setImportMcqCount,
       tone: "from-[#eff6ff] to-[#dbeafe] text-[#1d4ed8]",
     },
     {
-      label: "Задгай",
+      label: "Холбох тест",
+      hint: "Text",
+      value: importTextCount,
+      setValue: setImportTextCount,
+      tone: "from-[#f5f3ff] to-[#ede9fe] text-[#7c3aed]",
+    },
+    {
+      label: "Задгай тест",
       hint: "Open",
       value: importOpenCount,
       setValue: setImportOpenCount,

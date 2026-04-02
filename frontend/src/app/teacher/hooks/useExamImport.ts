@@ -34,12 +34,13 @@ export const useExamImport = (params: {
   const [importLoading, setImportLoading] = useState(false);
   const [importLoadingLabel, setImportLoadingLabel] = useState<string | null>(null);
   const [importMcqCount, setImportMcqCount] = useState(0);
+  const [importTextCount, setImportTextCount] = useState(0);
   const [importOpenCount, setImportOpenCount] = useState(0);
   const [shuffleImportedQuestions, setShuffleImportedQuestions] = useState(true);
 
   const importQuestionPlan = {
     mcqCount: importMcqCount,
-    textCount: 0,
+    textCount: importTextCount,
     openCount: importOpenCount,
     shuffleQuestions: shuffleImportedQuestions,
   } as const;
@@ -47,7 +48,7 @@ export const useExamImport = (params: {
   const plannedQuestionCount = getImportQuestionPlanTotal(importQuestionPlan);
   const generationCounts = {
     mcq: importMcqCount,
-    text: 0,
+    text: importTextCount,
     open: importOpenCount,
   } as const;
 
@@ -120,7 +121,10 @@ export const useExamImport = (params: {
     }
   };
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (
+    file: File,
+    options?: { preserveTitle?: boolean },
+  ) => {
     setImportError(null);
     setImportLoading(true);
     setImportLoadingLabel("Зураг уншиж байна...");
@@ -160,7 +164,7 @@ export const useExamImport = (params: {
             : `${shapedQuestions.length} асуулт зурганаас үүсгэгдлээ. Зөв хариултыг шалгана уу.`,
       );
 
-      if (!examTitle) {
+      if (!examTitle && !options?.preserveTitle) {
         setExamTitle(file.name.replace(/\.[^.]+$/, ""));
       }
     } catch {
@@ -171,7 +175,10 @@ export const useExamImport = (params: {
     }
   };
 
-  const handleDocxUpload = async (file: File) => {
+  const handleDocxUpload = async (
+    file: File,
+    options?: { preserveTitle?: boolean },
+  ) => {
     setImportError(null);
     setImportLoading(true);
     setImportLoadingLabel("DOCX уншиж байна...");
@@ -194,7 +201,7 @@ export const useExamImport = (params: {
 
       setQuestions(shapedQuestions);
 
-      if (!examTitle) {
+      if (!examTitle && !options?.preserveTitle) {
         setExamTitle(file.name.replace(/\.docx$/i, ""));
       }
 
@@ -211,7 +218,10 @@ export const useExamImport = (params: {
     }
   };
 
-  const handlePdfUpload = async (file: File) => {
+  const handlePdfUpload = async (
+    file: File,
+    options?: { preserveTitle?: boolean },
+  ) => {
     setPdfLoading(true);
     setPdfError(null);
     setImportLoading(true);
@@ -272,7 +282,7 @@ export const useExamImport = (params: {
 
       setQuestions(uploadedQuestions);
 
-      if (!examTitle) {
+      if (!examTitle && !options?.preserveTitle) {
         setExamTitle(file.name.replace(/\.pdf$/i, ""));
       }
 
@@ -307,6 +317,8 @@ export const useExamImport = (params: {
     importLoadingLabel,
     importMcqCount,
     setImportMcqCount,
+    importTextCount,
+    setImportTextCount,
     importOpenCount,
     setImportOpenCount,
     shuffleImportedQuestions,
