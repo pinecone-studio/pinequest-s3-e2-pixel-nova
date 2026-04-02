@@ -14,12 +14,6 @@ import {
   toActiveSession,
 } from '../core/context-helpers';
 import { isCheatDetectionEnabled } from '../core/cheat-detection';
-import {
-  buildBiologyMockResult,
-  createBiologyMockSession,
-  isMockExamRoomCode,
-  isMockExamSession,
-} from '../mock-exam';
 import type { AnswerValue, CheatEventType } from '@/types/student-app';
 import type { StudentAppSetState, StudentAppState } from '../core/state';
 import {
@@ -122,16 +116,6 @@ export const useStudentSession = ({
 
       const normalizedCode = roomCode.trim().toUpperCase();
 
-      if (isMockExamRoomCode(normalizedCode)) {
-        const nextSession = createBiologyMockSession();
-        setState((current) => ({
-          ...current,
-          activeSession: nextSession,
-          submittedResult: null,
-        }));
-        return nextSession;
-      }
-
       const joined = await joinSession(student, normalizedCode);
       const detail = await getSessionDetail(student, joined.sessionId);
       const nextSession = toActiveSession(
@@ -155,26 +139,6 @@ export const useStudentSession = ({
   const startExam = useCallback(async (options?: { audioReady?: boolean }) => {
     if (!activeSession) {
       throw new Error('No active exam session found.');
-    }
-
-    if (isMockExamSession(activeSession)) {
-      const startedAt = new Date().toISOString();
-      setState((current) => ({
-        ...current,
-        activeSession: current.activeSession
-          ? {
-              ...current.activeSession,
-              status: 'in_progress',
-              startedAt,
-              timerEndsAt:
-                new Date(startedAt).getTime() +
-                current.activeSession.exam.durationMin * 60 * 1000,
-              syncStatus: 'ready',
-              syncMessage: null,
-            }
-          : current.activeSession,
-      }));
-      return;
     }
 
     if (!student) {
@@ -301,20 +265,6 @@ export const useStudentSession = ({
           : current.activeSession,
       }));
 
-      if (isMockExamSession(activeSession)) {
-        setState((current) => ({
-          ...current,
-          activeSession: current.activeSession
-            ? {
-                ...current.activeSession,
-                syncStatus: 'ready',
-                syncMessage: null,
-              }
-            : current.activeSession,
-        }));
-      return;
-      }
-
       if (!student) {
         throw new Error('No active student selected.');
       }
@@ -388,23 +338,6 @@ export const useStudentSession = ({
     try {
       if (options?.beforeSubmit) {
         await options.beforeSubmit();
-      }
-
-      if (isMockExamSession(activeSession)) {
-        const result = buildBiologyMockResult(activeSession, activeSession.answers);
-        setState((current) => ({
-          ...current,
-          submittedResult: result,
-          activeSession: current.activeSession
-            ? {
-                ...current.activeSession,
-                status: 'submitted',
-                syncStatus: 'ready',
-                syncMessage: null,
-              }
-            : current.activeSession,
-        }));
-        return result;
       }
 
       if (!student) {

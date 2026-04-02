@@ -14,11 +14,14 @@ jest.mock("@react-navigation/native", () => ({
   useFocusEffect: jest.fn(),
 }));
 
-jest.mock("expo-router",()=>({
-  Redirect:({href}:{href:string})=>require("react").createElement("Text",null,`redirect:${href}`),
-  useLocalSearchParams:()=>({}),
-  useRouter:()=>({push:jest.fn(),replace:jest.fn()}),
-}));    
+const mockUseLocalSearchParams = jest.fn(() => ({}));
+
+jest.mock("expo-router", () => ({
+  Redirect: ({ href }: { href: string }) =>
+    require("react").createElement("Text", null, `redirect:${href}`),
+  useLocalSearchParams: () => mockUseLocalSearchParams(),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+}));
 
 jest.mock("expo-camera", () => ({
   useCameraPermissions: jest.fn(() => [{ granted: true }, jest.fn()]),
@@ -172,6 +175,7 @@ describe("ExamScreen", () => {
   afterEach(() => {
     cleanup();
     jest.clearAllMocks();
+    mockUseLocalSearchParams.mockReturnValue({});
   });
 
   it("keeps the tab mounted while session state hydrates", () => {
@@ -212,8 +216,6 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    fireEvent.press(screen.getByText("Шалгалтанд орох"));
-
     await waitFor(() => {
       expect(
         screen.getByText(
@@ -236,7 +238,28 @@ describe("ExamScreen", () => {
 
     expect(screen.getByText(/camera-capturing/)).toBeTruthy();
     expect(screen.getByText("Demo exam")).toBeTruthy();
-    expect(screen.getByText("Үлдсэн хугацаа")).toBeTruthy();
+    expect(screen.getByText("Асуулт 1")).toBeTruthy();
+    expect(screen.getByText("Илгээх")).toBeTruthy();
+    screen.unmount();
+  });
+
+  it("hides the joined exam list layout during auto-start preflight", () => {
+    mockUseLocalSearchParams.mockReturnValue({ autoStart: "1" });
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: false },
+      jest.fn(async () => ({ granted: false })),
+    ]);
+    mockUseStudentApp.mockReturnValue({
+      ...baseContext,
+      activeSession: buildActiveSession("joined"),
+    });
+
+    const screen = render(<ExamScreen />);
+
+    expect(screen.getByText("Demo exam")).toBeTruthy();
+    expect(screen.getByText("camera-preflight")).toBeTruthy();
+    expect(screen.queryByText("Ð¨Ð°Ð»Ð³Ð°Ð»Ñ‚ÑƒÑƒÐ´")).toBeNull();
+    expect(screen.queryByText("Ð¨Ð°Ð»Ð³Ð°Ð»Ñ‚ Ñ…Ð°Ð¹Ñ…...")).toBeNull();
     screen.unmount();
   });
 

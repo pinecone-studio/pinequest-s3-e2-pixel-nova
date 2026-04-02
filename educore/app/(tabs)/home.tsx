@@ -5,11 +5,6 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useStudentApp } from "@/lib/student-app/context";
-import {
-  BIOLOGY_MOCK_EXAM_ID,
-  BIOLOGY_MOCK_ROOM_CODE,
-  BIOLOGY_MOCK_TITLE,
-} from "@/lib/student-app/mock-exam";
 import { homeStyles as styles } from "@/styles/screens/home";
 
 type HomeExamStatus =
@@ -277,27 +272,6 @@ function buildPrimaryCardsForDate(
   const { activeSession, history, upcomingExams } = studentApp;
   const cards: HomeExamCard[] = [];
   const coveredExamIds = new Set<string>();
-
-  if (isSameDay(selectedDate, now)) {
-    const mockStart = new Date(now.getTime() - 2 * 60 * 1000);
-    cards.push({
-      id: `mock:${BIOLOGY_MOCK_EXAM_ID}`,
-      title: BIOLOGY_MOCK_TITLE,
-      date: formatDateLabel(mockStart.toISOString()),
-      time: formatTimeLabel(mockStart.toISOString()),
-      duration: "20 минут",
-      status: "active",
-      statusText: "Эхэлсэн",
-      canJoin: true,
-      canViewDetail: false,
-      roomCode: BIOLOGY_MOCK_ROOM_CODE,
-      className: "12A",
-      groupName: "Mock",
-      teacherName: "Demo Teacher",
-      sortTime: mockStart.getTime(),
-    });
-    coveredExamIds.add(BIOLOGY_MOCK_EXAM_ID);
-  }
 
   if (activeSession) {
     const scheduledAt =
