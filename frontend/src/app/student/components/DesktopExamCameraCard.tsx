@@ -107,6 +107,8 @@ export default function DesktopExamCameraCard({
     });
 
   const latestEvent = events[0] ?? null;
+  const visibleError =
+    error && !error.toLowerCase().includes("operation was aborted.") ? error : null;
   const yawLabel = useMemo(() => {
     if (latestObservation.yaw === null) {
       return "тодорхойгүй";
@@ -186,8 +188,8 @@ export default function DesktopExamCameraCard({
               Камер халхлагдсан дохио: {latestObservation.blockedReason.replace(/_/g, " ")}
             </p>
           )}
-          {error && (
-            <p className="mt-2 text-xs font-medium text-[#d25b2b]">{error}</p>
+          {visibleError && (
+            <p className="mt-2 text-xs font-medium text-[#d25b2b]">{visibleError}</p>
           )}
         </div>
 
@@ -195,9 +197,10 @@ export default function DesktopExamCameraCard({
           <button
             type="button"
             className="rounded-xl border border-[#d8e1f0] bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-[#f8fbff]"
-            onClick={() => {
+            onClick={async () => {
               stop();
-              void start();
+              await Promise.resolve();
+              await start();
             }}
           >
             Камерыг дахин асаах

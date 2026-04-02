@@ -6,12 +6,21 @@ import {
   buildTeacherOverviewStats,
   buildXpLeaderboard,
 } from "../analytics";
-import type { Exam, ExamStatsSummary, QuestionInsight, Submission } from "../types";
+import type {
+  Exam,
+  ExamStatsSummary,
+  QuestionInsight,
+  Submission,
+  TeacherDashboardAnalytics,
+} from "../types";
 import {
   fetchExamQuestionInsights,
+  fetchTeacherDashboardAnalytics,
   fetchTeacherExamDetail,
   fetchTeacherSubmissions,
 } from "./teacher-api";
+
+const DASHBOARD_REFRESH_MS = 5000;
 
 export const useExamStats = (params: {
   exams: Exam[];
@@ -35,6 +44,8 @@ export const useExamStats = (params: {
       }
     >
   >({});
+  const [dashboardAnalytics, setDashboardAnalytics] =
+    useState<TeacherDashboardAnalytics | null>(null);
 
   const xpLeaderboard = useMemo(
     () =>
@@ -120,6 +131,48 @@ export const useExamStats = (params: {
   );
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadDashboardAnalytics = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
+      try {
+        const payload = await fetchTeacherDashboardAnalytics(teacherId ?? undefined);
+        if (cancelled) return;
+        setDashboardAnalytics(payload);
+      } catch {
+        if (cancelled) return;
+        setDashboardAnalytics(null);
+      }
+    };
+
+    void loadDashboardAnalytics();
+
+    const interval = window.setInterval(() => {
+      void loadDashboardAnalytics();
+    }, DASHBOARD_REFRESH_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadDashboardAnalytics();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
+  }, [teacherId]);
+
+  useEffect(() => {
     if (!activeExamId || remoteInsightsByExam[activeExamId]) return;
 
     let cancelled = false;
@@ -198,6 +251,7 @@ export const useExamStats = (params: {
     stats,
     cheatStudents,
     xpLeaderboard,
+    dashboardAnalytics,
     selectedSubmissionId,
     setSelectedSubmissionId,
     selectedSubmission,

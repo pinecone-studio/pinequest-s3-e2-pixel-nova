@@ -4,7 +4,7 @@ import type { Exam, Question, Submission } from "../types";
 import { mapResultToReport } from "./student-exam-session-helpers";
 
 type AnswerReportItem = { question: Question; answer: string; correct: boolean }[];
-const RESULT_PENDING_POLL_MS = 15000;
+const RESULT_PENDING_POLL_MS = 5000;
 
 export function useStudentExamResultState(sessionId: string | null, activeExam: Exam | null) {
   const [lastSubmission, setLastSubmission] = useState<Submission | null>(null);
@@ -79,6 +79,8 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
         return;
       }
     };
+
+    void fetchResult();
 
     const interval = window.setInterval(() => {
       void fetchResult();

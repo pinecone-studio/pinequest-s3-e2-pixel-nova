@@ -50,6 +50,7 @@ export default function StudentPage() {
   });
   const progress = useStudentProgress(data.currentUser);
   const lastSyncedSubmissionIdRef = useRef<string | null>(null);
+  const lastResolvedResultSignatureRef = useRef<string | null>(null);
 
   useExamIntegrityMonitor({
     view: exam.view,
@@ -167,6 +168,34 @@ export default function StudentPage() {
     lastSyncedSubmissionIdRef.current = submissionId;
     void refreshProgress();
   }, [exam.lastSubmission?.id, refreshProgress]);
+
+  useEffect(() => {
+    const submission = exam.lastSubmission;
+    if (!submission || exam.resultPending) {
+      return;
+    }
+
+    const signature = [
+      submission.id,
+      submission.score ?? 0,
+      submission.totalPoints ?? 0,
+      submission.submittedAt ?? "",
+    ].join(":");
+
+    if (signature === lastResolvedResultSignatureRef.current) {
+      return;
+    }
+
+    lastResolvedResultSignatureRef.current = signature;
+    void refreshProgress();
+  }, [
+    exam.lastSubmission?.id,
+    exam.lastSubmission?.score,
+    exam.lastSubmission?.submittedAt,
+    exam.lastSubmission?.totalPoints,
+    exam.resultPending,
+    refreshProgress,
+  ]);
 
   if (showFallbackState) {
     return (

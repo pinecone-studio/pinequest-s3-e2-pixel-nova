@@ -148,6 +148,10 @@ let mediapipePromise:
     }>
   | null = null;
 
+const SILENCED_CONSOLE_ERROR_PATTERNS = [
+  "Created TensorFlow Lite XNNPACK delegate for CPU.",
+];
+
 const averagePoint = (points: FacePoint[]) => {
   if (!points.length) {
     return null;
@@ -230,6 +234,50 @@ const buildDefaultObservation = (): Observation => ({
   yaw: null,
 });
 
+const shouldSilenceConsoleError = (args: unknown[]) => {
+  const message = args
+    .map((arg) => (typeof arg === "string" ? arg : ""))
+    .join(" ");
+
+  return SILENCED_CONSOLE_ERROR_PATTERNS.some((pattern) =>
+    message.includes(pattern),
+  );
+};
+
+const withSilencedConsoleErrors = async <T>(run: () => Promise<T>) => {
+  if (typeof console === "undefined") {
+    return run();
+  }
+
+  const originalConsoleError = console.error.bind(console);
+  let patched = false;
+
+  try {
+    console.error = (...args: unknown[]) => {
+      if (shouldSilenceConsoleError(args)) {
+        return;
+      }
+
+      originalConsoleError(...args);
+    };
+    patched = true;
+  } catch {
+    return run();
+  }
+
+  try {
+    return await run();
+  } finally {
+    if (patched) {
+      try {
+        console.error = originalConsoleError;
+      } catch {
+        // Ignore console restore failures in browsers that lock console methods.
+      }
+    }
+  }
+};
+
 const clampConfidenceScore = (value: number) =>
   Math.max(0, Math.min(1, Math.round(value * 100) / 100));
 
@@ -261,7 +309,7 @@ const getObservationConfidence = (
 
 const ensureModels = async () => {
   if (!mediapipePromise) {
-    mediapipePromise = (async () => {
+    mediapipePromise = withSilencedConsoleErrors(async () => {
       const vision = (await import(
         /* webpackIgnore: true */ MEDIAPIPE_BUNDLE_URL
       )) as VisionModule;
@@ -290,7 +338,7 @@ const ensureModels = async () => {
       ]);
 
       return { detector, landmarker };
-    })();
+    });
   }
 
   return mediapipePromise;
@@ -302,6 +350,21 @@ const createTimerMap = (): Record<ProctoringEventType, TimerState> => ({
   LOOKING_AWAY: { activeSince: null, activeFrames: 0, lastEmittedAt: null, maxConfidence: 0 },
   CAMERA_BLOCKED: { activeSince: null, activeFrames: 0, lastEmittedAt: null, maxConfidence: 0 },
 });
+
+const isAbortLikeError = (cause: unknown) => {
+  if (typeof DOMException !== "undefined" && cause instanceof DOMException) {
+    return cause.name === "AbortError";
+  }
+
+  if (!(cause instanceof Error)) {
+    return false;
+  }
+
+  return (
+    cause.name === "AbortError" ||
+    cause.message.toLowerCase().includes("operation was aborted")
+  );
+};
 
 export const useProctoringCamera = (
   options: UseProctoringCameraOptions = {},
@@ -569,6 +632,13 @@ export const useProctoringCamera = (
       setStatus("running");
       void processFrame(detector, landmarker);
     } catch (cause) {
+      if (isAbortLikeError(cause)) {
+        stop();
+        setError(null);
+        setStatus("stopped");
+        return;
+      }
+
       console.error("use-proctoring-camera-start-failed", cause);
       stop();
       setStatus("error");

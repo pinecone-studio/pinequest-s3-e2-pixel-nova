@@ -38,7 +38,6 @@ describe("TeacherPageContent", () => {
     render(
       <TeacherPageContent
         activeTab="Хуваарь"
-        setActiveTab={() => {}}
         onOpenScheduleForm={() => {}}
         data={{ loading: true } as never}
         management={{} as never}
@@ -56,7 +55,6 @@ describe("TeacherPageContent", () => {
     render(
       <TeacherPageContent
         activeTab="Шалгалтын сан"
-        setActiveTab={() => {}}
         onOpenScheduleForm={() => {}}
         data={{
           loading: false,
@@ -127,12 +125,9 @@ describe("TeacherPageContent", () => {
   });
 
   it("opens an exam preview from the exam library instead of switching to results", () => {
-    const setActiveTab = jest.fn();
-
     render(
       <TeacherPageContent
         activeTab="Шалгалтын сан"
-        setActiveTab={setActiveTab}
         onOpenScheduleForm={() => {}}
         data={{
           loading: false,
@@ -204,6 +199,5 @@ describe("TeacherPageContent", () => {
     fireEvent.click(screen.getByRole("button", { name: "Математик харах" }));
 
     expect(screen.getByText("2 + 2 хэд вэ?")).toBeInTheDocument();
-    expect(setActiveTab).not.toHaveBeenCalled();
   });
 });

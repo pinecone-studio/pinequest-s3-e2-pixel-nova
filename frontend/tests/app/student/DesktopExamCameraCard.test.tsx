@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import DesktopExamCameraCard from "@/app/student/components/DesktopExamCameraCard";
 import { reportCheatEvent } from "@/api/cheat";
 import {
@@ -78,6 +78,85 @@ describe("DesktopExamCameraCard", () => {
     await waitFor(() => {
       expect(showWarning).not.toHaveBeenCalled();
       expect(mockReportCheatEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  it("hides benign abort errors from the camera card", () => {
+    mockUseProctoringCamera.mockReturnValue({
+      canvasRef: { current: null },
+      error: "The operation was aborted.",
+      events: [],
+      latestObservation: {
+        blockedReason: null,
+        brightness: null,
+        faceCount: 1,
+        yaw: null,
+      },
+      start: jest.fn(),
+      status: "error",
+      stop: jest.fn(),
+      videoRef: { current: null },
+    } as never);
+
+    render(
+      <DesktopExamCameraCard
+        enabledCheatDetections={["face_missing"]}
+        sessionId="session-1"
+        showWarning={jest.fn()}
+        user={{
+          id: "student-1",
+          username: "Student",
+          password: "",
+          role: "student",
+          createdAt: "",
+        }}
+        view="exam"
+      />,
+    );
+
+    expect(screen.queryByText("The operation was aborted.")).not.toBeInTheDocument();
+  });
+
+  it("restarts the camera from the action button", async () => {
+    const stop = jest.fn();
+    const start = jest.fn().mockResolvedValue(undefined);
+    mockUseProctoringCamera.mockReturnValue({
+      canvasRef: { current: null },
+      error: null,
+      events: [],
+      latestObservation: {
+        blockedReason: null,
+        brightness: null,
+        faceCount: 1,
+        yaw: null,
+      },
+      start,
+      status: "running",
+      stop,
+      videoRef: { current: null },
+    } as never);
+
+    render(
+      <DesktopExamCameraCard
+        enabledCheatDetections={["face_missing"]}
+        sessionId="session-1"
+        showWarning={jest.fn()}
+        user={{
+          id: "student-1",
+          username: "Student",
+          password: "",
+          role: "student",
+          createdAt: "",
+        }}
+        view="exam"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Камерыг дахин асаах" }));
+
+    await waitFor(() => {
+      expect(stop).toHaveBeenCalled();
+      expect(start).toHaveBeenCalled();
     });
   });
 });

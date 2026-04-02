@@ -1,9 +1,9 @@
 import { useState } from "react";
 import ExamListCard from "./ExamListCard";
 import ExamPreviewDialog from "./ExamPreviewDialog";
+import TeacherAnalyticsDashboardTab from "./TeacherAnalyticsDashboardTab";
 import TeacherStudentsTab from "./TeacherStudentsTab";
 import TeacherPageSkeleton from "./TeacherPageSkeleton";
-import AnalyticsTab from "./AnalyticsTab";
 import type { useExamAttendanceStats } from "../hooks/useExamAttendanceStats";
 import { useExamImport } from "../hooks/useExamImport";
 import type { useExamManagement } from "../hooks/useExamManagement";
@@ -12,7 +12,7 @@ import type { useTeacherData } from "../hooks/useTeacherData";
 import { Dialog } from "@/components/ui/dialog";
 import CreateExamDialogContent from "./CreateExamDialogContent";
 
-export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Шалгалтын аналитик";
+export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Гүйцэтгэл";
 
 const sanitizeFileName = (value: string) =>
   value
@@ -56,7 +56,6 @@ const buildExamDownloadText = (exam: TeacherPageContentProps["data"]["exams"][nu
 
 type TeacherPageContentProps = {
   activeTab: TeacherTab;
-  setActiveTab: (tab: TeacherTab) => void;
   loadingTab?: TeacherTab | null;
   onOpenScheduleForm: () => void;
   data: ReturnType<typeof useTeacherData>;
@@ -120,7 +119,7 @@ export default function TeacherPageContent({
   const skeletonVariant =
     activeTab === "Шалгалтын сан"
       ? "examLibrary"
-      : activeTab === "Шалгалтын аналитик"
+      : activeTab === "Гүйцэтгэл"
         ? "analytics"
         : "schedule";
 
@@ -171,18 +170,14 @@ export default function TeacherPageContent({
     );
   }
 
-  if (activeTab === "Шалгалтын аналитик") {
+  if (activeTab === "Гүйцэтгэл") {
     return (
-      <AnalyticsTab
-        teacherId={data.currentUser?.id ?? null}
-        exams={data.exams}
-        fallbackXpLeaderboard={examStatsState.xpLeaderboard}
-        fallbackExamStats={examStatsState.examStats}
+      <TeacherAnalyticsDashboardTab
+        loading={data.loading}
+        analytics={examStatsState.dashboardAnalytics}
       />
     );
   }
-
-
   return (
     <div className="space-y-6">
       <TeacherStudentsTab

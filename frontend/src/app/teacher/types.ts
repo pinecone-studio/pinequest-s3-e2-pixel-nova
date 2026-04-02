@@ -176,6 +176,46 @@ export type XpLeaderboardEntry = {
   lastActivity: string | null;
 };
 
+export type TeacherAnalyticsXpEntry = {
+  rank: number;
+  studentId: string;
+  displayName: string;
+  xp: number;
+  level: number;
+};
+
+export type TeacherAnalyticsTrendPoint = {
+  label: string;
+  averageScore: number;
+  averageXp: number;
+};
+
+export type TeacherAnalyticsInsight = {
+  title: string;
+  summary: string;
+  source: "ai" | "fallback";
+};
+
+export type TeacherDashboardAnalytics = {
+  totalClasses: number;
+  totalExams: number;
+  totalStudents: number;
+  activeExams: number;
+  totalSubmissions: number;
+  lastSevenDaysSubmissions: number;
+  recentExams: {
+    id: string;
+    title: string;
+    status: string;
+    createdAt: string;
+    studentCount: number;
+    averageScore: number | null;
+  }[];
+  xpLeaderboard: TeacherAnalyticsXpEntry[];
+  scoreTrend: TeacherAnalyticsTrendPoint[];
+  aiInsight: TeacherAnalyticsInsight;
+};
+
 export type ExamRosterParticipant = {
   sessionId: string;
   studentId: string;
