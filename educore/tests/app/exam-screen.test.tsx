@@ -14,14 +14,11 @@ jest.mock("@react-navigation/native", () => ({
   useFocusEffect: jest.fn(),
 }));
 
-jest.mock("expo-router", () => ({
-  Redirect: ({ href }: { href: string }) =>
-    require("react").createElement("Text", null, `redirect:${href}`),
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-  }),
-}));
+jest.mock("expo-router",()=>({
+  Redirect:({href}:{href:string})=>require("react").createElement("Text",null,`redirect:${href}`),
+  useLocalSearchParams:()=>({}),
+  useRouter:()=>({push:jest.fn(),replace:jest.fn()}),
+}));    
 
 jest.mock("expo-camera", () => ({
   useCameraPermissions: jest.fn(() => [{ granted: true }, jest.fn()]),
