@@ -83,7 +83,9 @@ export default function StudentExamStartGuideModal({
               <span
                 key={index}
                 className={`h-2.5 rounded-full transition-all ${
-                  index === safeIndex ? "w-6 bg-[#2f66ef]" : "w-2.5 bg-[#d9dee8]"
+                  index === safeIndex
+                    ? "w-6 bg-[#2f66ef]"
+                    : "w-2.5 bg-[#d9dee8]"
                 }`}
               />
             ))}
@@ -104,7 +106,11 @@ export default function StudentExamStartGuideModal({
             disabled={submitting}
             className="rounded-[16px] bg-[#2f66ef] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2557d0] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isLastStep ? (submitting ? "Эхлүүлж байна..." : "Start") : "Цааш"}
+            {isLastStep
+              ? submitting
+                ? "Эхлүүлж байна..."
+                : "Эхлүүлэх"
+              : "Цааш"}
           </button>
         </div>
       </div>
