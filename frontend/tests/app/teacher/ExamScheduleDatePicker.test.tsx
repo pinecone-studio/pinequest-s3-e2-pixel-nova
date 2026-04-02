@@ -6,11 +6,9 @@ jest.mock("@/components/ui/calendar", () => ({
   Calendar: ({
     onSelect,
     fromDate,
-    toDate,
   }: {
     onSelect: (date: Date) => void;
     fromDate?: Date;
-    toDate?: Date;
   }) => {
     lastFromDate = fromDate;
 
@@ -65,6 +63,26 @@ describe("ExamScheduleDatePicker", () => {
 
     expect(setScheduleDate).toHaveBeenCalledWith(
       new Date(2026, 2, 27, 9, 0, 0, 0).toISOString(),
+    );
+  });
+
+  it("applies quick presets using the selected time", () => {
+    const setScheduleDate = jest.fn();
+
+    render(
+      <ExamScheduleDatePicker
+        scheduleDate="2026-03-27T09:00:00.000Z"
+        setScheduleDate={setScheduleDate}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /2026-03-27 09:00/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Маргааш" }));
+
+    expect(setScheduleDate).toHaveBeenCalledWith(
+      new Date(2026, 2, 28, 9, 0, 0, 0).toISOString(),
     );
   });
 });

@@ -77,6 +77,9 @@ describe("StudentResultView", () => {
 
     expect(screen.getByText("85%")).toBeInTheDocument();
     expect(screen.getByText("85/100")).toBeInTheDocument();
+    expect(screen.getByText("1/1")).toBeInTheDocument();
+    expect(screen.getByText("100%")).toBeInTheDocument();
+    expect(screen.getByText(/Алдсан асуултуудаа давтаад/)).toBeInTheDocument();
   });
 
   it("renders answer report with correct and incorrect labels", () => {

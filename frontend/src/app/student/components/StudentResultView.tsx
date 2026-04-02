@@ -34,6 +34,18 @@ export default function StudentResultView({
     document.body.style.filter = "none";
   }, []);
 
+  const answeredCount = answerReport.filter((item) => item.answer?.trim()).length;
+  const correctCount = answerReport.filter((item) => item.correct).length;
+  const incorrectCount = Math.max(answerReport.length - correctCount, 0);
+  const attemptedRate =
+    answerReport.length > 0 ? Math.round((answeredCount / answerReport.length) * 100) : 0;
+  const summaryMessage =
+    (lastSubmission?.percentage ?? 0) >= 90
+      ? "Маш сайн. Энэ гүйцэтгэлээ тогтвортой хадгалаарай."
+      : (lastSubmission?.percentage ?? 0) >= 70
+        ? "Сайн байна. Алдсан асуултуудаа давтаад дараагийн удаа ахиулж чадна."
+        : "Суурь ойлголтоо дахин бататгаад буруу асуултуудаа давтан ажиллаарай.";
+
   if (resultPending || !lastSubmission) {
     return (
       <div className="min-h-screen bg-background px-6 py-10 text-foreground">
@@ -74,7 +86,7 @@ export default function StudentResultView({
     <div className="min-h-screen bg-background px-6 py-10 text-foreground">
       <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Дүнгийн хураангуй</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
           <div className="rounded-xl border border-border bg-muted p-4">
             <div className="text-xs text-muted-foreground">Оноо</div>
             <div className="mt-2 text-2xl font-semibold">
@@ -82,11 +94,35 @@ export default function StudentResultView({
             </div>
           </div>
           <div className="rounded-xl border border-border bg-muted p-4">
-            <div className="text-xs text-muted-foreground">Зөв</div>
+            <div className="text-xs text-muted-foreground">Нийт оноо</div>
             <div className="mt-2 text-2xl font-semibold">
               {lastSubmission.score ?? 0}/{lastSubmission.totalPoints ?? 0}
             </div>
           </div>
+          <div className="rounded-xl border border-border bg-muted p-4">
+            <div className="text-xs text-muted-foreground">Зөв / Буруу</div>
+            <div className="mt-2 text-2xl font-semibold">
+              {correctCount}/{incorrectCount}
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-muted p-4">
+            <div className="text-xs text-muted-foreground">Хариулсан хувь</div>
+            <div className="mt-2 text-2xl font-semibold">{attemptedRate}%</div>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-border bg-muted p-4">
+          <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span>Ахицын тойм</span>
+            <span>{answeredCount}/{answerReport.length || 0} асуулт</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-background">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${Math.max(0, Math.min(100, attemptedRate))}%` }}
+            />
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">{summaryMessage}</p>
         </div>
 
         <div className="mt-6">

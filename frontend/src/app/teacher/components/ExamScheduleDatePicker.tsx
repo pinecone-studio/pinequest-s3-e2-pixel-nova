@@ -79,6 +79,38 @@ export default function ExamScheduleDatePicker({
   const pendingLabel = isValidDate
     ? `${selectedDate.getFullYear()} оны ${selectedDate.getMonth() + 1} сарын ${selectedDate.getDate()} • ${selectedTime}`
     : "";
+  const presetButtons = [
+    { label: "Өнөөдөр", value: "today" },
+    { label: "Маргааш", value: "tomorrow" },
+    { label: "Ирэх Даваа", value: "next-monday" },
+    { label: "7 хоногийн дараа", value: "next-week" },
+  ] as const;
+
+  const applyPreset = (preset: (typeof presetButtons)[number]["value"]) => {
+    const base = selectedDate && !isNaN(selectedDate.getTime())
+      ? new Date(selectedDate)
+      : new Date();
+    base.setSeconds(0, 0);
+
+    const next = new Date(base);
+    if (preset === "today") {
+      // keep same date
+    } else if (preset === "tomorrow") {
+      next.setDate(next.getDate() + 1);
+    } else if (preset === "next-week") {
+      next.setDate(next.getDate() + 7);
+    } else {
+      const day = next.getDay();
+      const diff = ((8 - day) % 7) || 7;
+      next.setDate(next.getDate() + diff);
+    }
+
+    next.setHours(Number(selectedHour), Number(selectedMinute), 0, 0);
+    if (!isDateSelectable(next)) {
+      return;
+    }
+    setScheduleDate(next.toISOString());
+  };
 
   return (
     <div className="relative grid gap-3">
@@ -163,7 +195,19 @@ export default function ExamScheduleDatePicker({
             </div>
 
             <div className="border-t border-[#edf0f4] px-4 py-4">
-              <div className="grid gap-2">
+              <div className="grid gap-3">
+                <div className="flex flex-wrap justify-center gap-2">
+                  {presetButtons.map((preset) => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      className="rounded-full border border-[#dbe4f1] bg-[#f8fbff] px-3 py-1.5 text-[12px] font-semibold text-slate-600 transition hover:border-[#bfdbfe] hover:bg-[#eff6ff] hover:text-[#2563EB]"
+                      onClick={() => applyPreset(preset.value)}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="flex justify-center">
                   <input
                     type="time"

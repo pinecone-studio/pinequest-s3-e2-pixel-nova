@@ -15,6 +15,63 @@ const INITIAL_INPUT: AiExamGeneratorInput = {
   instructions: "",
 };
 
+const MIN_TOPIC_LENGTH = 3;
+const MAX_QUESTION_COUNT = 30;
+const MIN_QUESTION_COUNT = 1;
+const MAX_INSTRUCTIONS_LENGTH = 1200;
+
+const parseGeneratorErrorMessage = (error: unknown) => {
+  if (!(error instanceof Error) || !error.message) {
+    return "AI ноорог үүсгэж чадсангүй.";
+  }
+
+  try {
+    const parsed = JSON.parse(error.message) as {
+      message?: string;
+      error?: string | { message?: string };
+    };
+    const nestedMessage =
+      typeof parsed.error === "string" ? parsed.error : parsed.error?.message;
+    return parsed.message || nestedMessage || error.message;
+  } catch {
+    return error.message;
+  }
+};
+
+const normalizeInput = (
+  value: AiExamGeneratorInput,
+): AiExamGeneratorInput => ({
+  ...value,
+  topic: value.topic.trim(),
+  subject: value.subject?.trim() ?? "",
+  gradeOrClass: value.gradeOrClass?.trim() ?? "",
+  questionCount: Math.min(
+    MAX_QUESTION_COUNT,
+    Math.max(MIN_QUESTION_COUNT, Number(value.questionCount) || MIN_QUESTION_COUNT),
+  ),
+  instructions: value.instructions?.trim() ?? "",
+});
+
+const getValidationError = (value: AiExamGeneratorInput) => {
+  if (!value.topic) {
+    return "Сэдэв эсвэл гарчиг оруулна уу.";
+  }
+
+  if (value.topic.length < MIN_TOPIC_LENGTH) {
+    return `Гарчиг хамгийн багадаа ${MIN_TOPIC_LENGTH} тэмдэгт байх ёстой.`;
+  }
+
+  if (value.questionCount < MIN_QUESTION_COUNT || value.questionCount > MAX_QUESTION_COUNT) {
+    return `Асуултын тоо ${MIN_QUESTION_COUNT}-${MAX_QUESTION_COUNT} хооронд байх ёстой.`;
+  }
+
+  if ((value.instructions?.length ?? 0) > MAX_INSTRUCTIONS_LENGTH) {
+    return `Нэмэлт заавар ${MAX_INSTRUCTIONS_LENGTH} тэмдэгтээс ихгүй байх ёстой.`;
+  }
+
+  return null;
+};
+
 export const useAiExamGenerator = (params: {
   teacherId?: string | null;
   showToast: (message: string) => void;
@@ -34,13 +91,19 @@ export const useAiExamGenerator = (params: {
   };
 
   const generateDraft = async (override?: Partial<AiExamGeneratorInput>) => {
-    const effectiveInput: AiExamGeneratorInput = {
+    if (generating) {
+      return null;
+    }
+
+    const effectiveInput = normalizeInput({
       ...input,
       ...override,
-    };
+    });
+    const validationError = getValidationError(effectiveInput);
 
-    if (!effectiveInput.topic.trim()) {
-      setError("Сэдэв эсвэл гарчиг оруулна уу.");
+    if (validationError) {
+      setError(validationError);
+      setInput(effectiveInput);
       return null;
     }
 
@@ -52,10 +115,9 @@ export const useAiExamGenerator = (params: {
       const nextDraft = await generateAiExamDraft(
         {
           ...effectiveInput,
-          topic: effectiveInput.topic.trim(),
-          subject: effectiveInput.subject?.trim() || undefined,
-          gradeOrClass: effectiveInput.gradeOrClass?.trim() || undefined,
-          instructions: effectiveInput.instructions?.trim() || undefined,
+          subject: effectiveInput.subject || undefined,
+          gradeOrClass: effectiveInput.gradeOrClass || undefined,
+          instructions: effectiveInput.instructions || undefined,
         },
         teacherId ?? undefined,
       );
@@ -63,10 +125,7 @@ export const useAiExamGenerator = (params: {
       showToast("AI шалгалтын ноорог үүсгэлээ.");
       return nextDraft;
     } catch (err) {
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : "AI ноорог үүсгэж чадсангүй.";
+      const message = parseGeneratorErrorMessage(err);
       setError(message);
       return null;
     } finally {
@@ -75,12 +134,12 @@ export const useAiExamGenerator = (params: {
   };
 
   const acceptDraft = async (): Promise<AiAcceptedDraftResponse | null> => {
-    if (!draft) return null;
+    if (!draft || savingAccepted) return null;
     setSavingAccepted(true);
     setError(null);
     try {
       const result = await saveAcceptedAiDraft(
-        input,
+        normalizeInput(input),
         draft,
         teacherId ?? undefined,
       );
@@ -88,9 +147,7 @@ export const useAiExamGenerator = (params: {
       return result;
     } catch (err) {
       const message =
-        err instanceof Error && err.message
-          ? err.message
-          : "AI ноорог хадгалж чадсангүй.";
+        parseGeneratorErrorMessage(err) || "AI ноорог хадгалж чадсангүй.";
       setError(message);
       return null;
     } finally {

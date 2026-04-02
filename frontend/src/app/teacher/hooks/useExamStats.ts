@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { StudentProgress, User } from "@/lib/examGuard";
 import {
   buildCheatStudents,
@@ -46,6 +46,8 @@ export const useExamStats = (params: {
   >({});
   const [dashboardAnalytics, setDashboardAnalytics] =
     useState<TeacherDashboardAnalytics | null>(null);
+  const loadedInsightExamIdsRef = useRef<Set<string>>(new Set());
+  const activeExamRequestIdRef = useRef(0);
 
   const xpLeaderboard = useMemo(
     () =>
@@ -143,7 +145,6 @@ export const useExamStats = (params: {
         setDashboardAnalytics(payload);
       } catch {
         if (cancelled) return;
-        setDashboardAnalytics(null);
       }
     };
 
@@ -173,9 +174,11 @@ export const useExamStats = (params: {
   }, [teacherId]);
 
   useEffect(() => {
-    if (!activeExamId || remoteInsightsByExam[activeExamId]) return;
+    if (!activeExamId) return;
+    if (loadedInsightExamIdsRef.current.has(activeExamId)) return;
 
     let cancelled = false;
+    loadedInsightExamIdsRef.current.add(activeExamId);
 
     const loadInsights = async () => {
       try {
@@ -187,6 +190,7 @@ export const useExamStats = (params: {
         }));
       } catch {
         if (cancelled) return;
+        loadedInsightExamIdsRef.current.delete(activeExamId);
       }
     };
 
@@ -195,7 +199,7 @@ export const useExamStats = (params: {
     return () => {
       cancelled = true;
     };
-  }, [activeExamId, remoteInsightsByExam, teacherId]);
+  }, [activeExamId, teacherId]);
 
   useEffect(() => {
     if (!activeExamId) {
@@ -206,14 +210,20 @@ export const useExamStats = (params: {
     }
 
     let cancelled = false;
+    const requestId = activeExamRequestIdRef.current + 1;
+    activeExamRequestIdRef.current = requestId;
 
     const loadExamData = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
+
       try {
         const [detail, submissionsForExam] = await Promise.all([
           fetchTeacherExamDetail(activeExamId, teacherId ?? undefined),
           fetchTeacherSubmissions(activeExamId, teacherId ?? undefined),
         ]);
-        if (cancelled) return;
+        if (cancelled || requestId !== activeExamRequestIdRef.current) return;
         setActiveExamDetail(detail);
         setActiveSubmissions(
           [...submissionsForExam].sort((left, right) =>
@@ -221,7 +231,7 @@ export const useExamStats = (params: {
           ),
         );
       } catch {
-        if (cancelled) return;
+        if (cancelled || requestId !== activeExamRequestIdRef.current) return;
         setActiveExamDetail(exams.find((exam) => exam.id === activeExamId) ?? null);
         setActiveSubmissions([]);
       }
@@ -229,10 +239,39 @@ export const useExamStats = (params: {
 
     void loadExamData();
 
+    const isLiveLikeExam = (() => {
+      const exam = exams.find((item) => item.id === activeExamId) ?? activeExamDetail;
+      if (!exam) return false;
+      const status = String(exam.status ?? "").toLowerCase();
+      return status === "active" || status === "in_progress";
+    })();
+
+    const interval = isLiveLikeExam
+      ? window.setInterval(() => {
+          void loadExamData();
+        }, DASHBOARD_REFRESH_MS)
+      : null;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void loadExamData();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
     return () => {
       cancelled = true;
+      if (interval !== null) {
+        window.clearInterval(interval);
+      }
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
     };
-  }, [activeExamId, exams, teacherId]);
+  }, [activeExamDetail, activeExamId, exams, teacherId]);
 
   const mergedExamStats = useMemo<ExamStatsSummary | null>(() => {
     if (!examStats || !activeExamId) return examStats;

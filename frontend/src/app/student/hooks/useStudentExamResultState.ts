@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiRequest } from "@/api/client";
 import type { Exam, Question, Submission } from "../types";
 import { mapResultToReport } from "./student-exam-session-helpers";
@@ -12,6 +12,8 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
   const [resultReleaseAt, setResultReleaseAt] = useState<string | null>(null);
   const [resultCountdown, setResultCountdown] = useState("00:00:00");
   const [answerReport, setAnswerReport] = useState<AnswerReportItem>([]);
+  const [resultRefreshNonce, setResultRefreshNonce] = useState(0);
+  const requestInFlightRef = useRef(false);
 
   useEffect(() => {
     if (!resultPending) return;
@@ -22,6 +24,11 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
 
     const releaseTime = new Date(resultReleaseAt).getTime();
     if (Number.isNaN(releaseTime)) return;
+    const remainingMs = Math.max(releaseTime - Date.now(), 0);
+    const releaseTimer = window.setTimeout(() => {
+      setResultCountdown("00:00:00");
+      setResultRefreshNonce((value) => value + 1);
+    }, remainingMs);
     const timer = window.setInterval(() => {
       const diff = Math.max(releaseTime - Date.now(), 0);
       const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -33,22 +40,25 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
           .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`,
       );
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      clearTimeout(releaseTimer);
+    };
   }, [resultPending, resultReleaseAt]);
 
   useEffect(() => {
     if (!resultPending || !sessionId || !activeExam) return;
 
     const fetchResult = async () => {
+      if (requestInFlightRef.current) {
+        return;
+      }
+
       if (typeof document !== "undefined" && document.visibilityState !== "visible") {
         return;
       }
 
-      const examStatus = activeExam.status ?? null;
-      if (examStatus === "finished" || examStatus === "archived") {
-        return;
-      }
-
+      requestInFlightRef.current = true;
       try {
         const result = await apiRequest<{
           answers: {
@@ -77,6 +87,8 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
         setResultReleaseAt(null);
       } catch {
         return;
+      } finally {
+        requestInFlightRef.current = false;
       }
     };
 
@@ -102,7 +114,7 @@ export function useStudentExamResultState(sessionId: string | null, activeExam: 
         document.removeEventListener("visibilitychange", handleVisibilityChange);
       }
     };
-  }, [resultPending, sessionId, activeExam]);
+  }, [activeExam, resultPending, resultRefreshNonce, sessionId]);
 
   return {
     lastSubmission,

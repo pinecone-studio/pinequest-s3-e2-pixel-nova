@@ -1,5 +1,6 @@
-import { Sparkles, Zap } from "lucide-react";
+import { LineChart, Sparkles, Zap } from "lucide-react";
 import TeacherCardSkeleton from "./TeacherCardSkeleton";
+import TeacherEmptyState from "./TeacherEmptyState";
 import type { TeacherDashboardAnalytics } from "../types";
 
 type TeacherAnalyticsDashboardTabProps = {
@@ -77,6 +78,12 @@ export default function TeacherAnalyticsDashboardTab({
   const xpPolyline = buildPolyline(xpPoints, maxValue, chartHeight, chartWidth);
   const scoreArea = buildAreaPath(scorePolyline, chartHeight, chartWidth);
   const xpArea = buildAreaPath(xpPolyline, chartHeight, chartWidth);
+  const latestScore = scorePoints[scorePoints.length - 1] ?? 0;
+  const previousScore = scorePoints[scorePoints.length - 2] ?? latestScore;
+  const latestXp = xpPoints[xpPoints.length - 1] ?? 0;
+  const previousXp = xpPoints[xpPoints.length - 2] ?? latestXp;
+  const scoreDelta = Math.round((latestScore - previousScore) * 10) / 10;
+  const xpDelta = Math.round((latestXp - previousXp) * 10) / 10;
   const highlightedIndex =
     trend.length > 0 ? Math.min(4, trend.length - 1) : -1;
   const highlightedPoint =
@@ -137,16 +144,41 @@ export default function TeacherAnalyticsDashboardTab({
           </h3>
 
           {trend.length === 0 ? (
-            <div className="mt-8 rounded-[26px] border border-dashed border-[#dbe3ee] bg-[#fbfcfe] px-6 py-20 text-center text-sm text-slate-400">
-              Хангалттай submission цуглармагц график энд харагдана.
+            <div className="mt-8">
+              <TeacherEmptyState
+                icon={<LineChart className="size-5" />}
+                title="Графикийн өгөгдөл хүлээгдэж байна"
+                description="Хангалттай submission цуглармагц график энд харагдана."
+                className="px-6 py-16"
+              />
             </div>
           ) : (
             <div className="mt-8 overflow-hidden rounded-[28px] border border-[#edf1f6] bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)]">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf1f6] px-6 py-4">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#f5f7ff] px-3 py-1.5">
+                    <span className="size-2.5 rounded-full bg-[#5f82ff]" />
+                    Дундаж оноо
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[#f3fff9] px-3 py-1.5">
+                    <span className="size-2.5 rounded-full bg-[#77ebb9]" />
+                    Дундаж XP
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                  <span className="rounded-full border border-[#d9e4ff] bg-[#f5f7ff] px-3 py-1.5 text-[#4f6ed9]">
+                    Оноо {scoreDelta >= 0 ? "+" : ""}{scoreDelta}
+                  </span>
+                  <span className="rounded-full border border-[#d6f4e6] bg-[#f3fff9] px-3 py-1.5 text-[#2e9466]">
+                    XP {xpDelta >= 0 ? "+" : ""}{xpDelta}
+                  </span>
+                </div>
+              </div>
               <div className="px-4 pt-5 sm:px-6">
                 <svg
                   viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                   className="h-[360px] w-full"
-                  aria-label="Teacher analytics chart"
+                  aria-label={`Teacher analytics chart. Latest score ${latestScore} percent, latest xp ${latestXp}.`}
                   role="img"
                 >
                   <defs>
@@ -307,9 +339,12 @@ export default function TeacherAnalyticsDashboardTab({
 
           <div className="mt-5 space-y-3">
             {xpLeaderboard.length === 0 ? (
-              <div className="rounded-[22px] border border-dashed border-[#dbe3ee] bg-[#fbfcfe] px-4 py-14 text-center text-sm text-slate-400">
-                XP мэдээлэл одоогоор алга.
-              </div>
+              <TeacherEmptyState
+                icon={<Zap className="size-5" />}
+                title="XP мэдээлэл алга"
+                description="XP мэдээлэл одоогоор алга."
+                className="px-4 py-12"
+              />
             ) : (
               xpLeaderboard.map((student, index) => (
                 <div
