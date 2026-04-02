@@ -10,6 +10,7 @@ import {
   questions,
   options,
   students,
+  subjects,
 } from "../db";
 import type { AppEnv } from "../types";
 import { success, notFound } from "../utils/response";
@@ -545,6 +546,142 @@ studentRoutes.put("/profile", zValidator("json", profileSchema), async (c) => {
   return success(c, {
     ...payload,
   });
+});
+
+// GET /subject-progress — per-subject average scores for the current student
+studentRoutes.get("/subject-progress", async (c) => {
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  const sessions = await db
+    .select({
+      subjectId: subjects.id,
+      subjectName: subjects.name,
+      score: examSessions.score,
+      totalPoints: examSessions.totalPoints,
+      earnedPoints: examSessions.earnedPoints,
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(examSessions.examId, exams.id))
+    .innerJoin(subjects, eq(exams.subjectId, subjects.id))
+    .where(
+      and(
+        eq(examSessions.studentId, user.id),
+        eq(examSessions.status, "graded"),
+      )
+    );
+
+  const subjectMap = new Map<string, { name: string; scores: number[] }>();
+
+  for (const session of sessions) {
+    if (!session.subjectId || !session.subjectName) continue;
+    const rawScore = Number(session.score ?? 0);
+    const totalPoints = Number(session.totalPoints ?? 0);
+    const normalized =
+      totalPoints > 0
+        ? Math.max(0, Math.min(100, Math.round((Number(session.earnedPoints ?? rawScore) / totalPoints) * 100)))
+        : Math.max(0, Math.min(100, Math.round(rawScore)));
+    const bucket = subjectMap.get(session.subjectId) ?? { name: session.subjectName, scores: [] };
+    bucket.scores.push(normalized);
+    subjectMap.set(session.subjectId, bucket);
+  }
+
+  const result = [...subjectMap.values()]
+    .map(({ name, scores }) => ({
+      name,
+      averageScore: scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+      sessionCount: scores.length,
+    }))
+    .sort((a, b) => b.averageScore - a.averageScore);
+
+  return success(c, result);
+});
+
+const buildSubjectFallback = (subjectName: string, averageScore: number) => ({
+  attention: [
+    { label: `${subjectName} — Дасгал`, score: Math.max(40, Math.round(averageScore * 0.7)) },
+    { label: `${subjectName} — Онол`, score: Math.max(50, Math.round(averageScore * 0.8)) },
+  ],
+  strengths: [
+    { label: `${subjectName} — Үндэс`, score: Math.min(95, Math.round(averageScore * 1.1)) },
+    { label: `${subjectName} — Дадлага`, score: Math.min(90, Math.round(averageScore * 1.05)) },
+  ],
+  tips:
+    averageScore < 70
+      ? [
+          `${subjectName}-н үндсэн ойлголтуудыг дахин давтаарай`,
+          `Өдөр бүр 15 минут дасгал бодоорой`,
+          `Багшаасаа тусламж хүсэх эсвэл нэмэлт даалгавар авна уу`,
+        ]
+      : [
+          `${subjectName}-н гүнзгий ойлголтуудыг судлаарай`,
+          `Хэцүү бодлогуудыг шийдэх дадлага хийгээрэй`,
+          `Мэдлэгээ бататгахын тулд сорилт бодлогуудыг ажиллаарай`,
+        ],
+  source: "fallback" as const,
+});
+
+const aiTipsSchema = z.object({
+  subjectName: z.string().min(1).max(100),
+  averageScore: z.number().min(0).max(100),
+});
+
+// POST /ai-tips — AI-generated subtopic breakdown and study tips for a subject
+studentRoutes.post("/ai-tips", zValidator("json", aiTipsSchema), async (c) => {
+  const { subjectName, averageScore } = c.req.valid("json");
+  const fallback = buildSubjectFallback(subjectName, averageScore);
+
+  if (!c.env.AI) return success(c, fallback);
+
+  try {
+    const response = await c.env.AI.run("@cf/meta/llama-3.1-8b-instruct" as any, {
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an educational assistant. Return JSON only with keys: attention (array of {label,score}), strengths (array of {label,score}), tips (array of strings). Write in Mongolian. attention = 2-3 weak subtopics scores 40-65, strengths = 2-3 strong subtopics scores 75-95, tips = 3 specific study advice strings under 80 chars each.",
+        },
+        {
+          role: "user",
+          content: `Subject: ${subjectName}, Average score: ${averageScore}%`,
+        },
+      ],
+      max_tokens: 400,
+      temperature: 0.3,
+    });
+
+    const text =
+      typeof response === "string"
+        ? response
+        : typeof response === "object" && response !== null && "response" in response
+          ? String((response as { response?: string }).response ?? "")
+          : "";
+
+    const normalized = text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    const start = normalized.indexOf("{");
+    const end = normalized.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) return success(c, fallback);
+
+    const parsed = JSON.parse(normalized.slice(start, end + 1)) as {
+      attention?: { label: string; score: number }[];
+      strengths?: { label: string; score: number }[];
+      tips?: string[];
+    };
+
+    if (!Array.isArray(parsed.tips) || parsed.tips.length === 0) return success(c, fallback);
+
+    return success(c, {
+      attention: parsed.attention ?? fallback.attention,
+      strengths: parsed.strengths ?? fallback.strengths,
+      tips: parsed.tips,
+      source: "ai" as const,
+    });
+  } catch {
+    return success(c, fallback);
+  }
 });
 
 export default studentRoutes;
