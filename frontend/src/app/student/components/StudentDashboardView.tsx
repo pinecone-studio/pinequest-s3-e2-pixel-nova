@@ -116,6 +116,16 @@ export default function StudentDashboardView({
   getInitials,
 }: StudentDashboardViewProps) {
   const resolvedNextLevel = progress.nextLevel ?? progress.levelInfo;
+  const resolvedLeaderboardRank =
+    progress.termRankOverview.rank ?? currentRank;
+  const resolvedLeaderboardXp =
+    progress.termRankOverview.totalStudents > 0
+      ? progress.termRankOverview.xp
+      : currentXp;
+  const resolvedLeaderboardLevel =
+    progress.termRankOverview.totalStudents > 0
+      ? progress.termRankOverview.level
+      : progress.studentProgress.level;
   const currentUser = data.currentUser;
   const activeTeacherName =
     teacherUsers.find(
@@ -193,7 +203,7 @@ export default function StudentDashboardView({
           unreadCount={data.unreadNotificationCount}
           onMarkNotificationRead={data.markNotificationRead}
           onMarkAllNotificationsRead={data.markAllNotificationsRead}
-          xp={currentXp}
+          xp={resolvedLeaderboardXp}
           onTabChange={handleTabChange}
           onOpenProfile={() => handleTabChange("Profile")}
           onOpenHelp={() => handleTabChange("Help")}
@@ -219,10 +229,10 @@ export default function StudentDashboardView({
             levelInfo={progress.levelInfo}
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}
-            currentRank={progress.termRankOverview.rank}
+            currentRank={resolvedLeaderboardRank}
             studentCount={progress.termRankOverview.totalStudents}
-            leaderboardXp={progress.termRankOverview.xp}
-            leaderboardLevel={progress.termRankOverview.level}
+            leaderboardXp={resolvedLeaderboardXp}
+            leaderboardLevel={resolvedLeaderboardLevel}
             studentHistory={studentHistory}
             termLeaderboardEntries={progress.termLeaderboardEntries}
             teacherName={activeTeacherName}
@@ -263,9 +273,9 @@ export default function StudentDashboardView({
           <StudentProgressTab
             loading={showProgressLoading}
             currentUserName={currentUserName}
-            currentRank={progress.termRankOverview.rank}
-            currentXp={progress.termRankOverview.xp}
-            currentLevel={progress.termRankOverview.level}
+            currentRank={resolvedLeaderboardRank}
+            currentXp={resolvedLeaderboardXp}
+            currentLevel={resolvedLeaderboardLevel}
             levelInfo={progress.levelInfo}
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}

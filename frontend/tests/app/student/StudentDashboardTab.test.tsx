@@ -92,20 +92,23 @@ describe("StudentDashboardTab", () => {
   it("renders the screenshot-style home overview", () => {
     render(<StudentDashboardTab {...defaultProps} />);
 
-    expect(screen.getByText("Шалгалт өгөх")).toBeInTheDocument();
+    expect(screen.getByText("3 сарын 30")).toBeInTheDocument();
     expect(screen.getByText("Таны эрэмбэ")).toBeInTheDocument();
     expect(screen.getByText("Дараагийн шалгалтууд")).toBeInTheDocument();
-    expect(screen.getByText("83%")).toBeInTheDocument();
-    expect(screen.getByText("English Mock Exam")).toBeInTheDocument();
     expect(screen.getAllByText("Англи хэл").length).toBeGreaterThan(0);
+    expect(screen.getByText("Монгол хэл")).toBeInTheDocument();
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
-    expect(screen.getAllByText("Сурагч").length).toBe(2);
+    const maskedStudents = screen.getAllByText("Сурагч");
+    expect(maskedStudents).toHaveLength(2);
+    maskedStudents.forEach((studentLabel) => {
+      expect(studentLabel).toHaveClass("blur-[1px]");
+    });
     expect(screen.queryByText("Бат")).not.toBeInTheDocument();
     expect(screen.queryByText("Сараа")).not.toBeInTheDocument();
     expect(screen.getByText("YOU")).toBeInTheDocument();
     expect(screen.getByText("300xp")).toBeInTheDocument();
     expect(screen.queryByText("Топ")).not.toBeInTheDocument();
-    expect(screen.getByText("#3")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
   });
 
   it("opens exams from the upcoming exams header", () => {
@@ -125,7 +128,7 @@ describe("StudentDashboardTab", () => {
       />,
     );
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Дэлгэрэнгүй" })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Шалгалтад орох" }));
     expect(onOpenExamDetail).toHaveBeenCalledTimes(1);
     expect(onOpenExamDetail.mock.calls[0]?.[0]).toMatchObject({
       id: "exam-1",
@@ -155,7 +158,6 @@ describe("StudentDashboardTab", () => {
   it("keeps the layout stable even without history", () => {
     render(<StudentDashboardTab {...defaultProps} studentHistory={[]} />);
 
-    expect(screen.getByText("83%")).toBeInTheDocument();
     expect(screen.getAllByText("Нийгэм").length).toBeGreaterThan(0);
     expect(screen.getByText("Таны эрэмбэ")).toBeInTheDocument();
   });
@@ -180,7 +182,7 @@ describe("StudentDashboardTab", () => {
     render(<StudentDashboardTab {...defaultProps} currentRank={null} />);
 
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
-    expect(screen.getByText("#3")).toBeInTheDocument();
+    expect(screen.getByText("300xp")).toBeInTheDocument();
   });
 
   it("orders leaderboard rows by XP even if incoming ranks are stale", () => {
@@ -199,7 +201,7 @@ describe("StudentDashboardTab", () => {
       />,
     );
 
-    expect(screen.getByText("#1")).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("45")).toBeInTheDocument();
     expect(screen.queryByText("25xp")).not.toBeInTheDocument();
   });

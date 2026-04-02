@@ -1,5 +1,3 @@
-import { inputClass } from "../../styles";
-
 type ExamMetaFieldsProps = {
   examTitle: string;
   setExamTitle: (value: string) => void;
@@ -16,14 +14,11 @@ export default function ExamMetaFields({
           Гарчиг оруулна уу
         </span>
         <input
-          className={`${inputClass} h-14 rounded-[20px] border-[#e2e8f0] bg-[#fcfdff] text-base`}
+          className={` h-14 border-b-2 border-[#d3d7d8] text-base px-3 outline-none`}
           placeholder="Шалгалтын нэр"
           value={examTitle ?? ""}
           onChange={(event) => setExamTitle(event.target.value)}
         />
-        <span className="text-xs text-slate-400">
-          Тайлбар оруулна уу (заавал биш)
-        </span>
       </label>
     </div>
   );

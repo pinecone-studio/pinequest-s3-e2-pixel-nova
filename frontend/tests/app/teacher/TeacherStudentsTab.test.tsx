@@ -32,8 +32,8 @@ describe("TeacherStudentsTab", () => {
 
   const staleFinishedExam: Exam = {
     id: "exam-3",
-    title: "10А заавал судлах",
-    className: "10А заавал судлах",
+    title: "Англи хэл улирлын шалгалт",
+    className: "10А",
     groupName: "Сонгон судлал",
     status: "active",
     description: "Хугацаа нь дууссан шалгалт",
@@ -93,8 +93,9 @@ describe("TeacherStudentsTab", () => {
       />,
     );
 
-    expect(screen.getByText("10А анги")).toBeInTheDocument();
-    expect(screen.queryByText("9Б анги")).not.toBeInTheDocument();
+    expect(screen.getByText("Англи хэл 10А")).toBeInTheDocument();
+    expect(screen.getByText(/10А анги/)).toBeInTheDocument();
+    expect(screen.queryByText("Математик 9Б")).not.toBeInTheDocument();
     expect(screen.queryByText(/Хичээл:/)).not.toBeInTheDocument();
 
     fireEvent.click(
@@ -102,8 +103,9 @@ describe("TeacherStudentsTab", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Дууссан шалгалтууд" }));
 
-    expect(screen.getByText("9Б анги")).toBeInTheDocument();
-    expect(screen.queryByText("10А анги")).not.toBeInTheDocument();
+    expect(screen.getByText("Математик 9Б")).toBeInTheDocument();
+    expect(screen.getByText(/9Б анги/)).toBeInTheDocument();
+    expect(screen.queryByText("Англи хэл 10А")).not.toBeInTheDocument();
   });
 
   it("shows finished label instead of time in calendar view for past exams", () => {
@@ -120,9 +122,10 @@ describe("TeacherStudentsTab", () => {
     fireEvent.click(screen.getByRole("button", { name: "Дууссан шалгалтууд" }));
     fireEvent.click(screen.getByLabelText("Calendar view"));
 
-    expect(screen.getByText("10А анги")).toBeInTheDocument();
+    expect(screen.getByText("Англи хэл улирлын шалгалт")).toBeInTheDocument();
+    expect(screen.getByText(/10А анги/)).toBeInTheDocument();
     expect(screen.getByText("Дууссан")).toBeInTheDocument();
-    expect(screen.queryByText("заавал судлах")).not.toBeInTheDocument();
+    expect(screen.queryByText("сонгон судлал")).not.toBeInTheDocument();
     expect(screen.queryByText("08:00-08:45")).not.toBeInTheDocument();
   });
 });

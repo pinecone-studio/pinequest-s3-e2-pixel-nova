@@ -16,6 +16,8 @@ import { buildStudentAiInsight } from "./student-ai-insights";
 import {
   average,
   buildFallbackSubjectInsightDetail,
+  getSubjectLabelAliases,
+  localizeSubjectLabel,
   type SubjectInsightDetail,
   toSubjectLabel,
 } from "./student-progress-insights";
@@ -146,7 +148,7 @@ export default function StudentProgressTab({
     currentUserName,
     levelInfo: {
       level: currentLevel || levelInfo.level,
-      name: `Level ${currentLevel || levelInfo.level}`,
+      name: `Түвшин ${currentLevel || levelInfo.level}`,
       minXP: levelInfo.minXP,
     },
     currentXp,
@@ -208,6 +210,16 @@ export default function StudentProgressTab({
 
   const closeSubjectDetail = () => setSelectedSubject(null);
   const closeAiSummary = () => setAiSummaryOpen(false);
+  const resolveSubjectInsight = (subject: string) => {
+    for (const alias of getSubjectLabelAliases(subject)) {
+      const insight = subjectInsights[alias];
+      if (insight) {
+        return insight;
+      }
+    }
+
+    return null;
+  };
 
   if (loading) {
     return (
@@ -331,8 +343,8 @@ export default function StudentProgressTab({
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="space-y-3.5">
+      <div className="grid gap-y-5 lg:grid-cols-2 lg:gap-x-7 xl:grid-cols-[616px_616px] xl:justify-between">
+        <div className="w-full space-y-4 xl:w-[616px] xl:max-w-[616px]">
           <h3 className="text-[1.75rem] font-semibold tracking-[-0.045em] text-slate-900">
             Хичээлийн дүн
           </h3>
@@ -348,25 +360,25 @@ export default function StudentProgressTab({
                 type="button"
                 onClick={() =>
                   setSelectedSubject(
-                    subjectInsights[item.subject] ??
+                    resolveSubjectInsight(item.subject) ??
                       buildFallbackSubjectInsightDetail(
                         item.subject,
                         item.percentage,
                       ),
                   )
                 }
-                className="w-full rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-3.5 text-left shadow-[0_10px_24px_-24px_rgba(79,93,132,0.2)] transition hover:border-[#c7d7ff] hover:shadow-[0_16px_32px_-28px_rgba(79,93,132,0.28)]"
+                className="flex h-[87px] w-full flex-col justify-between rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-4 text-left shadow-[0_10px_24px_-24px_rgba(79,93,132,0.2)] transition hover:border-[#c7d7ff] hover:shadow-[0_16px_32px_-28px_rgba(79,93,132,0.28)]"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-[1.02rem] font-semibold text-slate-900">
+                  <div className="text-[1rem] font-semibold text-slate-900">
                     {item.subject}
                   </div>
-                  <div className="flex items-center gap-1.5 text-[1rem] font-semibold text-slate-700">
+                  <div className="flex items-center gap-1.5 text-[0.98rem] font-semibold text-slate-700">
                     {item.percentage}%
                     <ChevronRight className="h-4 w-4 text-slate-400" />
                   </div>
                 </div>
-                <div className={`mt-3 h-2.5 rounded-full ${progressTrackClass}`}>
+                <div className={`h-2 rounded-full ${progressTrackClass}`}>
                   <div
                     className={`h-full rounded-full ${scoreColors[index % scoreColors.length]}`}
                     style={{ width: `${Math.max(8, Math.min(item.percentage, 100))}%` }}
@@ -377,7 +389,7 @@ export default function StudentProgressTab({
           )}
         </div>
 
-        <div className="w-full max-w-[616px] space-y-5 lg:justify-self-end">
+        <div className="w-full space-y-4 xl:w-[616px] xl:max-w-[616px] xl:justify-self-end">
           <h3 className="flex items-center gap-3 text-[1.88rem] font-semibold tracking-[-0.05em] text-slate-900">
             <Lightbulb className="h-6 w-6 text-[#f0a63c]" strokeWidth={1.9} />
             Дүгнэлт
@@ -389,17 +401,17 @@ export default function StudentProgressTab({
             return (
               <div
                 key={item.message}
-                className="flex min-h-[75px] items-start gap-3.5 rounded-[22px] border bg-white px-5 py-[18px] text-[1.02rem] font-medium leading-[1.45] tracking-[-0.015em] transition-colors"
+                className="flex min-h-[75px] items-center gap-3 rounded-[20px] border bg-white px-4 py-[14px] text-[1rem] font-medium leading-[1.32] tracking-[-0.02em] transition-colors"
                 style={{
                   borderColor: item.borderColor,
                   color: item.accent,
                 }}
               >
                 <Icon
-                  className="mt-0.5 h-[23px] w-[23px] shrink-0"
+                  className="h-5 w-5 shrink-0"
                   strokeWidth={item.iconStrokeWidth}
                 />
-                <div className="pt-[1px]">{item.message}</div>
+                <div className="flex-1">{item.message}</div>
               </div>
             );
           })}
@@ -408,15 +420,15 @@ export default function StudentProgressTab({
             type="button"
             aria-label={aiSummaryLabel}
             onClick={() => setAiSummaryOpen(true)}
-            className="flex min-h-[75px] w-full items-center justify-between rounded-[22px] border border-[#d8e2ff] bg-white px-5 py-[18px] text-left transition-colors hover:border-[#c9d8ff] hover:bg-[#fbfcff]"
+            className="flex min-h-[58px] w-full items-center justify-between rounded-[18px] border border-[#d8e2ff] bg-white px-4 py-[14px] text-left transition-colors hover:border-[#c9d8ff] hover:bg-[#fbfcff]"
           >
-            <div className="flex items-center gap-3.5 text-[#3e6ef5]">
-              <Sparkles className="h-[23px] w-[23px] shrink-0" strokeWidth={2} />
-              <span className="text-[1.02rem] font-medium leading-6 tracking-[-0.015em]">
+            <div className="flex items-center gap-3 text-[#3e6ef5]">
+              <Sparkles className="h-5 w-5 shrink-0" strokeWidth={2} />
+              <span className="text-[1rem] font-medium leading-6 tracking-[-0.02em]">
                 AI-ийн ерөнхий дүгнэлт
               </span>
             </div>
-            <ChevronRight className="h-[25px] w-[25px] shrink-0 text-[#3e6ef5]" strokeWidth={2.35} />
+            <ChevronRight className="h-5 w-5 shrink-0 text-[#3e6ef5]" strokeWidth={2.4} />
           </button>
         </div>
       </div>
@@ -439,7 +451,7 @@ export default function StudentProgressTab({
                     id="student-subject-ai-title"
                     className="text-[2rem] font-semibold tracking-[-0.05em]"
                   >
-                    {selectedSubject.subject}
+                    {localizeSubjectLabel(selectedSubject.subject)}
                   </h3>
 
                   <button
@@ -581,7 +593,7 @@ export default function StudentProgressTab({
                         strongSubjects.map((item, index) => (
                           <div key={item.subject}>
                             <span className="font-semibold text-[#58c47b]">
-                              {index + 1}. {item.subject} ({item.percentage}%)
+                              {index + 1}. {localizeSubjectLabel(item.subject)} ({item.percentage}%)
                             </span>{" "}
                             <span>{getStrengthRemark(item.percentage)}</span>
                           </div>
@@ -607,7 +619,7 @@ export default function StudentProgressTab({
                         focusSubjects.map((item, index) => (
                           <div key={item.subject}>
                             <span className="font-semibold text-[#f0a63c]">
-                              {index + 1}. {item.subject} ({item.percentage}%)
+                              {index + 1}. {localizeSubjectLabel(item.subject)} ({item.percentage}%)
                             </span>{" "}
                             <span>{getFocusRemark(item.percentage)}</span>
                           </div>

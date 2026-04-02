@@ -25,12 +25,17 @@ import { useAiExamGenerator } from "../hooks/useAiExamGenerator";
 import ExamCreateCard from "../components/ExamCreateCard";
 import { pageShellClass } from "../styles";
 import { Button } from "@/components/ui/button";
-import { consumePendingCreateExamDraft } from "../create-exam-dialog-state";
+import {
+  consumePendingCreateExamDraft,
+  consumePendingCreateExamFile,
+  type PendingQuestionDraft,
+} from "../create-exam-dialog-state";
 
 type PendingRouteDraft =
   | {
       mode: "manual";
       examTitle: string;
+      questions: PendingQuestionDraft[];
     }
   | {
       mode: "ai";
@@ -47,7 +52,9 @@ type PendingRouteDraft =
       mode: "pdf";
       examTitle: string;
       importMcqCount: number;
+      importTextCount?: number;
       importOpenCount: number;
+      fileId?: string;
     };
 
 const parsePendingRouteDraft = (searchParams: {
@@ -58,6 +65,7 @@ const parsePendingRouteDraft = (searchParams: {
     return {
       mode,
       examTitle: searchParams.get("examTitle") ?? "",
+      questions: [],
     };
   }
 
@@ -90,6 +98,10 @@ const parsePendingRouteDraft = (searchParams: {
         0,
         Number(searchParams.get("importMcqCount") ?? "0") || 0,
       ),
+      importTextCount: Math.max(
+        0,
+        Number(searchParams.get("importTextCount") ?? "0") || 0,
+      ),
       importOpenCount: Math.max(
         0,
         Number(searchParams.get("importOpenCount") ?? "0") || 0,
@@ -120,6 +132,10 @@ export default function CreateExamPage() {
   const [redirectingAfterSave, setRedirectingAfterSave] = useState(false);
   const pendingAppliedRef = useRef(false);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
+  const [aiFlowTopic, setAiFlowTopic] = useState("");
+  const [aiFlowStatus, setAiFlowStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -192,26 +208,60 @@ export default function CreateExamPage() {
 
     if (pending.mode === "manual") {
       management.setExamTitle(pending.examTitle);
+      if (pending.questions.length > 0) {
+        management.setQuestions(
+          pending.questions.map((question, index) => ({
+            ...question,
+            id: `pending-question-${index + 1}`,
+          })),
+        );
+      }
       return;
     }
 
     if (pending.mode === "pdf") {
-      management.setExamTitle(pending.examTitle);
-      imports.setImportMcqCount(pending.importMcqCount);
-      imports.setImportOpenCount(
-        pending.importOpenCount + (pending.importOpenCount ?? 0),
-      );
-      data.showToast(
-        "PDF импортын тохиргоо бэлэн боллоо. Файлаа оруулаад үргэлжлүүлнэ үү.",
-      );
+      void (async () => {
+        const file = pending.fileId
+          ? await consumePendingCreateExamFile(pending.fileId)
+          : null;
+        if (!file) {
+          data.showToast(
+            "PDF файлыг түр хадгалж чадсангүй. Дахин оролдоно уу.",
+          );
+          return;
+        }
+
+        management.setExamTitle(pending.examTitle);
+        imports.setImportMcqCount(pending.importMcqCount);
+        imports.setImportTextCount(pending.importTextCount ?? 0);
+        imports.setImportOpenCount(pending.importOpenCount);
+
+        if (file.type.startsWith("image/")) {
+          await imports.handleImageUpload(file, { preserveTitle: true });
+        } else if (
+          file.type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+          /\.docx$/i.test(file.name)
+        ) {
+          await imports.handleDocxUpload(file, { preserveTitle: true });
+        } else {
+          await imports.handlePdfUpload(file, { preserveTitle: true });
+        }
+      })();
       return;
     }
 
     void (async () => {
+      setAiFlowTopic(pending.input.topic);
+      setAiFlowStatus("loading");
       const draft = await generator.generateDraft(pending.input);
-      if (!draft) return;
+      if (!draft) {
+        setAiFlowStatus("error");
+        return;
+      }
       management.setExamTitle(draft.title);
       management.setQuestions(draft.questions);
+      setAiFlowStatus("ready");
     })();
   }, [data, generator, imports, management, router, sessionUser?.id]);
 
@@ -230,7 +280,7 @@ export default function CreateExamPage() {
           {data.toast}
         </div>
       )}
-      <header className="flex items-center justify-between gap-3 bg-white/80 px-6 py-4 backdrop-blur">
+      <header className="flex items-center justify-between gap-3 bg-white/80 px-6 py-2 backdrop-blur">
         <Button
           type="button"
           onClick={() => router.push("/teacher")}
@@ -238,10 +288,30 @@ export default function CreateExamPage() {
           <ArrowLeft className="h-4 w-4" />
           Буцах
         </Button>
-        <Button className="text-sm py-5">AI ашиглан үүсгэх</Button>
       </header>
       <main className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1180px]">
+          {aiFlowStatus !== "idle" && (
+            <div
+              className={`mb-4 rounded-[22px] border px-4 py-3 text-sm shadow-[0_16px_30px_-26px_rgba(15,23,42,0.16)] ${
+                aiFlowStatus === "error"
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : aiFlowStatus === "ready"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-[#dbe7fb] bg-[#eff6ff] text-[#1d4ed8]"
+              }`}
+            >
+              {aiFlowStatus === "loading" && (
+                <span>AI асуултууд үүсэж байна: {aiFlowTopic}...</span>
+              )}
+              {aiFlowStatus === "ready" && (
+                <span>AI асуултууд бэлэн боллоо: {aiFlowTopic}</span>
+              )}
+              {aiFlowStatus === "error" && (
+                <span>AI асуултууд үүсгэхэд алдаа гарлаа. Дахин оролдоно уу.</span>
+              )}
+            </div>
+          )}
           <ExamCreateCard
             examTitle={management.examTitle}
             setExamTitle={management.setExamTitle}
@@ -288,6 +358,10 @@ export default function CreateExamPage() {
             onPdfUpload={imports.handlePdfUpload}
             onImageUpload={imports.handleImageUpload}
             onDocxUpload={imports.handleDocxUpload}
+            importTextCount={imports.importTextCount}
+            setImportTextCount={imports.setImportTextCount}
+            aiFlowStatus={aiFlowStatus}
+            aiFlowTopic={aiFlowTopic}
           />
         </div>
       </main>

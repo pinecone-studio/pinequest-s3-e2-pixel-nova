@@ -88,17 +88,17 @@ export default function StudentHeader({
           <span className="text-[15px] font-bold text-slate-900">Educore</span>
         </div>
 
-        <nav className="order-3 flex w-full items-center gap-2 overflow-x-auto rounded-[20px] border border-[#e7edf5] bg-[#fbfcff] px-1.5 py-1.5 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)] xl:order-none xl:w-auto xl:justify-center xl:justify-self-center">
+        <nav className="order-3 mx-auto grid h-[54px] w-full max-w-[276px] grid-cols-3 items-center gap-1 rounded-[28px] border border-[#e7edf5] bg-[#fbfcff] p-1 shadow-[0_12px_26px_-22px_rgba(15,23,42,0.28)] xl:order-none xl:justify-self-center">
           {primaryTabs.map((tab) => {
             const selected = activeTab === tab;
             return (
               <button
                 key={tab}
                 type="button"
-                className={`relative whitespace-nowrap rounded-[14px] px-5 py-2.5 text-sm font-medium transition ${
+                className={`relative flex h-full min-w-0 items-center justify-center whitespace-nowrap rounded-[24px] px-2 text-[15px] font-medium tracking-[-0.02em] transition ${
                   selected
-                    ? "bg-[#f5f4ff] text-slate-900 shadow-[inset_0_-2px_0_0_#5c6cff,0_10px_18px_-16px_rgba(92,108,255,0.65)]"
-                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                    ? "bg-white text-slate-900 shadow-[inset_0_-3px_0_0_#5c6cff,0_14px_24px_-18px_rgba(92,108,255,0.65)]"
+                    : "text-[#8fa0c2] hover:bg-slate-50 hover:text-slate-700"
                 }`}
                 onClick={() => onTabChange(tab)}
               >

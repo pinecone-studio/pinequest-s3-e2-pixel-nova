@@ -63,10 +63,17 @@ jest.mock(
 jest.mock(
   "@/app/student/components/StudentProgressTab",
   () =>
-    function StudentProgressTabMock(props: { loading?: boolean }) {
+    function StudentProgressTabMock(props: {
+      loading?: boolean;
+      currentRank?: number | null;
+      currentXp?: number;
+      currentLevel?: number;
+    }) {
       return (
         <div data-testid="progress-tab">
-          {props.loading ? "progress-loading" : "progress-ready"}
+          {props.loading ? "progress-loading" : "progress-ready"}|rank:
+          {props.currentRank ?? "-"}|xp:{props.currentXp ?? "-"}|lvl:
+          {props.currentLevel ?? "-"}
         </div>
       );
     },
@@ -252,6 +259,51 @@ describe("StudentDashboardView", () => {
     expect(screen.getByTestId("progress-tab")).toHaveTextContent(
       "progress-ready",
     );
+    expect(screen.getByTestId("progress-tab")).toHaveTextContent("rank:4");
+    expect(screen.getByTestId("progress-tab")).toHaveTextContent("xp:45");
+  });
+
+  it("falls back to overall rank data when the term rank is unavailable", () => {
+    const props = createProps();
+    props.progress.termRankOverview = {
+      rank: null,
+      totalStudents: 0,
+      xp: 0,
+      level: 1,
+    };
+
+    function FallbackHarness() {
+      const [activeTab, setActiveTab] = useState<StudentTab>("Progress");
+
+      return (
+        <StudentDashboardView
+          {...props}
+          exam={{
+            activeTab,
+            setActiveTab,
+            roomCodeInput: "",
+            setRoomCodeInput: jest.fn(),
+            joinLoading: false,
+            joinError: null,
+            handleLookup: jest.fn(),
+            selectedExam: null,
+            startExam: jest.fn(),
+            setSelectedExam: jest.fn(),
+            setJoinError: jest.fn(),
+          }}
+        />
+      );
+    }
+
+    render(<FallbackHarness />);
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(screen.getByTestId("progress-tab")).toHaveTextContent("rank:4");
+    expect(screen.getByTestId("progress-tab")).toHaveTextContent("xp:45");
+    expect(screen.getByTestId("progress-tab")).toHaveTextContent("lvl:12");
   });
 
   it("shows ai insights loading for one second after the ai tab is clicked", () => {
