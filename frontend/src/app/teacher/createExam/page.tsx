@@ -25,6 +25,7 @@ import { useAiExamGenerator } from "../hooks/useAiExamGenerator";
 import ExamCreateCard from "../components/ExamCreateCard";
 import { pageShellClass } from "../styles";
 import { Button } from "@/components/ui/button";
+import { consumePendingCreateExamDraft } from "../create-exam-dialog-state";
 
 type PendingRouteDraft =
   | {
@@ -114,7 +115,8 @@ const getLocalAuthUsers = (r: RoleKey): AuthUser[] => {
 
 export default function CreateExamPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams =
+    typeof useSearchParams === "function" ? useSearchParams() : null;
   const [redirectingAfterSave, setRedirectingAfterSave] = useState(false);
   const pendingAppliedRef = useRef(false);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
@@ -178,9 +180,11 @@ export default function CreateExamPage() {
     if (pendingAppliedRef.current || !sessionUser?.id) return;
     pendingAppliedRef.current = true;
 
-    const pending = parsePendingRouteDraft(searchParams);
+    const pending =
+      (searchParams ? parsePendingRouteDraft(searchParams) : null) ??
+      consumePendingCreateExamDraft();
     if (pending) {
-      router.replace("/teacher/createExam");
+      router.replace?.("/teacher/createExam");
     }
     if (!pending) return;
 
