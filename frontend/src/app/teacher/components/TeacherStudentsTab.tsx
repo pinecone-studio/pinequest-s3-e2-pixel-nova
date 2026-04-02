@@ -12,6 +12,7 @@ import { useExamAttendanceStats } from "../hooks/useExamAttendanceStats";
 import type { Exam, ExamAttendanceStats, ExamRosterDetail } from "../types";
 import { LegendDot, ScheduleCard, ScheduleListCard } from "./TeacherScheduleCards";
 import type { CopyCodeHandler } from "./RoomCodeCopyButton";
+import TeacherSelect from "./TeacherSelect";
 import TeacherScheduleDetailPanel from "./TeacherScheduleDetailPanel";
 import {
   HOURS,
@@ -20,6 +21,7 @@ import {
   buildScheduleData,
   formatDateValue,
   formatDayLabel,
+  getExamScheduleLifecycle,
   formatSectionLabel,
   formatTimeValue,
 } from "./teacher-schedule-helpers";
@@ -49,6 +51,7 @@ type TeacherStudentsTabProps = {
 };
 
 type ViewMode = "calendar" | "cards";
+type ScheduleFilter = "upcoming" | "finished";
 const VISIBLE_HOUR_COUNT = 7;
 const CALENDAR_VIEWPORT_OFFSET = 64;
 const VIEW_LOADING_MIN_MS = 1500;
@@ -210,7 +213,19 @@ export default function TeacherStudentsTab({
   currentUserId,
   onCopyCode,
 }: TeacherStudentsTabProps) {
-  const { days, items } = buildScheduleData(exams);
+  const [scheduleFilter, setScheduleFilter] = useState<ScheduleFilter>("upcoming");
+  const filteredExams = useMemo(
+    () =>
+      exams.filter((exam) => {
+        const lifecycle = getExamScheduleLifecycle(exam);
+        if (!lifecycle) return false;
+        return scheduleFilter === "finished"
+          ? lifecycle === "finished"
+          : lifecycle !== "finished";
+      }),
+    [exams, scheduleFilter],
+  );
+  const { days, items } = buildScheduleData(filteredExams);
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [roster, setRoster] = useState<ExamRosterDetail | null>(null);
@@ -329,12 +344,18 @@ export default function TeacherStudentsTab({
             .filter((item) => item.dayIndex === dayIndex)
             .sort(
               (left, right) =>
-                right.scheduledDate.getTime() - left.scheduledDate.getTime(),
+                scheduleFilter === "finished"
+                  ? right.scheduledDate.getTime() - left.scheduledDate.getTime()
+                  : left.scheduledDate.getTime() - right.scheduledDate.getTime(),
             ),
         }))
         .filter((group) => group.items.length > 0)
-        .reverse(),
-    [days, items],
+        .sort((left, right) => {
+          const leftTime = left.items[0]?.scheduledDate.getTime() ?? 0;
+          const rightTime = right.items[0]?.scheduledDate.getTime() ?? 0;
+          return scheduleFilter === "finished" ? rightTime - leftTime : leftTime - rightTime;
+        }),
+    [days, items, scheduleFilter],
   );
 
   const calendarHeight = HOURS.length * ROW_HEIGHT;
@@ -400,6 +421,21 @@ export default function TeacherStudentsTab({
               <span>Сонгон судлал</span>
             </div>
           </div>
+          {viewMode === "cards" ? (
+            <div className="mt-6 max-w-[266px]">
+              <TeacherSelect
+                options={[
+                  { value: "upcoming", label: "Удахгүй болох шалгалтууд" },
+                  { value: "finished", label: "Дууссан шалгалтууд" },
+                ]}
+                value={scheduleFilter}
+                onChange={(event) =>
+                  setScheduleFilter(event.target.value as ScheduleFilter)
+                }
+                className="min-h-[48px] rounded-[16px] border-[#d8dee8] py-0 text-[16px] font-medium text-[#20232d] shadow-[0_2px_10px_-8px_rgba(15,23,42,0.15)] focus:border-[#8aa7ff] focus:ring-2 focus:ring-[#dbe6ff]"
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="ml-auto flex flex-col items-end gap-3">
@@ -464,7 +500,11 @@ export default function TeacherStudentsTab({
           <div className="space-y-7">
             {groupedItems.length === 0 ? (
               <div className="rounded-[32px] border border-dashed border-[#dce5ef] bg-white px-6 py-16 text-center text-sm text-slate-400">
-                {loading ? "Хуваарь ачаалж байна..." : "Хуваарьласан шалгалт алга."}
+                {loading
+                  ? "Хуваарь ачаалж байна..."
+                  : scheduleFilter === "finished"
+                    ? "Дууссан шалгалт алга."
+                    : "Удахгүй болох шалгалт алга."}
               </div>
             ) : (
               groupedItems.map((group) => (

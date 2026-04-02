@@ -43,20 +43,27 @@ export function ScheduleCard({
           border: "border-t-[4px] border-t-[#ffb14a]",
           dot: "elective" as const,
         };
-  const secondaryLabel = item.subjectName
-    ? `${item.subjectName} · ${formatTimeRange(item.scheduledDate, item.duration)}`
+  const isFinished = item.lifecycle === "finished";
+  const titleLength = item.title.trim().length;
+  const secondaryLabel = isFinished
+    ? "Дууссан"
     : formatTimeRange(item.scheduledDate, item.duration);
+  const minCardHeight = isFinished || titleLength > 15 ? 72 : 56;
+  const titleClass =
+    titleLength > 20
+      ? "line-clamp-2 text-[12px] font-semibold leading-4 text-[#2e2e2e]"
+      : "line-clamp-2 text-[13px] font-semibold leading-5 text-[#2e2e2e]";
 
   return (
     <button
       type="button"
       onClick={() => onOpen(item.id)}
-      className={`absolute rounded-[10px] border border-[#ececec] bg-[#f4f4f4] px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-[#d5d9e3] ${tone.border}`}
+      className={`absolute overflow-hidden rounded-[10px] border border-[#ececec] bg-[#f4f4f4] px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-[#d5d9e3] ${tone.border}`}
       style={{
         left: `calc(${item.dayIndex} * (100% / ${daysCount}) + 12px)`,
         width: `calc((100% / ${daysCount}) - 16px)`,
         top: `${Math.max(8, (item.startMinutes / 60) * ROW_HEIGHT + 8)}px`,
-        height: `${Math.max((item.duration / 60) * ROW_HEIGHT - 10, 56)}px`,
+        height: `${Math.max((item.duration / 60) * ROW_HEIGHT - 10, minCardHeight)}px`,
       }}
     >
       <div className="flex h-full gap-2">
@@ -64,10 +71,14 @@ export function ScheduleCard({
           <LegendDot category={tone.dot} />
         </div>
         <div className="min-w-0">
-          <div className="line-clamp-2 text-[13px] font-semibold leading-5 text-[#2e2e2e]">
+          <div className={titleClass}>
             {item.title}
           </div>
-          <div className="mt-1 line-clamp-1 text-[11px] leading-4 text-[#a3a3a3]">
+          <div
+            className={`mt-1 line-clamp-1 text-[11px] leading-4 ${
+              isFinished ? "font-medium text-[#8d8d8d]" : "text-[#a3a3a3]"
+            }`}
+          >
             {secondaryLabel}
           </div>
         </div>
@@ -122,14 +133,6 @@ export function ScheduleListCard({
               <h3 className="min-h-[64px] text-[26px] font-semibold leading-[31px] tracking-[-0.03em] text-black break-words">
                 {item.title}
               </h3>
-              {item.subjectName ? (
-                <div className="mt-3 inline-flex max-w-full items-center rounded-full border border-[#e4e7ec] bg-[#f8f9fb] px-3 py-1.5 text-[13px] font-semibold leading-4 text-[#4b5563]">
-                  <span className="shrink-0 text-[#7b8494]">Хичээл:</span>
-                  <span className="ml-1 truncate text-[#2f3743]">
-                    {item.subjectName}
-                  </span>
-                </div>
-              ) : null}
             </div>
             <div className="mt-1 flex shrink-0 flex-col items-end gap-2">
               <span
