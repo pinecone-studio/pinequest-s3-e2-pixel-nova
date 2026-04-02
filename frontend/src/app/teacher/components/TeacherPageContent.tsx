@@ -22,7 +22,9 @@ const sanitizeFileName = (value: string) =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "") || "exam";
 
-const buildExamDownloadText = (exam: TeacherPageContentProps["data"]["exams"][number]) => {
+const buildExamDownloadText = (
+  exam: TeacherPageContentProps["data"]["exams"][number],
+) => {
   const header = [
     `Шалгалтын нэр: ${exam.title}`,
     exam.className ? `Анги: ${exam.className}` : null,
@@ -114,7 +116,7 @@ export default function TeacherPageContent({
   const previewExam =
     data.loading || !("exams" in data)
       ? null
-      : data.exams.find((exam) => exam.id === previewExamId) ?? null;
+      : (data.exams.find((exam) => exam.id === previewExamId) ?? null);
   const showSkeleton = data.loading || loadingTab === activeTab;
   const skeletonVariant =
     activeTab === "Шалгалтын сан"
@@ -178,6 +180,7 @@ export default function TeacherPageContent({
       />
     );
   }
+
   return (
     <div className="space-y-6">
       <TeacherStudentsTab

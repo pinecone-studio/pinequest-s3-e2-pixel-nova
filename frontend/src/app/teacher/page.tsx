@@ -21,9 +21,7 @@ import {
   type RoleKey,
 } from "@/lib/role-session";
 import { updateExam } from "@/api/exams";
-import {
-  DEFAULT_ENABLED_CHEAT_DETECTIONS,
-} from "@/lib/exam-cheat-detections";
+import { DEFAULT_ENABLED_CHEAT_DETECTIONS } from "@/lib/exam-cheat-detections";
 import TeacherHeader from "./components/TeacherHeader";
 import TeacherPageContent, {
   type TeacherTab,
@@ -61,11 +59,13 @@ function TeacherScheduleModal({
       className="fixed inset-0 z-120 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
       onClick={() => {
         if (!management.scheduling) onClose();
-      }}>
+      }}
+    >
       <div className="mx-auto flex min-h-screen w-full max-w-[820px] items-center justify-center py-4 sm:py-8">
         <div
           className="flex w-full justify-center transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
-          onClick={(event) => event.stopPropagation()}>
+          onClick={(event) => event.stopPropagation()}
+        >
           <ExamScheduleCard
             exams={data.exams}
             selectedScheduleExamId={management.selectedScheduleExamId}
@@ -82,8 +82,12 @@ function TeacherScheduleModal({
             setScheduleSubjectName={management.setScheduleSubjectName}
             scheduleDescription={management.scheduleDescription}
             setScheduleDescription={management.setScheduleDescription}
-            scheduleExpectedStudentsCount={management.scheduleExpectedStudentsCount}
-            setScheduleExpectedStudentsCount={management.setScheduleExpectedStudentsCount}
+            scheduleExpectedStudentsCount={
+              management.scheduleExpectedStudentsCount
+            }
+            setScheduleExpectedStudentsCount={
+              management.setScheduleExpectedStudentsCount
+            }
             durationMinutes={management.durationMinutes}
             setDurationMinutes={management.setDurationMinutes}
             scheduling={management.scheduling}
@@ -199,10 +203,7 @@ export default function TeacherPage() {
     const storedTab = window.sessionStorage.getItem(
       TEACHER_ACTIVE_TAB_STORAGE_KEY,
     );
-    if (
-      storedTab &&
-      teacherTabs.includes(storedTab as TeacherTab)
-    ) {
+    if (storedTab && teacherTabs.includes(storedTab as TeacherTab)) {
       setActiveTab((current) =>
         current === storedTab ? current : (storedTab as TeacherTab),
       );
@@ -301,9 +302,7 @@ export default function TeacherPage() {
 
     setPendingTabLoading(nextTab);
     tabLoadingTimerRef.current = window.setTimeout(() => {
-      setPendingTabLoading((current) =>
-        current === nextTab ? null : current,
-      );
+      setPendingTabLoading((current) => (current === nextTab ? null : current));
       tabLoadingTimerRef.current = null;
     }, TAB_LOADING_MIN_MS);
 
@@ -349,7 +348,8 @@ export default function TeacherPage() {
             ? {
                 ...exam,
                 requiresAudioRecording:
-                  updated.requiresAudioRecording ?? selectedRequiresAudioRecording,
+                  updated.requiresAudioRecording ??
+                  selectedRequiresAudioRecording,
                 enabledCheatDetections:
                   updated.enabledCheatDetections ?? selectedConfig,
               }
@@ -372,7 +372,13 @@ export default function TeacherPage() {
   if (!data.currentUser) return null;
 
   return (
-    <div className={isExamLibraryTab ? "min-h-screen bg-white text-foreground" : pageShellClass}>
+    <div
+      className={
+        isExamLibraryTab
+          ? "min-h-screen bg-white text-foreground"
+          : pageShellClass
+      }
+    >
       {data.toast && (
         <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
           {data.toast}
@@ -411,10 +417,10 @@ export default function TeacherPage() {
       />
       <main className={mainClassName}>
         <div
-          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}>
+          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}
+        >
           <TeacherPageContent
             activeTab={activeTab}
-            loadingTab={pendingTabLoading}
             onOpenScheduleForm={() => setShowScheduleForm(true)}
             data={data}
             management={management}
