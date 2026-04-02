@@ -65,7 +65,7 @@ const getValidationError = (value: AiExamGeneratorInput) => {
     return `Асуултын тоо ${MIN_QUESTION_COUNT}-${MAX_QUESTION_COUNT} хооронд байх ёстой.`;
   }
 
-  if (value.instructions.length > MAX_INSTRUCTIONS_LENGTH) {
+  if ((value.instructions?.length ?? 0) > MAX_INSTRUCTIONS_LENGTH) {
     return `Нэмэлт заавар ${MAX_INSTRUCTIONS_LENGTH} тэмдэгтээс ихгүй байх ёстой.`;
   }
 
