@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCameraPermissions } from "expo-camera";
 import { Redirect, useRouter } from "expo-router";
@@ -1138,49 +1138,150 @@ export default function ExamScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.pageTitle}>Шалгалт</Text>
+        {isJoined ? (
+          <>
+            <Text style={styles.pageTitle}>Шалгалтууд</Text>
 
-        <View style={styles.examCard}>
-          <View style={styles.examCardTop} />
-          <View style={styles.examCardBody}>
-            <View style={styles.examCardRow}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {activeSession.exam.title.charAt(0).toUpperCase()}
+            <View style={styles.tabRow}>
+              <View style={[styles.tab, styles.tabActive]}>
+                <Text style={[styles.tabText, styles.tabTextActive]}>
+                  Шалгалтууд
                 </Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.examTitle}>{activeSession.exam.title}</Text>
-                <Text style={styles.examMeta}>
-                  {"Scheduled: "}
-                  {formatDateTime(
-                    activeSession.exam.scheduledAt ?? activeSession.startedAt,
-                  )}{" "}
-                  · {activeSession.exam.durationMin} min
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.statusPill,
-                  activeSession.entryStatus === "late" &&
-                    styles.statusPillWarning,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusPillText,
-                    activeSession.entryStatus === "late" &&
-                      styles.statusPillTextWarning,
-                  ]}
-                >
-                  {activeSession.entryStatus === "late"
-                    ? "Late"
-                    : getEntryStatusLabel(activeSession.entryStatus)}
-                </Text>
+              <View style={styles.tab}>
+                <Text style={styles.tabText}>Шалгалтын түүх</Text>
               </View>
             </View>
 
-            {!isJoined && (
+            <View style={styles.searchBar}>
+              <Ionicons name="search-outline" size={18} color="#98A2B3" />
+              <Text style={styles.searchPlaceholderText}>Шалгалт хайх...</Text>
+            </View>
+
+            <View style={styles.upcomingCard}>
+              <View style={styles.listCardRow}>
+                <Text style={styles.upcomingCardTitle}>
+                  {activeSession.exam.title}
+                </Text>
+                <View
+                  style={[
+                    styles.statusPill,
+                    activeSession.entryStatus === "late" &&
+                      styles.statusPillWarning,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusPillText,
+                      activeSession.entryStatus === "late" &&
+                        styles.statusPillTextWarning,
+                    ]}
+                  >
+                    {activeSession.entryStatus === "late"
+                      ? "Хоцорсон"
+                      : "Эхэлсэн"}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.upcomingMetaGroup}>
+                <View style={styles.upcomingMetaRow}>
+                  <Text style={styles.upcomingMetaLabel}>Өдөр:</Text>
+                  <Text style={styles.upcomingMetaValue}>
+                    {formatListDate(
+                      activeSession.exam.scheduledAt ?? activeSession.startedAt,
+                    )}
+                  </Text>
+                </View>
+                <View style={styles.upcomingMetaRow}>
+                  <Text style={styles.upcomingMetaLabel}>Эхэлсэн цаг:</Text>
+                  <Text style={styles.upcomingMetaValue}>
+                    {formatListTime(
+                      activeSession.exam.scheduledAt ?? activeSession.startedAt,
+                    )}
+                  </Text>
+                </View>
+                <View style={styles.upcomingMetaRow}>
+                  <Text style={styles.upcomingMetaLabel}>
+                    Үргэлжилсэн хугацаа:
+                  </Text>
+                  <Text style={styles.upcomingMetaValue}>
+                    {activeSession.exam.durationMin} минут
+                  </Text>
+                </View>
+              </View>
+
+              {syncError ? (
+                <Text style={styles.errorText}>{syncError}</Text>
+              ) : null}
+              {proctoringBlockedMessage ? (
+                <Text style={styles.errorText}>{proctoringBlockedMessage}</Text>
+              ) : null}
+
+              <View style={styles.upcomingButtonRow}>
+                <TouchableOpacity
+                  style={styles.upcomingPrimaryButton}
+                  onPress={() => void handleStart()}
+                >
+                  <Text style={styles.upcomingDetailText}>Шалгалтанд орох</Text>
+                </TouchableOpacity>
+              </View>
+
+              <MobileProctorCamera
+                captureEnabled={false}
+                headless
+                isEnabled
+                permissionGranted={!!cameraPermission?.granted}
+                sessionId={activeSession.sessionId}
+                student={student}
+                onCameraReadyChange={setCameraReady}
+                onViolation={logIntegrityEvent}
+              />
+            </View>
+          </>
+        ) : (
+          <View style={styles.examCard}>
+            <View style={styles.examCardTop} />
+            <View style={styles.examCardBody}>
+              <View style={styles.examCardRow}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>
+                    {activeSession.exam.title.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.examTitle}>
+                    {activeSession.exam.title}
+                  </Text>
+                  <Text style={styles.examMeta}>
+                    {"Scheduled: "}
+                    {formatDateTime(
+                      activeSession.exam.scheduledAt ?? activeSession.startedAt,
+                    )}{" "}
+                    · {activeSession.exam.durationMin} min
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusPill,
+                    activeSession.entryStatus === "late" &&
+                      styles.statusPillWarning,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusPillText,
+                      activeSession.entryStatus === "late" &&
+                        styles.statusPillTextWarning,
+                    ]}
+                  >
+                    {activeSession.entryStatus === "late"
+                      ? "Late"
+                      : getEntryStatusLabel(activeSession.entryStatus)}
+                  </Text>
+                </View>
+              </View>
+
               <View style={styles.metaRow}>
                 <View style={styles.metaChip}>
                   <Text style={styles.metaChipLabel}>Time left</Text>
@@ -1193,88 +1294,50 @@ export default function ExamScreen() {
                   <Text style={styles.metaChipValue}>{progressLabel}</Text>
                 </View>
               </View>
-            )}
 
-            {activeSession.syncMessage ? (
-              <Text style={styles.warningText}>
-                {activeSession.syncMessage}
-              </Text>
-            ) : null}
-
-            {integrity.warningMessage ? (
-              <View style={styles.warningBox}>
+              {activeSession.syncMessage ? (
                 <Text style={styles.warningText}>
-                  {integrity.warningMessage}
+                  {activeSession.syncMessage}
+                </Text>
+              ) : null}
+
+              {integrity.warningMessage ? (
+                <View style={styles.warningBox}>
+                  <Text style={styles.warningText}>
+                    {integrity.warningMessage}
+                  </Text>
+                </View>
+              ) : null}
+
+              {proctoringBlockedMessage ? (
+                <View style={styles.warningBox}>
+                  <Text style={styles.warningText}>
+                    {proctoringBlockedMessage}
+                  </Text>
+                </View>
+              ) : null}
+
+              <View style={styles.infoBox}>
+                <Text style={styles.infoText}>
+                  Camera preflight, periodic snapshot evidence, and rolling
+                  audio recording are managed from this screen. Proctoring must
+                  stay active for the whole exam.
                 </Text>
               </View>
-            ) : null}
 
-            {proctoringBlockedMessage ? (
-              <View style={styles.warningBox}>
-                <Text style={styles.warningText}>
-                  {proctoringBlockedMessage}
-                </Text>
-              </View>
-            ) : null}
+              {syncError ? (
+                <Text style={styles.errorText}>{syncError}</Text>
+              ) : null}
 
-            <View style={styles.infoBox}>
               <Text style={styles.infoText}>
-                Camera preflight, periodic snapshot evidence, and rolling audio
-                recording are managed from this screen. Proctoring must stay
-                active for the whole exam.
+                Audio status: {audioRecorder.status}
+                {audioRecorder.lastUploadedAt
+                  ? ` · Last upload ${formatDateTime(audioRecorder.lastUploadedAt)}`
+                  : ""}
               </Text>
             </View>
-
-            {syncError ? (
-              <Text style={styles.errorText}>{syncError}</Text>
-            ) : null}
-
-            <Text style={styles.infoText}>
-              Audio status: {audioRecorder.status}
-              {audioRecorder.lastUploadedAt
-                ? ` · Last upload ${formatDateTime(audioRecorder.lastUploadedAt)}`
-                : ""}
-            </Text>
-
-            {isJoined ? (
-              <>
-                <MobileProctorCamera
-                  captureEnabled={false}
-                  isEnabled
-                  permissionGranted={!!cameraPermission?.granted}
-                  sessionId={activeSession.sessionId}
-                  student={student}
-                  onCameraReadyChange={setCameraReady}
-                  onViolation={logIntegrityEvent}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.primaryBtn,
-                    startingExam && styles.navBtnDisabled,
-                  ]}
-                  disabled={startingExam}
-                  onPress={() => void handleStart()}
-                >
-                  <Text style={styles.primaryBtnText}>
-                    {startingExam ? "Starting exam..." : "Start exam"}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.secondaryBtn,
-                    refreshingSession && styles.navBtnDisabled,
-                  ]}
-                  disabled={refreshingSession}
-                  onPress={() => void handleRefreshSession()}
-                >
-                  <Text style={styles.secondaryBtnText}>
-                    {refreshingSession ? "Refreshing..." : "Refresh session"}
-                  </Text>
-                </TouchableOpacity>
-              </>
-            ) : null}
           </View>
-        </View>
+        )}
 
         {!isJoined ? (
           <>

@@ -29,11 +29,17 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="exam-detail" options={{ headerShown: false }} />
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="join" options={{ headerShown: false }} />
           <Stack.Screen
             name="result"
-            options={{ title: "Results", headerBackVisible: false }}
+            options={{
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: "#FFFFFF",
+              },
+            }}
           />
         </Stack>
       </StudentAppProvider>

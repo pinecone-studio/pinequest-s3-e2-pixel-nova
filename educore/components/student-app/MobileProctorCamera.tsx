@@ -8,7 +8,9 @@ import type { AuthUser, CheatEventType } from "@/types/student-app";
 
 type MobileProctorCameraProps = {
   captureEnabled: boolean;
+  headless?: boolean;
   isEnabled: boolean;
+  hidePreview?: boolean;
   permissionGranted: boolean;
   sessionId?: string;
   student?: AuthUser | null;
@@ -20,7 +22,9 @@ const SNAPSHOT_INTERVAL_MS = 30_000;
 
 export default function MobileProctorCamera({
   captureEnabled,
+  headless = false,
   isEnabled,
+  hidePreview = false,
   permissionGranted,
   sessionId,
   student,
@@ -102,8 +106,19 @@ export default function MobileProctorCamera({
   }
 
   if (!permissionGranted) {
+    if (headless) {
+      return null;
+    }
+
     return (
-      <View style={[styles.card, styles.warningCard]} testID="mobile-proctor-camera">
+      <View
+        style={[
+          styles.card,
+          styles.warningCard,
+          hidePreview && styles.compactCard,
+        ]}
+        testID="mobile-proctor-camera"
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Exam camera</Text>
           <Pill label="Permission required" tone="warning" />
@@ -116,7 +131,26 @@ export default function MobileProctorCamera({
   }
 
   return (
-    <View style={styles.card} testID="mobile-proctor-camera">
+    headless ? (
+      <CameraView
+        ref={cameraRef}
+        facing="front"
+        style={styles.hiddenPreview}
+        onCameraReady={() => {
+          setCameraReady(true);
+          setError(null);
+        }}
+        onMountError={(event) => {
+          setCameraReady(false);
+          setError(event.message);
+          void onViolation?.("camera_blocked", `camera-mount:${event.message}`);
+        }}
+      />
+    ) : (
+    <View
+      style={[styles.card, hidePreview && styles.compactCard]}
+      testID="mobile-proctor-camera"
+    >
       <View style={styles.header}>
         <Text style={styles.title}>Exam camera</Text>
         <Pill
@@ -128,7 +162,7 @@ export default function MobileProctorCamera({
       <CameraView
         ref={cameraRef}
         facing="front"
-        style={styles.preview}
+        style={hidePreview ? styles.hiddenPreview : styles.preview}
         onCameraReady={() => {
           setCameraReady(true);
           setError(null);
@@ -143,18 +177,21 @@ export default function MobileProctorCamera({
       <Text style={styles.status}>
         {captureEnabled ? "Periodic evidence snapshots are active." : "Camera preflight is active."}
       </Text>
-      <Text style={styles.message}>
-        The mobile client keeps the front camera ready, uploads periodic still-image
-        evidence during active exams, and remains ready for native local proctoring events.
-      </Text>
-      {lastSnapshotAt ? (
+      {!hidePreview ? (
+        <Text style={styles.message}>
+          The mobile client keeps the front camera ready, uploads periodic still-image
+          evidence during active exams, and remains ready for native local proctoring events.
+        </Text>
+      ) : null}
+      {!hidePreview && lastSnapshotAt ? (
         <Text style={styles.message}>Last snapshot uploaded at {lastSnapshotAt}</Text>
       ) : null}
-      {uploadStatus === "uploading" ? (
+      {!hidePreview && uploadStatus === "uploading" ? (
         <Text style={styles.message}>Uploading evidence snapshot...</Text>
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
+    )
   );
 }
 
@@ -171,6 +208,10 @@ const styles = StyleSheet.create({
     borderColor: "#D8AA6B",
     backgroundColor: "#FFF7E8",
   },
+  compactCard: {
+    padding: 14,
+    gap: 8,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -186,6 +227,11 @@ const styles = StyleSheet.create({
     height: 220,
     borderRadius: 18,
     overflow: "hidden",
+  },
+  hiddenPreview: {
+    height: 1,
+    opacity: 0.01,
+    position: "absolute",
   },
   message: {
     fontSize: 14,

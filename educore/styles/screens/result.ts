@@ -1,50 +1,117 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet } from "react-native";
 
 export const resultStyles = StyleSheet.create({
-  pillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  screen: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  screenContent: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  resultCard: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 10,
+  },
+  closeButton: {
+    alignSelf: "flex-end",
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroWrap: {
+    alignItems: "center",
+    marginTop: 2,
+  },
+  heroCheck: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 3,
+    borderColor: "#3568F5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  illustrationWrap: {
+    width: "100%",
+    height: 250,
+    marginBottom: 6,
+  },
+  title: {
+    fontSize: 22,
+    lineHeight: 36,
+    fontWeight: "700",
+    color: "#111827",
+    textAlign: "center",
+    marginBottom: 22,
+    paddingHorizontal: 16,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 18,
+  },
+  summaryCard: {
+    flex: 1,
+    borderRadius: 20,
+    paddingTop: 10,
+    paddingBottom: 12,
+    paddingHorizontal: 12,
+  },
+  summaryCardBlue: {
+    backgroundColor: "#3568F5",
+  },
+  summaryCardGreen: {
+    backgroundColor: "#97D91F",
+  },
+  summaryLabel: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  summaryInner: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    minHeight: 76,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
     gap: 8,
   },
-  metaText: {
-    fontSize: 14,
-    color: '#5F665E',
+  summaryValue: {
+    fontSize: 30,
+    fontWeight: "800",
   },
-  answerTitle: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#203229',
+  summaryValueBlue: {
+    color: "#3568F5",
   },
-  answerRow: {
-    borderTopWidth: 1,
-    borderTopColor: '#EFE5D4',
-    paddingTop: 14,
-    gap: 6,
+  summaryValueGreen: {
+    color: "#84CC16",
   },
-  answerQuestion: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#293B31',
+  collectButton: {
+    backgroundColor: "#3568F5",
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#2F5BE3",
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  answerMeta: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#5F665E',
-  },
-  answerState: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  answerCorrect: {
-    backgroundColor: '#E7F2EA',
-    color: '#24583F',
-  },
-  answerWrong: {
-    backgroundColor: '#F7E8E8',
-    color: '#A53838',
+  collectButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
   },
 });

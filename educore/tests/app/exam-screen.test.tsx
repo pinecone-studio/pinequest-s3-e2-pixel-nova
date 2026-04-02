@@ -45,7 +45,7 @@ jest.mock("@/lib/student-app/hooks/use-exam-audio-recorder", () => ({
 
 jest.mock("@/components/student-app/MobileProctorCamera", () => ({
   __esModule: true,
-  default: ({
+  default: function MockMobileProctorCamera({
     captureEnabled,
     isEnabled,
     onCameraReadyChange,
@@ -55,7 +55,7 @@ jest.mock("@/components/student-app/MobileProctorCamera", () => ({
     isEnabled: boolean;
     onCameraReadyChange?: (ready: boolean) => void;
     permissionGranted: boolean;
-  }) => {
+  }) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const React = require("react");
 
@@ -215,11 +215,13 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    fireEvent.press(screen.getByText("Start exam"));
+    fireEvent.press(screen.getByText("Шалгалтанд орох"));
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Camera permission is required before the exam can start/),
+        screen.getByText(
+          /Camera permission is required before the exam can start/,
+        ),
       ).toBeTruthy();
     });
     expect(startExam).not.toHaveBeenCalled();
@@ -236,7 +238,8 @@ describe("ExamScreen", () => {
     const screen = render(<ExamScreen />);
 
     expect(screen.getByText(/camera-capturing/)).toBeTruthy();
-    expect(screen.getByText(/Audio status:/)).toBeTruthy();
+    expect(screen.getByText("Demo exam")).toBeTruthy();
+    expect(screen.getByText("Time left")).toBeTruthy();
     screen.unmount();
   });
 
