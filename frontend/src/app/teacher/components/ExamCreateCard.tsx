@@ -6,6 +6,7 @@ import ExamMetaFields from "./exam-create/ExamMetaFields";
 import QuestionFormSection from "./exam-create/QuestionFormSection";
 import QuestionPreviewPanel from "./exam-create/QuestionPreviewPanel";
 import QuestionListPanel from "./exam-create/QuestionListPanel";
+import SaveExamDialog from "./SaveExamDialog";
 
 type ExamCreateCardProps = {
   examTitle: string;
@@ -35,7 +36,7 @@ type ExamCreateCardProps = {
   ) => void;
   addQuestionOption: (id: string) => void;
   removeQuestionOption: (id: string, optionIndex: number) => void;
-  saveExam: () => void;
+  saveExam: (overrides?: { title?: string; className?: string }) => void;
   saving: boolean;
   hasUser: boolean;
   pdfUseOcr: boolean;
@@ -95,6 +96,7 @@ export default function ExamCreateCard({
 }: ExamCreateCardProps) {
   const [previewIndex, setPreviewIndex] = useState(0);
   const [editMode, setEditMode] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
   useEffect(() => {
     if (questions.length === 0) {
@@ -170,37 +172,23 @@ export default function ExamCreateCard({
           <div className="flex justify-end">
             <button
               className={`inline-flex items-center gap-2 ${buttonPrimary}`}
-              onClick={saveExam}
+              onClick={() => setSaveDialogOpen(true)}
               type="button"
               disabled={saving || !hasUser}>
-              {saving && (
-                <svg
-                  className="size-4 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="9"
-                    stroke="currentColor"
-                    strokeOpacity="0.28"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M21 12a9 9 0 0 0-9-9"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              )}
-              {!hasUser
-                ? "Багш сонгогдоогүй"
-                : saving
-                  ? "Хадгалж байна..."
-                  : "Шалгалт хадгалах"}
+              {!hasUser ? "Багш сонгогдоогүй" : "Үргэлжлүүлэх"}
             </button>
           </div>
+
+          <SaveExamDialog
+            open={saveDialogOpen}
+            onClose={() => setSaveDialogOpen(false)}
+            examTitle={examTitle}
+            saving={saving}
+            onSave={(title, className) => {
+              setSaveDialogOpen(false);
+              saveExam({ title, className: className || undefined });
+            }}
+          />
         </div>
 
         <div className="rounded-[30px] border border-[#e7edf5] bg-white p-5 shadow-[0_20px_48px_-38px_rgba(15,23,42,0.16)]">

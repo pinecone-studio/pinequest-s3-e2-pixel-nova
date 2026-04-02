@@ -144,7 +144,9 @@ export default function ExamTab(props: ExamTabProps) {
           }
           durationMinutes={props.durationMinutes}
           setDurationMinutes={props.setDurationMinutes}
-          onSchedule={props.onSchedule}
+          onContinue={function (): void {
+            throw new Error("Function not implemented.");
+          }}
         />
         <ExamCreateCard
           examTitle={props.examTitle}

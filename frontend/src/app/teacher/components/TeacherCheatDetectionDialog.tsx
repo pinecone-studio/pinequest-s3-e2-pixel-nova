@@ -9,6 +9,7 @@ import type { Exam } from "../types";
 
 type TeacherCheatDetectionDialogProps = {
   exam: Exam | null;
+  examTitle?: string | null;
   open: boolean;
   saving?: boolean;
   requiresAudioRecording: boolean;
@@ -21,6 +22,7 @@ type TeacherCheatDetectionDialogProps = {
 
 export default function TeacherCheatDetectionDialog({
   exam,
+  examTitle,
   open,
   saving = false,
   requiresAudioRecording,
@@ -30,13 +32,14 @@ export default function TeacherCheatDetectionDialog({
   onClose,
   onSave,
 }: TeacherCheatDetectionDialogProps) {
-  if (!open || !exam) return null;
+  if (!open) return null;
 
   const selectedSet = new Set<ConfigurableCheatDetection>(
     DEFAULT_ENABLED_CHEAT_DETECTIONS.filter((value) =>
       selectedDetections.includes(value),
     ),
   );
+  const title = exam?.title ?? examTitle ?? "Шалгалт";
 
   const toggleDetection = (detection: ConfigurableCheatDetection) => {
     if (selectedSet.has(detection)) {
@@ -63,7 +66,7 @@ export default function TeacherCheatDetectionDialog({
                 <h2 className="text-xl font-semibold text-slate-950">
                   Луйврын илрүүлэлтийн тохиргоо
                 </h2>
-                <p className="mt-1 text-sm text-slate-600">{exam.title}</p>
+                <p className="mt-1 text-sm text-slate-600">{title}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   Хуваарь аль хэдийн хадгалагдсан. Энэ шалгалтад ямар автомат
                   илрүүлэлтүүд идэвхтэй байхыг эндээс тохируулна.

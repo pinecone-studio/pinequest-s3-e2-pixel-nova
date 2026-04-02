@@ -43,10 +43,12 @@ export const useExamSaveActions = ({
 }: UseExamSaveActionsParams) => {
   const [saving, setSaving] = useState(false);
 
-  const saveExam = useCallback(async () => {
+  const saveExam = useCallback(async (overrides?: { title?: string; className?: string }) => {
     if (saving) return false;
     setSaving(true);
-    if (!examTitle || questions.length === 0) {
+    const effectiveTitle = overrides?.title ?? examTitle;
+    const effectiveClassName = overrides?.className ?? null;
+    if (!effectiveTitle || questions.length === 0) {
       showToast("Шалгалтын нэр болон асуултууд оруулна уу.");
       setSaving(false);
       return false;
@@ -70,7 +72,7 @@ export const useExamSaveActions = ({
     }
 
     let newExam = buildLocalExam({
-      title: examTitle,
+      title: effectiveTitle,
       scheduledAt: createDate || null,
       expectedStudentsCount,
       questions,
@@ -81,6 +83,7 @@ export const useExamSaveActions = ({
     try {
       const syncedExam = await syncExamToBackend(currentUser, {
         title: newExam.title,
+        className: effectiveClassName,
         duration: newExam.duration ?? 45,
         scheduledAt: createDate || null,
         expectedStudentsCount,
@@ -94,7 +97,7 @@ export const useExamSaveActions = ({
       }
 
       newExam = buildLocalExam({
-        title: examTitle,
+        title: effectiveTitle,
         scheduledAt: createDate || null,
         expectedStudentsCount,
         questions,
