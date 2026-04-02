@@ -14,14 +14,11 @@ jest.mock("@react-navigation/native", () => ({
   useFocusEffect: jest.fn(),
 }));
 
-jest.mock("expo-router", () => ({
-  Redirect: ({ href }: { href: string }) =>
-    require("react").createElement("Text", null, `redirect:${href}`),
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-  }),
-}));
+jest.mock("expo-router",()=>({
+  Redirect:({href}:{href:string})=>require("react").createElement("Text",null,`redirect:${href}`),
+  useLocalSearchParams:()=>({}),
+  useRouter:()=>({push:jest.fn(),replace:jest.fn()}),
+}));    
 
 jest.mock("expo-camera", () => ({
   useCameraPermissions: jest.fn(() => [{ granted: true }, jest.fn()]),
@@ -185,7 +182,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("Loading...")).toBeTruthy();
+    expect(screen.getByText("Ачааллаж байна...")).toBeTruthy();
     screen.unmount();
   });
 
@@ -194,8 +191,8 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("Exams")).toBeTruthy();
-    expect(screen.getByPlaceholderText("Search exams...")).toBeTruthy();
+    expect(screen.getByText("Товлогдсон шалгалт алга")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Шалгалт хайх...")).toBeTruthy();
     screen.unmount();
   });
 
@@ -220,7 +217,7 @@ describe("ExamScreen", () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          /Camera permission is required before the exam can start/,
+          "Шалгалтыг эхлүүлэхийн өмнө камерын зөвшөөрөл шаардлагатай.",
         ),
       ).toBeTruthy();
     });
@@ -239,7 +236,7 @@ describe("ExamScreen", () => {
 
     expect(screen.getByText(/camera-capturing/)).toBeTruthy();
     expect(screen.getByText("Demo exam")).toBeTruthy();
-    expect(screen.getByText("Time left")).toBeTruthy();
+    expect(screen.getByText("Үлдсэн хугацаа")).toBeTruthy();
     screen.unmount();
   });
 
@@ -280,7 +277,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    fireEvent.press(screen.getByText("History"));
+    fireEvent.press(screen.getByText("Шалгалтын түүх"));
 
     expect(screen.queryByText("91")).toBeNull();
     screen.unmount();

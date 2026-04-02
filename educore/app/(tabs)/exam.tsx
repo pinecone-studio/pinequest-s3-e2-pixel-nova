@@ -1,7 +1,7 @@
 ﻿import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCameraPermissions } from "expo-camera";
-import { Redirect, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   SafeAreaView,
@@ -29,8 +29,6 @@ import { useExamAudioRecorder } from "@/lib/student-app/hooks/use-exam-audio-rec
 import {
   computeRemainingSeconds,
   formatCountdown,
-  formatDateTime,
-  getEntryStatusLabel,
   normalizeApiError,
 } from "@/lib/student-app/utils";
 import { examStyles as styles } from "@/styles/screens/exam";
@@ -63,6 +61,11 @@ type HistoryListItem = {
   status: "graded" | "missed" | "late";
   sortTime: number;
 };
+
+function getRequestedTab(tab?: string | string[]): TabKey {
+  const resolved = Array.isArray(tab) ? tab[0] : tab;
+  return resolved === "history" ? "history" : "active";
+}
 
 function formatListDate(value?: string | null) {
   if (!value) return "----/--/--";
@@ -186,6 +189,40 @@ function getMockTeacherName(title: string) {
   return "Г. Сарантуяа";
 }
 
+function formatExamDateTime(value?: string | null) {
+  const date = formatListDate(value);
+  const time = formatListTime(value);
+
+  if (date === "----/--/--" && time === "--:--") {
+    return "Мэдээлэл алга";
+  }
+
+  return `${date} ${time}`;
+}
+
+function getAudioStatusLabel(status: string) {
+  switch (status) {
+    case "idle":
+      return "Бэлэн биш";
+    case "preparing":
+      return "Бэлдэж байна";
+    case "ready":
+      return "Бэлэн";
+    case "recording":
+      return "Бичиж байна";
+    case "uploading":
+      return "Илгээж байна";
+    case "blocked":
+      return "Хаагдсан";
+    case "error":
+      return "Алдаа гарсан";
+    case "stopped":
+      return "Зогссон";
+    default:
+      return status;
+  }
+}
+
 function ExamDetailModal({
   exam,
   visible,
@@ -281,15 +318,17 @@ function ExamDetailModal({
                     size={18}
                     color="#F59E0B"
                   />
-                  <Text style={styles.ruleTitle}>Change tab</Text>
-                  <Text style={styles.ruleSubtitle}>Cannot change tab.</Text>
+                  <Text style={styles.ruleTitle}>Таб солих</Text>
+                  <Text style={styles.ruleSubtitle}>
+                    Шалгалтын үед таб солих боломжгүй.
+                  </Text>
                 </View>
 
                 <View style={[styles.ruleCard, styles.ruleCardWarning]}>
                   <Ionicons name="timer-outline" size={18} color="#F59E0B" />
-                  <Text style={styles.ruleTitle}>Auto Submit</Text>
+                  <Text style={styles.ruleTitle}>Автоматаар илгээнэ</Text>
                   <Text style={styles.ruleSubtitle}>
-                    Submits when time ends
+                    Хугацаа дуусмагц автоматаар илгээгдэнэ.
                   </Text>
                 </View>
 
@@ -299,14 +338,14 @@ function ExamDetailModal({
                     size={18}
                     color="#EF4444"
                   />
-                  <Text style={styles.ruleTitle}>Copy/Paste</Text>
-                  <Text style={styles.ruleSubtitle}>Disabled</Text>
+                  <Text style={styles.ruleTitle}>Хуулах, буулгах</Text>
+                  <Text style={styles.ruleSubtitle}>Идэвхгүй</Text>
                 </View>
 
                 <View style={[styles.ruleCard, styles.ruleCardDanger]}>
                   <Ionicons name="camera-outline" size={18} color="#EF4444" />
-                  <Text style={styles.ruleTitle}>Camera</Text>
-                  <Text style={styles.ruleSubtitle}>Required</Text>
+                  <Text style={styles.ruleTitle}>Камер</Text>
+                  <Text style={styles.ruleSubtitle}>Шаардлагатай</Text>
                 </View>
               </View>
             </View>
@@ -347,11 +386,16 @@ function ExamDetailModal({
 // Exam list screen (tab = "active" | "history")
 
 function ExamListScreen() {
+  const { tab } = useLocalSearchParams<{ tab?: string | string[] }>();
   const { dashboardLoading, history, upcomingExams } = useStudentApp();
-  const [activeTab, setActiveTab] = useState<TabKey>("active");
+  const [activeTab, setActiveTab] = useState<TabKey>(getRequestedTab(tab));
   const [search, setSearch] = useState("");
   const [now, setNow] = useState(() => new Date());
   const attemptedExamIds = new Set(history.map((item) => item.examId));
+
+  useEffect(() => {
+    setActiveTab(getRequestedTab(tab));
+  }, [tab]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -518,14 +562,14 @@ function ExamListScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.pageTitle}>Exams</Text>
+        <Text style={styles.pageTitle}>Шалгалтууд</Text>
 
         {dashboardLoading ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyEmoji}>Loading</Text>
-            <Text style={styles.emptyTitle}>Refreshing exams...</Text>
+            <Text style={styles.emptyEmoji}>⏳</Text>
+            <Text style={styles.emptyTitle}>Шалгалтуудыг шинэчилж байна...</Text>
             <Text style={styles.emptyText}>
-              Updating your active session, upcoming exams, and recent history.
+              Одоогийн шалгалт, дараагийн шалгалт, түүхийн мэдээллийг шинэчилж байна.
             </Text>
           </View>
         ) : null}
@@ -542,7 +586,7 @@ function ExamListScreen() {
                 activeTab === "active" && styles.tabTextActive,
               ]}
             >
-              Upcoming
+              Шалгалтууд
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -555,7 +599,7 @@ function ExamListScreen() {
                 activeTab === "history" && styles.tabTextActive,
               ]}
             >
-              History
+              Шалгалтын түүх
             </Text>
           </TouchableOpacity>
         </View>
@@ -565,7 +609,7 @@ function ExamListScreen() {
           <Ionicons name="search-outline" size={18} color="#98A2B3" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search exams..."
+            placeholder="Шалгалт хайх..."
             placeholderTextColor="#AAB0C0"
             value={search}
             onChangeText={setSearch}
@@ -659,11 +703,18 @@ function ActiveExamList({
               </TouchableOpacity>
             ) : (
               <View style={styles.upcomingButtonRow}>
+                <View style={styles.upcomingDivider} />
                 <TouchableOpacity
                   style={styles.upcomingDetailButton}
                   onPress={() => setSelectedExam(exam)}
                 >
                   <Text style={styles.upcomingDetailText}>Дэлгэрэнгүй</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={24}
+                    color="#111827"
+                    style={styles.upcomingDetailArrow}
+                  />
                 </TouchableOpacity>
               </View>
             )}
@@ -817,7 +868,7 @@ export default function ExamScreen() {
       });
     } catch (error) {
       setSyncError(
-        normalizeApiError(error, "Could not save your typed answer."),
+        normalizeApiError(error, "Бичсэн хариултыг хадгалж чадсангүй."),
       );
     }
   }, [
@@ -859,7 +910,7 @@ export default function ExamScreen() {
         router.replace("/result");
       } catch (error) {
         submitRequestedRef.current = false;
-        setSyncError(normalizeApiError(error, "Could not submit the exam."));
+        setSyncError(normalizeApiError(error, "Шалгалтыг илгээж чадсангүй."));
       } finally {
         setSubmitting(false);
       }
@@ -882,14 +933,14 @@ export default function ExamScreen() {
 
       if (!permissionResult?.granted) {
         setSyncError(
-          "Camera permission is required before the exam can continue.",
+          "Шалгалтыг үргэлжлүүлэхийн өмнө камерын зөвшөөрөл шаардлагатай.",
         );
         return;
       }
 
       if (!cameraReady) {
         setSyncError(
-          "The exam camera is still preparing. Wait for the camera card to show Ready.",
+          "Шалгалтын камер бэлдэж байна. Камер бэлэн болтол түр хүлээнэ үү.",
         );
         return;
       }
@@ -899,7 +950,7 @@ export default function ExamScreen() {
         if (!prepared) {
           setSyncError(
             audioRecorder.error ??
-              "Microphone recording must be ready before the exam can continue.",
+              "Шалгалтыг үргэлжлүүлэхийн өмнө микрофоны бичлэг бэлэн байх шаардлагатай.",
           );
           return;
         }
@@ -908,7 +959,7 @@ export default function ExamScreen() {
         if (!started) {
           setSyncError(
             audioRecorder.error ??
-              "Microphone recording must be running before the exam can continue.",
+              "Шалгалтыг үргэлжлүүлэхийн өмнө микрофоны бичлэг ажиллаж байх шаардлагатай.",
           );
           return;
         }
@@ -918,7 +969,7 @@ export default function ExamScreen() {
       setIntegrityWarning(null);
     } catch (error) {
       setSyncError(
-        normalizeApiError(error, "Could not recover exam proctoring."),
+        normalizeApiError(error, "Шалгалтын хяналтыг сэргээж чадсангүй."),
       );
     } finally {
       setRecoveringProctoring(false);
@@ -977,10 +1028,10 @@ export default function ExamScreen() {
       setAppIsActive(nextState === "active");
       if (nextState !== "active" && activeSession?.status === "in_progress") {
         setProctoringBlockedMessage(
-          "The exam was paused because the app left the foreground. Return to the exam and recover proctoring before continuing.",
+          "Апп арын төлөв рүү шилжсэн тул шалгалтыг түр зогсоолоо. Буцаж орж, хяналтыг сэргээсний дараа үргэлжлүүлнэ үү.",
         );
         setIntegrityWarning(
-          "The app moved out of the foreground during an active exam.",
+          "Шалгалтын үед апп дэлгэцнээс гарсан байна.",
         );
         void logIntegrityEvent("tab_hidden", `app-state:${nextState}`);
       }
@@ -997,10 +1048,10 @@ export default function ExamScreen() {
           !submitRequestedRef.current
         ) {
           setProctoringBlockedMessage(
-            "The exam was paused because you left the exam screen.",
+            "Та шалгалтын дэлгэцээс гарсан тул шалгалтыг түр зогсоолоо.",
           );
           setIntegrityWarning(
-            "You left the exam screen. Stay inside the exam until you submit.",
+            "Та шалгалтын дэлгэцээс гарсан байна. Илгээх хүртлээ шалгалтын дэлгэц дээрээ байна уу.",
           );
           void logIntegrityEvent("window_blur", "screen-blur");
         }
@@ -1015,7 +1066,7 @@ export default function ExamScreen() {
     ) {
       setProctoringBlockedMessage(
         audioRecorder.error ??
-          "Audio recording stopped unexpectedly. Recover proctoring before continuing.",
+          "Аудио бичлэг санаандгүй зогссон байна. Үргэлжлүүлэхийн өмнө хяналтыг сэргээнэ үү.",
       );
     }
   }, [audioRecorder.error, audioRecorder.status]);
@@ -1037,20 +1088,20 @@ export default function ExamScreen() {
   if (!hydrated) {
     return (
       <SafeAreaView style={styles.screen} edges={["top"]}>
-        <ScrollView
-          style={styles.screen}
-          contentContainerStyle={styles.content}
-        >
-          <Text style={styles.pageTitle}>Шалгалт</Text>
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyEmoji}>Loading</Text>
-            <Text style={styles.emptyTitle}>Loading...</Text>
-            <Text style={styles.emptyText}>
-              Restoring the latest exam state.
-            </Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+          <ScrollView
+            style={styles.screen}
+            contentContainerStyle={styles.content}
+          >
+            <Text style={styles.pageTitle}>Шалгалт</Text>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyEmoji}>⏳</Text>
+              <Text style={styles.emptyTitle}>Ачааллаж байна...</Text>
+              <Text style={styles.emptyText}>
+                Сүүлийн шалгалтын төлөвийг сэргээж байна.
+              </Text>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
     );
   }
 
@@ -1068,13 +1119,13 @@ export default function ExamScreen() {
         : await requestCameraPermission();
       if (!permissionResult?.granted) {
         setSyncError(
-          "Camera permission is required before the exam can start.",
+          "Шалгалтыг эхлүүлэхийн өмнө камерын зөвшөөрөл шаардлагатай.",
         );
         return;
       }
       if (!cameraReady) {
         setSyncError(
-          "The exam camera is still preparing. Wait for the camera card to show Ready.",
+          "Шалгалтын камер бэлдэж байна. Камер бэлэн болтол түр хүлээнэ үү.",
         );
         return;
       }
@@ -1089,7 +1140,7 @@ export default function ExamScreen() {
         if (!prepared) {
           setSyncError(
             audioRecorder.error ??
-              "Microphone recording must be ready before the exam can start.",
+              "Шалгалтыг эхлүүлэхийн өмнө микрофоны бичлэг бэлэн байх шаардлагатай.",
           );
           return;
         }
@@ -1098,7 +1149,7 @@ export default function ExamScreen() {
         if (!started) {
           setSyncError(
             audioRecorder.error ??
-              "Microphone recording must be running before the exam can start.",
+              "Шалгалтыг эхлүүлэхийн өмнө микрофоны бичлэг ажиллаж байх шаардлагатай.",
           );
           return;
         }
@@ -1112,7 +1163,7 @@ export default function ExamScreen() {
       setRemainingSeconds(computeRemainingSeconds(activeSession.timerEndsAt));
     } catch (error) {
       await audioRecorder.stop();
-      setSyncError(normalizeApiError(error, "Could not start the exam."));
+      setSyncError(normalizeApiError(error, "Шалгалтыг эхлүүлж чадсангүй."));
     } finally {
       setStartingExam(false);
     }
@@ -1127,7 +1178,7 @@ export default function ExamScreen() {
         textAnswer: null,
       });
     } catch (error) {
-      setSyncError(normalizeApiError(error, "Could not save your answer."));
+      setSyncError(normalizeApiError(error, "Хариултыг хадгалж чадсангүй."));
     }
   };
 
@@ -1223,7 +1274,7 @@ export default function ExamScreen() {
                   style={styles.upcomingPrimaryButton}
                   onPress={() => void handleStart()}
                 >
-                  <Text style={styles.upcomingDetailText}>Шалгалтанд орох</Text>
+                  <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
                 </TouchableOpacity>
               </View>
 
@@ -1254,11 +1305,11 @@ export default function ExamScreen() {
                     {activeSession.exam.title}
                   </Text>
                   <Text style={styles.examMeta}>
-                    {"Scheduled: "}
-                    {formatDateTime(
+                    {"Товлогдсон: "}
+                    {formatExamDateTime(
                       activeSession.exam.scheduledAt ?? activeSession.startedAt,
                     )}{" "}
-                    · {activeSession.exam.durationMin} min
+                    · {activeSession.exam.durationMin} минут
                   </Text>
                 </View>
                 <View
@@ -1276,21 +1327,21 @@ export default function ExamScreen() {
                     ]}
                   >
                     {activeSession.entryStatus === "late"
-                      ? "Late"
-                      : getEntryStatusLabel(activeSession.entryStatus)}
+                      ? "Хоцорч орсон"
+                      : "Цагтаа"}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.metaRow}>
                 <View style={styles.metaChip}>
-                  <Text style={styles.metaChipLabel}>Time left</Text>
+                  <Text style={styles.metaChipLabel}>Үлдсэн хугацаа</Text>
                   <Text style={styles.metaChipValue}>
                     {formatCountdown(remainingSeconds)}
                   </Text>
                 </View>
                 <View style={styles.metaChip}>
-                  <Text style={styles.metaChipLabel}>Progress</Text>
+                  <Text style={styles.metaChipLabel}>Явц</Text>
                   <Text style={styles.metaChipValue}>{progressLabel}</Text>
                 </View>
               </View>
@@ -1319,9 +1370,9 @@ export default function ExamScreen() {
 
               <View style={styles.infoBox}>
                 <Text style={styles.infoText}>
-                  Camera preflight, periodic snapshot evidence, and rolling
-                  audio recording are managed from this screen. Proctoring must
-                  stay active for the whole exam.
+                  Камерын урьдчилсан шалгалт, хугацаат зураг, тасралтгүй аудио
+                  бичлэг энэ дэлгэцээс удирдагдана. Шалгалтын турш хяналт
+                  идэвхтэй байх ёстой.
                 </Text>
               </View>
 
@@ -1330,9 +1381,9 @@ export default function ExamScreen() {
               ) : null}
 
               <Text style={styles.infoText}>
-                Audio status: {audioRecorder.status}
+                Аудио төлөв: {getAudioStatusLabel(audioRecorder.status)}
                 {audioRecorder.lastUploadedAt
-                  ? ` · Last upload ${formatDateTime(audioRecorder.lastUploadedAt)}`
+                  ? ` · Сүүлд илгээсэн: ${formatExamDateTime(audioRecorder.lastUploadedAt)}`
                   : ""}
               </Text>
             </View>
@@ -1363,8 +1414,8 @@ export default function ExamScreen() {
               >
                 <Text style={styles.secondaryBtnText}>
                   {recoveringProctoring
-                    ? "Recovering proctoring..."
-                    : "Recover proctoring"}
+                    ? "Хяналтыг сэргээж байна..."
+                    : "Хяналтыг сэргээх"}
                 </Text>
               </TouchableOpacity>
             ) : null}
@@ -1374,7 +1425,7 @@ export default function ExamScreen() {
         {!isJoined && currentQuestion ? (
           <View style={styles.questionCard}>
             <Text style={styles.questionCounter}>
-              Question {activeSession.currentQuestionIndex + 1}
+              Асуулт {activeSession.currentQuestionIndex + 1}
             </Text>
             {hasTraditionalMongolian(currentQuestion.questionText) ? (
               <MongolianText
@@ -1453,7 +1504,7 @@ export default function ExamScreen() {
                 key={currentQuestion.id}
                 multiline
                 contextMenuHidden={integrity.capabilities.copyPasteRestricted}
-                placeholder="Write your answer here"
+                placeholder="Хариултаа энд бичнэ үү"
                 placeholderTextColor="#BBBFC9"
                 style={styles.answerInput}
                 value={textDraft}
@@ -1477,7 +1528,7 @@ export default function ExamScreen() {
               }
               onPress={() => void moveQuestion(-1)}
             >
-              <Text style={styles.navBtnText}>Previous</Text>
+              <Text style={styles.navBtnText}>Өмнөх</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -1493,7 +1544,7 @@ export default function ExamScreen() {
               }
               onPress={() => void moveQuestion(1)}
             >
-              <Text style={styles.navBtnText}>Next</Text>
+              <Text style={styles.navBtnText}>Дараах</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -1504,7 +1555,7 @@ export default function ExamScreen() {
               onPress={() => void handleSubmit(false)}
             >
               <Text style={styles.primaryBtnText}>
-                {submitting ? "Submitting..." : "Submit exam"}
+                {submitting ? "Илгээж байна..." : "Шалгалт илгээх"}
               </Text>
             </TouchableOpacity>
           </View>

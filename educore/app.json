@@ -13,7 +13,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Allow PineQuest to access your front camera during exams for proctoring.",
         "NSMicrophoneUsageDescription": "Allow PineQuest to record microphone audio during exams when audio proctoring is required."
-      }
+      },
+      "bundleIdentifier": "com.anonymous.educore"
     },
     "android": {
       "adaptiveIcon": {

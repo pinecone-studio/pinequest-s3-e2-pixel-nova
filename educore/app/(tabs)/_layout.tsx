@@ -7,22 +7,22 @@ export default function TabLayout() {
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="home">
-        <Label>Home</Label>
+        <Label>Нүүр</Label>
         <Icon sf="house.fill" drawable="ic_menu_mylocation" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="exam">
-        <Label>Exam</Label>
+        <Label>Шалгалт</Label>
         <Icon sf="doc.text.fill" drawable="ic_menu_agenda" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="progress">
-        <Label>Progress</Label>
+        <Label>Ахиц</Label>
         <Icon sf="chart.bar.fill" drawable="ic_menu_sort_by_size" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="profile">
-        <Label>Profile</Label>
+        <Label>Профайл</Label>
         <Icon sf="person.fill" drawable="ic_menu_preferences" />
       </NativeTabs.Trigger>
     </NativeTabs>
