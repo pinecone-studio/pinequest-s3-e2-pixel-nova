@@ -22,10 +22,10 @@ describe("StudentSidebar", () => {
 		expect(screen.getAllByText("Тусламж").length).toBeGreaterThan(0);
 	});
 
-	it("renders EduCore branding when expanded", () => {
+	it("renders localized branding when expanded", () => {
 		render(<StudentSidebar {...makeProps()} />);
 
-		expect(screen.getByText("EduCore")).toBeInTheDocument();
+		expect(screen.getByText("Эдүкор")).toBeInTheDocument();
 		expect(screen.getByText("Суралцах төв")).toBeInTheDocument();
 	});
 

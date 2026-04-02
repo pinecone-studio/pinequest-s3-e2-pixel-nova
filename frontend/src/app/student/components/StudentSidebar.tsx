@@ -63,7 +63,7 @@ export default function StudentSidebar({
               collapsed ? "hidden opacity-0" : "block opacity-100"
             }`}>
             <h1 className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              EduCore
+              Эдүкор
             </h1>
             <p className="text-[10px] text-muted-foreground font-medium">
               Суралцах төв

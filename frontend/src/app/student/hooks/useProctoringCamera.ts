@@ -594,7 +594,7 @@ export const useProctoringCamera = (
       !navigator.mediaDevices?.getUserMedia
     ) {
       setStatus("unsupported");
-      setError("Secure webcam access is not available in this browser.");
+      setError("Энэ хөтөч дээр аюулгүй камерын хандалт ашиглах боломжгүй байна.");
       return;
     }
 
@@ -616,7 +616,7 @@ export const useProctoringCamera = (
 
       const video = videoRef.current;
       if (!video) {
-        throw new Error("Camera video element is not mounted.");
+        throw new Error("Камерын видео элемент холбогдоогүй байна.");
       }
 
       video.srcObject = stream;
@@ -645,7 +645,7 @@ export const useProctoringCamera = (
       setError(
         cause instanceof Error
           ? cause.message
-          : "Could not start browser camera monitoring.",
+          : "Хөтөч доторх камерын хяналтыг эхлүүлж чадсангүй.",
       );
     }
   }, [processFrame, stop, videoConstraints]);

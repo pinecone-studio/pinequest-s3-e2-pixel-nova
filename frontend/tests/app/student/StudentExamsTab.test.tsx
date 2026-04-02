@@ -55,7 +55,7 @@ describe("StudentExamsTab", () => {
     expect(onStartExam).toHaveBeenCalledTimes(1);
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Go back to exam list" }),
+      screen.getByRole("button", { name: "Шалгалтын жагсаалт руу буцах" }),
     );
     expect(onClearSelection).toHaveBeenCalledTimes(1);
   });

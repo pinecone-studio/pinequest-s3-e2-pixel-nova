@@ -3,6 +3,10 @@
 import { Mic, RefreshCcw, ShieldAlert, StopCircle } from "lucide-react";
 import type { User } from "@/lib/examGuard";
 import { useExamAudioRecorder } from "../hooks/useExamAudioRecorder";
+import {
+  localizeAudioMimeType,
+  localizeAudioStatus,
+} from "./student-ui-text";
 
 type DesktopExamAudioCardProps = {
   required: boolean;
@@ -56,11 +60,11 @@ export default function DesktopExamAudioCard({
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">
-                  Microphone evidence is required
+                  Микрофоны бичлэг заавал шаардлагатай
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {lastError ??
-                    "Audio recording stopped, so the exam cannot continue until microphone recording is restored."}
+                    "Аудио бичлэг тасарсан тул микрофоны бичлэгийг сэргээх хүртэл шалгалтыг үргэлжлүүлэх боломжгүй."}
                 </p>
               </div>
             </div>
@@ -73,14 +77,16 @@ export default function DesktopExamAudioCard({
                   void restart();
                 }}
               >
-                Retry microphone
+                Микрофоныг дахин асаах
               </button>
               <button
                 type="button"
                 className="rounded-xl border border-[#e6c6c6] bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-[#fff7f7]"
-                onClick={() => onTerminateExam("Required exam audio recording was interrupted.")}
+                onClick={() =>
+                  onTerminateExam("Шалгалтын шаардлагатай аудио бичлэг тасалдсан.")
+                }
               >
-                End exam
+                Шалгалтыг дуусгах
               </button>
             </div>
           </div>
@@ -90,9 +96,9 @@ export default function DesktopExamAudioCard({
       <section className="overflow-hidden rounded-[24px] border border-[#d8e1f0] bg-white shadow-[0_18px_40px_-32px_rgba(15,23,42,0.25)]">
         <div className="flex items-center justify-between border-b border-[#e9eef7] px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-slate-900">Exam audio evidence</p>
+            <p className="text-sm font-semibold text-slate-900">Шалгалтын аудио баримт</p>
             <p className="text-xs text-slate-500">
-              Required microphone recording in rolling 30-second chunks
+              30 секундийн хэсгүүдээр микрофоны бичлэг заавал хийгдэнэ
             </p>
           </div>
           <span
@@ -104,7 +110,7 @@ export default function DesktopExamAudioCard({
                   : "bg-[#edf3ff] text-[#355cde]"
             }`}
           >
-            {status.replace(/_/g, " ")}
+            {localizeAudioStatus(status)}
           </span>
         </div>
 
@@ -113,7 +119,7 @@ export default function DesktopExamAudioCard({
             <div className="grid gap-3 text-xs text-slate-600 sm:grid-cols-2">
               <div className="rounded-2xl border border-[#d8e1f0] bg-white px-3 py-3">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                  Current Chunk
+                  Одоогийн хэсэг
                 </div>
                 <div className="mt-1 text-lg font-semibold text-slate-900">
                   {formatElapsed(currentChunkElapsedMs)}
@@ -121,7 +127,7 @@ export default function DesktopExamAudioCard({
               </div>
               <div className="rounded-2xl border border-[#d8e1f0] bg-white px-3 py-3">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                  Uploaded Chunks
+                  Илгээсэн хэсэг
                 </div>
                 <div className="mt-1 text-lg font-semibold text-slate-900">
                   {chunkCount}
@@ -129,26 +135,26 @@ export default function DesktopExamAudioCard({
               </div>
               <div className="rounded-2xl border border-[#d8e1f0] bg-white px-3 py-3">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                  Audio Format
+                  Аудио формат
                 </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {mimeType ?? "Unavailable"}
+                  {localizeAudioMimeType(mimeType)}
                 </div>
               </div>
               <div className="rounded-2xl border border-[#d8e1f0] bg-white px-3 py-3">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                  Last Upload
+                  Сүүлд илгээсэн
                 </div>
                 <div className="mt-1 text-sm font-semibold text-slate-900">
                   {lastUploadedAt
-                    ? new Date(lastUploadedAt).toLocaleTimeString()
-                    : "Waiting for first chunk"}
+                    ? new Date(lastUploadedAt).toLocaleTimeString("mn-MN")
+                    : "Эхний хэсгийг хүлээж байна"}
                 </div>
               </div>
             </div>
 
             <p className="mt-4 text-xs leading-5 text-slate-500">
-              Audio is stored as evidence clips for teacher review. The exam cannot continue without microphone recording.
+              Аудио бичлэг нь багш шалгах баримт байдлаар хадгалагдана. Микрофоны бичлэггүйгээр шалгалтыг үргэлжлүүлэх боломжгүй.
             </p>
             {lastError && (
               <p className="mt-2 text-xs font-medium text-[#d25b2b]">{lastError}</p>
@@ -164,7 +170,7 @@ export default function DesktopExamAudioCard({
               }}
             >
               <RefreshCcw className="mr-2 inline size-3.5" />
-              Restart mic
+              Микрофоныг дахин асаах
             </button>
             <button
               type="button"
@@ -172,13 +178,13 @@ export default function DesktopExamAudioCard({
               onClick={stop}
             >
               <StopCircle className="mr-2 inline size-3.5" />
-              Stop
+              Зогсоох
             </button>
           </div>
 
           <div className="mt-4 rounded-2xl border border-[#e9eef7] bg-[#fbfdff] px-3 py-2 text-xs text-slate-600">
             <Mic className="mr-2 inline size-3.5 text-[#355cde]" />
-            Microphone recording stays on while the exam is active.
+            Шалгалт үргэлжилж байх хугацаанд микрофоны бичлэг идэвхтэй байна.
           </div>
         </div>
       </section>

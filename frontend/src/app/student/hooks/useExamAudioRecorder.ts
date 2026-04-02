@@ -104,7 +104,7 @@ const uploadAudioChunk = async ({
   });
 
   if (!response.ok) {
-    throw new Error(`Audio upload failed with status ${response.status}`);
+    throw new Error(`Аудио илгээхэд алдаа гарлаа (төлөв: ${response.status}).`);
   }
 
   await finalizeAudioUpload(
@@ -236,7 +236,7 @@ export const useExamAudioRecorder = ({
 
       if (uploadFailureCountRef.current >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
         await emitBlockingIssue(
-          "Audio uploads kept failing. The exam cannot continue without microphone evidence.",
+          "Аудио илгээх оролдлого дахин дахин амжилтгүй боллоо. Микрофоны бичлэггүйгээр шалгалтыг үргэлжлүүлэх боломжгүй.",
           "audio_recording_interrupted",
           {
             reason: "upload_failure_threshold",
@@ -261,10 +261,10 @@ export const useExamAudioRecorder = ({
       typeof MediaRecorder === "undefined"
     ) {
       setStatus("unsupported");
-      setLastError("Secure microphone recording is not available in this browser.");
+      setLastError("Энэ хөтөч дээр аюулгүй микрофоны бичлэг ашиглах боломжгүй байна.");
       if (required) {
         await emitBlockingIssue(
-          "Secure microphone recording is not available in this browser.",
+          "Энэ хөтөч дээр аюулгүй микрофоны бичлэг ашиглах боломжгүй байна.",
           "microphone_permission_denied",
           { reason: "unsupported_browser" },
         );
@@ -274,10 +274,10 @@ export const useExamAudioRecorder = ({
 
     if (!mimeType) {
       setStatus("unsupported");
-      setLastError("This browser does not support an audio-only recording format.");
+      setLastError("Энэ хөтөч зөвхөн аудио бичлэгийн форматыг дэмжихгүй байна.");
       if (required) {
         await emitBlockingIssue(
-          "This browser does not support an audio-only recording format.",
+          "Энэ хөтөч зөвхөн аудио бичлэгийн форматыг дэмжихгүй байна.",
           "microphone_permission_denied",
           { reason: "unsupported_mime_type" },
         );
@@ -314,7 +314,7 @@ export const useExamAudioRecorder = ({
       for (const track of stream.getAudioTracks()) {
         track.addEventListener("ended", () => {
           void emitBlockingIssue(
-            "Microphone access stopped during the exam.",
+            "Шалгалтын үеэр микрофоны хандалт тасарлаа.",
             "audio_recording_interrupted",
             { reason: "track_ended" },
           );
@@ -353,7 +353,7 @@ export const useExamAudioRecorder = ({
           })
           .catch((error) => {
             void handleUploadFailure(
-              error instanceof Error ? error.message : "Audio upload failed.",
+              error instanceof Error ? error.message : "Аудио илгээхэд алдаа гарлаа.",
               { sequenceNumber: sequenceNumberRef.current },
             );
           });
@@ -361,7 +361,7 @@ export const useExamAudioRecorder = ({
 
       recorder.addEventListener("error", () => {
         void emitBlockingIssue(
-          "Audio recording failed during the exam.",
+          "Шалгалтын үеэр аудио бичлэг хийхэд алдаа гарлаа.",
           "audio_recording_interrupted",
           { reason: "recorder_error" },
         );
@@ -374,7 +374,7 @@ export const useExamAudioRecorder = ({
       const message =
         error instanceof Error
           ? error.message
-          : "Microphone access could not be started.";
+          : "Микрофоны хандалтыг эхлүүлж чадсангүй.";
       setStatus("error");
       setLastError(message);
       if (required) {

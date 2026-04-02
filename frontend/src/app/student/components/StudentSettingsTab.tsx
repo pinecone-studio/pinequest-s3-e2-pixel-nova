@@ -112,11 +112,11 @@ export default function StudentSettingsTab({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Түвшин</span>
                 <span className="font-semibold text-foreground">
-                  {typeof profile.level === "number" ? `Lv.${profile.level}` : "—"}
+                  {typeof profile.level === "number" ? `Түвшин ${profile.level}` : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>XP</span>
+                <span>Оноо</span>
                 <span className="font-semibold text-foreground">
                   {typeof profile.xp === "number" ? profile.xp : "—"}
                 </span>
@@ -164,7 +164,6 @@ export default function StudentSettingsTab({
               className="mt-1 w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm outline-none transition focus:border-primary"
               value={profile.email ?? ""}
               onChange={(e) => handleChange("email", e.target.value)}
-              placeholder="email@domain.mn"
               type="email"
             />
           </div>
@@ -199,7 +198,7 @@ export default function StudentSettingsTab({
                 className="mt-1 w-full rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm outline-none transition focus:border-primary"
                 value={profile.grade ?? ""}
                 onChange={(e) => handleChange("grade", e.target.value)}
-                placeholder="10A"
+                placeholder="10А"
               />
             </div>
           </div>

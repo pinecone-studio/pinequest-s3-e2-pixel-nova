@@ -29,7 +29,7 @@ const getInitials = (value: string) =>
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("") || "ST";
+    .join("") || "СУ";
 
 export default function StudentPage() {
   const router = useRouter();
@@ -200,7 +200,7 @@ export default function StudentPage() {
             Өгөгдөл ачаалж чадсангүй
           </h2>
           <p className="mt-2 text-sm text-slate-500">
-            Backend холболтоо шалгаад дахин ачаалж үзнэ үү.
+            Серверийн холболтоо шалгаад дахин ачаалж үзнэ үү.
           </p>
           <button
             className="mt-5 rounded-2xl border border-[#dce6f4] bg-[#f8fbff] px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"

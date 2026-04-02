@@ -8,6 +8,10 @@ import {
   useProctoringCamera,
   type ProctoringEvent,
 } from "../hooks/useProctoringCamera";
+import {
+  localizeCameraBlockedReason,
+  localizeCameraStatus,
+} from "./student-ui-text";
 
 type DesktopExamCameraCardProps = {
   sessionId: string | null;
@@ -123,7 +127,7 @@ export default function DesktopExamCameraCard({
         <div>
           <p className="text-sm font-semibold text-slate-900">Камерын хяналт</p>
           <p className="text-xs text-slate-500">
-            Browser доторх локал frame анализ ашигласан камерын хяналт
+            Хөтөч дотор явагдах дотоод дүрсний шинжилгээтэй камерын хяналт
           </p>
         </div>
         <span
@@ -135,7 +139,7 @@ export default function DesktopExamCameraCard({
                 : "bg-[#edf3ff] text-[#355cde]"
           }`}
         >
-          {status.replace(/_/g, " ")}
+          {localizeCameraStatus(status)}
         </span>
       </div>
 
@@ -180,12 +184,14 @@ export default function DesktopExamCameraCard({
           </div>
 
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            Зөвхөн browser дотор локал анализ хийгдэнэ. Зураг, видео хадгалахгүй
+            Зөвхөн хөтөч дотор дотоод шинжилгээ хийгдэнэ. Зураг, видео хадгалахгүй
             бөгөөд сервер рүү илгээхгүй.
           </p>
           {latestObservation.blockedReason && (
             <p className="mt-2 text-xs font-medium text-[#d25b2b]">
-              Камер халхлагдсан дохио: {latestObservation.blockedReason.replace(/_/g, " ")}
+              Камер халхлагдсан дохио: {localizeCameraBlockedReason(
+                latestObservation.blockedReason,
+              )}
             </p>
           )}
           {visibleError && (

@@ -15,8 +15,8 @@ export default function StudentLoadingScreen({
       title={usersLoading ? "Сурагчийн орчныг бэлдэж байна" : "Өгөгдөл ачаалж чадсангүй"}
       subtitle={
         usersLoading
-          ? "Шалгалт, XP, мэдэгдлийн мэдээллийг синк хийж байна. Түр хүлээнэ үү."
-          : "Backend холболтоо шалгаад дахин ачаалж үзнэ үү."
+          ? "Шалгалт, оноо, мэдэгдлийн мэдээллийг шинэчилж байна. Түр хүлээнэ үү."
+          : "Серверийн холболтоо шалгаад дахин ачаалж үзнэ үү."
       }
       className="after:pointer-events-none after:absolute after:inset-0 after:bg-[linear-gradient(180deg,transparent,rgba(5,8,22,0.38))]"
     >

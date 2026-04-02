@@ -82,11 +82,11 @@ describe("StudentProgressTab", () => {
     expect(screen.getByText("Миний ахиц")).toBeInTheDocument();
     expect(screen.getByText("Хичээлийн дүн")).toBeInTheDocument();
     expect(screen.getByText("Дүгнэлт")).toBeInTheDocument();
-    expect(screen.getByText("AI-ийн ерөнхий дүгнэлт")).toBeInTheDocument();
+    expect(screen.getByText("Хиймэл оюуны ерөнхий дүгнэлт")).toBeInTheDocument();
     expect(screen.getByText("Англи хэл")).toBeInTheDocument();
     expect(screen.getByText("Математик")).toBeInTheDocument();
     expect(screen.getByText("Физик")).toBeInTheDocument();
-    expect(screen.getByText("YOU")).toBeInTheDocument();
+    expect(screen.getByText("ТА")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Математик/i }));
 
@@ -94,10 +94,12 @@ describe("StudentProgressTab", () => {
     expect(screen.getByText("Гүйцэтгэл өндөр сэдэв")).toBeInTheDocument();
     expect(screen.getByText("Зөвлөгөө")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /AI-ийн ерөнхий дүгнэлт/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Хиймэл оюуны ерөнхий дүгнэлт/i }),
+    );
 
     expect(
-      screen.getByRole("dialog", { name: "AI-ийн ерөнхий дүгнэлт" }),
+      screen.getByRole("dialog", { name: "Хиймэл оюуны ерөнхий дүгнэлт" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Сайн байгаа хэсэг")).toBeInTheDocument();
     expect(screen.getByText("Анхаарах хэсэг")).toBeInTheDocument();

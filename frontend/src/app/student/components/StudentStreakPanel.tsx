@@ -56,7 +56,7 @@ export default function StudentStreakPanel({
       </div>
 
       <div className="mt-8 rounded-[20px] bg-white/14 px-4 py-3 text-center text-sm text-white/90">
-        Сайн байна! {xpToNext > 0 ? `${xpToNext} XP` : "Та аль хэдийн"}
+        Сайн байна! {xpToNext > 0 ? `${xpToNext} оноо` : "Та аль хэдийн"}
         {xpToNext > 0 ? " хэрэгтэй" : ""} байна. Дараагийн түвшин{" "}
         {nextLevel}.
       </div>

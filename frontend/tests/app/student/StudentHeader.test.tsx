@@ -37,9 +37,11 @@ describe("StudentHeader", () => {
       />,
     );
 
-    expect(screen.getByText("Educore")).toBeInTheDocument();
-    expect(screen.getByText("2.5k XP")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "AI дүгнэлт" })).not.toBeInTheDocument();
+    expect(screen.getByText("Pinecone")).toBeInTheDocument();
+    expect(screen.getByText("2.5 мян. XP")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Хиймэл оюуны дүгнэлт" }),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Шалгалт" }));
     expect(onTabChange).toHaveBeenCalledWith("Exams");
@@ -66,7 +68,7 @@ describe("StudentHeader", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Мэдэгдэл нээх" }));
     expect(
-      screen.getByText("Mathematics Final Exam шалгалтын дүн шинэчлэгдлээ."),
+      screen.getByText("Математик эцсийн шалгалтын дүн шинэчлэгдлээ."),
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Дансны цэс нээх" }));

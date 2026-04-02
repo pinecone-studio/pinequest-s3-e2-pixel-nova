@@ -65,11 +65,13 @@ describe("StudentAiInsightsTab", () => {
       />,
     );
 
-    expect(await screen.findByText("AI-ийн ерөнхий дүгнэлт")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Хиймэл оюуны ерөнхий дүгнэлт"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Дундаж оноо")).toBeInTheDocument();
     expect(screen.getByText("Хамгийн өндөр")).toBeInTheDocument();
     expect(screen.getByText("Шалгалтын тоо")).toBeInTheDocument();
-    expect(screen.getByText("XP эрэмбэ")).toBeInTheDocument();
+    expect(screen.getByText("Онооны эрэмбэ")).toBeInTheDocument();
     expect(screen.getByText("Явцын төлөв")).toBeInTheDocument();
     expect(screen.getByText("Өнөөдрийн урам")).toBeInTheDocument();
   });

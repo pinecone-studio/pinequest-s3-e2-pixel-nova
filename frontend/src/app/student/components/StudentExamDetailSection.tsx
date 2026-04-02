@@ -5,7 +5,11 @@ import { formatDate } from "../utils";
 import StudentExamCautionPanel from "./StudentExamCautionPanel";
 import StudentExamDetailHeader from "./StudentExamDetailHeader";
 import StudentExamTimingPanel from "./StudentExamTimingPanel";
-import { formatClock, subjectFromExam } from "./student-exams-helpers";
+import {
+  formatClock,
+  localizeExamTitle,
+  subjectFromExam,
+} from "./student-exams-helpers";
 
 type StudentExamDetailSectionProps = {
   selectedExam: Exam;
@@ -38,7 +42,7 @@ export default function StudentExamDetailSection({
     );
     const isUpcoming = safeStart.getTime() > Date.now();
     const subject = subjectFromExam(selectedExam);
-    const title = selectedExam.title?.trim() || subject;
+    const title = localizeExamTitle(selectedExam.title, subject);
     const normalizedTitle = title.trim().replace(/\s+/g, " ").toLowerCase();
     const normalizedSubject = subject.trim().replace(/\s+/g, " ").toLowerCase();
     return {
@@ -54,7 +58,7 @@ export default function StudentExamDetailSection({
       teacher:
         selectedExam.teacherName?.trim() ||
         teacherName?.trim() ||
-        "Pinecone баг",
+        "Пайнкоун баг",
       secondaryLabel: "Өрөө",
       secondaryValue: selectedExam.roomCode || "Нээлттэй",
       dateLabel: formatDate(safeStart.toISOString()),
