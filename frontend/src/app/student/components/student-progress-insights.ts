@@ -127,7 +127,18 @@ export const localizeSubjectLabel = (value: string) => {
   return preset?.label ?? cleaned;
 };
 
-export const toSubjectLabel = (value: string) => {
+const englishStopWords = new Set([
+  "exam",
+  "final",
+  "midterm",
+  "quiz",
+  "reading",
+  "mock",
+  "practice",
+  "test",
+]);
+
+export const toCompactSubjectLabel = (value: string) => {
   const cleaned = value
     .replace(/[_-]+/g, " ")
     .replace(/\bхэлний\b/gi, "хэл")
@@ -139,29 +150,29 @@ export const toSubjectLabel = (value: string) => {
 
   const localized = localizeSubjectLabel(cleaned);
   if (localized !== cleaned) {
-    return localized;
+    return cleaned;
   }
-
-  const englishStopWords = new Set([
-    "exam",
-    "final",
-    "midterm",
-    "quiz",
-    "reading",
-    "mock",
-    "practice",
-    "test",
-  ]);
 
   const filteredWords = cleaned
     .split(/\s+/)
     .filter((word) => !englishStopWords.has(word.toLowerCase()));
 
   if (filteredWords.length === 0) {
-    return localizeSubjectLabel(cleaned);
+    return cleaned || "Хичээл";
   }
 
-  return localizeSubjectLabel(filteredWords.slice(0, 2).join(" "));
+  return filteredWords.slice(0, 2).join(" ");
+};
+
+export const getSubjectLabelAliases = (value: string) => {
+  const compact = toCompactSubjectLabel(value);
+  const localized = localizeSubjectLabel(compact);
+  return [...new Set([compact, localized])].filter(Boolean);
+};
+
+export const toSubjectLabel = (value: string) => {
+  const compact = toCompactSubjectLabel(value);
+  return localizeSubjectLabel(compact);
 };
 
 const getQuestionTopicLabel = (

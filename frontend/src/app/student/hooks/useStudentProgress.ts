@@ -18,6 +18,7 @@ import {
 import {
   average,
   buildBackendSubjectInsightDetail,
+  getSubjectLabelAliases,
   type SubjectInsightDetail,
   toSubjectLabel,
 } from "../components/student-progress-insights";
@@ -146,6 +147,7 @@ export const useStudentProgress = (currentUser: User | null) => {
       const grouped = new Map<
         string,
         {
+          aliases: Set<string>;
           percentages: number[];
           answers: NonNullable<(typeof details)[number]>["detail"]["answers"];
         }
@@ -154,8 +156,15 @@ export const useStudentProgress = (currentUser: User | null) => {
       details.forEach((item) => {
         if (!item) return;
         const subject = toSubjectLabel(item.title);
-        const current = grouped.get(subject) ?? { percentages: [], answers: [] };
+        const aliases = getSubjectLabelAliases(item.title);
+        const current = grouped.get(subject) ?? {
+          aliases: new Set<string>(),
+          percentages: [],
+          answers: [],
+        };
+        aliases.forEach((alias) => current.aliases.add(alias));
         grouped.set(subject, {
+          aliases: current.aliases,
           percentages: [...current.percentages, item.score],
           answers: [
             ...current.answers,
@@ -170,14 +179,15 @@ export const useStudentProgress = (currentUser: User | null) => {
       });
 
       const nextSubjectInsights = Object.fromEntries(
-        [...grouped.entries()].map(([subject, value]) => [
-          subject,
-          buildBackendSubjectInsightDetail(
+        [...grouped.entries()].flatMap(([subject, value]) => {
+          const detail = buildBackendSubjectInsightDetail(
             subject,
             average(value.percentages),
             value.answers,
-          ),
-        ]),
+          );
+
+          return [...value.aliases].map((alias) => [alias, detail] as const);
+        }),
       );
 
       setSubjectInsights(nextSubjectInsights);

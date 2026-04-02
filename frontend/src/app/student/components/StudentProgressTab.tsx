@@ -16,6 +16,7 @@ import { buildStudentAiInsight } from "./student-ai-insights";
 import {
   average,
   buildFallbackSubjectInsightDetail,
+  getSubjectLabelAliases,
   localizeSubjectLabel,
   type SubjectInsightDetail,
   toSubjectLabel,
@@ -209,6 +210,16 @@ export default function StudentProgressTab({
 
   const closeSubjectDetail = () => setSelectedSubject(null);
   const closeAiSummary = () => setAiSummaryOpen(false);
+  const resolveSubjectInsight = (subject: string) => {
+    for (const alias of getSubjectLabelAliases(subject)) {
+      const insight = subjectInsights[alias];
+      if (insight) {
+        return insight;
+      }
+    }
+
+    return null;
+  };
 
   if (loading) {
     return (
@@ -349,7 +360,7 @@ export default function StudentProgressTab({
                 type="button"
                 onClick={() =>
                   setSelectedSubject(
-                    subjectInsights[item.subject] ??
+                    resolveSubjectInsight(item.subject) ??
                       buildFallbackSubjectInsightDetail(
                         item.subject,
                         item.percentage,
