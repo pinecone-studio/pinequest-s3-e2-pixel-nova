@@ -66,15 +66,15 @@ export default function StudentHeader({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="w-full rounded-[36px] border border-[#e7ebfb] bg-white px-6 shadow-[0_20px_48px_rgba(77,93,138,0.07)] lg:h-[80px] lg:px-8">
-      <div className="flex h-full flex-wrap items-center gap-4 lg:grid lg:grid-cols-[minmax(200px,1fr)_auto_minmax(200px,1fr)] lg:items-center lg:gap-6">
+    <header className="w-full rounded-[36px] border border-[#e7ebfb] bg-white px-5 py-4 shadow-[0_20px_48px_rgba(77,93,138,0.07)] sm:px-7 lg:h-[88px] lg:px-8 lg:py-0">
+      <div className="flex h-full flex-wrap items-center gap-4 lg:grid lg:grid-cols-[minmax(200px,1fr)_auto_minmax(220px,1fr)] lg:items-center lg:gap-6">
 
         {/* ── Logo ── */}
         <div className="flex min-w-[180px] shrink-0 items-center gap-3 lg:justify-self-start">
           <div className="overflow-hidden rounded-[14px]">
             <Image
               src="/group-web.svg"
-              alt="Educore"
+              alt="Pinecone"
               width={40}
               height={40}
               className="h-10 w-10"
@@ -82,19 +82,19 @@ export default function StudentHeader({
             />
           </div>
           <span className="text-[1rem] font-semibold tracking-[-0.03em] text-slate-900">
-            Educore
+            Pinecone
           </span>
         </div>
 
         {/* ── Navigation pill ── */}
-        <nav className="order-3 mx-auto grid h-[50px] w-full max-w-[380px] shrink-0 grid-cols-3 items-center gap-[3px] rounded-[25px] border border-[#e2e8fb] bg-[#f5f7ff] p-[3px] lg:order-none lg:justify-self-center">
+        <nav className="order-3 mx-auto grid h-[46px] w-full max-w-[280px] shrink-0 grid-cols-3 items-center gap-1 rounded-[20px] border border-[#e2e8fb] bg-[#f5f7ff] p-1 lg:order-none lg:justify-self-center">
           {primaryTabs.map((tab) => {
             const selected = activeTab === tab;
             return (
               <button
                 key={tab}
                 type="button"
-                className={`relative flex h-full min-w-0 items-center justify-center whitespace-nowrap rounded-[22px] px-3 text-[14px] font-medium tracking-[-0.015em] transition-all duration-150 ${
+                className={`relative flex h-full min-w-0 items-center justify-center whitespace-nowrap rounded-[16px] px-3 text-[14px] font-medium tracking-[-0.015em] transition-all duration-150 ${
                   selected
                     ? "bg-white text-slate-900 shadow-[inset_0_-2.5px_0_0_#5c6cff,0_10px_20px_-16px_rgba(92,108,255,0.55)]"
                     : "text-[#94a3b8] hover:bg-white/60 hover:text-slate-600"
@@ -108,10 +108,10 @@ export default function StudentHeader({
         </nav>
 
         {/* ── Right actions ── */}
-        <div className="order-2 ml-auto flex shrink-0 items-center gap-2.5 lg:order-none lg:ml-0 lg:justify-self-end">
+        <div className="order-2 ml-auto flex shrink-0 items-center gap-1 rounded-full border border-[#edf0fb] bg-white px-2 py-2 shadow-[0_18px_38px_-28px_rgba(42,56,99,0.24)] lg:order-none lg:ml-0 lg:justify-self-end">
 
           {/* XP badge */}
-          <div className="hidden h-[38px] items-center gap-1.5 rounded-full border border-[#fddcbb] bg-[#fff7ef] px-4 text-[13px] font-semibold text-[#f39a4a] sm:flex">
+          <div className="hidden h-[36px] items-center gap-1.5 rounded-full border border-[#fddcbb] bg-[#fff7ef] px-4 text-[12px] font-semibold text-[#f39a4a] sm:flex">
             <svg
               className="h-[15px] w-[15px]"
               viewBox="0 0 24 24"
@@ -123,7 +123,7 @@ export default function StudentHeader({
             >
               <path d="m13 2-7 12h5l-1 8 8-13h-5l0-7Z" />
             </svg>
-            {formatCompactStudentPoints(xp)}
+            {formatCompactStudentPoints(xp)} XP
           </div>
 
           {/* Notification bell */}
@@ -134,12 +134,12 @@ export default function StudentHeader({
           >
             <button
               aria-label="Мэдэгдэл нээх"
-              className="relative grid h-[44px] w-[44px] place-items-center rounded-full border border-[#e4e8fb] bg-white text-slate-400 transition hover:border-[#cfd8ff] hover:text-slate-600"
+              className="relative grid h-9 w-9 place-items-center rounded-full text-slate-400 transition hover:text-slate-600"
               onClick={() => setNotificationsOpen((prev) => !prev)}
             >
               <Bell className="h-[17px] w-[17px]" />
               {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 grid h-[22px] min-w-[22px] place-items-center rounded-full bg-[#f39a4a] px-1 text-[10px] font-bold text-white">
+                <span className="absolute right-0 top-0 grid h-[18px] min-w-[18px] -translate-y-[20%] translate-x-[8%] place-items-center rounded-full bg-[#f39a4a] px-1 text-[9px] font-bold text-white">
                   {unreadCount}
                 </span>
               )}
@@ -238,7 +238,7 @@ export default function StudentHeader({
           >
             <button
               aria-label="Дансны цэс нээх"
-              className="flex h-[44px] items-center gap-2 rounded-full border border-[#e4e8fb] bg-white pl-1.5 pr-3 shadow-[0_8px_20px_rgba(77,93,138,0.08)] transition hover:border-[#cfd8ff]"
+              className="flex h-9 items-center gap-1.5 rounded-full pl-0.5 pr-1 text-slate-400 transition hover:text-slate-600"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
               <span className="grid h-[34px] w-[34px] place-items-center rounded-full bg-gradient-to-br from-[#7b67ff] to-[#9a7dff] text-[13px] font-semibold text-white">
