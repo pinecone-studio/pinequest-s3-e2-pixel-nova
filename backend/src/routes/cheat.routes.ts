@@ -15,7 +15,11 @@ import { success, error, notFound, forbidden } from "../utils/response";
 import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 import { newId } from "../utils/id";
-import { notifyTeacherStudentFlagged } from "../services/notifications";
+import {
+  notifyStudentExamDisqualified,
+  notifyStudentTeacherWarning,
+  notifyTeacherStudentFlagged,
+} from "../services/notifications";
 import { createR2PresignedUrl } from "../utils/r2-presign";
 import { parseEnabledCheatDetections } from "../utils/exam-cheat-detections";
 
@@ -128,7 +132,7 @@ const EVENT_COOLDOWN_MS: Partial<Record<EventType, number>> = {
   disqualification: 0,
 };
 
-const EVENT_LABELS = {
+const EVENT_LABELS: Partial<Record<string, string>> = {
   tab_switch: "Таб сольсон",
   tab_hidden: "Бүтэн дэлгэцээс гарсан",
   window_blur: "Цонхноос гарсан",
@@ -1255,10 +1259,12 @@ cheatRoutes.post("/event", requireRole("student"), zValidator("json", eventSchem
       sessionId,
       user.id,
       student?.fullName ?? user.id,
-      eventType,
+      EVENT_LABELS[eventType] ?? eventType,
       riskSummary.riskLevel === "critical" || severity === "critical"
         ? "critical"
         : "warning",
+      eventType,
+      source,
     );
   }
 
@@ -1564,6 +1570,68 @@ const disqualifySchema = z.object({
   reason: z.string().min(1),
 });
 
+const warnStudentSchema = z.object({
+  message: z.string().trim().min(1).max(300),
+});
+
+cheatRoutes.post("/warn/:sessionId", requireRole("teacher"), zValidator("json", warnStudentSchema), async (c) => {
+  const sessionId = c.req.param("sessionId");
+  const { message } = c.req.valid("json");
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  const [session] = await db
+    .select()
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .limit(1);
+
+  if (!session) {
+    return notFound(c, "Session");
+  }
+
+  const [exam] = await db
+    .select()
+    .from(exams)
+    .where(and(eq(exams.id, session.examId), eq(exams.teacherId, user.id)))
+    .limit(1);
+
+  if (!exam) {
+    return forbidden(c, "You do not own this exam");
+  }
+
+  if (!["joined", "late", "in_progress"].includes(String(session.status))) {
+    return error(c, "INVALID_STATUS", "Can only warn students in active exam sessions", 400);
+  }
+
+  const eventId = newId();
+  await db.insert(cheatEvents).values({
+    id: eventId,
+    sessionId,
+    examId: session.examId,
+    studentId: session.studentId,
+    eventType: "teacher_warning",
+    eventSource: "teacher_action",
+    confidence: 1,
+    details: JSON.stringify({ message }),
+    dedupeKey: `teacher_warning::teacher_action::${sessionId}:${Math.floor(Date.now() / 30000)}`,
+    severity: "warning",
+    metadata: JSON.stringify({ message }),
+    isNotified: false,
+  });
+
+  const notification = await notifyStudentTeacherWarning(
+    db,
+    session.studentId,
+    session.examId,
+    sessionId,
+    user.fullName,
+    message,
+  );
+
+  return success(c, { eventId, notification }, 201);
+});
+
 cheatRoutes.post("/disqualify/:sessionId", requireRole("teacher"), zValidator("json", disqualifySchema), async (c) => {
   const sessionId = c.req.param("sessionId");
   const { reason } = c.req.valid("json");
@@ -1625,6 +1693,14 @@ cheatRoutes.post("/disqualify/:sessionId", requireRole("teacher"), zValidator("j
     metadata: JSON.stringify({ reason }),
     isNotified: false,
   });
+
+  await notifyStudentExamDisqualified(
+    db,
+    session.studentId,
+    session.examId,
+    sessionId,
+    reason,
+  );
 
   // Fetch the updated session
   const [updatedSession] = await db

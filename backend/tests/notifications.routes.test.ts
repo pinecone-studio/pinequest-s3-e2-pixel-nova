@@ -78,4 +78,21 @@ describe("notifications routes", () => {
       },
     });
   });
+
+  it("opens a live notification stream for authenticated users", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [],
+      [],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/notifications/live",
+      { headers: teacherHeaders() },
+      workerEnv,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toContain("text/event-stream");
+  });
 });

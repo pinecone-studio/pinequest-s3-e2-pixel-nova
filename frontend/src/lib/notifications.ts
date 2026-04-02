@@ -6,6 +6,8 @@ export type NotificationType =
   | "student_joined"
   | "student_submitted"
   | "student_flagged"
+  | "teacher_warning"
+  | "exam_disqualified"
   | "exam_ending_soon"
   | "exam_finished"
   | "exam_unlocked"

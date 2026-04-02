@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getSessionUser, type StudentProgress, type User } from "@/lib/examGuard";
+import type { NotificationItem } from "@/lib/notifications";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { Exam } from "../types";
 import {
@@ -9,7 +10,10 @@ import {
 
 const DASHBOARD_POLL_MS = 30_000;
 
-export const useTeacherData = (overrideUser?: User | null) => {
+export const useTeacherData = (
+  overrideUser?: User | null,
+  options?: { onIncomingNotification?: (notification: NotificationItem) => void },
+) => {
   const overrideUserId = overrideUser?.id ?? null;
   const overrideUsername = overrideUser?.username ?? null;
   const overridePassword = overrideUser?.password ?? "";
@@ -156,6 +160,7 @@ export const useTeacherData = (overrideUser?: User | null) => {
     role: "teacher",
     userId: overrideUserId,
     onToast: showToast,
+    onIncoming: options?.onIncomingNotification,
   });
 
   return {

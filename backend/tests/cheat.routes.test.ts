@@ -4,6 +4,7 @@ import {
   queueDbResults,
   resetDbMock,
   studentHeaders,
+  teacherHeaders,
   workerEnv,
 } from "./helpers/mock-db";
 import app from "../src/index";
@@ -509,5 +510,59 @@ describe("cheat routes", () => {
     );
 
     expect(response.status).toBe(400);
+  });
+
+  it("allows teachers to warn a student in an active session", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{ id: "session-1", examId: "exam-1", studentId: "student-1", status: "in_progress" }],
+      [{ id: "exam-1", teacherId: "teacher-1" }],
+      [],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/cheat/warn/session-1",
+      jsonRequest(
+        {
+          message: "Please focus on your own screen.",
+        },
+        teacherHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: expect.objectContaining({
+        eventId: "test-id",
+      }),
+    });
+    expect(mockDb.insert).toHaveBeenCalled();
+  });
+
+  it("publishes a student notification when a teacher disqualifies a session", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{ id: "session-1", examId: "exam-1", studentId: "student-1", status: "in_progress" }],
+      [{ id: "exam-1", teacherId: "teacher-1" }],
+      [],
+      [{ id: "session-1", status: "disqualified", examId: "exam-1", studentId: "student-1" }],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/cheat/disqualify/session-1",
+      jsonRequest(
+        {
+          reason: "Teacher disqualified the student after a repeated cheat event.",
+        },
+        teacherHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDb.insert).toHaveBeenCalled();
+    expect(mockDb.update).toHaveBeenCalled();
   });
 });

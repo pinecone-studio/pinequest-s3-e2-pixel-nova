@@ -240,7 +240,7 @@ export default function ScheduleCalendarView({
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowForm(false);
           }}>
-          <div className="w-full max-w-[32rem]">
+          <div className="w-full max-w-lg">
             <ExamScheduleCard
               exams={exams}
               selectedScheduleExamId={selectedScheduleExamId}

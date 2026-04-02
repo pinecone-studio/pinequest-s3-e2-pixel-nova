@@ -732,8 +732,8 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
     return notFound(c, "Session");
   }
 
-  if (!["in_progress", "late", "joined"].includes(session.status)) {
-    return error(c, "INVALID_STATUS", "Session must be in 'in_progress', 'late', or 'joined' status to submit", 400);
+  if (!["in_progress", "late", "joined", "disqualified"].includes(session.status)) {
+    return error(c, "INVALID_STATUS", "Session must be in 'in_progress', 'late', 'joined', or 'disqualified' status to submit", 400);
   }
 
   // Fetch exam and questions for grading
@@ -748,7 +748,7 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
   }
 
   const effectiveStart = getEffectiveExamStart(exam);
-  if (session.status !== "in_progress") {
+  if (session.status !== "in_progress" && session.status !== "disqualified") {
     const startedAt = session.startedAt ?? effectiveStart?.toISOString() ?? new Date().toISOString();
     await db
       .update(examSessions)
@@ -833,10 +833,11 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
   const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
 
   const now = new Date().toISOString();
+  const finalStatus = session.status === "disqualified" ? "disqualified" : "graded";
   await db
     .update(examSessions)
     .set({
-      status: "graded",
+      status: finalStatus,
       submittedAt: now,
       score: percentage,
       totalPoints,
@@ -874,7 +875,7 @@ sessionRoutes.post("/:sessionId/submit", requireRole("student"), async (c) => {
 
   return success(c, {
     sessionId,
-    status: "graded",
+    status: finalStatus,
     submittedAt: now,
     score: percentage,
     totalPoints,

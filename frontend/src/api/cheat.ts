@@ -151,3 +151,17 @@ export const disqualifySession = (
     },
     body: JSON.stringify({ reason }),
   });
+
+export const warnStudentSession = (
+  sessionId: string,
+  message: string,
+  user?: User | null,
+) =>
+  apiRequest<{ eventId: string }>(`/api/cheat/warn/${sessionId}`, {
+    method: "POST",
+    user,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ message }),
+  });
