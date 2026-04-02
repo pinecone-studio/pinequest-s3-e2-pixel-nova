@@ -124,8 +124,7 @@ export default function ScheduleCalendarView({
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-2xl bg-[#f97316]  py-2.5 text-sm  font-semibold text-white w-[185px] h-[49px] transition hover:bg-[#ea6c0a]"
-        >
+          className="flex items-center gap-2 rounded-2xl bg-[#f97316]  py-2.5 text-sm  font-semibold text-white w-[185px] h-[49px] transition hover:bg-[#ea6c0a]">
           <span className="text-base leading-none ">+</span>
           Хуваарь нэмэх
         </button>
@@ -136,19 +135,16 @@ export default function ScheduleCalendarView({
         <div className="flex">
           <div
             className="shrink-0 border-r border-[#dce5ef] bg-white"
-            style={{ width: `${TIME_COLUMN_WIDTH}px` }}
-          >
+            style={{ width: `${TIME_COLUMN_WIDTH}px` }}>
             <div
               className="flex items-center justify-center border-b border-[#dce5ef] text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400"
-              style={{ height: "49px" }}
-            >
+              style={{ height: "49px" }}>
               Цаг
             </div>
             {HOURS.map((hour) => (
               <div
                 key={hour}
-                className="flex items-center justify-center border-b border-[#dce5ef] bg-white text-[13px] text-slate-400 last:border-b-0"
-              >
+                className="flex items-center justify-center border-b border-[#dce5ef] bg-white text-[13px] text-slate-400 last:border-b-0">
                 {String(hour).padStart(2, "0")} цаг
               </div>
             ))}
@@ -156,19 +152,16 @@ export default function ScheduleCalendarView({
 
           <div
             className="overflow-x-auto"
-            style={{ width: `${visibleDays * DAY_COLUMN_WIDTH}px` }}
-          >
+            style={{ width: `${visibleDays * DAY_COLUMN_WIDTH}px` }}>
             <div
               style={{
                 minWidth: `${calendarDays.length * DAY_COLUMN_WIDTH}px`,
-              }}
-            >
+              }}>
               <div
                 className="grid"
                 style={{
                   gridTemplateColumns: `repeat(${calendarDays.length}, minmax(${DAY_COLUMN_WIDTH}px, 1fr))`,
-                }}
-              >
+                }}>
                 {calendarDays.map((d, i) => {
                   const isSelected =
                     selectedDate &&
@@ -180,8 +173,7 @@ export default function ScheduleCalendarView({
                         isSelected
                           ? "bg-[#eef2ff] text-slate-900"
                           : "text-slate-600"
-                      }`}
-                    >
+                      }`}>
                       {d.getMonth() + 1} сарын {d.getDate()}
                     </div>
                   );
@@ -192,8 +184,7 @@ export default function ScheduleCalendarView({
                 className="grid"
                 style={{
                   gridTemplateColumns: `repeat(${calendarDays.length}, minmax(${DAY_COLUMN_WIDTH}px, 1fr))`,
-                }}
-              >
+                }}>
                 {calendarDays.map((_, dayIndex) => (
                   <div key={dayIndex} className="border-l border-[#dce5ef]">
                     {HOURS.map((hour) => {
@@ -209,8 +200,7 @@ export default function ScheduleCalendarView({
                         <div
                           key={`${dayIndex}-${hour}`}
                           className="border-b border-[#dce5ef] p-2"
-                          style={{ minHeight: 68 }}
-                        >
+                          style={{ minHeight: 68 }}>
                           {exam && colors && (
                             <div
                               className="flex items-center gap-2 rounded-xl border border-[#e8eef6] px-3 py-2.5 text-sm font-medium text-slate-800"
@@ -218,12 +208,10 @@ export default function ScheduleCalendarView({
                                 background: colors.bg,
                                 borderTopColor: colors.border,
                                 borderTopWidth: 2.5,
-                              }}
-                            >
+                              }}>
                               <span
                                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
-                                style={{ borderColor: colors.icon }}
-                              >
+                                style={{ borderColor: colors.icon }}>
                                 <span
                                   className="h-2 w-2 rounded-full"
                                   style={{ background: colors.icon }}
@@ -251,11 +239,8 @@ export default function ScheduleCalendarView({
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/22 px-4 py-6 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowForm(false);
-          }}
-        >
-          <div
-            className="w-full max-w-[32rem]"
-          >
+          }}>
+          <div className="w-full max-w-[32rem]">
             <ExamScheduleCard
               exams={exams}
               selectedScheduleExamId={selectedScheduleExamId}
@@ -273,10 +258,12 @@ export default function ScheduleCalendarView({
               scheduleDescription={scheduleDescription}
               setScheduleDescription={setScheduleDescription}
               scheduleExpectedStudentsCount={scheduleExpectedStudentsCount}
-              setScheduleExpectedStudentsCount={setScheduleExpectedStudentsCount}
+              setScheduleExpectedStudentsCount={
+                setScheduleExpectedStudentsCount
+              }
               durationMinutes={durationMinutes}
               setDurationMinutes={setDurationMinutes}
-              onSchedule={() => {
+              onContinue={() => {
                 onSchedule();
                 setShowForm(false);
               }}
