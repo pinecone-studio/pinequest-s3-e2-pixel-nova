@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
   Image,
@@ -26,6 +28,8 @@ const emptyProfile: StudentProfile = {
   groupName: "",
   bio: "",
 };
+
+const defaultAvatarImage = require("../../assets/images/zolbayar-profile.jpg");
 
 const editableFields: {
   label: string;
@@ -67,7 +71,7 @@ function FeatureCard({
   return (
     <View style={styles.featureCard}>
       <View style={styles.featureIconWrap}>
-        <Ionicons name={icon} size={18} color="#00779A" />
+        <Ionicons name={icon} size={18} color="#2563EB" />
       </View>
       <Text style={styles.featureTitle}>{title}</Text>
       <Text style={styles.featureSubtitle}>{subtitle}</Text>
@@ -80,16 +84,20 @@ function AchievementCard({
   title,
   subtitle,
   bgColor,
+  iconColor,
 }: {
   icon: string;
   title: string;
   subtitle: string;
   bgColor: string;
+  iconColor?: string;
 }) {
   return (
     <View style={styles.achievementCard}>
       <View style={[styles.achievementIconWrap, { backgroundColor: bgColor }]}>
-        <Text style={styles.achievementIcon}>{icon}</Text>
+        <Text style={[styles.achievementIcon, iconColor ? { color: iconColor } : undefined]}>
+          {icon}
+        </Text>
       </View>
       <Text style={styles.achievementTitle}>{title}</Text>
       <Text style={styles.achievementSubtitle}>{subtitle}</Text>
@@ -174,6 +182,8 @@ export default function ProfileScreen() {
   const displayName = form.fullName || student?.fullName || "Оюутан";
   const initials = getInitials(displayName);
   const xp = profile?.xp ?? student?.xp ?? 2300;
+  const avatarUri = (form.avatarUrl ?? "").trim();
+  const avatarSource = avatarUri ? { uri: avatarUri } : defaultAvatarImage;
   const averageScore =
     history.length > 0
       ? Math.round(
@@ -186,6 +196,7 @@ export default function ProfileScreen() {
       : 83;
   const xpMax = Math.max(3000, Math.ceil(xp / 500) * 500);
   const xpProgress = Math.min(1, xp / xpMax);
+  const level = Math.max(1, Math.floor(xp / 200) + 1);
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -194,70 +205,120 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-      <View style={styles.hero}>
-        <View style={styles.avatarBlurShadow} />
-        <View style={styles.avatarShell}>
-          {form.avatarUrl ? (
-            <Image source={{ uri: form.avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatarFallback}>
-              <Text style={styles.avatarInitials}>{initials}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.profileCard}>
-        <View style={styles.profileHeader}>
-          <View style={styles.profileHeaderText}>
-            <Text style={styles.profileName}>{displayName}</Text>
-            <Text style={styles.profileRole}>Student</Text>
+        <View style={styles.profileCardWrapper}>
+          <View pointerEvents="none" style={styles.profileBackdrop}>
+            <LinearGradient
+              colors={["rgba(37,99,235,0.24)", "rgba(191,219,254,0.02)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.backdropOrb, styles.backdropOrbLeft]}
+            />
           </View>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => setEditorOpen((current) => !current)}
-          >
-            <Ionicons name="create-outline" size={18} color="#13B6F3" />
-          </TouchableOpacity>
+          <View pointerEvents="none" style={styles.profileBackdrop}>
+            <LinearGradient
+              colors={["rgba(56,189,248,0.22)", "rgba(255,255,255,0.02)"]}
+              start={{ x: 0.2, y: 0 }}
+              end={{ x: 0.8, y: 1 }}
+              style={[styles.backdropOrb, styles.backdropOrbRight]}
+            />
+          </View>
+
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatarShadow} />
+            <View style={styles.avatarShell}>
+              <Image
+                source={avatarSource}
+                style={[styles.avatarImage, !avatarUri && styles.avatarImageDefault]}
+                resizeMode="cover"
+              />
+              <LinearGradient
+                colors={["transparent", "rgba(255,255,255,0.52)", "rgba(255,255,255,0.92)"]}
+                locations={[0.48, 0.8, 1]}
+                style={styles.avatarBottomFade}
+              />
+            </View>
+          </View>
+
+          <View style={styles.profileCard}>
+            <BlurView
+              intensity={92}
+              tint="light"
+              experimentalBlurMethod="dimezisBlurView"
+              style={styles.profileCardBlur}
+            />
+            <LinearGradient
+              colors={[
+                "rgba(255,255,255,0.76)",
+                "rgba(255,255,255,0.32)",
+                "rgba(255,255,255,0.62)",
+              ]}
+              start={{ x: 0.1, y: 0 }}
+              end={{ x: 0.9, y: 1 }}
+              style={styles.profileCardHighlight}
+            />
+
+            <View style={styles.profileCardContent}>
+              <View style={styles.cardHandle} />
+
+              <View style={styles.nameCard}>
+                <View style={styles.profileHeader}>
+                  <View style={styles.profileHeaderText}>
+                    <Text style={styles.profileName}>{displayName}</Text>
+                    <Text style={styles.profileRole}>Student</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => setEditorOpen((current) => !current)}
+                  >
+                    <Ionicons name="create-outline" size={18} color="#2563EB" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.xpSection}>
+                <View style={styles.xpRow}>
+                  <Text style={styles.xpLabel}>Lvl {level}</Text>
+                  <Text style={styles.xpValue}>{xp}xp</Text>
+                </View>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[styles.progressFill, { width: `${xpProgress * 100}%` }]}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.xpRow}>
-          <Text style={styles.xpLabel}>Exp</Text>
-          <Text style={styles.xpValue}>{xp}</Text>
+        <View style={styles.featureRow}>
+          <FeatureCard icon="star-outline" title="English" subtitle="Гоц хичээл" />
+          <FeatureCard
+            icon="star-outline"
+            title={`${averageScore}%`}
+            subtitle="Дундаж оноо"
+          />
         </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${xpProgress * 100}%` }]} />
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Амжилтууд</Text>
+          <Text style={styles.sectionMeta}>2 нээгдсэн</Text>
         </View>
-      </View>
 
-      <View style={styles.featureRow}>
-        <FeatureCard icon="star-outline" title="English" subtitle="Гол хичээл" />
-        <FeatureCard
-          icon="star-outline"
-          title={`${averageScore}%`}
-          subtitle="Дундаж оноо"
-        />
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Амжилтууд</Text>
-        <Text style={styles.sectionMeta}>2 нээгдсэн</Text>
-      </View>
-
-      <View style={styles.achievementRow}>
-        <AchievementCard
-          icon="🏆"
-          title="Том тархи"
-          subtitle="100% авах"
-          bgColor="#FFE3B3"
-        />
-        <AchievementCard
-          icon="⚡"
-          title="Түргэн бодогч"
-          subtitle="Хурдан дуусгах"
-          bgColor="#19B5D9"
-        />
-      </View>
+        <View style={styles.achievementRow}>
+          <AchievementCard
+            icon="🏆"
+            title="Том тархи"
+            subtitle="100% авах"
+            bgColor="#FFE3B3"
+          />
+          <AchievementCard
+            icon="⚡"
+            title="Түргэн бодогч"
+            subtitle="Хурдан дуусгах"
+            bgColor="#2563EB"
+            iconColor="#FFFFFF"
+          />
+        </View>
 
       <View style={styles.menuCard}>
         <TouchableOpacity
@@ -265,7 +326,7 @@ export default function ProfileScreen() {
           onPress={() => void refreshProfile()}
         >
           <View style={styles.menuIconWrap}>
-            <Ionicons name="bar-chart-outline" size={20} color="#13B6F3" />
+            <Ionicons name="bar-chart-outline" size={20} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
             <Text style={styles.menuLabel}>Миний статистик</Text>
@@ -280,7 +341,7 @@ export default function ProfileScreen() {
           onPress={() => setSelectorOpen((current) => !current)}
         >
           <View style={styles.menuIconWrap}>
-            <Ionicons name="swap-horizontal-outline" size={20} color="#13B6F3" />
+            <Ionicons name="swap-horizontal-outline" size={20} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
             <Text style={styles.menuLabel}>Student accounts</Text>
@@ -298,7 +359,7 @@ export default function ProfileScreen() {
           onPress={() => setCodeLoginOpen((current) => !current)}
         >
           <View style={styles.menuIconWrap}>
-            <Ionicons name="key-outline" size={20} color="#13B6F3" />
+            <Ionicons name="key-outline" size={20} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
             <Text style={styles.menuLabel}>Student code login</Text>
@@ -310,7 +371,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity style={styles.menuItem} onPress={() => void handleSignOut()}>
           <View style={styles.menuIconWrap}>
-            <Ionicons name="log-out-outline" size={20} color="#13B6F3" />
+            <Ionicons name="log-out-outline" size={20} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
             <Text style={styles.menuLabel}>Гарах</Text>
@@ -341,7 +402,7 @@ export default function ProfileScreen() {
                   <Text style={styles.selectorCode}>{userItem.code ?? userItem.id}</Text>
                 </View>
                 {selected ? (
-                  <Ionicons name="checkmark-circle" size={20} color="#13B6F3" />
+                  <Ionicons name="checkmark-circle" size={20} color="#2563EB" />
                 ) : null}
               </Pressable>
             );
