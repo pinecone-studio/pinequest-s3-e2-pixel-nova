@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import TeacherSelect from "./TeacherSelect";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,10 +36,12 @@ function ManualTabPanel({
   title,
   onTitleChange,
   onContinue,
+  pending,
 }: {
   title: string;
   onTitleChange: (value: string) => void;
   onContinue: () => void;
+  pending: boolean;
 }) {
   return (
     <>
@@ -131,14 +134,22 @@ function ManualTabPanel({
           variant="outline"
           className="h-10 rounded-2xl border-[#d6dae1] px-6 text-[14px] text-[#374151]"
           onClick={onContinue}
+          disabled={pending}
         >
-          Хуваарь нэмэх
+          <span className="inline-flex items-center gap-2">
+            {pending && <Spinner className="size-4" />}
+            Хуваарь нэмэх
+          </span>
         </Button>
         <Button
           className="h-10 rounded-2xl bg-[#2563eb] px-6 text-[14px] font-medium text-white hover:bg-[#1d4ed8]"
           onClick={onContinue}
+          disabled={pending}
         >
-          Хадгалах
+          <span className="inline-flex items-center gap-2">
+            {pending && <Spinner className="size-4" />}
+            {pending ? "Нээж байна..." : "Хадгалах"}
+          </span>
         </Button>
       </DialogFooter>
     </>
@@ -149,6 +160,7 @@ function AiTabPanel({
   input,
   onChange,
   onContinue,
+  pending,
 }: {
   input: AiExamGeneratorInput;
   onChange: <K extends keyof AiExamGeneratorInput>(
@@ -156,6 +168,7 @@ function AiTabPanel({
     value: AiExamGeneratorInput[K],
   ) => void;
   onContinue: () => void;
+  pending: boolean;
 }) {
   return (
     <>
@@ -264,8 +277,12 @@ function AiTabPanel({
         <Button
           className="h-10 rounded-2xl bg-[#2563eb] px-6 text-[14px] font-medium text-white hover:bg-[#1d4ed8]"
           onClick={onContinue}
+          disabled={pending}
         >
-          Ноорог үүсгэх
+          <span className="inline-flex items-center gap-2">
+            {pending && <Spinner className="size-4" />}
+            {pending ? "Нээж байна..." : "Ноорог үүсгэх"}
+          </span>
         </Button>
       </DialogFooter>
     </>
@@ -280,6 +297,7 @@ function PdfTabPanel({
   selectedFileName,
   onPickFile,
   onContinue,
+  pending,
 }: {
   examTitle: string;
   onExamTitleChange: (value: string) => void;
@@ -291,6 +309,7 @@ function PdfTabPanel({
   selectedFileName: string | null;
   onPickFile: () => void;
   onContinue: () => void;
+  pending: boolean;
 }) {
   const total = useMemo(
     () => counts.mcq + counts.open,
@@ -375,6 +394,7 @@ function PdfTabPanel({
                 variant="outline"
                 className="mt-4 h-8 rounded-xl border-[#d9dde6] px-5 text-[13px] text-[#374151]"
                 onClick={onPickFile}
+                disabled={pending}
               >
                 Оруулах
               </Button>
@@ -387,8 +407,12 @@ function PdfTabPanel({
         <Button
           className="h-10 rounded-2xl bg-[#2563eb] px-6 text-[14px] font-medium text-white hover:bg-[#1d4ed8]"
           onClick={onContinue}
+          disabled={pending}
         >
-          Асуулт үүсгэх
+          <span className="inline-flex items-center gap-2">
+            {pending && <Spinner className="size-4" />}
+            {pending ? "Нээж байна..." : "Асуулт үүсгэх"}
+          </span>
         </Button>
       </DialogFooter>
     </>
@@ -413,6 +437,7 @@ export default function CreateExamDialogContent() {
     mcq: 0,
     open: 0,
   });
+  const [navigating, setNavigating] = useState(false);
   const [selectedPdfFileName, setSelectedPdfFileName] = useState<string | null>(
     null,
   );
@@ -432,6 +457,10 @@ export default function CreateExamDialogContent() {
   };
 
   const navigateToCreateExam = () => {
+    if (navigating) {
+      return;
+    }
+
     if (activeTab === "Гараар үүсгэх") {
       savePendingCreateExamDraft({
         mode: "manual",
@@ -455,6 +484,7 @@ export default function CreateExamDialogContent() {
       });
     }
 
+    setNavigating(true);
     router.push("/teacher/createExam");
   };
 
@@ -488,6 +518,7 @@ export default function CreateExamDialogContent() {
               type="button"
               aria-label="Close create exam modal"
               className="inline-flex size-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
+              disabled={navigating}
             >
               <X className="size-5" />
             </button>
@@ -502,6 +533,7 @@ export default function CreateExamDialogContent() {
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
+                disabled={navigating}
                 className={`relative pb-3 text-[14px] font-medium transition ${
                   active ? "text-[#111827]" : "text-[#374151]"
                 }`}
@@ -520,6 +552,7 @@ export default function CreateExamDialogContent() {
             title={manualTitle}
             onTitleChange={setManualTitle}
             onContinue={navigateToCreateExam}
+            pending={navigating}
           />
         )}
 
@@ -528,6 +561,7 @@ export default function CreateExamDialogContent() {
             input={aiInput}
             onChange={handleAiInputChange}
             onContinue={navigateToCreateExam}
+            pending={navigating}
           />
         )}
 
@@ -540,6 +574,7 @@ export default function CreateExamDialogContent() {
             selectedFileName={selectedPdfFileName}
             onPickFile={() => fileInputRef.current?.click()}
             onContinue={navigateToCreateExam}
+            pending={navigating}
           />
         )}
       </div>

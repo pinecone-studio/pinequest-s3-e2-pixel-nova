@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import RoleNavbar from "@/components/RoleNavbar";
 import {
@@ -23,7 +23,6 @@ import {
 import { updateExam } from "@/api/exams";
 import {
   DEFAULT_ENABLED_CHEAT_DETECTIONS,
-  normalizeEnabledCheatDetections,
 } from "@/lib/exam-cheat-detections";
 import TeacherHeader from "./components/TeacherHeader";
 import TeacherPageContent, {
@@ -38,7 +37,9 @@ import { useExamAttendanceStats } from "./hooks/useExamAttendanceStats";
 import { pageShellClass } from "./styles";
 import type { Exam } from "./types";
 
-const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Гүйцэтгэл", "XP"] as const;
+const teacherTabs = ["Хуваарь", "Шалгалтын сан", "Шалгалтын аналитик"] as const;
+const TAB_LOADING_MIN_MS = 4000;
+const TEACHER_ACTIVE_TAB_STORAGE_KEY = "teacher:active-tab";
 
 function TeacherScheduleModal({
   show,
@@ -114,7 +115,7 @@ export default function TeacherPage() {
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
-  const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын сан");
+  const [activeTab, setActiveTab] = useState<TeacherTab>("Шалгалтын аналитик");
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [showCheatDetectionDialog, setShowCheatDetectionDialog] =
     useState(false);
@@ -128,10 +129,14 @@ export default function TeacherPage() {
     useState(false);
   const [savingCheatDetections, setSavingCheatDetections] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
+  const [pendingTabLoading, setPendingTabLoading] = useState<TeacherTab | null>(
+    null,
+  );
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(
     null,
   );
   const [profileLoading, setProfileLoading] = useState(false);
+  const tabLoadingTimerRef = useRef<number | null>(null);
 
   const sessionUser = useMemo(
     () => (selectedUser ? buildSessionUser(selectedUser) : null),
@@ -153,9 +158,11 @@ export default function TeacherPage() {
   });
   const attendance = useExamAttendanceStats(examStatsState.activeExamId);
   const isExamLibraryTab = activeTab === "Шалгалтын сан";
-  const mainClassName =
-    isExamLibraryTab
-      ? "w-full"
+  const isAnalyticsTab = activeTab === "Шалгалтын аналитик";
+  const mainClassName = isExamLibraryTab
+    ? "w-full"
+    : isAnalyticsTab
+      ? "mx-auto w-full max-w-[1380px] px-4 pt-[42.5px] pb-8 sm:px-6 lg:px-8"
       : "mx-auto w-full max-w-[1380px] space-y-5 px-4 py-4 sm:px-6 lg:px-8";
 
   useEffect(() => {
@@ -173,8 +180,42 @@ export default function TeacherPage() {
   }, [activeTab]);
 
   useEffect(() => {
+    return () => {
+      if (tabLoadingTimerRef.current !== null) {
+        window.clearTimeout(tabLoadingTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     setStoredRole(role);
   }, [role]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedTab = window.sessionStorage.getItem(
+      TEACHER_ACTIVE_TAB_STORAGE_KEY,
+    );
+    if (
+      storedTab &&
+      teacherTabs.includes(storedTab as TeacherTab)
+    ) {
+      setActiveTab((current) =>
+        current === storedTab ? current : (storedTab as TeacherTab),
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.sessionStorage.setItem(TEACHER_ACTIVE_TAB_STORAGE_KEY, activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -246,6 +287,27 @@ export default function TeacherPage() {
     setSelectedCheatDetections([]);
     setSelectedRequiresAudioRecording(false);
     setSavingCheatDetections(false);
+  };
+
+  const handleTabChange = (nextTab: TeacherTab) => {
+    if (nextTab === activeTab) {
+      return;
+    }
+
+    if (tabLoadingTimerRef.current !== null) {
+      window.clearTimeout(tabLoadingTimerRef.current);
+      tabLoadingTimerRef.current = null;
+    }
+
+    setPendingTabLoading(nextTab);
+    tabLoadingTimerRef.current = window.setTimeout(() => {
+      setPendingTabLoading((current) =>
+        current === nextTab ? null : current,
+      );
+      tabLoadingTimerRef.current = null;
+    }, TAB_LOADING_MIN_MS);
+
+    setActiveTab(nextTab);
   };
 
   const handleScheduleAndConfigure = async () => {
@@ -322,7 +384,8 @@ export default function TeacherPage() {
         onMarkRead={data.markNotificationRead}
         onMarkAllRead={data.markAllNotificationsRead}
         activeTab={activeTab}
-        setActiveTab={(tab) => setActiveTab(tab as TeacherTab)}
+        setActiveTab={(tab) => handleTabChange(tab as TeacherTab)}
+        loadingTab={pendingTabLoading}
         tabs={teacherTabs}
         contentWidthClass="max-w-[1260px]"
         outerPaddingClass="px-4 py-2 sm:px-6 lg:px-8"
@@ -352,6 +415,7 @@ export default function TeacherPage() {
           <TeacherPageContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
+            loadingTab={pendingTabLoading}
             onOpenScheduleForm={() => setShowScheduleForm(true)}
             data={data}
             management={management}

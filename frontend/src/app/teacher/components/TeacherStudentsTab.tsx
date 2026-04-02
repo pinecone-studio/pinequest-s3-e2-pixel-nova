@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Layers } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   fetchTeacherExamRoster,
   openTeacherExamLiveStream,
@@ -50,6 +51,157 @@ type TeacherStudentsTabProps = {
 type ViewMode = "calendar" | "cards";
 const VISIBLE_HOUR_COUNT = 7;
 const CALENDAR_VIEWPORT_OFFSET = 64;
+const VIEW_LOADING_MIN_MS = 1500;
+const SHOULD_SKIP_VIEW_LOADING =
+  process.env.NODE_ENV === "test" ||
+  Boolean(process.env.JEST_WORKER_ID);
+
+function ScheduleCardsSkeleton() {
+  return (
+    <div className="space-y-7">
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div key={index} className="space-y-5">
+          <Skeleton className="h-6 w-36 rounded-full border-0 bg-[#e5ebf5]" />
+          <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: index === 0 ? 1 : 3 }).map((__, cardIndex) => (
+              <ScheduleCardSkeleton key={`${index}-${cardIndex}`} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScheduleCardSkeleton() {
+  return (
+    <div className="relative min-h-[340px] rounded-[24px] border border-[#dfdfdf] bg-white px-6 pb-5 pt-6">
+      <div className="relative flex h-full flex-col">
+        <div className="space-y-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-3">
+              <Skeleton className="h-7 w-40 rounded-full border-0 bg-[#e5ebf5]" />
+              <Skeleton className="h-7 w-28 rounded-full border-0 bg-[#e5ebf5]" />
+              <Skeleton className="h-4 w-24 rounded-full border-0 bg-[#e5ebf5]" />
+            </div>
+            <div className="mt-1 flex shrink-0 flex-col items-end gap-2">
+              <Skeleton className="h-7 w-[88px] rounded-full border-0 bg-[#e5ebf5]" />
+              <Skeleton className="h-6 w-16 rounded-full border-0 bg-[#e5ebf5]" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <Skeleton className="h-5 w-12 rounded-full border-0 bg-[#e5ebf5]" />
+              <Skeleton className="h-5 w-24 rounded-full border-0 bg-[#e5ebf5]" />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <Skeleton className="h-5 w-20 rounded-full border-0 bg-[#e5ebf5]" />
+              <Skeleton className="h-5 w-14 rounded-full border-0 bg-[#e5ebf5]" />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <Skeleton className="h-5 w-32 rounded-full border-0 bg-[#e5ebf5]" />
+              <Skeleton className="h-5 w-[72px] rounded-full border-0 bg-[#e5ebf5]" />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <Skeleton className="h-5 w-24 rounded-full border-0 bg-[#e5ebf5]" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-16 rounded-full border-0 bg-[#e5ebf5]" />
+                <Skeleton className="size-5 rounded-md border-0 bg-[#e5ebf5]" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-auto border-t border-[#dfe4ff] pt-4">
+          <Skeleton className="ml-auto h-5 w-28 rounded-full border-0 bg-[#e5ebf5]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleCalendarSkeleton({
+  dayCount,
+}: {
+  dayCount: number;
+}) {
+  const columnCount = Math.min(Math.max(dayCount, 5), 7);
+  const rowCount = 7;
+  const eventPlaceholders = [
+    { column: 0, row: 0, height: 64 },
+    { column: 2, row: 2, height: 86 },
+    { column: 4, row: 1, height: 72 },
+    { column: Math.max(columnCount - 2, 1), row: 4, height: 78 },
+  ].filter((item) => item.column < columnCount);
+
+  return (
+    <div className="mx-auto w-full max-w-[1272px] rounded-[32px] border border-[#eceef4] bg-white p-[18px] shadow-[0_16px_36px_-34px_rgba(15,23,42,0.18)]">
+      <div className="overflow-hidden rounded-[28px] border border-[#edf1f7] bg-white">
+        <div className="mx-auto p-[28px]">
+          <div
+            className="grid items-center gap-0 pb-4"
+            style={{
+              gridTemplateColumns: `76px repeat(${columnCount}, minmax(0, 1fr))`,
+            }}
+          >
+            <div />
+            {Array.from({ length: columnCount }).map((_, index) => (
+              <div key={index} className="px-3 text-center">
+                <Skeleton className="mx-auto h-5 w-16 rounded-full border-0 bg-[#e5ebf5]" />
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-[76px_1fr]">
+            <div className="space-y-5 pr-3">
+              {Array.from({ length: rowCount }).map((_, index) => (
+                <Skeleton
+                  key={index}
+                  className="h-8 w-11 rounded-full border-0 bg-[#e5ebf5]"
+                />
+              ))}
+            </div>
+
+            <div className="rounded-[24px] border border-[#edf1f7] bg-[#fcfdff] p-4">
+              <div
+                className="relative overflow-hidden rounded-[20px] border border-[#eef2f7] bg-white"
+                style={{ height: `${rowCount * 72}px` }}
+              >
+                {Array.from({ length: columnCount - 1 }).map((_, index) => (
+                  <span
+                    key={`column-${index}`}
+                    className="absolute top-0 h-full w-px bg-[#edf1f7]"
+                    style={{ left: `${((index + 1) / columnCount) * 100}%` }}
+                  />
+                ))}
+
+                {Array.from({ length: rowCount - 1 }).map((_, index) => (
+                  <span
+                    key={`row-${index}`}
+                    className="absolute left-0 w-full h-px bg-[#f3f5f9]"
+                    style={{ top: `${(index + 1) * 72}px` }}
+                  />
+                ))}
+
+                {eventPlaceholders.map((item, index) => (
+                  <Skeleton
+                    key={`event-${index}`}
+                    className="absolute rounded-[18px] border-0 bg-[#e5ebf5]"
+                    style={{
+                      left: `calc(${(item.column / columnCount) * 100}% + 10px)`,
+                      top: `${item.row * 72 + 10}px`,
+                      width: `calc(${100 / columnCount}% - 20px)`,
+                      height: `${item.height}px`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function TeacherStudentsTab({
   exams,
@@ -66,6 +218,8 @@ export default function TeacherStudentsTab({
   const [liveAttendance, setLiveAttendance] = useState<ExamAttendanceStats | null>(null);
   const [liveStreamFailed, setLiveStreamFailed] = useState(false);
   const calendarScrollRef = useRef<HTMLDivElement>(null);
+  const viewLoadingTimerRef = useRef<number | null>(null);
+  const [viewLoadingMode, setViewLoadingMode] = useState<ViewMode | null>(null);
 
   const selectedExam = useMemo(
     () => exams.find((exam) => exam.id === selectedExamId) ?? null,
@@ -81,6 +235,14 @@ export default function TeacherStudentsTab({
     setLiveStreamFailed(false);
     setLiveAttendance(null);
   }, [selectedExamId]);
+
+  useEffect(() => {
+    return () => {
+      if (viewLoadingTimerRef.current !== null) {
+        window.clearTimeout(viewLoadingTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (viewMode !== "calendar") return;
@@ -179,6 +341,31 @@ export default function TeacherStudentsTab({
   const calendarViewportHeight =
     VISIBLE_HOUR_COUNT * ROW_HEIGHT + CALENDAR_VIEWPORT_OFFSET;
   const scheduleMinWidth = TIME_COLUMN_WIDTH + Math.max(days.length, 5) * DAY_COLUMN_WIDTH;
+  const isViewLoading = viewLoadingMode !== null;
+
+  const handleViewModeChange = (nextMode: ViewMode) => {
+    if (nextMode === viewMode) {
+      return;
+    }
+
+    if (SHOULD_SKIP_VIEW_LOADING) {
+      setViewMode(nextMode);
+      setViewLoadingMode(null);
+      return;
+    }
+
+    if (viewLoadingTimerRef.current !== null) {
+      window.clearTimeout(viewLoadingTimerRef.current);
+      viewLoadingTimerRef.current = null;
+    }
+
+    setViewMode(nextMode);
+    setViewLoadingMode(nextMode);
+    viewLoadingTimerRef.current = window.setTimeout(() => {
+      setViewLoadingMode((current) => (current === nextMode ? null : current));
+      viewLoadingTimerRef.current = null;
+    }, VIEW_LOADING_MIN_MS);
+  };
 
   if (selectedExam) {
     return (
@@ -238,25 +425,27 @@ export default function TeacherStudentsTab({
           <div className="inline-flex items-center gap-1 rounded-[16px] border border-[#d7e3f4] bg-[#eef4ff] p-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_26px_-24px_rgba(59,130,246,0.5)]">
             <button
               type="button"
-              onClick={() => setViewMode("cards")}
+              onClick={() => handleViewModeChange("cards")}
               aria-label="Card view"
+              disabled={isViewLoading}
               className={`grid h-10 w-10 place-items-center rounded-[10px] transition ${
                 viewMode === "cards"
                   ? "bg-[linear-gradient(180deg,#4f8dff_0%,#2f66ef_100%)] text-white shadow-[0_14px_24px_-18px_rgba(37,99,235,0.9)]"
                   : "bg-transparent text-[#2f66ef] hover:bg-white/75 hover:text-[#1d4ed8]"
-              }`}
+              } ${isViewLoading ? "cursor-progress opacity-80" : ""}`}
             >
               <Layers className="size-[18px]" />
             </button>
             <button
               type="button"
-              onClick={() => setViewMode("calendar")}
+              onClick={() => handleViewModeChange("calendar")}
               aria-label="Calendar view"
+              disabled={isViewLoading}
               className={`grid h-10 w-10 place-items-center rounded-[10px] transition ${
                 viewMode === "calendar"
                   ? "bg-[linear-gradient(180deg,#4f8dff_0%,#2f66ef_100%)] text-white shadow-[0_14px_24px_-18px_rgba(37,99,235,0.9)]"
                   : "bg-transparent text-[#2f66ef] hover:bg-white/75 hover:text-[#1d4ed8]"
-              }`}
+              } ${isViewLoading ? "cursor-progress opacity-80" : ""}`}
             >
               <CalendarDays className="size-[18px]" />
             </button>
@@ -265,7 +454,13 @@ export default function TeacherStudentsTab({
       </div>
 
       <div className="mt-8">
-        {viewMode === "cards" ? (
+        {isViewLoading ? (
+          viewMode === "cards" ? (
+            <ScheduleCardsSkeleton />
+          ) : (
+            <ScheduleCalendarSkeleton dayCount={days.length} />
+          )
+        ) : viewMode === "cards" ? (
           <div className="space-y-7">
             {groupedItems.length === 0 ? (
               <div className="rounded-[32px] border border-dashed border-[#dce5ef] bg-white px-6 py-16 text-center text-sm text-slate-400">

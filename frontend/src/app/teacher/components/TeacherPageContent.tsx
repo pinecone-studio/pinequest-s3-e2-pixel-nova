@@ -1,10 +1,9 @@
 import { useState } from "react";
 import ExamListCard from "./ExamListCard";
 import ExamPreviewDialog from "./ExamPreviewDialog";
-import ResultsTab from "./ResultsTab";
 import TeacherStudentsTab from "./TeacherStudentsTab";
-import TeacherXpOverviewCard from "./TeacherXpOverviewCard";
 import TeacherPageSkeleton from "./TeacherPageSkeleton";
+import AnalyticsTab from "./AnalyticsTab";
 import type { useExamAttendanceStats } from "../hooks/useExamAttendanceStats";
 import { useExamImport } from "../hooks/useExamImport";
 import type { useExamManagement } from "../hooks/useExamManagement";
@@ -12,9 +11,8 @@ import type { useExamStats } from "../hooks/useExamStats";
 import type { useTeacherData } from "../hooks/useTeacherData";
 import { Dialog } from "@/components/ui/dialog";
 import CreateExamDialogContent from "./CreateExamDialogContent";
-import { contentCanvasClass } from "../styles";
 
-export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Гүйцэтгэл" | "XP";
+export type TeacherTab = "Хуваарь" | "Шалгалтын сан" | "Шалгалтын аналитик";
 
 const sanitizeFileName = (value: string) =>
   value
@@ -59,6 +57,7 @@ const buildExamDownloadText = (exam: TeacherPageContentProps["data"]["exams"][nu
 type TeacherPageContentProps = {
   activeTab: TeacherTab;
   setActiveTab: (tab: TeacherTab) => void;
+  loadingTab?: TeacherTab | null;
   onOpenScheduleForm: () => void;
   data: ReturnType<typeof useTeacherData>;
   management: ReturnType<typeof useExamManagement>;
@@ -102,6 +101,7 @@ function TeacherCreateExamModal({
 
 export default function TeacherPageContent({
   activeTab,
+  loadingTab,
   onOpenScheduleForm,
   data,
   management,
@@ -116,9 +116,16 @@ export default function TeacherPageContent({
     data.loading || !("exams" in data)
       ? null
       : data.exams.find((exam) => exam.id === previewExamId) ?? null;
+  const showSkeleton = data.loading || loadingTab === activeTab;
+  const skeletonVariant =
+    activeTab === "Шалгалтын сан"
+      ? "examLibrary"
+      : activeTab === "Шалгалтын аналитик"
+        ? "analytics"
+        : "schedule";
 
-  if (data.loading && activeTab !== "Гүйцэтгэл" && activeTab !== "XP") {
-    return <TeacherPageSkeleton />;
+  if (showSkeleton) {
+    return <TeacherPageSkeleton variant={skeletonVariant} />;
   }
 
   if (activeTab === "Шалгалтын сан") {
@@ -164,32 +171,14 @@ export default function TeacherPageContent({
     );
   }
 
-  if (activeTab === "Гүйцэтгэл") {
+  if (activeTab === "Шалгалтын аналитик") {
     return (
-      <ResultsTab
-        loading={data.loading}
-        examOptions={examStatsState.examOptions}
-        activeExamId={examStatsState.activeExamId}
-        onSelectExam={examStatsState.setSelectedExamId}
-        examStats={examStatsState.examStats}
-        submissions={examStatsState.activeSubmissions}
-        onSelectSubmission={examStatsState.setSelectedSubmissionId}
-        selectedSubmissionId={examStatsState.selectedSubmissionId}
-        selectedSubmission={examStatsState.selectedSubmission}
-        selectedExam={examStatsState.selectedExam}
-        attendanceStats={attendance.stats}
-        attendanceLoading={attendance.loading}
-        studentProfile={studentProfile as never}
-        profileLoading={profileLoading}
+      <AnalyticsTab
+        teacherId={data.currentUser?.id ?? null}
+        exams={data.exams}
+        fallbackXpLeaderboard={examStatsState.xpLeaderboard}
+        fallbackExamStats={examStatsState.examStats}
       />
-    );
-  }
-
-  if (activeTab === "XP") {
-    return (
-      <div className="space-y-6">
-        <TeacherXpOverviewCard students={examStatsState.xpLeaderboard} />
-      </div>
     );
   }
 

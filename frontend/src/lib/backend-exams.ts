@@ -14,6 +14,7 @@ type RemoteExamDetail = {
   id: string;
   title: string;
   description?: string | null;
+  subjectName?: string | null;
   examType?: string | null;
   className?: string | null;
   groupName?: string | null;
@@ -73,6 +74,7 @@ const buildHeaders = (user: RoleUser) => ({
 export type SyncExamPayload = {
   title: string;
   description?: string | null;
+  subjectName?: string | null;
   examType?: string | null;
   className?: string | null;
   groupName?: string | null;
@@ -115,6 +117,7 @@ export const syncExamToBackend = async (
     body: JSON.stringify({
       title: exam.title,
       description: exam.description,
+      subjectName: exam.subjectName,
       examType: exam.examType,
       className: exam.className,
       groupName: exam.groupName,

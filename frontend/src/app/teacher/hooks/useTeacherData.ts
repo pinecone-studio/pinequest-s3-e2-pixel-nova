@@ -38,9 +38,13 @@ export const useTeacherData = (overrideUser?: User | null) => {
 
     setCurrentUser(user ?? null);
 
-    if (!overrideUserId) return;
+    if (!overrideUserId) {
+      setLoading(false);
+      return;
+    }
 
     let cancelled = false;
+    setLoading(true);
 
     const loadRemote = async () => {
       try {
