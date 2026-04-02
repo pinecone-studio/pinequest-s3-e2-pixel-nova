@@ -84,9 +84,9 @@ describe("StudentExamsTab", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Шалгалтын дүрэм ба мэдээлэл")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Өрөөний код")).toBeInTheDocument();
-    expect(screen.getByText("Буцах боломжгүй")).toBeInTheDocument();
-    expect(screen.getByText("Автоматаар илгээнэ")).toBeInTheDocument();
-    expect(screen.getByText("Хуулах, буулгах")).toBeInTheDocument();
+    expect(screen.getByText("Буцах")).toBeInTheDocument();
+    expect(screen.getByText("Автоматаар илгээх")).toBeInTheDocument();
+    expect(screen.getByText("Хуулах")).toBeInTheDocument();
     expect(screen.getByText("Камер")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Шалгалтад нэвтрэх" }));
