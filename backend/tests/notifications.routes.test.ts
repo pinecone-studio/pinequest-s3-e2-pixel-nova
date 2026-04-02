@@ -94,5 +94,9 @@ describe("notifications routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toContain("text/event-stream");
+
+    const reader = response.body?.getReader();
+    await reader?.read();
+    await reader?.cancel();
   });
 });

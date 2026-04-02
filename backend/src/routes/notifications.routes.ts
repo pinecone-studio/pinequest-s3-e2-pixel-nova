@@ -98,6 +98,7 @@ notificationsRoutes.get("/live", async (c) => {
       };
 
       const sendEvent = (event: string, payload: unknown) => {
+        if (closed) return;
         controller.enqueue(
           encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`),
         );
@@ -116,11 +117,13 @@ notificationsRoutes.get("/live", async (c) => {
             sendEvent("notification", mapNotification(item));
           }
 
+          if (closed) return;
           controller.enqueue(encoder.encode(": heartbeat\n\n"));
           timeoutId = setTimeout(() => {
             void tick();
           }, STREAM_POLL_MS);
         } catch {
+          if (closed) return;
           sendEvent("error", { message: "Failed to stream notifications." });
           closeStream();
         }
