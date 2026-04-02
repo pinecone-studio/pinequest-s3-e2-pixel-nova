@@ -68,7 +68,7 @@ const formatPercent = (value: number | null | undefined) => {
 
 const renderMonthTick =
 	(activeLabel: string | null) =>
-	({
+	function AnalyticsMonthTick({
 		x,
 		y,
 		payload,
@@ -76,7 +76,7 @@ const renderMonthTick =
 		x?: number | string;
 		y?: number | string;
 		payload?: { value?: string };
-	}) => {
+	}) {
 		const label = payload?.value ?? "";
 		const isActive = label === activeLabel;
 		return (
@@ -95,7 +95,7 @@ const renderMonthTick =
 
 const renderHighlightedDot =
 	(activeLabel: string | null, color: string, glow: string) =>
-	({
+	function AnalyticsHighlightedDot({
 		cx,
 		cy,
 		payload,
@@ -103,7 +103,7 @@ const renderHighlightedDot =
 		cx?: number;
 		cy?: number;
 		payload?: { name?: string };
-	}) => {
+	}) {
 		if (payload?.name !== activeLabel || typeof cx !== "number" || typeof cy !== "number") {
 			return null;
 		}

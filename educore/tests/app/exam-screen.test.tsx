@@ -191,7 +191,7 @@ describe("ExamScreen", () => {
 
     const screen = render(<ExamScreen />);
 
-    expect(screen.getByText("Шалгалтууд")).toBeTruthy();
+    expect(screen.getByText("Товлогдсон шалгалт алга")).toBeTruthy();
     expect(screen.getByPlaceholderText("Шалгалт хайх...")).toBeTruthy();
     screen.unmount();
   });
