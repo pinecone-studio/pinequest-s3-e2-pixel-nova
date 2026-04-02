@@ -47,7 +47,7 @@ const editableFields: {
   { label: "Сургууль", key: "school" },
   { label: "Анги", key: "grade" },
   { label: "Бүлэг", key: "groupName" },
-  { label: "Avatar URL", key: "avatarUrl" },
+  { label: "Аватарын холбоос", key: "avatarUrl" },
 ];
 
 
@@ -132,7 +132,7 @@ export default function ProfileScreen() {
       setMessage("Профайл хадгалагдлаа.");
       setEditorOpen(false);
     } catch (error) {
-      setMessage(normalizeApiError(error, "Failed to save profile."));
+      setMessage(normalizeApiError(error, "Профайл хадгалж чадсангүй."));
     } finally {
       setSaving(false);
     }
@@ -144,7 +144,7 @@ export default function ProfileScreen() {
       await switchUser(userId);
       setSelectorOpen(false);
     } catch (error) {
-      setMessage(normalizeApiError(error, "Failed to switch user."));
+      setMessage(normalizeApiError(error, "Хэрэглэгч солиж чадсангүй."));
     }
   };
 
@@ -156,7 +156,7 @@ export default function ProfileScreen() {
       setCodeLoginOpen(false);
     } catch (error) {
       setMessage(
-        normalizeApiError(error, "Failed to sign in with student code."),
+        normalizeApiError(error, "Суралцагчийн кодоор нэвтэрч чадсангүй."),
       );
     }
   };
@@ -167,7 +167,7 @@ export default function ProfileScreen() {
       await logout();
       setSelectorOpen(false);
     } catch (error) {
-      setMessage(normalizeApiError(error, "Failed to sign out."));
+      setMessage(normalizeApiError(error, "Гарч чадсангүй."));
     }
   };
 
@@ -219,8 +219,8 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.xpSection}>
               <View style={styles.xpRow}>
-                <Text style={styles.xpLabel}>Lvl {level}</Text>
-                <Text style={styles.xpValue}>{xp}xp</Text>
+                <Text style={styles.xpLabel}>Түвшин {level}</Text>
+                <Text style={styles.xpValue}>{xp} оноо</Text>
               </View>
               <View style={styles.progressTrack}>
                 <View style={[styles.progressFill, { width: `${xpProgress * 100}%` }]} />
@@ -230,7 +230,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.featureRow}>
-          <FeatureCard icon="star-outline" title="English" subtitle="Гоц хичээл" />
+          <FeatureCard icon="star-outline" title="Англи хэл" subtitle="Гоц хичээл" />
           <FeatureCard
             icon="star-outline"
             title={`${averageScore}%`}
@@ -295,9 +295,9 @@ export default function ProfileScreen() {
             <Ionicons name="swap-horizontal-outline" size={24} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
-            <Text style={styles.menuLabel}>Student accounts</Text>
+            <Text style={styles.menuLabel}>Суралцагчийн бүртгэлүүд</Text>
             <Text style={styles.menuSub}>
-              {authMode === "user_switcher" ? "Student account" : "Student code"} ·{" "}
+              {authMode === "user_switcher" ? "Суралцагчийн бүртгэл" : "Суралцагчийн код"} ·{" "}
               {availableUsers.length} хэрэглэгч
             </Text>
           </View>
@@ -313,7 +313,7 @@ export default function ProfileScreen() {
             <Ionicons name="key-outline" size={24} color="#2563EB" />
           </View>
           <View style={styles.menuCopy}>
-            <Text style={styles.menuLabel}>Student code login</Text>
+            <Text style={styles.menuLabel}>Суралцагчийн кодоор нэвтрэх</Text>
             <Text style={styles.menuSub}>Кодоор нэвтрэх</Text>
           </View>
         </View>
@@ -351,12 +351,12 @@ export default function ProfileScreen() {
 
       {codeLoginOpen && (
         <View style={styles.panelCard}>
-          <Text style={styles.panelTitle}>Student code login</Text>
+          <Text style={styles.panelTitle}>Суралцагчийн кодоор нэвтрэх</Text>
           <Text style={styles.panelText}>
-            Багшаасаа авсан student code-оор нэвтэрнэ үү. Жишээ: S-2001
+            Багшаасаа авсан суралцагчийн кодоор нэвтэрнэ үү. Жишээ: S-2001
           </Text>
           <InputField
-            label="Student code"
+            label="Суралцагчийн код"
             autoCapitalize="characters"
             value={codeInput}
             onChangeText={setCodeInput}
@@ -396,7 +396,7 @@ export default function ProfileScreen() {
             />
           ))}
           <InputField
-            label="Bio"
+            label="Танилцуулга"
             multiline
             value={form.bio ?? ""}
             onChangeText={(value) => setForm((prev) => ({ ...prev, bio: value }))}

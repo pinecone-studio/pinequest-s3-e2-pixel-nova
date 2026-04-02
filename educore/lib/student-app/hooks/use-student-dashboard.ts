@@ -45,7 +45,7 @@ export const useStudentDashboard = (
         ...current,
         dashboardError: normalizeApiError(
           error,
-          'Could not load the latest student dashboard.',
+          'Суралцагчийн самбарын мэдээллийг ачаалж чадсангүй.',
         ),
       }));
     } finally {
@@ -70,7 +70,7 @@ export const useStudentDashboard = (
   const saveProfile = useCallback(
     async (payload: StudentProfile) => {
       if (!student) {
-        throw new Error('No active student selected.');
+        throw new Error('Сонгосон суралцагч алга.');
       }
 
       try {

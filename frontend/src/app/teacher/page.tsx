@@ -59,16 +59,14 @@ function TeacherScheduleModal({
 
   return (
     <div
-      className="fixed inset-0 z-120 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] px-4 py-6 backdrop-blur-[10px] sm:px-6 sm:py-10"
+      className="fixed inset-0 z-120 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.16),transparent_32%),rgba(8,15,32,0.46)] backdrop-blur-[10px]"
       onClick={() => {
         if (!management.scheduling) onClose();
-      }}
-    >
-      <div className="mx-auto flex min-h-screen w-full max-w-[820px] items-center justify-center py-4 sm:py-8">
+      }}>
+      <div className="mx-auto flex min-h-screen w-full max-w-[820px] items-center justify-center">
         <div
           className="flex w-full justify-center transition-all duration-300 ease-out animate-[pageFadeSlide_220ms_ease_both]"
-          onClick={(event) => event.stopPropagation()}
-        >
+          onClick={(event) => event.stopPropagation()}>
           <ExamScheduleCard
             exams={data.exams}
             selectedScheduleExamId={management.selectedScheduleExamId}
@@ -146,7 +144,9 @@ export default function TeacherPage() {
     null,
   );
   const [profileLoading, setProfileLoading] = useState(false);
-  const [cheatAlertQueue, setCheatAlertQueue] = useState<NotificationItem[]>([]);
+  const [cheatAlertQueue, setCheatAlertQueue] = useState<NotificationItem[]>(
+    [],
+  );
   const [cheatActionBusy, setCheatActionBusy] = useState(false);
   const tabLoadingTimerRef = useRef<number | null>(null);
   const queuedAlertIdsRef = useRef<Set<string>>(new Set());
@@ -157,7 +157,10 @@ export default function TeacherPage() {
   );
   const data = useTeacherData(sessionUser, {
     onIncomingNotification: (notification) => {
-      if (notification.type !== "student_flagged" || notification.status !== "unread") {
+      if (
+        notification.type !== "student_flagged" ||
+        notification.status !== "unread"
+      ) {
         return;
       }
 
@@ -240,9 +243,7 @@ export default function TeacherPage() {
     window.sessionStorage.setItem(TEACHER_ACTIVE_TAB_STORAGE_KEY, activeTab);
   }, [activeTab]);
 
-  const handleNotificationAction = (notification: {
-    type: string;
-  }) => {
+  const handleNotificationAction = (notification: { type: string }) => {
     const nextTab =
       notification.type === "exam_finished" ||
       notification.type === "result_published"
@@ -330,11 +331,14 @@ export default function TeacherPage() {
     if (!notificationId) return;
     await data.markNotificationRead(notificationId);
     queuedAlertIdsRef.current.delete(notificationId);
-    setCheatAlertQueue((prev) => prev.filter((item) => item.id !== notificationId));
+    setCheatAlertQueue((prev) =>
+      prev.filter((item) => item.id !== notificationId),
+    );
   };
 
   const handleWarnStudent = async () => {
-    if (!activeCheatAlert?.sessionId || !data.currentUser || cheatActionBusy) return;
+    if (!activeCheatAlert?.sessionId || !data.currentUser || cheatActionBusy)
+      return;
 
     setCheatActionBusy(true);
     try {
@@ -360,7 +364,8 @@ export default function TeacherPage() {
   };
 
   const handleDisqualifyStudent = async () => {
-    if (!activeCheatAlert?.sessionId || !data.currentUser || cheatActionBusy) return;
+    if (!activeCheatAlert?.sessionId || !data.currentUser || cheatActionBusy)
+      return;
 
     setCheatActionBusy(true);
     try {
@@ -377,7 +382,9 @@ export default function TeacherPage() {
       data.showToast("Суралцагчийг шалгалтаас чөлөөллөө.");
     } catch (error) {
       data.showToast(
-        error instanceof Error ? error.message : "Суралцагчийг чөлөөлж чадсангүй.",
+        error instanceof Error
+          ? error.message
+          : "Суралцагчийг чөлөөлж чадсангүй.",
       );
     } finally {
       setCheatActionBusy(false);
@@ -501,8 +508,7 @@ export default function TeacherPage() {
         isExamLibraryTab
           ? "min-h-screen bg-white text-foreground"
           : pageShellClass
-      }
-    >
+      }>
       {data.toast && (
         <div className="fixed right-6 top-6 z-50 rounded-2xl border border-[#d5dfeb] bg-white px-4 py-3 text-sm shadow-[0_20px_45px_-32px_rgba(15,23,42,0.28)]">
           {data.toast}
@@ -542,8 +548,7 @@ export default function TeacherPage() {
       />
       <main className={mainClassName}>
         <div
-          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}
-        >
+          className={`${showScheduleForm ? "" : "transform-gpu"} transition-all duration-500 ease-out ${contentVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.992] opacity-0"}`}>
           <TeacherPageContent
             activeTab={activeTab}
             onOpenScheduleForm={openScheduleForm}

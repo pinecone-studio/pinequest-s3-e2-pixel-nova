@@ -88,7 +88,7 @@ export const useExamAudioRecorder = ({
     await activeRecording.stopAndUnloadAsync();
     const uri = activeRecording.getURI();
     if (!uri) {
-      throw new Error("Audio chunk did not produce a local file.");
+      throw new Error("Аудио хэсгийн локал файл үүссэнгүй.");
     }
 
     const endedAt = Date.now();
@@ -121,7 +121,7 @@ export const useExamAudioRecorder = ({
         const message =
           flushError instanceof Error
             ? flushError.message
-            : "Could not upload the last audio chunk.";
+            : "Сүүлийн аудио хэсгийг илгээж чадсангүй.";
         setError(message);
         setStatus(required ? "blocked" : "error");
 
@@ -153,7 +153,7 @@ export const useExamAudioRecorder = ({
     if (!audioModule?.Audio?.requestPermissionsAsync) {
       setStatus("unsupported");
       setError(
-        "Microphone recording requires a native build with audio recording support.",
+        "Микрофоны бичлэг хийхийн тулд аудио дэмждэг native build шаардлагатай.",
       );
       return false;
     }
@@ -162,7 +162,7 @@ export const useExamAudioRecorder = ({
     const permission = await audioModule.Audio.requestPermissionsAsync();
     if (!permission?.granted) {
       setStatus("error");
-      setError("Microphone permission is required before the exam can start.");
+      setError("Шалгалт эхлэхээс өмнө микрофоны зөвшөөрөл шаардлагатай.");
 
       if (student && session) {
         await reportCheatEvent(student, {
@@ -205,7 +205,7 @@ export const useExamAudioRecorder = ({
     ) {
       setStatus("unsupported");
       setError(
-        "Microphone recording requires a native build with audio recording support.",
+        "Микрофоны бичлэг хийхийн тулд аудио дэмждэг native build шаардлагатай.",
       );
       return false;
     }
@@ -244,7 +244,7 @@ export const useExamAudioRecorder = ({
             const message =
               recordingError instanceof Error
                 ? recordingError.message
-                : "Audio recording was interrupted.";
+                : "Аудио бичлэг тасалдлаа.";
             setError(message);
             setStatus("blocked");
 
@@ -270,7 +270,7 @@ export const useExamAudioRecorder = ({
       const message =
         startError instanceof Error
           ? startError.message
-          : "Could not start microphone recording.";
+          : "Микрофоны бичлэгийг эхлүүлж чадсангүй.";
       setStatus("error");
       setError(message);
       return false;

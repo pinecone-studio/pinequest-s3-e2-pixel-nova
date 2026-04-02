@@ -30,9 +30,9 @@ const guideSteps = [
     icon: MonitorSmartphone,
   },
   {
-    title: "Copy Paste хийх",
+    title: "Хуулах, буулгах",
     description:
-      "Шалгалтын үед текстийг copy эсвэл paste үйлдэл хийх боломжгүй.",
+      "Шалгалтын үед текст хуулах эсвэл буулгах үйлдэл хийх боломжгүй.",
     icon: ClipboardX,
   },
 ] as const;
@@ -104,7 +104,7 @@ export default function StudentExamStartGuideModal({
             disabled={submitting}
             className="rounded-[16px] bg-[#2f66ef] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2557d0] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isLastStep ? (submitting ? "Эхлүүлж байна..." : "Start") : "Цааш"}
+            {isLastStep ? (submitting ? "Эхлүүлж байна..." : "Эхлэх") : "Цааш"}
           </button>
         </div>
       </div>
