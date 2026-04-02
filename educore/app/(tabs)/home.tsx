@@ -260,7 +260,7 @@ function openExamDetail(
   exam: HomeExamCard,
 ) {
   router.push({
-    pathname: "/exam-detail",
+    pathname: "/exam-detail" as never,
     params: {
       title: exam.title,
       date: exam.date,
@@ -270,7 +270,7 @@ function openExamDetail(
       className: exam.className ?? "",
       groupName: exam.groupName ?? "",
       teacherName: exam.teacherName ?? getTeacherName(exam.title),
-    },
+    } as never,
   });
 }
 
@@ -416,7 +416,12 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Дараагийн шалгалтууд</Text>
           <TouchableOpacity
             style={styles.sectionLinkRow}
-            onPress={() => router.push("/exam")}
+            onPress={() =>
+              router.push({
+                pathname: "/exam",
+                params: { tab: "active" },
+              })
+            }
           >
             <Text style={styles.sectionLinkMuted}>Бүгд</Text>
             <Ionicons name="chevron-forward" size={13} color="#9CA3AF" />
@@ -469,11 +474,18 @@ export default function HomeScreen() {
                   </View>
                 </View>
 
+                <View style={styles.nextDivider} />
+
                 <TouchableOpacity
-                  style={styles.nextPrimaryBtn}
+                  style={styles.detailLinkRow}
                   onPress={() => openExamDetail(router, exam)}
                 >
-                  <Text style={styles.nextPrimaryBtnText}>Дэлгэрэнгүй</Text>
+                  <Text style={styles.detailLink}>Дэлгэрэнгүй</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={24}
+                    color="#111827"
+                  />
                 </TouchableOpacity>
               </View>
             ))}
