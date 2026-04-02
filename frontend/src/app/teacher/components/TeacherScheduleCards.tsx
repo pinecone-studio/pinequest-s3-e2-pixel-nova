@@ -74,6 +74,11 @@ export function ScheduleCard({
           <div className={titleClass}>
             {item.title}
           </div>
+          {item.subtitle ? (
+            <div className="mt-0.5 line-clamp-1 text-[11px] leading-4 text-[#8d8d8d]">
+              {item.subtitle}
+            </div>
+          ) : null}
           <div
             className={`mt-1 line-clamp-1 text-[11px] leading-4 ${
               isFinished ? "font-medium text-[#8d8d8d]" : "text-[#a3a3a3]"
@@ -133,6 +138,11 @@ export function ScheduleListCard({
               <h3 className="min-h-[64px] text-[26px] font-semibold leading-[31px] tracking-[-0.03em] text-black break-words">
                 {item.title}
               </h3>
+              {item.subtitle ? (
+                <p className="mt-1 text-[15px] font-medium leading-5 text-[#8a94a6]">
+                  {item.subtitle}
+                </p>
+              ) : null}
             </div>
             <div className="mt-1 flex shrink-0 flex-col items-end gap-2">
               <span

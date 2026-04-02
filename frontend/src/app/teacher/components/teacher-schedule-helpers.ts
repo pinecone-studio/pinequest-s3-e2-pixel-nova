@@ -206,26 +206,9 @@ export function getExamScheduleLifecycle(exam: Exam): ScheduleLifecycle | null {
 }
 
 export function buildScheduleData(exams: Exam[]) {
-  const looksLikeClassLabel = (value: string) =>
-    /^(\d{1,2}\s*[A-Za-zА-Яа-яӨөҮүЁё]+)(\s*,\s*\d{1,2}\s*[A-Za-zА-Яа-яӨөҮүЁё]+)*$/u.test(
-      value.trim(),
-    );
-
   const resolveTitle = (exam: Exam) => {
     const title = exam.title?.trim() || "";
     const description = exam.description?.trim() || "";
-    const classTitle =
-      normalizeClassTitle(exam.className) ??
-      extractClassTitle(title) ??
-      extractClassTitle(description);
-
-    if (classTitle) {
-      return classTitle;
-    }
-
-    if (description && looksLikeClassLabel(title)) {
-      return stripScheduleDescriptors(description) || "Шалгалт";
-    }
 
     return stripScheduleDescriptors(title || description || "Шалгалт") || "Шалгалт";
   };
@@ -282,7 +265,12 @@ export function buildScheduleData(exams: Exam[]) {
         id: exam.id,
         title: resolveTitle(exam),
         subjectName: inferSubjectName(exam),
-        subtitle: [exam.className, exam.groupName].filter(Boolean).join(" · "),
+        subtitle: [
+          normalizeClassTitle(exam.className) ?? extractClassTitle(exam.className),
+          exam.groupName?.trim() || null,
+        ]
+          .filter(Boolean)
+          .join(" · "),
         dayIndex,
         startMinutes:
           scheduledAt.getHours() * 60 +
