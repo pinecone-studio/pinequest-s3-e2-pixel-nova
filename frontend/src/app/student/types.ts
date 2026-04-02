@@ -85,6 +85,7 @@ export type StudentProgress = {
     level: number;
     history: {
       examId: string;
+      title: string;
       percentage: number;
       xp: number;
       date: string;

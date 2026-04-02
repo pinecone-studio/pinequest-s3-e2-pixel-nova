@@ -40,6 +40,7 @@ export type StudentResultDetail = StudentResultSummary & {
   description?: string | null;
   startedAt?: string | null;
   answers: {
+    topic?: string | null;
     questionText: string;
     selectedAnswer: string | null;
     correctAnswer: string | null;
