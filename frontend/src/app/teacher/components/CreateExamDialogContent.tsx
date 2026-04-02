@@ -22,7 +22,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { savePendingCreateExamDraft } from "../create-exam-dialog-state";
 import type { AiExamGeneratorInput } from "../types";
 
 const tabs = ["Гараар үүсгэх", "AI ноорог үүсгэх", "PDF файл-Материал"] as const;
@@ -449,10 +448,7 @@ export default function CreateExamDialogContent() {
     setAiInput((current) => ({ ...current, [key]: value }));
   };
 
-  const handlePdfCountChange = (
-    key: "mcq" | "open",
-    value: number,
-  ) => {
+  const handlePdfCountChange = (key: "mcq" | "open", value: number) => {
     setPdfCounts((current) => ({ ...current, [key]: value }));
   };
 
@@ -461,31 +457,37 @@ export default function CreateExamDialogContent() {
       return;
     }
 
+    const params = new URLSearchParams();
+
     if (activeTab === "Гараар үүсгэх") {
-      savePendingCreateExamDraft({
-        mode: "manual",
-        examTitle: manualTitle.trim(),
-      });
+      params.set("mode", "manual");
+      if (manualTitle.trim()) {
+        params.set("examTitle", manualTitle.trim());
+      }
     }
 
     if (activeTab === "AI ноорог үүсгэх") {
-      savePendingCreateExamDraft({
-        mode: "ai",
-        input: aiInput,
-      });
+      params.set("mode", "ai");
+      params.set("topic", aiInput.topic ?? "");
+      params.set("subject", aiInput.subject ?? "");
+      params.set("gradeOrClass", aiInput.gradeOrClass ?? "");
+      params.set("difficulty", aiInput.difficulty ?? "medium");
+      params.set("questionCount", String(aiInput.questionCount ?? 10));
+      params.set("instructions", aiInput.instructions ?? "");
     }
 
     if (activeTab === "PDF файл-Материал") {
-      savePendingCreateExamDraft({
-        mode: "pdf",
-        examTitle: pdfExamTitle.trim(),
-        importMcqCount: pdfCounts.mcq,
-        importOpenCount: pdfCounts.open,
-      });
+      params.set("mode", "pdf");
+      if (pdfExamTitle.trim()) {
+        params.set("examTitle", pdfExamTitle.trim());
+      }
+      params.set("importMcqCount", String(pdfCounts.mcq));
+      params.set("importOpenCount", String(pdfCounts.open));
     }
 
     setNavigating(true);
-    router.push("/teacher/createExam");
+    const query = params.toString();
+    router.push(query ? `/teacher/createExam?${query}` : "/teacher/createExam");
   };
 
   return (

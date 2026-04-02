@@ -18,6 +18,7 @@ type StudentExamViewProps = {
   onSelectMcq: (value: string, maybeValue?: string) => void;
   onPrev: () => void;
   onNext: () => void;
+  submitting?: boolean;
   onSubmit: () => void;
   onExit: () => void;
   cameraPanel?: ReactNode;
@@ -122,6 +123,7 @@ export default function StudentExamView({
   answers,
   onUpdateAnswer,
   onSelectMcq,
+  submitting = false,
   onSubmit,
   onExit,
   cameraPanel,
@@ -311,11 +313,17 @@ export default function StudentExamView({
           Гарах
         </button>
         <button
-          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:brightness-110"
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
           onClick={onSubmit}
+          disabled={submitting}
         >
           Илгээх
         </button>
+        {submitting && (
+          <div className="w-full text-right text-xs font-medium text-slate-500 sm:w-auto sm:self-center">
+            Submitting exam...
+          </div>
+        )}
       </div>
     </div>
   );

@@ -391,7 +391,7 @@ function HomeExamDetailModal({
 export default function HomeScreen() {
   const router = useRouter();
   const studentApp = useStudentApp();
-  const { dashboardError } = studentApp;
+  const { dashboardError, dashboardLoading } = studentApp;
   const [selectedExam, setSelectedExam] = useState<HomeExamCard | null>(null);
   const now = new Date();
   const calendarDays = buildCalendarWeek(now);
@@ -444,6 +444,18 @@ export default function HomeScreen() {
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>Шалгалт өгөх</Text>
         </View>
+
+        {dashboardLoading ? (
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.examTitle}>Refreshing dashboard...</Text>
+              <Text style={styles.examMeta}>
+                Updating your active session, upcoming exams, and recent
+                results.
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         {primaryExam ? (
           <View style={styles.card}>

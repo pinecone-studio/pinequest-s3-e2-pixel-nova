@@ -182,6 +182,8 @@ export const useStudentExamSession = ({
 }: UseStudentExamSessionParams) => {
   const [view, setView] = useState<"dashboard" | "exam" | "result">("dashboard");
   const [activeExam, setActiveExam] = useState<Exam | null>(null);
+  const [startingExam, setStartingExam] = useState(false);
+  const [submittingExam, setSubmittingExam] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -260,6 +262,7 @@ export const useStudentExamSession = ({
   }, [clearAnswerFlushTimer, flushPendingAnswers]);
 
   const startExam = () => {
+    if (startingExam) return;
     if (!sessionId || !currentUser) {
       setJoinError?.("Шалгалт эхлүүлэхэд шаардлагатай мэдээлэл алга байна.");
       return;
@@ -267,6 +270,7 @@ export const useStudentExamSession = ({
 
     const run = async () => {
       let requiresAudioRecording = false;
+      setStartingExam(true);
       try {
         const sessionData = await apiRequest<SessionData>(`/api/sessions/${sessionId}`);
         const mappedExam: Exam = mapSessionToExam(sessionData, roomCodeInput);
@@ -319,6 +323,8 @@ export const useStudentExamSession = ({
         }
         setJoinError?.(message);
         showWarning(message);
+      } finally {
+        setStartingExam(false);
       }
     };
 
@@ -326,9 +332,10 @@ export const useStudentExamSession = ({
   };
 
   const submitExam = useCallback(async (auto = false, terminated = false, reason?: string) => {
-    if (!activeExam || !currentUser || !sessionId) return;
+    if (!activeExam || !currentUser || !sessionId || submittingExam) return;
     if (!auto && !window.confirm("Та шалгалтаа илгээхдээ итгэлтэй байна уу?")) return;
 
+    setSubmittingExam(true);
     const report = buildAnswerReport(activeExam, answers);
     await flushPendingAnswers();
     await apiRequest(`/api/sessions/${sessionId}/submit`, { method: "POST" });
@@ -369,6 +376,7 @@ export const useStudentExamSession = ({
       setResultPending(false);
       setResultReleaseAt(null);
       setView("result");
+      setSubmittingExam(false);
       return;
     } catch (error) {
       const errorCode = getErrorCode(error);
@@ -379,9 +387,11 @@ export const useStudentExamSession = ({
         setAnswerReport([]);
         setLastSubmission(pendingSubmission);
         setView("result");
+        setSubmittingExam(false);
       }
     }
-  }, [activeExam, answers, currentUser, flushPendingAnswers, sessionId, violations, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt]);
+    setSubmittingExam(false);
+  }, [activeExam, answers, currentUser, flushPendingAnswers, sessionId, submittingExam, violations, setAnswerReport, setLastSubmission, setResultPending, setResultReleaseAt]);
 
   const terminateExam = useCallback((reason: string) => {
     showWarning("Шалгалт зогсоолоо.");
@@ -453,7 +463,9 @@ export const useStudentExamSession = ({
     warning,
     showWarning,
     logViolation,
+    startingExam,
     startExam,
+    submittingExam,
     submitExam,
     terminateExam,
     resultPending,

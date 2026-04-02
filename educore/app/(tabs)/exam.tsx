@@ -347,7 +347,7 @@ function ExamDetailModal({
 // Exam list screen (tab = "active" | "history")
 
 function ExamListScreen() {
-  const { history, upcomingExams } = useStudentApp();
+  const { dashboardLoading, history, upcomingExams } = useStudentApp();
   const [activeTab, setActiveTab] = useState<TabKey>("active");
   const [search, setSearch] = useState("");
   const [now, setNow] = useState(() => new Date());
@@ -519,6 +519,16 @@ function ExamListScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.pageTitle}>Exams</Text>
+
+        {dashboardLoading ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>Loading</Text>
+            <Text style={styles.emptyTitle}>Refreshing exams...</Text>
+            <Text style={styles.emptyText}>
+              Updating your active session, upcoming exams, and recent history.
+            </Text>
+          </View>
+        ) : null}
 
         {/* Tab switcher */}
         <View style={styles.tabRow}>
@@ -759,6 +769,9 @@ export default function ExamScreen() {
     AppState.currentState !== "background" &&
       AppState.currentState !== "inactive",
   );
+  const [startingExam, setStartingExam] = useState(false);
+  const [refreshingSession, setRefreshingSession] = useState(false);
+  const [recoveringProctoring, setRecoveringProctoring] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [textDraft, setTextDraft] = useState("");
@@ -859,6 +872,7 @@ export default function ExamScreen() {
       return;
     }
 
+    setRecoveringProctoring(true);
     setSyncError(null);
 
     try {
@@ -906,6 +920,8 @@ export default function ExamScreen() {
       setSyncError(
         normalizeApiError(error, "Could not recover exam proctoring."),
       );
+    } finally {
+      setRecoveringProctoring(false);
     }
   }, [
     activeSession,
@@ -915,6 +931,15 @@ export default function ExamScreen() {
     requestCameraPermission,
     setIntegrityWarning,
   ]);
+
+  const handleRefreshSession = useCallback(async () => {
+    setRefreshingSession(true);
+    try {
+      await recoverActiveSession();
+    } finally {
+      setRefreshingSession(false);
+    }
+  }, [recoverActiveSession]);
 
   const moveQuestion = async (direction: -1 | 1) => {
     await persistTextAnswer();
@@ -1036,6 +1061,7 @@ export default function ExamScreen() {
   // ── Active / joined session ────────────────────────────────────────────────
 
   const handleStart = async () => {
+    setStartingExam(true);
     try {
       const permissionResult = cameraPermission?.granted
         ? cameraPermission
@@ -1087,6 +1113,8 @@ export default function ExamScreen() {
     } catch (error) {
       await audioRecorder.stop();
       setSyncError(normalizeApiError(error, "Could not start the exam."));
+    } finally {
+      setStartingExam(false);
     }
   };
 
@@ -1220,16 +1248,28 @@ export default function ExamScreen() {
                   onViolation={logIntegrityEvent}
                 />
                 <TouchableOpacity
-                  style={styles.primaryBtn}
+                  style={[
+                    styles.primaryBtn,
+                    startingExam && styles.navBtnDisabled,
+                  ]}
+                  disabled={startingExam}
                   onPress={() => void handleStart()}
                 >
-                  <Text style={styles.primaryBtnText}>Start exam</Text>
+                  <Text style={styles.primaryBtnText}>
+                    {startingExam ? "Starting exam..." : "Start exam"}
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.secondaryBtn}
-                  onPress={() => void recoverActiveSession()}
+                  style={[
+                    styles.secondaryBtn,
+                    refreshingSession && styles.navBtnDisabled,
+                  ]}
+                  disabled={refreshingSession}
+                  onPress={() => void handleRefreshSession()}
                 >
-                  <Text style={styles.secondaryBtnText}>Refresh session</Text>
+                  <Text style={styles.secondaryBtnText}>
+                    {refreshingSession ? "Refreshing..." : "Refresh session"}
+                  </Text>
                 </TouchableOpacity>
               </>
             ) : null}
@@ -1251,10 +1291,18 @@ export default function ExamScreen() {
             />
             {proctoringBlockedMessage ? (
               <TouchableOpacity
-                style={styles.secondaryBtn}
+                style={[
+                  styles.secondaryBtn,
+                  recoveringProctoring && styles.navBtnDisabled,
+                ]}
+                disabled={recoveringProctoring}
                 onPress={() => void handleRecoverProctoring()}
               >
-                <Text style={styles.secondaryBtnText}>Recover proctoring</Text>
+                <Text style={styles.secondaryBtnText}>
+                  {recoveringProctoring
+                    ? "Recovering proctoring..."
+                    : "Recover proctoring"}
+                </Text>
               </TouchableOpacity>
             ) : null}
           </>

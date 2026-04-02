@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import {
   STORAGE_KEYS,
@@ -25,7 +25,77 @@ import { useAiExamGenerator } from "../hooks/useAiExamGenerator";
 import ExamCreateCard from "../components/ExamCreateCard";
 import { pageShellClass } from "../styles";
 import { Button } from "@/components/ui/button";
-import { consumePendingCreateExamDraft } from "../create-exam-dialog-state";
+
+type PendingRouteDraft =
+  | {
+      mode: "manual";
+      examTitle: string;
+    }
+  | {
+      mode: "ai";
+      input: {
+        topic: string;
+        subject?: string;
+        gradeOrClass?: string;
+        difficulty: "easy" | "medium" | "hard";
+        questionCount: number;
+        instructions?: string;
+      };
+    }
+  | {
+      mode: "pdf";
+      examTitle: string;
+      importMcqCount: number;
+      importOpenCount: number;
+    };
+
+const parsePendingRouteDraft = (
+  searchParams: { get: (key: string) => string | null },
+): PendingRouteDraft | null => {
+  const mode = searchParams.get("mode");
+  if (mode === "manual") {
+    return {
+      mode,
+      examTitle: searchParams.get("examTitle") ?? "",
+    };
+  }
+
+  if (mode === "ai") {
+    const difficulty = searchParams.get("difficulty");
+    return {
+      mode,
+      input: {
+        topic: searchParams.get("topic") ?? "",
+        subject: searchParams.get("subject") ?? "",
+        gradeOrClass: searchParams.get("gradeOrClass") ?? "",
+        difficulty:
+          difficulty === "easy" || difficulty === "hard" ? difficulty : "medium",
+        questionCount: Math.max(
+          1,
+          Number(searchParams.get("questionCount") ?? "10") || 10,
+        ),
+        instructions: searchParams.get("instructions") ?? "",
+      },
+    };
+  }
+
+  if (mode === "pdf") {
+    return {
+      mode,
+      examTitle: searchParams.get("examTitle") ?? "",
+      importMcqCount: Math.max(
+        0,
+        Number(searchParams.get("importMcqCount") ?? "0") || 0,
+      ),
+      importOpenCount: Math.max(
+        0,
+        Number(searchParams.get("importOpenCount") ?? "0") || 0,
+      ),
+    };
+  }
+
+  return null;
+};
 
 const role: RoleKey = "teacher";
 
@@ -44,6 +114,7 @@ const getLocalAuthUsers = (r: RoleKey): AuthUser[] => {
 
 export default function CreateExamPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [redirectingAfterSave, setRedirectingAfterSave] = useState(false);
   const pendingAppliedRef = useRef(false);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
@@ -107,7 +178,10 @@ export default function CreateExamPage() {
     if (pendingAppliedRef.current || !sessionUser?.id) return;
     pendingAppliedRef.current = true;
 
-    const pending = consumePendingCreateExamDraft();
+    const pending = parsePendingRouteDraft(searchParams);
+    if (pending) {
+      router.replace("/teacher/createExam");
+    }
     if (!pending) return;
 
     if (pending.mode === "manual") {
@@ -134,6 +208,8 @@ export default function CreateExamPage() {
     generator,
     imports,
     management,
+    router,
+    searchParams,
     sessionUser?.id,
   ]);
 
