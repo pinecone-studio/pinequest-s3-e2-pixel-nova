@@ -52,12 +52,49 @@ describe("StudentExamsTab", () => {
     expect(screen.getByText("AX7K2P")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Шалгалт эхлүүлэх" }));
+    expect(screen.getByText("Камер нээх")).toBeInTheDocument();
+    expect(onStartExam).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Цааш" }));
+    expect(screen.getByText("Шалгалт илгээгдэх")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Цааш" }));
+    expect(screen.getByText("Дэлгэц солих")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Цааш" }));
+    expect(screen.getByText("Copy Paste хийх")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
     expect(onStartExam).toHaveBeenCalledTimes(1);
 
     fireEvent.click(
       screen.getByRole("button", { name: "Шалгалтын жагсаалт руу буцах" }),
     );
     expect(onClearSelection).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows the student to close the onboarding modal before starting", () => {
+    render(
+      <StudentExamsTab
+        loading={false}
+        joinLoading={false}
+        roomCodeInput="AX7K2P"
+        setRoomCodeInput={jest.fn()}
+        joinError={null}
+        onLookup={jest.fn()}
+        selectedExam={selectedExam}
+        onStartExam={jest.fn()}
+        onClearSelection={jest.fn()}
+        teacherName="Г. Сарантуяа"
+        studentHistory={[]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Шалгалт эхлүүлэх" }));
+    expect(screen.getByText("Камер нээх")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Болих" }));
+    expect(screen.queryByText("Камер нээх")).not.toBeInTheDocument();
   });
 
   it("shows the join panel when no exam is selected", () => {

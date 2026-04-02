@@ -41,6 +41,12 @@ export default function TeacherHeader({
     () => (showAllNotifications ? notifications : notifications.slice(0, 3)),
     [notifications, showAllNotifications],
   );
+  const getSeverityLabel = (severity: NotificationItem["severity"]) => {
+    if (severity === "critical") return "Ноцтой";
+    if (severity === "warning") return "Анхаарах";
+    if (severity === "success") return "Амжилттай";
+    return "Мэдээлэл";
+  };
   const getNotificationActionLabel = (item: NotificationItem) => {
     if (item.type === "student_flagged" || item.type === "student_submitted") {
       return "Хуваарь руу очих";
@@ -119,7 +125,7 @@ export default function TeacherHeader({
                 });
               }}
               type="button"
-              aria-label="Notifications"
+              aria-label="Мэдэгдэл"
             >
               <Bell className="h-4 w-4" />
               {unreadCount > 0 && (
@@ -186,7 +192,7 @@ export default function TeacherHeader({
                                   : "bg-[#f4f8fc] text-[#5b718b]"
                           }`}
                         >
-                          {item.severity}
+                          {getSeverityLabel(item.severity)}
                         </span>
                       </div>
                       <div className="mt-1">{item.message}</div>

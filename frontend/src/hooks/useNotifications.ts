@@ -67,13 +67,15 @@ export const useNotifications = ({
 
     let active = true;
     let timer: number | undefined;
+    const visibleInterval = role === "teacher" ? 5_000 : 15_000;
+    const hiddenInterval = role === "teacher" ? 15_000 : 30_000;
 
     const tick = async () => {
       try {
         await sync();
       } finally {
         if (!active) return;
-        const interval = document.hidden ? 30_000 : 15_000;
+        const interval = document.hidden ? hiddenInterval : visibleInterval;
         timer = window.setTimeout(() => {
           void tick();
         }, interval);
@@ -82,13 +84,22 @@ export const useNotifications = ({
 
     timer = window.setTimeout(() => {
       void tick();
-    }, 15_000);
+    }, visibleInterval);
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) return;
+      if (timer) window.clearTimeout(timer);
+      void tick();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       active = false;
       if (timer) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [sync, userId]);
+  }, [role, sync, userId]);
 
   const handleMarkRead = useCallback(
     async (notificationId: string) => {

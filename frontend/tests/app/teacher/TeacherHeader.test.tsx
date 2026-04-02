@@ -36,7 +36,7 @@ describe("TeacherHeader", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
+    fireEvent.click(screen.getByRole("button", { name: "Мэдэгдэл" }));
     fireEvent.click(screen.getByRole("button", { name: "Аналитик руу очих" }));
 
     expect(onMarkRead).toHaveBeenCalledWith("notification-1");
@@ -46,5 +46,34 @@ describe("TeacherHeader", () => {
         type: "exam_finished",
       }),
     );
+  });
+
+  it("shows Mongolian severity labels", () => {
+    render(
+      <TeacherHeader
+        notifications={[
+          {
+            id: "notification-2",
+            userId: "teacher-1",
+            role: "teacher",
+            type: "student_flagged",
+            severity: "warning",
+            status: "unread",
+            title: "Зөрчил илэрлээ",
+            message: "Сурагчийн шалгалтын үеэр tab солилт бүртгэгдлээ.",
+            createdAt: "2026-04-03T10:05:00.000Z",
+          },
+        ]}
+        unreadCount={1}
+        activeTab="Хуваарь"
+        setActiveTab={jest.fn()}
+        tabs={["Хуваарь", "Шалгалтын сан", "Шалгалтын аналитик"]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Мэдэгдэл" }));
+
+    expect(screen.getByText("Анхаарах")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Хуваарь руу очих" })).toBeInTheDocument();
   });
 });
