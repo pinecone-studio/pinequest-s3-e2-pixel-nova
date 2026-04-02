@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import TeacherHeader from "@/app/teacher/components/TeacherHeader";
 
+/* eslint-disable @next/next/no-img-element */
 jest.mock("next/image", () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => <img alt={String(props.alt ?? "")} />,

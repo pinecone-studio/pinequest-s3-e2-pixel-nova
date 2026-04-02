@@ -92,7 +92,7 @@ export default function ExamScheduleDatePicker({
       : new Date();
     base.setSeconds(0, 0);
 
-    let next = new Date(base);
+    const next = new Date(base);
     if (preset === "today") {
       // keep same date
     } else if (preset === "tomorrow") {

@@ -187,10 +187,7 @@ export default function StudentPage() {
     lastResolvedResultSignatureRef.current = signature;
     void refreshProgress();
   }, [
-    exam.lastSubmission?.id,
-    exam.lastSubmission?.score,
-    exam.lastSubmission?.submittedAt,
-    exam.lastSubmission?.totalPoints,
+    exam.lastSubmission,
     exam.resultPending,
     refreshProgress,
   ]);

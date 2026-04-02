@@ -6,11 +6,9 @@ jest.mock("@/components/ui/calendar", () => ({
   Calendar: ({
     onSelect,
     fromDate,
-    toDate,
   }: {
     onSelect: (date: Date) => void;
     fromDate?: Date;
-    toDate?: Date;
   }) => {
     lastFromDate = fromDate;
 

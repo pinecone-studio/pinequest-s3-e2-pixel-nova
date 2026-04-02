@@ -135,7 +135,6 @@ export default function StudentDashboardTab({
   currentRank,
   leaderboardXp = 0,
   leaderboardLevel,
-  studentHistory,
   termLeaderboardEntries = [],
   teacherName,
   onOpenExamDetail = () => undefined,
