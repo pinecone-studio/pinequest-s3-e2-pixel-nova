@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import {
   STORAGE_KEYS,
@@ -50,9 +50,9 @@ type PendingRouteDraft =
       importOpenCount: number;
     };
 
-const parsePendingRouteDraft = (
-  searchParams: { get: (key: string) => string | null },
-): PendingRouteDraft | null => {
+const parsePendingRouteDraft = (searchParams: {
+  get: (key: string) => string | null;
+}): PendingRouteDraft | null => {
   const mode = searchParams.get("mode");
   if (mode === "manual") {
     return {
@@ -70,7 +70,9 @@ const parsePendingRouteDraft = (
         subject: searchParams.get("subject") ?? "",
         gradeOrClass: searchParams.get("gradeOrClass") ?? "",
         difficulty:
-          difficulty === "easy" || difficulty === "hard" ? difficulty : "medium",
+          difficulty === "easy" || difficulty === "hard"
+            ? difficulty
+            : "medium",
         questionCount: Math.max(
           1,
           Number(searchParams.get("questionCount") ?? "10") || 10,
@@ -115,8 +117,6 @@ const getLocalAuthUsers = (r: RoleKey): AuthUser[] => {
 
 export default function CreateExamPage() {
   const router = useRouter();
-  const searchParams =
-    typeof useSearchParams === "function" ? useSearchParams() : null;
   const [redirectingAfterSave, setRedirectingAfterSave] = useState(false);
   const pendingAppliedRef = useRef(false);
   const [selectedUser, setSelectedUser] = useState<AuthUser | null>(null);
@@ -180,9 +180,11 @@ export default function CreateExamPage() {
     if (pendingAppliedRef.current || !sessionUser?.id) return;
     pendingAppliedRef.current = true;
 
-    const pending =
-      (searchParams ? parsePendingRouteDraft(searchParams) : null) ??
-      consumePendingCreateExamDraft();
+    const routePending =
+      typeof window !== "undefined"
+        ? parsePendingRouteDraft(new URLSearchParams(window.location.search))
+        : null;
+    const pending = routePending ?? consumePendingCreateExamDraft();
     if (pending) {
       router.replace?.("/teacher/createExam");
     }
@@ -196,8 +198,12 @@ export default function CreateExamPage() {
     if (pending.mode === "pdf") {
       management.setExamTitle(pending.examTitle);
       imports.setImportMcqCount(pending.importMcqCount);
-      imports.setImportOpenCount(pending.importOpenCount + (pending.importTextCount ?? 0));
-      data.showToast("PDF импортын тохиргоо бэлэн боллоо. Файлаа оруулаад үргэлжлүүлнэ үү.");
+      imports.setImportOpenCount(
+        pending.importOpenCount + (pending.importOpenCount ?? 0),
+      );
+      data.showToast(
+        "PDF импортын тохиргоо бэлэн боллоо. Файлаа оруулаад үргэлжлүүлнэ үү.",
+      );
       return;
     }
 
@@ -207,15 +213,7 @@ export default function CreateExamPage() {
       management.setExamTitle(draft.title);
       management.setQuestions(draft.questions);
     })();
-  }, [
-    data,
-    generator,
-    imports,
-    management,
-    router,
-    searchParams,
-    sessionUser?.id,
-  ]);
+  }, [data, generator, imports, management, router, sessionUser?.id]);
 
   const handleSaveExam = async () => {
     const success = await management.saveExam();
@@ -236,8 +234,7 @@ export default function CreateExamPage() {
         <Button
           type="button"
           onClick={() => router.push("/teacher")}
-          variant="outline"
-        >
+          variant="outline">
           <ArrowLeft className="h-4 w-4" />
           Буцах
         </Button>
