@@ -163,7 +163,7 @@ export const useStudentProgress = (currentUser: User | null) => {
               ...answer,
               sessionId: item.detail.sessionId,
               examTitle: item.detail.title,
-              submittedAt: item.detail.submittedAt ?? item.submittedAt ?? null,
+              submittedAt: item.detail.submittedAt ?? null,
             })),
           ],
         });
