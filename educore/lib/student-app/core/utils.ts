@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
 import type {
+  ActiveExamSession,
   IntegrityCapability,
   SessionDetailResponse,
   SessionResultResponse,
@@ -112,7 +113,7 @@ export const getIntegrityCapabilities = (): IntegrityCapability => {
     screenshotDetectionSupported: false,
     copyPasteRestricted: false,
     backgroundDetectionSupported: true,
-    notes: ['Web and preview environments use warning-only integrity controls.'],
+    notes: ['Web environments use warning-only integrity controls.'],
   };
 };
 

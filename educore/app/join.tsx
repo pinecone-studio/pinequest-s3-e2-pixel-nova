@@ -1,27 +1,32 @@
-import { Redirect, useRouter } from "expo-router";
-import { useState } from "react";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  ScrollView,
 } from "react-native";
 
 import { useStudentApp } from "@/lib/student-app/context";
-import {
-  formatDateTime,
-  getEntryStatusLabel,
-  normalizeApiError,
-} from "@/lib/student-app/utils";
+import { normalizeApiError } from "@/lib/student-app/utils";
 
 export default function JoinExamScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ roomCode?: string | string[] }>();
   const { activeSession, joinExam, student } = useStudentApp();
-  const [roomCode, setRoomCode] = useState(activeSession?.roomCode ?? "");
+  const prefilledRoomCode = Array.isArray(params.roomCode)
+    ? params.roomCode[0] ?? ""
+    : params.roomCode ?? activeSession?.roomCode ?? "";
+  const [roomCode, setRoomCode] = useState(prefilledRoomCode);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!prefilledRoomCode) return;
+    setRoomCode(prefilledRoomCode);
+  }, [prefilledRoomCode]);
 
   if (!student) {
     return <Redirect href="/" />;
@@ -30,8 +35,10 @@ export default function JoinExamScreen() {
   const handleJoin = async () => {
     setLoading(true);
     setErrorMessage(null);
+
     try {
       await joinExam(roomCode);
+      router.replace("/exam");
     } catch (error) {
       setErrorMessage(
         normalizeApiError(error, "Could not join an exam with this code."),
@@ -43,11 +50,9 @@ export default function JoinExamScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      {/* Join card */}
       <View style={styles.card}>
-        {/* Close button */}
         <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
-          <Text style={styles.closeText}>×</Text>
+          <Text style={styles.closeText}>x</Text>
         </TouchableOpacity>
 
         <Text style={styles.title}>Enter your exam access code.</Text>
@@ -62,13 +67,17 @@ export default function JoinExamScreen() {
           onChangeText={setRoomCode}
         />
 
+        <Text style={styles.helperText}>
+          Enter the code your teacher shared with you.
+        </Text>
+
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>
         ) : null}
 
         <TouchableOpacity
           style={[
-            styles.gradientBtn,
+            styles.primaryBtn,
             (!roomCode.trim() || loading) && styles.btnDisabled,
           ]}
           disabled={!roomCode.trim() || loading}
@@ -76,58 +85,11 @@ export default function JoinExamScreen() {
             void handleJoin();
           }}
         >
-          <Text style={styles.gradientBtnText}>
+          <Text style={styles.primaryBtnText}>
             {loading ? "Joining..." : "Join exam"}
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Active session card */}
-      {activeSession ? (
-        <View style={styles.card}>
-          <View style={styles.cardTopBar} />
-          <View style={styles.cardBody}>
-            <Text style={styles.examTitle}>{activeSession.exam.title}</Text>
-
-            <View style={styles.statusPill}>
-              <Text style={styles.statusPillText}>
-                {getEntryStatusLabel(activeSession.entryStatus)}
-              </Text>
-            </View>
-
-            <Text style={styles.metaText}>
-              {activeSession.exam.durationMin} min ·{" "}
-              {activeSession.questions.length} questions
-            </Text>
-            <Text style={styles.metaText}>
-              {formatDateTime(
-                activeSession.exam.scheduledAt ?? activeSession.startedAt,
-              )}
-            </Text>
-
-            {activeSession.entryStatus === "late" ? (
-              <Text style={styles.warningText}>
-                You joined late. Start as soon as possible to preserve your
-                remaining time.
-              </Text>
-            ) : null}
-
-            <TouchableOpacity
-              style={styles.gradientBtn}
-              onPress={() => router.push("/exam")}
-            >
-              <Text style={styles.gradientBtnText}>Open exam</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={() => router.replace("/home")}
-            >
-              <Text style={styles.secondaryBtnText}>Back to home</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : null}
     </ScrollView>
   );
 }
@@ -138,34 +100,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#F2F4F7",
   },
   content: {
-    padding: 20,
-    paddingTop: 40,
-    paddingBottom: 40,
-    gap: 16,
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 32,
   },
-
-  // Card
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 24,
     padding: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
-    marginTop: 190,
   },
-  cardTopBar: {
-    height: 6,
-    backgroundColor: "#5B67F8",
-    borderRadius: 4,
-    marginBottom: 16,
-  },
-  cardBody: {
-    gap: 10,
-  },
-
-  // Close
   closeBtn: {
     position: "absolute",
     top: 12,
@@ -177,97 +125,52 @@ const styles = StyleSheet.create({
   },
   closeText: {
     fontSize: 18,
-    color: "#999",
+    color: "#98A2B3",
     fontWeight: "600",
   },
-
-  // Title
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#111",
+    color: "#111827",
     textAlign: "center",
     marginTop: 16,
     marginBottom: 24,
     lineHeight: 30,
   },
-
-  // Input
   input: {
     borderWidth: 1.5,
-    borderColor: "#DDE1EF",
+    borderColor: "#D9E0EE",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: "#111",
+    color: "#111827",
     marginBottom: 12,
   },
-
-  // Gradient button (solid fallback)
-  gradientBtn: {
-    backgroundColor: "#5B67F8",
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  btnDisabled: {
-    opacity: 0.4,
-  },
-  gradientBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-
-  // Secondary button
-  secondaryBtn: {
-    borderRadius: 14,
-    paddingVertical: 13,
-    alignItems: "center",
-    backgroundColor: "#F2F4F7",
-    marginTop: 4,
-  },
-  secondaryBtnText: {
-    color: "#5B67F8",
-    fontWeight: "600",
-    fontSize: 15,
-  },
-
-  // Exam info
-  examTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#1A1A2E",
-  },
-  statusPill: {
-    alignSelf: "flex-start",
-    backgroundColor: "#E8F5E9",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  statusPillText: {
-    color: "#2E7D32",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  metaText: {
+  helperText: {
     fontSize: 13,
-    color: "#888",
-  },
-  warningText: {
-    fontSize: 13,
-    color: "#B45309",
-    backgroundColor: "#FEF3C7",
-    padding: 10,
-    borderRadius: 10,
+    color: "#667085",
+    textAlign: "center",
+    marginBottom: 10,
   },
   errorText: {
     color: "#DC2626",
     fontSize: 13,
     textAlign: "center",
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  primaryBtn: {
+    backgroundColor: "#3568F5",
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+  primaryBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  btnDisabled: {
+    opacity: 0.45,
   },
 });

@@ -121,6 +121,9 @@ export const homeStyles = StyleSheet.create({
     padding: 16,
     gap: 14,
   },
+  emptyStateCardBody: {
+    padding: 16,
+  },
   cardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -129,7 +132,6 @@ export const homeStyles = StyleSheet.create({
   examTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#111827",
     flex: 1,
     marginRight: 10,
   },
@@ -195,6 +197,20 @@ export const homeStyles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 14,
+  },
+  emptyStateButton: {
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 58,
+  },
+  emptyStateButtonText: {
+    color: "#4F5FCF",
+    fontWeight: "600",
+    fontSize: 14,
+    textAlign: "center",
   },
 
   nextList: {

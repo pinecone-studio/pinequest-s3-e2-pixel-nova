@@ -15,11 +15,29 @@ import {
 } from '../core/context-helpers';
 import type { StudentAppSetState, StudentAppState } from '../core/state';
 import { buildProgressSummary } from '../core/utils';
+import type { AuthUser } from '@/types/student-app';
 
 type UseStudentAuthArgs = {
   state: StudentAppState;
   setState: StudentAppSetState;
   refreshDashboard: () => Promise<void>;
+};
+
+const isSameAuthUser = (left: AuthUser | null, right: AuthUser | null) => {
+  if (!left || !right) {
+    return left === right;
+  }
+
+  return (
+    left.id === right.id &&
+    left.role === right.role &&
+    left.code === right.code &&
+    left.fullName === right.fullName &&
+    left.email === right.email &&
+    left.avatarUrl === right.avatarUrl &&
+    left.xp === right.xp &&
+    left.level === right.level
+  );
 };
 
 export const useStudentAuth = ({
@@ -140,7 +158,11 @@ export const useStudentAuth = ({
       try {
         const me = await getMe(student);
         if (!cancelled && me.role === 'student') {
-          setState((current) => ({ ...current, student: me }));
+          setState((current) =>
+            isSameAuthUser(current.student, me)
+              ? current
+              : { ...current, student: me },
+          );
         }
       } catch {
         if (cancelled) return;

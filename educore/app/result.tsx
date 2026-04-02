@@ -1,23 +1,15 @@
-import { Redirect, useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { Redirect, useRouter } from "expo-router";
+import { Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import MongolianText from '@/components/MongolianText';
-import {
-  AppScreen,
-  Card,
-  Pill,
-  PrimaryButton,
-  SectionTitle,
-  uiStyles,
-} from '@/components/student-app/ui';
-import { hasTraditionalMongolian } from '@/lib/mongolian-script';
-import { useStudentApp } from '@/lib/student-app/context';
-import { formatDateTime, getResultMessage } from '@/lib/student-app/utils';
-import { resultStyles as styles } from '@/styles/screens/result';
+import ResultCelebrationIllustration from "@/components/student-app/ResultCelebrationIllustration";
+import { useStudentApp } from "@/lib/student-app/context";
+import { resultStyles as styles } from "@/styles/screens/result";
 
 export default function ResultScreen() {
   const router = useRouter();
-  const { clearResult, profile, submittedResult, student } = useStudentApp();
+  const { clearResult, submittedResult, student } = useStudentApp();
 
   if (!student) {
     return <Redirect href="/" />;
@@ -27,97 +19,59 @@ export default function ResultScreen() {
     return <Redirect href="/home" />;
   }
 
-  const resolveAnswerText = (answer: (typeof submittedResult.answers)[number]) => {
-    if (answer.selectedOptionId) {
-      return (
-        answer.options.find((option) => option.id === answer.selectedOptionId)?.text ??
-        answer.selectedOptionId
-      );
-    }
+  const xpValue = submittedResult.xpEarned ?? submittedResult.score;
 
-    return answer.textAnswer ?? 'No answer';
+  const handleClose = () => {
+    clearResult();
+    router.replace("/home");
   };
 
   return (
-    <AppScreen scroll>
-      <Card>
-        <SectionTitle
-          title="Exam submitted"
-          subtitle={getResultMessage(submittedResult.score)}
-        />
-        <View style={styles.pillRow}>
-          <Pill label={`Submitted ${formatDateTime(submittedResult.submittedAt)}`} />
-          {submittedResult.xpEarned ? (
-            <Pill label={`+${submittedResult.xpEarned} XP`} tone="success" />
-          ) : null}
-        </View>
-        <View style={uiStyles.statRow}>
-          <View style={uiStyles.statCard}>
-            <Text style={uiStyles.statLabel}>Score</Text>
-            <Text style={uiStyles.statValue}>{submittedResult.score}%</Text>
-          </View>
-          <View style={uiStyles.statCard}>
-            <Text style={uiStyles.statLabel}>Points</Text>
-            <Text style={uiStyles.statValue}>
-              {submittedResult.earnedPoints}/{submittedResult.totalPoints}
-            </Text>
-          </View>
-        </View>
-        <Text style={styles.metaText}>
-          Current XP: {profile?.xp ?? student?.xp ?? 0} · Level {profile?.level ?? student?.level ?? 1}
-        </Text>
-      </Card>
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+      <View style={styles.screenContent}>
+        <View style={styles.resultCard}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <Ionicons name="close" size={24} color="#111827" />
+          </TouchableOpacity>
 
-      <Card>
-        <Text style={styles.answerTitle}>Answer review</Text>
-        {submittedResult.answers.map((answer, index) => (
-          <View key={`${answer.questionId}-${index}`} style={styles.answerRow}>
-            {hasTraditionalMongolian(answer.questionText) ? (
-              <View>
-                <Text style={styles.answerQuestion}>{index + 1}.</Text>
-                <MongolianText
-                  text={answer.questionText}
-                  style={styles.answerQuestion}
-                />
-              </View>
-            ) : (
-              <Text style={styles.answerQuestion}>
-                {index + 1}. {answer.questionText}
-              </Text>
-            )}
-            <Text style={styles.answerMeta}>Your answer: {resolveAnswerText(answer)}</Text>
-            {answer.correctAnswerText &&
-            hasTraditionalMongolian(answer.correctAnswerText) ? (
-              <View>
-                <Text style={styles.answerMeta}>Correct answer:</Text>
-                <MongolianText
-                  text={answer.correctAnswerText}
-                  style={styles.answerMeta}
-                />
-              </View>
-            ) : (
-              <Text style={styles.answerMeta}>
-                Correct answer: {answer.correctAnswerText ?? 'Not provided'}
-              </Text>
-            )}
-            <Text
-              style={[
-                styles.answerState,
-                answer.isCorrect ? styles.answerCorrect : styles.answerWrong,
-              ]}>
-              {answer.isCorrect ? 'Correct' : 'Incorrect'}
-            </Text>
+          <View style={styles.heroWrap}>
+            <View style={styles.heroCheck}>
+              <Ionicons name="checkmark" size={34} color="#3568F5" />
+            </View>
+            <View style={styles.illustrationWrap}>
+              <ResultCelebrationIllustration />
+            </View>
           </View>
-        ))}
-        <PrimaryButton
-          label="Back to home"
-          onPress={() => {
-            clearResult();
-            router.replace('/home');
-          }}
-        />
-      </Card>
-    </AppScreen>
+
+          <Text style={styles.title}>Та шалгалтаа амжилттай дуусгалаа!</Text>
+
+          <View style={styles.summaryRow}>
+            <View style={[styles.summaryCard, styles.summaryCardBlue]}>
+              <Text style={styles.summaryLabel}>Нийт XP</Text>
+              <View style={styles.summaryInner}>
+                <Ionicons name="flash" size={20} color="#3568F5" />
+                <Text style={[styles.summaryValue, styles.summaryValueBlue]}>
+                  {xpValue}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.summaryCard, styles.summaryCardGreen]}>
+              <Text style={styles.summaryLabel}>Дүн</Text>
+              <View style={styles.summaryInner}>
+                <Ionicons name="speedometer-outline" size={20} color="#84CC16" />
+                <Text style={[styles.summaryValue, styles.summaryValueGreen]}>
+                  {submittedResult.score}%
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.collectButton} onPress={handleClose}>
+            <Text style={styles.collectButtonText}>XP цуглуулах</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
-

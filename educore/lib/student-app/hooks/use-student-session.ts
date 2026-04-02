@@ -10,14 +10,16 @@ import {
   submitSessionAnswer,
 } from '../services/api';
 import {
-  buildEmptyIntegrityState,
   buildSyncMessage,
   toActiveSession,
 } from '../core/context-helpers';
 import { isCheatDetectionEnabled } from '../core/cheat-detection';
 import type { AnswerValue, CheatEventType } from '@/types/student-app';
 import type { StudentAppSetState, StudentAppState } from '../core/state';
-import { mergeSessionResult, normalizeApiError } from '../core/utils';
+import {
+  mergeSessionResult,
+  normalizeApiError,
+} from '../core/utils';
 
 type UseStudentSessionArgs = {
   state: StudentAppState;
@@ -32,11 +34,16 @@ export const useStudentSession = ({
 }: UseStudentSessionArgs) => {
   const { hydrated, student, activeSession } = state;
   const submitLockRef = useRef(false);
+  const activeSessionId = activeSession?.sessionId ?? null;
+  const activeSessionRoomCode = activeSession?.roomCode ?? null;
+  const activeSessionEntryStatus = activeSession?.entryStatus ?? null;
 
   const recoverActiveSession = useCallback(async () => {
-    if (!student || !activeSession?.sessionId) return;
+    if (!student || !activeSessionId) return;
 
-    const { sessionId, roomCode, entryStatus } = activeSession;
+    const sessionId = activeSessionId;
+    const roomCode = activeSessionRoomCode ?? '';
+    const entryStatus = activeSessionEntryStatus ?? 'on_time';
 
     setState((current) => ({
       ...current,
@@ -88,12 +95,18 @@ export const useStudentSession = ({
           : current.activeSession,
       }));
     }
-  }, [activeSession, setState, student]);
+  }, [
+    activeSessionEntryStatus,
+    activeSessionId,
+    activeSessionRoomCode,
+    setState,
+    student,
+  ]);
 
   useEffect(() => {
-    if (!hydrated || !student || !activeSession?.sessionId) return;
+    if (!hydrated || !student || !activeSessionId) return;
     void recoverActiveSession();
-  }, [activeSession?.sessionId, hydrated, recoverActiveSession, student]);
+  }, [activeSessionId, hydrated, recoverActiveSession, student]);
 
   const joinExam = useCallback(
     async (roomCode: string) => {
@@ -102,6 +115,7 @@ export const useStudentSession = ({
       }
 
       const normalizedCode = roomCode.trim().toUpperCase();
+
       const joined = await joinSession(student, normalizedCode);
       const detail = await getSessionDetail(student, joined.sessionId);
       const nextSession = toActiveSession(
@@ -123,8 +137,12 @@ export const useStudentSession = ({
   );
 
   const startExam = useCallback(async (options?: { audioReady?: boolean }) => {
-    if (!student || !activeSession) {
+    if (!activeSession) {
       throw new Error('No active exam session found.');
+    }
+
+    if (!student) {
+      throw new Error('No active student selected.');
     }
 
     const started = await startSessionWithOptions(
@@ -221,7 +239,7 @@ export const useStudentSession = ({
 
   const answerQuestion = useCallback(
     async (questionId: string, answer: AnswerValue) => {
-      if (!student || !activeSession) {
+      if (!activeSession) {
         throw new Error('No active exam session found.');
       }
 
@@ -246,6 +264,10 @@ export const useStudentSession = ({
             }
           : current.activeSession,
       }));
+
+      if (!student) {
+        throw new Error('No active student selected.');
+      }
 
       try {
         await submitSessionAnswer(
@@ -290,7 +312,7 @@ export const useStudentSession = ({
   );
 
   const submitCurrentExam = useCallback(async (options?: { beforeSubmit?: () => Promise<void> }) => {
-    if (!student || !activeSession) {
+    if (!activeSession) {
       throw new Error('No active exam session found.');
     }
 
@@ -317,6 +339,11 @@ export const useStudentSession = ({
       if (options?.beforeSubmit) {
         await options.beforeSubmit();
       }
+
+      if (!student) {
+        throw new Error('No active student selected.');
+      }
+
       const submission = await submitSession(student, activeSession.sessionId);
       const result = await getSessionResult(student, activeSession.sessionId);
       const mergedResult = mergeSessionResult(result, submission.xpEarned);

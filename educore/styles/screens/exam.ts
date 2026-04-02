@@ -2,7 +2,12 @@ import { StyleSheet } from "react-native";
 
 export const examStyles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F2F4F7" },
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40, gap: 16 },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+    gap: 16,
+  },
   pageTitle: {
     fontSize: 26,
     fontWeight: "800",
@@ -57,6 +62,10 @@ export const examStyles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: "#111",
+  },
+  searchPlaceholderText: {
+    fontSize: 14,
+    color: "#AAB0C0",
   },
   searchIcon: {
     fontSize: 16,
