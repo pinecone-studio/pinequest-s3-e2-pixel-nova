@@ -249,6 +249,28 @@ export type StudentProgressSummary = {
   latestCompletedAt: string | null;
 };
 
+export type SubjectProgressItem = {
+  name: string;
+  averageScore: number;
+  sessionCount: number;
+};
+
+export type SubjectAiTips = {
+  attention: { label: string; score: number }[];
+  strengths: { label: string; score: number }[];
+  tips: string[];
+  source?: "ai" | "fallback";
+};
+
+export type XpLeaderboardEntry = {
+  rank: number;
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  xp: number;
+  level: number;
+};
+
 export type PersistedStudentAppState = {
   authMode: AuthMode;
   student: AuthUser | null;

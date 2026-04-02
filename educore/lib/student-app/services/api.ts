@@ -15,6 +15,9 @@ import type {
   StudentExamHistoryItem,
   StudentProfile,
   StudentUpcomingExam,
+  SubjectAiTips,
+  SubjectProgressItem,
+  XpLeaderboardEntry,
 } from "@/types/student-app";
 import { getApiBaseUrl } from "../core/utils";
 
@@ -288,3 +291,21 @@ export const finalizeAudioUpload = async (
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+
+export const getStudentSubjectProgress = async (student: AuthUser) =>
+  apiRequest<SubjectProgressItem[]>("/api/student/subject-progress", { student });
+
+export const getStudentAiTips = async (
+  student: AuthUser,
+  subjectName: string,
+  averageScore: number,
+) =>
+  apiRequest<SubjectAiTips>("/api/student/ai-tips", {
+    method: "POST",
+    student,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subjectName, averageScore }),
+  });
+
+export const getXpLeaderboard = async (student: AuthUser) =>
+  apiRequest<XpLeaderboardEntry[]>("/api/xp/leaderboard", { student });
