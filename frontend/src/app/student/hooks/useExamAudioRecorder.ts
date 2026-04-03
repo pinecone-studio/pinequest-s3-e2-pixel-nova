@@ -50,6 +50,40 @@ const AUDIO_MIME_CANDIDATES = [
   "audio/ogg",
 ];
 
+const parseApiErrorCode = (error: unknown) => {
+  if (!(error instanceof Error) || !error.message) return null;
+
+  try {
+    const parsed = JSON.parse(error.message) as {
+      error?: {
+        code?: string;
+      };
+    };
+    return parsed.error?.code ?? null;
+  } catch {
+    return null;
+  }
+};
+
+export const classifyAudioUploadFailure = (error: unknown) => {
+  const errorCode = parseApiErrorCode(error);
+
+  if (errorCode === "R2_UPLOAD_NOT_CONFIGURED") {
+    return {
+      blocking: false,
+      nextStatus: "unsupported" as const,
+      message:
+        "Audio uploads are not configured on the server right now. The exam can continue without blocking audio upload.",
+    };
+  }
+
+  return {
+    blocking: true,
+    nextStatus: null,
+    message: null,
+  };
+};
+
 const getSupportedMimeType = () => {
   if (typeof window === "undefined" || typeof MediaRecorder === "undefined") {
     return null;
@@ -165,7 +199,7 @@ export const useExamAudioRecorder = ({
     setLastError(null);
   }, [sessionId]);
 
-  const stop = useCallback(() => {
+  const stop = useCallback((nextStatus: ExamAudioStatus = "stopped") => {
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
       recorderRef.current.stop();
     }
@@ -174,7 +208,7 @@ export const useExamAudioRecorder = ({
     streamRef.current = null;
     chunkStartRef.current = null;
     setCurrentChunkElapsedMs(0);
-    setStatus((current) => (current === "unsupported" ? current : "stopped"));
+    setStatus((current) => (current === "unsupported" ? current : nextStatus));
   }, []);
 
   const emitBlockingIssue = useCallback(
@@ -210,6 +244,14 @@ export const useExamAudioRecorder = ({
 
   const handleUploadFailure = useCallback(
     async (message: string, details?: Record<string, unknown>) => {
+      const failure = classifyAudioUploadFailure(details?.rawError ?? null);
+
+      if (!failure.blocking) {
+        setLastError(failure.message);
+        stop(failure.nextStatus);
+        return;
+      }
+
       uploadFailureCountRef.current += 1;
       setLastError(message);
 
@@ -354,7 +396,10 @@ export const useExamAudioRecorder = ({
           .catch((error) => {
             void handleUploadFailure(
               error instanceof Error ? error.message : "Аудио илгээхэд алдаа гарлаа.",
-              { sequenceNumber: sequenceNumberRef.current },
+              {
+                rawError: error,
+                sequenceNumber: sequenceNumberRef.current,
+              },
             );
           });
       });

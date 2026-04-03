@@ -1,11 +1,5 @@
-import { useEffect, type ReactNode } from "react";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Clock3,
-  ShieldCheck,
-  X,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { AlertTriangle } from "lucide-react";
 import MathText from "@/components/MathText";
 import MongolianText from "@/components/MongolianText";
 import { hasTraditionalMongolian } from "@/lib/mongolian-script";
@@ -32,47 +26,34 @@ type StudentExamViewProps = {
   cameraPanel?: ReactNode;
 };
 
-function ExamMetric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="rounded-[18px] border border-[#e6ebf5] bg-[#f8faff] px-3 py-3">
-      <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#a3afc6]">
-        {label}
-      </div>
-      <div className="mt-1.5 text-sm font-semibold text-slate-900">{value}</div>
-    </div>
-  );
-}
-
 function QuestionBlock({
   question,
-  questionNumber,
+  index,
   value,
   onUpdateAnswer,
   onSelectMcq,
 }: {
   question: NonNullable<Exam["questions"]>[number];
-  questionNumber: number;
+  index: number;
   value: string;
   onUpdateAnswer: (questionId: string, value: string) => void;
   onSelectMcq: (questionId: string, value: string) => void;
 }) {
   return (
-    <article className="rounded-[28px] border border-[#e3e9f4] bg-white px-4 py-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.18)] sm:px-5">
-      <div className="text-sm font-semibold text-[#91a2c7]">
-        Асуулт {questionNumber}
-      </div>
-      <div className="mt-3 text-[19px] font-semibold leading-8 text-slate-900">
-        {hasTraditionalMongolian(question.text) ? (
-          <MongolianText text={question.text} />
-        ) : (
-          <MathText text={question.text} />
-        )}
+    <article
+      id={`question-${question.id}`}
+      className="rounded-[28px] border border-[#d8e1f0] bg-white p-6 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.25)]">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[#edf3ff] text-sm font-semibold text-[#355cde]">
+          {index + 1}
+        </div>
+        <div className="pt-1 text-[18px] font-semibold leading-8 text-slate-900 sm:text-[20px]">
+          {hasTraditionalMongolian(question.text) ? (
+            <MongolianText text={question.text} />
+          ) : (
+            <MathText text={question.text} />
+          )}
+        </div>
       </div>
 
       {question.imageUrl && (
@@ -80,20 +61,20 @@ function QuestionBlock({
         <img
           src={question.imageUrl}
           alt="Асуултын зураг"
-          className="mt-5 w-full rounded-[22px] border border-[#dfe6f2] bg-[#f6f8fd] object-contain"
-          style={{ maxHeight: 260 }}
+          className="mb-5 w-full rounded-3xl border border-[#d8e1f0] bg-[#f7faff] object-contain"
+          style={{ maxHeight: 320 }}
         />
       )}
 
       {question.type === "open" ? (
         <textarea
-          className="mt-5 h-36 w-full rounded-[20px] border border-[#dce4f2] bg-[#f7f9fd] px-4 py-4 text-sm text-slate-700 outline-none transition focus:border-[#5b7ef0] focus:ring-4 focus:ring-[#dbe5ff]"
+          className="h-36 w-full rounded-[22px] border border-[#d8e1f0] bg-[#f7faff] px-5 py-4 text-sm text-slate-700 outline-none transition focus:border-[#355cde] focus:ring-4 focus:ring-[#dbe6ff]"
           placeholder="Хариултаа энд бичнэ үү"
           value={value}
           onChange={(event) => onUpdateAnswer(question.id, event.target.value)}
         />
       ) : question.type === "mcq" ? (
-        <div className="mt-5 space-y-2.5">
+        <div className="grid gap-3 sm:grid-cols-2">
           {(question.options ?? []).map((option, optionIndex) => {
             const label = String.fromCharCode(65 + optionIndex);
             const isSelected = value === option || value === label;
@@ -102,13 +83,12 @@ function QuestionBlock({
               <button
                 key={`${question.id}-${label}-${option}`}
                 type="button"
-                className={`w-full rounded-[18px] border px-4 py-3.5 text-left text-[16px] transition ${
+                className={`rounded-[22px] border px-6 py-5 text-left text-[16px] transition ${
                   isSelected
-                    ? "border-[#7194ff] bg-[#d9e4ff] text-slate-900 shadow-[0_18px_30px_-24px_rgba(77,113,233,0.52)]"
-                    : "border-[#e1e7f2] bg-[#f6f8fc] text-slate-800 hover:border-[#c7d5f2] hover:bg-[#f1f5fb]"
+                    ? "border-[#9edec2] bg-[#eefcf3] text-[#069668]"
+                    : "border-[#d8e1f0] bg-[#f7faff] text-slate-800 hover:border-[#b6c8ea] hover:bg-[#f1f6ff]"
                 }`}
-                onClick={() => onSelectMcq(question.id, option)}
-              >
+                onClick={() => onSelectMcq(question.id, option)}>
                 <div className="flex flex-wrap items-start gap-1">
                   <span>{label}.</span>
                   {hasTraditionalMongolian(option) ? (
@@ -123,7 +103,7 @@ function QuestionBlock({
         </div>
       ) : (
         <input
-          className="mt-5 w-full rounded-[20px] border border-[#dce4f2] bg-[#f7f9fd] px-4 py-4 text-sm text-slate-700 outline-none transition focus:border-[#5b7ef0] focus:ring-4 focus:ring-[#dbe5ff]"
+          className="w-full rounded-[22px] border border-[#d8e1f0] bg-[#f7faff] px-5 py-4 text-sm text-slate-700 outline-none transition focus:border-[#355cde] focus:ring-4 focus:ring-[#dbe6ff]"
           placeholder="Хариултаа бичнэ үү"
           value={value}
           onChange={(event) => onUpdateAnswer(question.id, event.target.value)}
@@ -143,47 +123,74 @@ export default function StudentExamView({
   answers,
   onUpdateAnswer,
   onSelectMcq,
-  onPrev,
-  onNext,
   submitting = false,
   onSubmit,
   onExit,
   cameraPanel,
 }: StudentExamViewProps) {
+  const questionRefs = useRef<Record<string, HTMLElement | null>>({});
+
   const totalQuestions = activeExam?.questions.length || 0;
-  const answeredCount = Object.values(answers).filter((value) =>
-    value && value.trim().length > 0,
+  const answeredCount = Object.values(answers).filter(
+    (value) => value && value.trim().length > 0,
   ).length;
   const progressPercent =
     totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
+  const questionIds = useMemo(
+    () => (activeExam?.questions ?? []).map((question) => question.id),
+    [activeExam],
+  );
+
   useEffect(() => {
-    if (totalQuestions === 0 && currentQuestionIndex !== 0) {
-      setCurrentQuestionIndex(0);
+    if (!questionIds.length || typeof IntersectionObserver === "undefined")
       return;
-    }
 
-    if (totalQuestions > 0 && currentQuestionIndex > totalQuestions - 1) {
-      setCurrentQuestionIndex(totalQuestions - 1);
-    }
-  }, [currentQuestionIndex, setCurrentQuestionIndex, totalQuestions]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (left, right) => right.intersectionRatio - left.intersectionRatio,
+          )[0];
 
-  const currentQuestion =
-    totalQuestions > 0 ? activeExam?.questions[currentQuestionIndex] ?? null : null;
-  const isFirstQuestion = currentQuestionIndex <= 0;
-  const isLastQuestion =
-    totalQuestions > 0 && currentQuestionIndex >= totalQuestions - 1;
-  const currentQuestionNumber =
-    totalQuestions > 0 ? Math.min(currentQuestionIndex + 1, totalQuestions) : 0;
-  const examTitle = activeExam
-    ? localizeExamTitle(activeExam.title, activeExam.description)
-    : "Шалгалтын өрөө";
+        if (!visible) return;
+        const nextIndex = questionIds.findIndex(
+          (questionId) => questionRefs.current[questionId] === visible.target,
+        );
+        if (nextIndex >= 0 && nextIndex !== currentQuestionIndex) {
+          setCurrentQuestionIndex(nextIndex);
+        }
+      },
+      {
+        threshold: [0.35, 0.6, 0.9],
+        rootMargin: "-10% 0px -35% 0px",
+      },
+    );
+
+    questionIds.forEach((questionId) => {
+      const node = questionRefs.current[questionId];
+      if (node) observer.observe(node);
+    });
+
+    return () => observer.disconnect();
+  }, [currentQuestionIndex, questionIds, setCurrentQuestionIndex]);
+
+  const scrollToQuestion = (index: number) => {
+    const question = activeExam?.questions[index];
+    if (!question) return;
+    setCurrentQuestionIndex(index);
+    questionRefs.current[question.id]?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#eef4ff_0%,#f5f7fb_34%,#eef2f8_100%)] px-4 pb-10 pt-6 text-slate-900 sm:px-6">
+    <div className="min-h-screen bg-background px-6 py-8 text-foreground">
       {warning && (
-        <div className="fixed left-1/2 top-4 z-50 w-[min(92vw,390px)] -translate-x-1/2 sm:top-6">
-          <div className="overflow-hidden rounded-[26px] border border-[#ffc9a8] bg-white shadow-[0_26px_64px_-30px_rgba(249,115,22,0.42)]">
+        <div className="sticky right-6 top-6 z-50 max-w-[420px]">
+          <div className="overflow-hidden rounded-[28px] border border-[#ffc9a8] bg-white shadow-[0_28px_64px_-28px_rgba(249,115,22,0.42)]">
             <div className="flex items-start gap-4 px-5 py-5">
               <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#fff1e8] text-[#f97316]">
                 <AlertTriangle className="size-6" />
@@ -192,7 +199,9 @@ export default function StudentExamView({
                 <p className="text-base font-semibold text-slate-900">
                   Анхааруулга илэрлээ
                 </p>
-                <p className="mt-2 text-[15px] leading-7 text-slate-600">{warning}</p>
+                <p className="mt-2 text-[15px] leading-7 text-slate-600">
+                  {warning}
+                </p>
                 <p className="mt-3 text-sm font-medium text-[#f97316]">
                   Дахин давтагдвал шалгалт автоматаар дуусна.
                 </p>
@@ -205,125 +214,121 @@ export default function StudentExamView({
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-[430px]">
-        <div className="rounded-[34px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(243,247,255,0.88)_100%)] p-3 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.42)]">
-          <div className="rounded-[30px] border border-[#e5eaf3] bg-white px-4 pb-5 pt-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] sm:px-5">
-            <div className="flex items-center justify-between text-sm text-slate-900">
-              <div className="text-[15px] font-semibold tracking-[-0.02em]">
-                shalgalt
-              </div>
-              <button
-                type="button"
-                className="grid h-9 w-9 place-items-center rounded-full text-slate-500 transition hover:bg-[#f5f7fb] hover:text-slate-800"
-                onClick={onExit}
-                aria-label="Шалгалтаас гарах"
-              >
-                <X className="h-[18px] w-[18px]" />
-              </button>
-            </div>
+      <header className="flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+        <div className="font-semibold">
+          {activeExam
+            ? localizeExamTitle(activeExam.title, activeExam.description)
+            : "Шалгалтын өрөө"}
+        </div>
+        <div className="text-lg font-semibold">{formatTimer(timeLeft)}</div>
+        <div className="text-sm text-muted-foreground">
+          {Math.min(currentQuestionIndex + 1, Math.max(totalQuestions, 1))}/
+          {Math.max(totalQuestions, 1)}
+        </div>
+        <div className="flex gap-2 text-xs">
+          <span className="rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
+            Эрсдэл: {localizeRiskLevel(violations.riskLevel)}
+          </span>
+          <span className="rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
+            Таб: {violations.tabSwitch}
+          </span>
+          <span className="rounded-full border border-border bg-muted px-2 py-1 text-muted-foreground">
+            Хуулалт: {violations.copyAttempt}
+          </span>
+        </div>
+      </header>
 
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="text-[1.45rem] font-semibold tracking-[-0.04em] text-slate-900">
-                  {examTitle}
-                </h1>
-                <p className="mt-1 text-[14px] leading-6 text-slate-400">
-                  Асуултуудаа сайн уншиж танилцаад тайван бөглөөрэй.
-                </p>
-              </div>
+      <div className="mt-3 w-full rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Явц</span>
+          <span>
+            {answeredCount}/{totalQuestions} · {progressPercent}%
+          </span>
+        </div>
+        <div className="mt-2 h-2 w-full rounded-full bg-muted">
+          <div
+            className="h-2 rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
 
-              <div className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-[#dde4ef] bg-white px-3.5 py-2 text-[0.98rem] font-semibold text-slate-900 shadow-[0_10px_28px_-22px_rgba(15,23,42,0.45)]">
-                <Clock3 className="h-[18px] w-[18px] text-slate-700" />
-                {formatTimer(timeLeft)}
-              </div>
-            </div>
-
-            <div className="mt-5 flex items-center gap-2 text-xs font-medium text-[#93a0ba]">
-              <div className="rounded-full bg-[#eef3ff] px-3 py-1 text-[#5874dd]">
-                {currentQuestionNumber}/{Math.max(totalQuestions, 1)} асуулт
-              </div>
-              <div className="inline-flex items-center gap-1 rounded-full bg-[#f4f7fb] px-3 py-1">
-                <ShieldCheck className="h-[14px] w-[14px] text-[#5874dd]" />
-                {localizeRiskLevel(violations.riskLevel)}
-              </div>
-            </div>
-
-            <div className="mt-5">
-              {currentQuestion ? (
-                <QuestionBlock
-                  question={currentQuestion}
-                  questionNumber={currentQuestionNumber}
-                  value={answers[currentQuestion.id] || ""}
-                  onUpdateAnswer={onUpdateAnswer}
-                  onSelectMcq={onSelectMcq}
-                />
-              ) : (
-                <div className="rounded-[28px] border border-dashed border-[#d8e1f0] bg-white px-6 py-16 text-center text-sm text-slate-400">
-                  Асуулт хараахан алга.
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 rounded-[24px] border border-[#e4eaf5] bg-[#fbfcff] px-4 py-4">
-              <div className="flex items-center justify-between text-xs font-medium text-slate-500">
-                <span>Явц</span>
-                <span>
-                  {answeredCount}/{totalQuestions} · {progressPercent}%
-                </span>
-              </div>
-              <div className="mt-3 h-2.5 w-full rounded-full bg-[#ebeff6]">
-                <div
-                  className="h-2.5 rounded-full bg-[#9fb7f7] transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <ExamMetric
-                  label="Асуулт"
-                  value={`${currentQuestionNumber}/${Math.max(totalQuestions, 1)}`}
-                />
-                <ExamMetric
-                  label="Эрсдэл"
-                  value={localizeRiskLevel(violations.riskLevel)}
-                />
-                <ExamMetric label="Таб" value={violations.tabSwitch} />
-                <ExamMetric label="Хуулалт" value={violations.copyAttempt} />
-              </div>
-            </div>
-
+      <div className="mt-6 grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-5">
+          {(activeExam?.questions ?? []).map((question, index) => (
             <div
-              className={`mt-5 grid gap-3 ${
-                isFirstQuestion ? "grid-cols-1" : "grid-cols-[56px_minmax(0,1fr)]"
-              }`}
-            >
-              {!isFirstQuestion && (
-                <button
-                  type="button"
-                  className="grid h-[56px] place-items-center rounded-[18px] border border-[#dbe3ef] bg-white text-[#5874dd] shadow-sm transition hover:bg-[#f8fbff]"
-                  onClick={onPrev}
-                  aria-label="Өмнөх асуулт"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-              )}
-              <button
-                type="button"
-                className="h-[56px] rounded-[18px] bg-[#4b6fe8] px-5 text-base font-semibold text-white shadow-[0_20px_34px_-24px_rgba(75,111,232,0.6)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
-                onClick={isLastQuestion ? onSubmit : onNext}
-                disabled={submitting || !currentQuestion}
-              >
-                {isLastQuestion
-                  ? submitting
-                    ? "Илгээж байна..."
-                    : "Илгээх"
-                  : "Үргэлжлүүлэх"}
-              </button>
+              key={question.id}
+              ref={(node) => {
+                questionRefs.current[question.id] = node;
+              }}>
+              <QuestionBlock
+                question={question}
+                index={index}
+                value={answers[question.id] || ""}
+                onUpdateAnswer={onUpdateAnswer}
+                onSelectMcq={onSelectMcq}
+              />
             </div>
-          </div>
+          ))}
+
+          {!activeExam?.questions.length && (
+            <div className="rounded-[28px] border border-dashed border-[#d8e1f0] bg-white px-6 py-16 text-center text-sm text-slate-400">
+              Асуулт хараахан алга.
+            </div>
+          )}
         </div>
 
-        {cameraPanel && <div className="mt-4 space-y-4">{cameraPanel}</div>}
+        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          {cameraPanel}
+
+          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="text-xs text-muted-foreground">Явц</div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {Array.from({ length: totalQuestions || 6 }).map((_, idx) => {
+                const question = activeExam?.questions[idx];
+                const isAnswered = question
+                  ? Boolean(answers[question.id]?.trim())
+                  : false;
+                const isCurrent = idx === currentQuestionIndex;
+
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`grid h-10 place-items-center rounded-xl border text-sm transition ${
+                      isCurrent
+                        ? "border-[#355cde] bg-[#edf3ff] text-[#355cde]"
+                        : isAnswered
+                          ? "border-[#9edec2] bg-[#eefcf3] text-[#069668]"
+                          : "border-border bg-muted text-slate-700 hover:bg-muted/70"
+                    }`}
+                    onClick={() => scrollToQuestion(idx)}>
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div className="mt-6 flex w-full flex-wrap justify-between gap-3">
+        <button
+          className="rounded-xl border border-border bg-muted px-4 py-2 text-sm transition hover:bg-muted/70"
+          onClick={onExit}>
+          Гарах
+        </button>
+        <button
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+          onClick={onSubmit}
+          disabled={submitting}>
+          Илгээх
+        </button>
+        {submitting && (
+          <div className="w-full text-right text-xs font-medium text-slate-500 sm:w-auto sm:self-center">
+            Шалгалтыг илгээж байна...
+          </div>
+        )}
       </div>
     </div>
   );

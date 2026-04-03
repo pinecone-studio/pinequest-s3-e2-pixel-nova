@@ -131,6 +131,32 @@ describe("pdf routes", () => {
     expect(json.data.questions[0].evidence).toBe("Correct: B");
   });
 
+  it("POST /api/pdf/generate normalizes Workers AI daily limit errors", async () => {
+    mockAi.run.mockRejectedValueOnce(
+      new Error("daily limit reached"),
+    );
+
+    const res = await app.request(
+      "http://localhost/api/pdf/generate",
+      jsonRequest(
+        {
+          material: "Plants make food through photosynthesis.",
+          counts: { mcq: 1, text: 0, open: 0 },
+        },
+        teacherHeaders(),
+      ),
+      pdfEnv,
+    );
+
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toMatchObject({
+      success: false,
+      error: {
+        code: "AI_DAILY_LIMIT_REACHED",
+      },
+    });
+  });
+
   it("POST /api/pdf/extract returns 404 for missing file", async () => {
     mockR2.get.mockResolvedValueOnce(null as any);
 

@@ -22,6 +22,7 @@ import {
 } from "../services/notifications";
 import { createR2PresignedUrl } from "../utils/r2-presign";
 import { parseEnabledCheatDetections } from "../utils/exam-cheat-detections";
+import { normalizeWorkersAiError } from "../utils/workers-ai";
 
 const cheatRoutes = new Hono<AppEnv>();
 
@@ -1333,12 +1334,11 @@ cheatRoutes.post(
       }
 
       console.error("snapshot-analysis-failed", err);
-      return error(
-        c,
-        "AI_ANALYSIS_FAILED",
+      const normalized = normalizeWorkersAiError(
+        err,
         "Could not analyze the camera snapshot right now.",
-        502,
       );
+      return error(c, normalized.code, normalized.message, normalized.status);
     }
   },
 );
