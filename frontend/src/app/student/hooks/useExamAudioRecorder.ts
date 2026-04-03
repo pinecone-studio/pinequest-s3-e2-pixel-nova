@@ -248,7 +248,7 @@ export const useExamAudioRecorder = ({
 
       if (!failure.blocking) {
         setLastError(failure.message);
-        stop(failure.nextStatus);
+        stop(failure.nextStatus ?? undefined);
         return;
       }
 
