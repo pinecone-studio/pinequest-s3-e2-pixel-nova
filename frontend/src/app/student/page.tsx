@@ -156,35 +156,35 @@ export default function StudentPage() {
   const { refreshProgress } = progress;
   const showFallbackState =
     !data.currentUser && !selectedUser && !usersLoading && !data.loading;
+  const lastSubmissionId = exam.lastSubmission?.id ?? null;
+  const lastSubmissionResolvedSignature = exam.lastSubmission
+    ? [
+        exam.lastSubmission.id,
+        exam.lastSubmission.score ?? 0,
+        exam.lastSubmission.totalPoints ?? 0,
+        exam.lastSubmission.submittedAt ?? "",
+      ].join(":")
+    : null;
 
   useEffect(() => {
-    const submissionId = exam.lastSubmission?.id ?? null;
-    if (!submissionId || submissionId === lastSyncedSubmissionIdRef.current) {
+    if (!lastSubmissionId || lastSubmissionId === lastSyncedSubmissionIdRef.current) {
       return;
     }
 
-    lastSyncedSubmissionIdRef.current = submissionId;
+    lastSyncedSubmissionIdRef.current = lastSubmissionId;
     void refreshProgress();
-  }, [exam.lastSubmission?.id, refreshProgress]);
+  }, [lastSubmissionId, refreshProgress]);
 
   useEffect(() => {
-    const submission = exam.lastSubmission;
-    if (!submission || exam.resultPending) {
+    if (!lastSubmissionResolvedSignature || exam.resultPending) {
       return;
     }
 
-    const signature = [
-      submission.id,
-      submission.score ?? 0,
-      submission.totalPoints ?? 0,
-      submission.submittedAt ?? "",
-    ].join(":");
-
-    if (signature === lastResolvedResultSignatureRef.current) {
+    if (lastSubmissionResolvedSignature === lastResolvedResultSignatureRef.current) {
       return;
     }
 
-    lastResolvedResultSignatureRef.current = signature;
+    lastResolvedResultSignatureRef.current = lastSubmissionResolvedSignature;
     void refreshProgress();
   }, [exam.lastSubmission, exam.resultPending, refreshProgress]);
 

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSessionUser, type User } from "@/lib/examGuard";
-import { getStudentResults } from "@/lib/backend-auth";
+import { getStudentUpcomingExams } from "@/lib/backend-auth";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { Exam } from "../types";
 
@@ -18,8 +18,8 @@ export const useStudentData = (overrideUser?: User | null) => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    const user =
+  const resolvedUser = useMemo(
+    () =>
       overrideUserId && overrideUsername && overrideRole
         ? {
             id: overrideUserId,
@@ -28,7 +28,45 @@ export const useStudentData = (overrideUser?: User | null) => {
             role: overrideRole,
             createdAt: overrideCreatedAt,
           }
-        : getSessionUser();
+        : null,
+    [
+      overrideCreatedAt,
+      overridePassword,
+      overrideRole,
+      overrideUserId,
+      overrideUsername,
+    ],
+  );
+
+  const mapUpcomingExams = useCallback(
+    (items: Awaited<ReturnType<typeof getStudentUpcomingExams>>): Exam[] =>
+      items.map((item) => ({
+        id: item.examId,
+        title: item.title,
+        subjectName: item.subjectName ?? null,
+        teacherName: item.teacherName ?? null,
+        description: item.description ?? null,
+        examType: item.examType ?? null,
+        className: item.className ?? null,
+        groupName: item.groupName ?? null,
+        status: item.status ?? null,
+        scheduledAt: item.scheduledAt ?? null,
+        examStartedAt: item.startedAt ?? null,
+        finishedAt: item.finishedAt ?? null,
+        roomCode: item.roomCode ?? "",
+        questions: [],
+        duration: item.durationMin ?? undefined,
+        createdAt:
+          item.scheduledAt ??
+          item.startedAt ??
+          item.finishedAt ??
+          new Date().toISOString(),
+      })),
+    [],
+  );
+
+  useEffect(() => {
+    const user = resolvedUser ?? getSessionUser();
 
     setCurrentUser(user ?? null);
 
@@ -42,20 +80,9 @@ export const useStudentData = (overrideUser?: User | null) => {
       }
 
       try {
-        const results = await getStudentResults(user);
+        const upcomingExams = await getStudentUpcomingExams(user);
         if (cancelled) return;
-
-        const mappedExams: Exam[] = results.map((item) => ({
-          id: item.examId,
-          title: item.title,
-          scheduledAt: null,
-          roomCode: "",
-          questions: [],
-          duration: undefined,
-          createdAt: item.submittedAt ?? new Date().toISOString(),
-        }));
-
-        setExams(mappedExams);
+        setExams(mapUpcomingExams(upcomingExams));
       } catch {
         if (cancelled) return;
         setExams([]);
@@ -70,11 +97,13 @@ export const useStudentData = (overrideUser?: User | null) => {
       cancelled = true;
     };
   }, [
+    mapUpcomingExams,
     overrideCreatedAt,
     overridePassword,
     overrideRole,
     overrideUserId,
     overrideUsername,
+    resolvedUser,
   ]);
 
   useEffect(() => {
@@ -83,24 +112,15 @@ export const useStudentData = (overrideUser?: User | null) => {
         return;
       }
 
-      const user = getSessionUser();
+      const user = resolvedUser ?? getSessionUser();
       if (!user) {
         setExams([]);
         return;
       }
 
       try {
-        const results = await getStudentResults(user);
-        const mappedExams: Exam[] = results.map((item) => ({
-          id: item.examId,
-          title: item.title,
-          scheduledAt: null,
-          roomCode: "",
-          questions: [],
-          duration: undefined,
-          createdAt: item.submittedAt ?? new Date().toISOString(),
-        }));
-        setExams(mappedExams);
+        const upcomingExams = await getStudentUpcomingExams(user);
+        setExams(mapUpcomingExams(upcomingExams));
       } catch {
         setExams([]);
       }
@@ -127,7 +147,7 @@ export const useStudentData = (overrideUser?: User | null) => {
         document.removeEventListener("visibilitychange", handleVisibilityChange);
       }
     };
-  }, []);
+  }, [mapUpcomingExams, resolvedUser]);
 
   const showToast = useCallback((message: string) => {
     setToast(message);

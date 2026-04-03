@@ -37,8 +37,10 @@ describe("StudentHeader", () => {
       />,
     );
 
-    expect(screen.getByText("Pinecone")).toBeInTheDocument();
-    expect(screen.getByText("2.5 мян. XP")).toBeInTheDocument();
+    expect(screen.getByText("Educore")).toBeInTheDocument();
+    expect(
+      screen.getByText((_, element) => element?.textContent === "2.5 мян. XP"),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Хиймэл оюуны дүгнэлт" }),
     ).not.toBeInTheDocument();

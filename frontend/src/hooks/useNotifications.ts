@@ -28,10 +28,20 @@ export const useNotifications = ({
   const seenIdsRef = useRef<Set<string>>(new Set());
   const initializedRef = useRef(false);
   const liveEnabledRef = useRef(enableLive);
+  const onIncomingRef = useRef(onIncoming);
+  const onToastRef = useRef(onToast);
 
   useEffect(() => {
     liveEnabledRef.current = enableLive;
   }, [enableLive]);
+
+  useEffect(() => {
+    onIncomingRef.current = onIncoming;
+  }, [onIncoming]);
+
+  useEffect(() => {
+    onToastRef.current = onToast;
+  }, [onToast]);
 
   const mergeIncomingNotification = useCallback(
     (item: NotificationItem, shouldToast = true) => {
@@ -59,13 +69,13 @@ export const useNotifications = ({
       }
 
       if (added) {
-        onIncoming?.(item);
-        if (shouldToast && onToast) {
-          onToast(item.message);
+        onIncomingRef.current?.(item);
+        if (shouldToast && onToastRef.current) {
+          onToastRef.current(item.message);
         }
       }
     },
-    [onIncoming, onToast],
+    [],
   );
 
   const sync = useCallback(async () => {
@@ -95,15 +105,15 @@ export const useNotifications = ({
       newItems
         .slice()
         .reverse()
-        .forEach((item) => onIncoming?.(item));
-      if (newItems.length > 0 && onToast && !liveEnabledRef.current) {
-        onToast(newItems[0].message);
+        .forEach((item) => onIncomingRef.current?.(item));
+      if (newItems.length > 0 && onToastRef.current && !liveEnabledRef.current) {
+        onToastRef.current(newItems[0].message);
       }
     } catch {
       setLoading(false);
     }
     setLoading(false);
-  }, [onIncoming, onToast, role, userId]);
+  }, [role, userId]);
 
   useEffect(() => {
     initializedRef.current = false;
@@ -118,22 +128,24 @@ export const useNotifications = ({
     let timer: number | undefined;
     const visibleInterval = role === "teacher" ? 5_000 : 15_000;
     const hiddenInterval = role === "teacher" ? 15_000 : 30_000;
+    let stopStream: (() => void) | null = null;
+    let liveFailed = !enableLive;
+
+    const scheduleNextTick = () => {
+      if (!active) return;
+      const interval = document.hidden ? hiddenInterval : visibleInterval;
+      timer = window.setTimeout(() => {
+        void tick();
+      }, interval);
+    };
 
     const tick = async () => {
       try {
         await sync();
       } finally {
-        if (!active) return;
-        const interval = document.hidden ? hiddenInterval : visibleInterval;
-        timer = window.setTimeout(() => {
-          void tick();
-        }, interval);
+        scheduleNextTick();
       }
     };
-
-    timer = window.setTimeout(() => {
-      void tick();
-    }, visibleInterval);
 
     const handleVisibilityChange = () => {
       if (document.hidden) return;
@@ -142,28 +154,6 @@ export const useNotifications = ({
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    let stopStream: (() => void) | null = null;
-    let streamFailed = !enableLive;
-
-    const startPolling = () => {
-      if (!active) return;
-
-      const tick = async () => {
-        try {
-          await sync();
-        } finally {
-          if (!active) return;
-          const interval = document.hidden ? 30_000 : 15_000;
-          timer = window.setTimeout(() => {
-            void tick();
-          }, interval);
-        }
-      };
-
-      timer = window.setTimeout(() => {
-        void tick();
-      }, 15_000);
-    };
 
     if (enableLive) {
       stopStream = openNotificationsLiveStream(
@@ -175,20 +165,19 @@ export const useNotifications = ({
             mergeIncomingNotification(item);
           },
           onError: () => {
-            if (!active || streamFailed) return;
-            streamFailed = true;
+            if (!active || liveFailed) return;
+            liveFailed = true;
             void sync();
-            startPolling();
+            if (timer) window.clearTimeout(timer);
+            scheduleNextTick();
           },
         },
         userId,
       );
-    } else {
-      streamFailed = true;
     }
 
-    if (streamFailed) {
-      startPolling();
+    if (liveFailed) {
+      scheduleNextTick();
     }
 
     return () => {

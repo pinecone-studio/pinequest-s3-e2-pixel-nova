@@ -7,7 +7,7 @@ import {
 } from "react";
 import RoleNavbar from "@/components/RoleNavbar";
 import type { AuthUser } from "@/lib/backend-auth";
-import type { XpLeaderboardEntry } from "@/api/xp";
+import type { XpLeaderboardEntry, XpNeighborEntry } from "@/api/xp";
 import type { RoleKey } from "@/lib/role-session";
 import StudentHeader from "./StudentHeader";
 import StudentAiInsightsTab from "./StudentAiInsightsTab";
@@ -69,7 +69,12 @@ type StudentProgressState = {
   subjectInsights: Record<string, SubjectInsightDetail>;
   nextLevel: { level: number; name: string; minXP: number } | null;
   progressSegments: number;
+  xpNeighborEntries: XpNeighborEntry[];
   termLeaderboardEntries: XpLeaderboardEntry[];
+  rankOverview: {
+    rank: number | null;
+    totalStudents: number;
+  };
   termRankOverview: {
     rank: number | null;
     totalStudents: number;
@@ -116,16 +121,12 @@ export default function StudentDashboardView({
   getInitials,
 }: StudentDashboardViewProps) {
   const resolvedNextLevel = progress.nextLevel ?? progress.levelInfo;
-  const resolvedLeaderboardRank =
-    progress.termRankOverview.rank ?? currentRank;
-  const resolvedLeaderboardXp =
-    progress.termRankOverview.totalStudents > 0
-      ? progress.termRankOverview.xp
-      : currentXp;
-  const resolvedLeaderboardLevel =
-    progress.termRankOverview.totalStudents > 0
-      ? progress.termRankOverview.level
-      : progress.studentProgress.level;
+  const resolvedLeaderboardRank = currentRank;
+  const resolvedLeaderboardXp = currentXp;
+  const resolvedLeaderboardLevel = progress.studentProgress.level;
+  const resolvedStudentCount =
+    progress.rankOverview?.totalStudents ?? totalStudents;
+  const resolvedXpNeighborEntries = progress.xpNeighborEntries ?? [];
   const currentUser = data.currentUser;
   const activeTeacherName =
     teacherUsers.find(
@@ -230,10 +231,11 @@ export default function StudentDashboardView({
             studentProgress={progress.studentProgress}
             nextLevel={resolvedNextLevel}
             currentRank={resolvedLeaderboardRank}
-            studentCount={progress.termRankOverview.totalStudents}
+            studentCount={resolvedStudentCount}
             leaderboardXp={resolvedLeaderboardXp}
             leaderboardLevel={resolvedLeaderboardLevel}
             studentHistory={studentHistory}
+            xpNeighborEntries={resolvedXpNeighborEntries}
             termLeaderboardEntries={progress.termLeaderboardEntries}
             teacherName={activeTeacherName}
             onOpenExamDetail={setHomeSelectedExam}

@@ -150,7 +150,12 @@ const createProps = () => ({
       minXP: 100,
     },
     progressSegments: 3,
+    xpNeighborEntries: [],
     termLeaderboardEntries: [],
+    rankOverview: {
+      rank: 4,
+      totalStudents: 20,
+    },
     termRankOverview: {
       rank: 4,
       totalStudents: 20,

@@ -5,6 +5,7 @@ import { ChevronDownIcon, FolderIcon } from "lucide-react";
 import {
 	Dialog,
 	DialogContent,
+	DialogTitle,
 } from "@/components/ui/dialog";
 import { buttonPrimary, buttonSecondary } from "../styles";
 
@@ -52,6 +53,7 @@ export default function SaveExamDialog({
 			<DialogContent
 				showCloseButton={false}
 				className="max-w-[360px] gap-0 overflow-hidden rounded-2xl border border-[#d5dfeb] p-0 shadow-[0_24px_56px_-20px_rgba(15,23,42,0.22)]">
+				<DialogTitle className="sr-only">Шалгалт хадгалах</DialogTitle>
 				<div className="px-5 pt-4 pb-5">
 					<p className="mb-4 text-xs text-slate-400">save file</p>
 

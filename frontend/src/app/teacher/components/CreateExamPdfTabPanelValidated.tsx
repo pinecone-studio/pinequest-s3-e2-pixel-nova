@@ -14,7 +14,11 @@ type Props = {
   selectedFileName: string | null;
   onPickFile: () => void;
   errors: PdfErrors;
+  importError?: string | null;
+  generatedCount?: number;
+  generatedPreview?: string[];
   onContinue: () => void;
+  onOpenEditor?: () => void;
   pending: boolean;
 };
 
@@ -35,7 +39,11 @@ export default function CreateExamPdfTabPanelValidated({
   selectedFileName,
   onPickFile,
   errors,
+  importError,
+  generatedCount = 0,
+  generatedPreview = [],
   onContinue,
+  onOpenEditor,
   pending,
 }: Props) {
   const total = counts.mcq + counts.text + counts.open;
@@ -129,9 +137,44 @@ export default function CreateExamPdfTabPanelValidated({
             {errors.counts}
           </p>
         )}
+
+        {importError && (
+          <p className="mt-3 text-[12px] font-medium text-red-600">
+            {importError}
+          </p>
+        )}
+
+        {generatedCount > 0 && (
+          <div className="mt-5 rounded-[18px] border border-emerald-200 bg-emerald-50 px-4 py-4">
+            <div className="text-[14px] font-semibold text-emerald-700">
+              {generatedCount} асуулт бэлэн боллоо.
+            </div>
+            {generatedPreview.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {generatedPreview.map((question, index) => (
+                  <div
+                    key={`${question}-${index}`}
+                    className="rounded-2xl border border-emerald-100 bg-white px-3 py-2 text-[13px] text-slate-700">
+                    {index + 1}. {question}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       <DialogFooter className="mt-4 border-t-0 bg-transparent px-8 pb-8 pt-0 sm:justify-end">
+        {generatedCount > 0 && onOpenEditor ? (
+          <Button
+            variant="outline"
+            className="h-10 rounded-2xl border-[#d9dde6] px-6 text-[14px] font-medium text-[#374151]"
+            onClick={onOpenEditor}
+            disabled={pending}
+            type="button">
+            Редакторт нээх
+          </Button>
+        ) : null}
         <Button
           className="h-10 rounded-2xl bg-[#2563eb] px-6 text-[14px] font-medium text-white hover:bg-[#1d4ed8]"
           onClick={onContinue}
@@ -139,7 +182,11 @@ export default function CreateExamPdfTabPanelValidated({
           type="button">
           <span className="inline-flex items-center gap-2">
             {pending && <Spinner className="size-4" />}
-            {pending ? "Нээж байна..." : "Асуулт үүсгэх"}
+            {pending
+              ? "Үүсгэж байна..."
+              : generatedCount > 0
+                ? "Дахин үүсгэх"
+                : "Асуулт үүсгэх"}
           </span>
         </Button>
       </DialogFooter>

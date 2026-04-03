@@ -130,8 +130,26 @@ export const isQuestionTextSuspicious = (text: string) => {
 
   const letters = (normalized.match(/[A-Za-zА-Яа-яӨөҮүЁё]/g) ?? []).length;
   const digits = (normalized.match(/\d/g) ?? []).length;
+  const letterTokens = normalized
+    .split(/\s+/)
+    .map((token) => token.replace(/[^A-Za-zА-Яа-яӨөҮүЁё]/g, ""))
+    .filter(Boolean);
+  const repeatedCharTokens = letterTokens.filter((token) =>
+    /^([A-Za-zА-Яа-яӨөҮүЁё])\1+$/i.test(token),
+  ).length;
+  const uniqueLetters = new Set(
+    (normalized.match(/[A-Za-zА-Яа-яӨөҮүЁё]/g) ?? []).map((char) =>
+      char.toLowerCase(),
+    ),
+  ).size;
 
   if (letters === 0 && digits > 0 && normalized.length <= 12) return true;
+  if (letterTokens.length > 0 && repeatedCharTokens / letterTokens.length >= 0.35) {
+    return true;
+  }
+  if (letters >= 8 && uniqueLetters <= 2) {
+    return true;
+  }
 
   return false;
 };

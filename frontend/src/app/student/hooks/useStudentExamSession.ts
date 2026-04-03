@@ -321,9 +321,11 @@ export const useStudentExamSession = ({
     }, ANSWER_SYNC_DEBOUNCE_MS);
   }, [clearAnswerFlushTimer, flushPendingAnswers]);
 
-  const startExam = () => {
+  const startExam = (params?: { sessionId?: string | null; roomCode?: string }) => {
     if (startingExam) return;
-    if (!sessionId || !currentUser) {
+    const effectiveSessionId = params?.sessionId ?? sessionId;
+    const effectiveRoomCode = params?.roomCode ?? roomCodeInput;
+    if (!effectiveSessionId || !currentUser) {
       setJoinError?.("Шалгалт эхлүүлэхэд шаардлагатай мэдээлэл алга байна.");
       return;
     }
@@ -332,20 +334,20 @@ export const useStudentExamSession = ({
       let requiresAudioRecording = false;
       setStartingExam(true);
       try {
-        const sessionData = await apiRequest<SessionData>(`/api/sessions/${sessionId}`);
-        const mappedExam: Exam = mapSessionToExam(sessionData, roomCodeInput);
+        const sessionData = await apiRequest<SessionData>(`/api/sessions/${effectiveSessionId}`);
+        const mappedExam: Exam = mapSessionToExam(sessionData, effectiveRoomCode);
         requiresAudioRecording = Boolean(mappedExam.requiresAudioRecording);
         await requestDesktopCameraPermission();
         if (requiresAudioRecording) {
           await requestDesktopMicrophonePermission();
         }
         const restoredServerAnswers = mapSessionAnswers(sessionData);
-        const restoredDraftAnswers = readDraftAnswers(sessionId);
+        const restoredDraftAnswers = readDraftAnswers(effectiveSessionId);
         const restoredAnswers = {
           ...restoredServerAnswers,
           ...restoredDraftAnswers,
         };
-        const startData = await apiRequest<{ startedAt?: string; status?: string }>(`/api/sessions/${sessionId}/start`, {
+        const startData = await apiRequest<{ startedAt?: string; status?: string }>(`/api/sessions/${effectiveSessionId}/start`, {
           method: "POST",
           body: JSON.stringify({
             audioReady: requiresAudioRecording ? true : undefined,
@@ -361,7 +363,7 @@ export const useStudentExamSession = ({
         setCurrentQuestionIndex(0);
         setAnswers(restoredAnswers);
         pendingAnswersRef.current = {};
-        writeDraftAnswers(sessionId, restoredAnswers);
+        writeDraftAnswers(effectiveSessionId, restoredAnswers);
         setViolations({ ...EMPTY_VIOLATIONS });
         setJoinError?.(null);
         setView("exam");
@@ -371,7 +373,7 @@ export const useStudentExamSession = ({
           void apiRequest(`/api/cheat/event`, {
             method: "POST",
             body: JSON.stringify({
-              sessionId,
+              sessionId: effectiveSessionId,
               eventType: "microphone_permission_denied",
               source: "browser_audio",
               confidence: 0.99,

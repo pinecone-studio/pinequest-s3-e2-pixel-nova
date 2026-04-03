@@ -33,6 +33,10 @@ export type XpLeaderboardEntry = {
   level: number;
 };
 
+export type XpNeighborEntry = XpLeaderboardEntry & {
+  isCurrentUser: boolean;
+};
+
 export const getXpProfile = (user?: User | null) =>
   apiRequest<XpProfile>("/api/xp/profile", { user });
 
@@ -41,3 +45,6 @@ export const getXpHistory = (user?: User | null) =>
 
 export const getXpLeaderboard = (user?: User | null) =>
   apiRequest<XpLeaderboardEntry[]>("/api/xp/leaderboard", { user });
+
+export const getXpNeighbors = (user?: User | null) =>
+  apiRequest<XpNeighborEntry[]>("/api/xp/neighbors", { user });

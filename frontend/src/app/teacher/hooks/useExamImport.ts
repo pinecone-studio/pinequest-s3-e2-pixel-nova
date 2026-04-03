@@ -25,18 +25,22 @@ export const useExamImport = (params: {
   showToast: (message: string) => void;
   currentUser?: User | null;
 }) => {
-  const { setQuestions, examTitle, setExamTitle, showToast, currentUser } = params;
+  const { setQuestions, examTitle, setExamTitle, showToast, currentUser } =
+    params;
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfUseOcr, setPdfUseOcr] = useState(true);
   const [answerKeyPage, setAnswerKeyPage] = useState<number | "last">("last");
   const [importError, setImportError] = useState<string | null>(null);
   const [importLoading, setImportLoading] = useState(false);
-  const [importLoadingLabel, setImportLoadingLabel] = useState<string | null>(null);
+  const [importLoadingLabel, setImportLoadingLabel] = useState<string | null>(
+    null,
+  );
   const [importMcqCount, setImportMcqCount] = useState(0);
   const [importTextCount, setImportTextCount] = useState(0);
   const [importOpenCount, setImportOpenCount] = useState(0);
-  const [shuffleImportedQuestions, setShuffleImportedQuestions] = useState(true);
+  const [shuffleImportedQuestions, setShuffleImportedQuestions] =
+    useState(true);
 
   const importQuestionPlan = {
     mcqCount: importMcqCount,
@@ -131,7 +135,9 @@ export const useExamImport = (params: {
 
     try {
       if (plannedQuestionCount <= 0) {
-        setImportError("Импортлох асуултын төрөл, тоогоо эхлээд тохируулна уу.");
+        setImportError(
+          "Үүсгүүлэх асуултын төрөл, тоогоо эхлээд тохируулна уу.",
+        );
         return;
       }
 
@@ -150,7 +156,9 @@ export const useExamImport = (params: {
       );
 
       if (!shapedQuestions) {
-        setImportError("Зурганаас асуулт олдсонгүй. Илүү тод зураг оруулна уу.");
+        setImportError(
+          "Зурагнаас асуулт олдсонгүй. Илүү тод зураг оруулна уу.",
+        );
         return;
       }
 
@@ -251,7 +259,10 @@ export const useExamImport = (params: {
 
       if (currentUser) {
         try {
-          const uploaded = (await uploadPdf(file, currentUser)) as UploadedPdfPayload;
+          const uploaded = (await uploadPdf(
+            file,
+            currentUser,
+          )) as UploadedPdfPayload;
           const backendQuestions = await generateBackendQuestions({
             fileKey: uploaded.fileKey,
           });

@@ -80,4 +80,57 @@ describe("xp routes", () => {
       ],
     });
   });
+
+  it("returns current student with nearest xp neighbors", async () => {
+    queueDbResults(
+      [{ id: "student-2", fullName: "Odon Student", xp: 170 }],
+      [
+        { id: "student-1", fullName: "Nora Student", avatarUrl: null, xp: 250 },
+        { id: "student-2", fullName: "Odon Student", avatarUrl: null, xp: 170 },
+        { id: "student-3", fullName: "Sara Student", avatarUrl: null, xp: 90 },
+      ],
+    );
+
+    const response = await app.request(
+      "http://localhost/api/xp/neighbors",
+      {
+        headers: studentHeaders({ "x-user-id": "student-2" }),
+      },
+      workerEnv,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: [
+        {
+          rank: 1,
+          id: "student-1",
+          fullName: "Nora Student",
+          avatarUrl: null,
+          xp: 250,
+          level: 2,
+          isCurrentUser: false,
+        },
+        {
+          rank: 2,
+          id: "student-2",
+          fullName: "Odon Student",
+          avatarUrl: null,
+          xp: 170,
+          level: 2,
+          isCurrentUser: true,
+        },
+        {
+          rank: 3,
+          id: "student-3",
+          fullName: "Sara Student",
+          avatarUrl: null,
+          xp: 90,
+          level: 1,
+          isCurrentUser: false,
+        },
+      ],
+    });
+  });
 });

@@ -184,7 +184,8 @@ export default function QuestionFormSection({
             <Button
               variant="outline"
               className="h-10 rounded-2xl border-[#d7e0ea] px-4 text-[14px] font-medium text-[#31558c]"
-              type="button">
+              type="button"
+              onClick={addQuestion}>
               + Асуулт нэмэх
             </Button>
           </div>

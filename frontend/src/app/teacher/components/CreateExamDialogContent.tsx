@@ -10,10 +10,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AiExamGeneratorInput } from "../types";
-import {
-  savePendingCreateExamDraft,
-  savePendingCreateExamFile,
-} from "../create-exam-dialog-state";
+import type { Question } from "../types";
+import { savePendingCreateExamDraft } from "../create-exam-dialog-state";
+import { getSessionUser } from "@/lib/examGuard";
+import { useExamImport } from "../hooks/useExamImport";
 import CreateExamAiTabPanelValidated from "./CreateExamAiTabPanelValidated";
 import CreateExamManualTabPanel from "./CreateExamManualTabPanel";
 import CreateExamPdfTabPanelValidated from "./CreateExamPdfTabPanelValidated";
@@ -85,6 +85,18 @@ export default function CreateExamDialogContent() {
   const [selectedPdfFileName, setSelectedPdfFileName] = useState<string | null>(
     null,
   );
+  const [generatedPdfQuestions, setGeneratedPdfQuestions] = useState<Question[]>([]);
+  const currentUser = getSessionUser();
+  const importFlow = useExamImport({
+    setQuestions: (next) =>
+      setGeneratedPdfQuestions((prev) =>
+        typeof next === "function" ? next(prev) : next,
+      ),
+    examTitle: pdfExamTitle,
+    setExamTitle: setPdfExamTitle,
+    showToast: () => undefined,
+    currentUser,
+  });
 
   const handleAiInputChange = <K extends keyof AiExamGeneratorInput>(
     key: K,
@@ -97,6 +109,7 @@ export default function CreateExamDialogContent() {
   const handlePdfCountChange = (key: PdfCountKey, value: number) => {
     setPdfCounts((current) => ({ ...current, [key]: value }));
     setPdfErrors((current) => ({ ...current, counts: undefined }));
+    setGeneratedPdfQuestions([]);
   };
 
   const handleManualQuestionDraftChange = (
@@ -210,7 +223,14 @@ export default function CreateExamDialogContent() {
       router.push(buildAiCreateExamRoute(aiInput));
       return;
     }
+  };
 
+  const handlePdfFilePick = () => {
+    fileInputRef.current?.click();
+    setPdfErrors((current) => ({ ...current, file: undefined }));
+  };
+
+  const handleGeneratePdfQuestions = async () => {
     const nextErrors: PdfErrors = {};
     if (!selectedPdfFile) {
       nextErrors.file = "Файл хавсаргана уу.";
@@ -219,41 +239,53 @@ export default function CreateExamDialogContent() {
       nextErrors.counts = "Нийт асуулт дор хаяж 1 байх ёстой.";
     }
 
-    if (Object.keys(nextErrors).length > 0) {
+    if (Object.keys(nextErrors).length > 0 || !selectedPdfFile) {
       setPdfErrors(nextErrors);
       return;
     }
 
-    if (!selectedPdfFile) {
-      setPdfErrors({ file: "Файл хавсаргана уу." });
+    setGeneratedPdfQuestions([]);
+    importFlow.setImportMcqCount(pdfCounts.mcq);
+    importFlow.setImportTextCount(pdfCounts.text);
+    importFlow.setImportOpenCount(pdfCounts.open);
+
+    const isImage = selectedPdfFile.type.startsWith("image/");
+    const isDocx =
+      selectedPdfFile.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      /\.docx$/i.test(selectedPdfFile.name);
+
+    if (isImage) {
+      await importFlow.handleImageUpload(selectedPdfFile, { preserveTitle: true });
       return;
     }
 
-    const fileId = await savePendingCreateExamFile(selectedPdfFile).catch(
-      () => null,
-    );
-    if (!fileId) {
-      setPdfErrors({
-        file: "Файлыг түр хадгалж чадсангүй. Дахин оролдоно уу.",
-      });
+    if (isDocx) {
+      await importFlow.handleDocxUpload(selectedPdfFile, { preserveTitle: true });
       return;
     }
 
-    setNavigating(true);
-    savePendingCreateExamDraft({
-      mode: "pdf",
-      examTitle: trim(pdfExamTitle),
-      importMcqCount: pdfCounts.mcq,
-      importTextCount: pdfCounts.text,
-      importOpenCount: pdfCounts.open,
-      fileId,
-    });
-    router.push("/teacher/createExam");
+    await importFlow.handlePdfUpload(selectedPdfFile, { preserveTitle: true });
   };
 
-  const handlePdfFilePick = () => {
-    fileInputRef.current?.click();
-    setPdfErrors((current) => ({ ...current, file: undefined }));
+  const handleOpenGeneratedPdfInEditor = () => {
+    if (generatedPdfQuestions.length === 0) {
+      return;
+    }
+
+    savePendingCreateExamDraft({
+      mode: "manual",
+      examTitle: trim(pdfExamTitle),
+      questions: generatedPdfQuestions.map((question) => ({
+        text: question.text,
+        type: question.type === "mcq" ? "mcq" : "open",
+        options: question.options,
+        correctAnswer: question.correctAnswer,
+        points: question.points,
+        imageUrl: question.imageUrl,
+      })),
+    });
+    router.push("/teacher/createExam");
   };
 
   return (
@@ -271,6 +303,7 @@ export default function CreateExamDialogContent() {
           setSelectedPdfFile(file);
           setSelectedPdfFileName(file?.name ?? null);
           setPdfErrors((current) => ({ ...current, file: undefined }));
+          setGeneratedPdfQuestions([]);
         }}
       />
 
@@ -349,14 +382,21 @@ export default function CreateExamDialogContent() {
             onExamTitleChange={(value) => {
               setPdfExamTitle(value);
               setPdfErrors((current) => ({ ...current, file: undefined }));
+              setGeneratedPdfQuestions([]);
             }}
             counts={pdfCounts}
             onCountChange={handlePdfCountChange}
             selectedFileName={selectedPdfFileName}
             onPickFile={handlePdfFilePick}
             errors={pdfErrors}
-            onContinue={handleNavigateToCreateExam}
-            pending={navigating}
+            importError={importFlow.pdfError ?? importFlow.importError}
+            generatedCount={generatedPdfQuestions.length}
+            generatedPreview={generatedPdfQuestions
+              .slice(0, 3)
+              .map((question) => question.text)}
+            onContinue={handleGeneratePdfQuestions}
+            onOpenEditor={handleOpenGeneratedPdfInEditor}
+            pending={importFlow.pdfLoading || importFlow.importLoading}
           />
         )}
       </div>

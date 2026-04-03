@@ -191,6 +191,10 @@ export const parsePdfQuestions = async (params: {
         .replace(/\s+/g, " ")
         .trim();
 
+      if (!parsedQuestion && isQuestionTextSuspicious(fallbackText)) {
+        continue;
+      }
+
       const finalQuestion: Question =
         parsedQuestion ?? {
           id: crypto.randomUUID(),

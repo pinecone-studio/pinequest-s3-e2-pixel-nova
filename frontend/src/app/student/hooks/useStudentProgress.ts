@@ -11,9 +11,11 @@ import {
 } from "@/lib/backend-auth";
 import {
   getXpHistory,
+  getXpNeighbors,
   getXpProfile,
   type XpActivity,
   type XpLeaderboardEntry,
+  type XpNeighborEntry,
 } from "@/api/xp";
 import {
   average,
@@ -34,6 +36,7 @@ export const useStudentProgress = (currentUser: User | null) => {
   const [termLeaderboardEntries, setTermLeaderboardEntries] = useState<
     XpLeaderboardEntry[]
   >([]);
+  const [xpNeighborEntries, setXpNeighborEntries] = useState<XpNeighborEntry[]>([]);
   const [rankOverview, setRankOverview] = useState({
     rank: null as number | null,
     totalStudents: 0,
@@ -56,6 +59,7 @@ export const useStudentProgress = (currentUser: User | null) => {
       setSubjectInsights({});
       setXpActivities([]);
       setTermLeaderboardEntries([]);
+      setXpNeighborEntries([]);
       setRankOverview({ rank: null, totalStudents: 0 });
       setTermRankOverview({
         rank: null,
@@ -87,6 +91,12 @@ export const useStudentProgress = (currentUser: User | null) => {
       setXpActivities(await getXpHistory(currentUser));
     } catch {
       setXpActivities([]);
+    }
+
+    try {
+      setXpNeighborEntries(await getXpNeighbors(currentUser));
+    } catch {
+      setXpNeighborEntries([]);
     }
 
     try {
@@ -219,6 +229,7 @@ export const useStudentProgress = (currentUser: User | null) => {
     studentHistory,
     subjectInsights,
     xpActivities,
+    xpNeighborEntries,
     termLeaderboardEntries,
     rankOverview,
     termRankOverview,

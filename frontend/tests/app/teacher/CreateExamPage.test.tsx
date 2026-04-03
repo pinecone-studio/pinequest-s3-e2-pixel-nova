@@ -9,6 +9,15 @@ type MockAuthUser = {
 };
 
 const push = jest.fn();
+const mockGetAuthUsers = jest.fn().mockResolvedValue([
+  {
+    id: "teacher-1",
+    fullName: "Ada Teacher",
+    role: "teacher",
+    email: null,
+    avatarUrl: null,
+  },
+]);
 const consumePendingCreateExamDraft = jest.fn<
   PendingCreateExamDraft | null,
   []
@@ -42,15 +51,7 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("@/lib/backend-auth", () => ({
-  getAuthUsers: jest.fn().mockResolvedValue([
-    {
-      id: "teacher-1",
-      fullName: "Ada Teacher",
-      role: "teacher",
-      email: null,
-      avatarUrl: null,
-    },
-  ]),
+  getAuthUsers: () => mockGetAuthUsers(),
 }));
 
 jest.mock("@/lib/role-session", () => ({
@@ -184,6 +185,7 @@ jest.mock("@/app/teacher/hooks/useAiExamGenerator", () => ({
 describe("CreateExamPage", () => {
   beforeEach(() => {
     push.mockReset();
+    mockGetAuthUsers.mockClear();
     consumePendingCreateExamDraft.mockReset();
     consumePendingCreateExamFile.mockReset();
     consumePendingCreateExamDraft.mockReturnValue(null);
@@ -199,6 +201,10 @@ describe("CreateExamPage", () => {
 
   it("renders the current create exam shell without inline AI draft actions", async () => {
     render(<CreateExamPage />);
+
+    await waitFor(() => {
+      expect(mockGetAuthUsers).toHaveBeenCalled();
+    });
 
     expect(
       screen.getByRole("heading", { name: "Шалгалт үүсгэх" }),

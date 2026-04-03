@@ -19,6 +19,7 @@ const MIN_TOPIC_LENGTH = 3;
 const MAX_QUESTION_COUNT = 30;
 const MIN_QUESTION_COUNT = 1;
 const MAX_INSTRUCTIONS_LENGTH = 1200;
+const FALLBACK_OPTION_BANK = ["A", "B", "C", "D"];
 
 const parseGeneratorErrorMessage = (error: unknown) => {
   if (!(error instanceof Error) || !error.message) {
@@ -71,6 +72,64 @@ const getValidationError = (value: AiExamGeneratorInput) => {
 
   return null;
 };
+
+const capitalize = (value: string) =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
+const buildFallbackTitle = (input: AiExamGeneratorInput) => {
+  const subject = input.subject?.trim();
+  if (subject) {
+    return `${subject} - ${capitalize(input.topic)}`;
+  }
+  return `${capitalize(input.topic)} шалгалт`;
+};
+
+const buildFallbackQuestion = (
+  input: AiExamGeneratorInput,
+  index: number,
+): AiGeneratedDraft["questions"][number] => {
+  const number = index + 1;
+  const promptBase = input.topic || "Сэдэв";
+  const difficultyLabel =
+    input.difficulty === "hard"
+      ? "ахисан"
+      : input.difficulty === "easy"
+        ? "суурь"
+        : "дунд";
+
+  if (index % 3 === 2) {
+    return {
+      id: `fallback-text-${number}`,
+      text: `${promptBase} сэдвийн ${difficultyLabel} түвшний ${number}-р асуултад богино хариулт бичнэ үү.`,
+      type: "text",
+      correctAnswer: `${promptBase} сэдвийн гол ойлголтыг зөв тайлбарласан хариулт`,
+      points: 1,
+    };
+  }
+
+  const correctIndex = index % FALLBACK_OPTION_BANK.length;
+  const options = FALLBACK_OPTION_BANK.map(
+    (label, optionIndex) => `${promptBase} - хувилбар ${label}${optionIndex === correctIndex ? " (зөв)" : ""}`,
+  );
+
+  return {
+    id: `fallback-mcq-${number}`,
+    text: `${promptBase} сэдвийн ${difficultyLabel} түвшний ${number}-р асуулт`,
+    type: "mcq",
+    options,
+    correctAnswer: options[correctIndex],
+    points: 1,
+  };
+};
+
+const buildFallbackDraft = (input: AiExamGeneratorInput): AiGeneratedDraft => ({
+  title: buildFallbackTitle(input),
+  description:
+    input.instructions?.trim() || `${input.topic} сэдвээр автоматаар үүсгэсэн нөөц шалгалтын ноорог.`,
+  questions: Array.from({ length: input.questionCount }, (_, index) =>
+    buildFallbackQuestion(input, index),
+  ),
+});
 
 export const useAiExamGenerator = (params: {
   teacherId?: string | null;
@@ -125,9 +184,11 @@ export const useAiExamGenerator = (params: {
       showToast("AI шалгалтын ноорог үүсгэлээ.");
       return nextDraft;
     } catch (err) {
-      const message = parseGeneratorErrorMessage(err);
-      setError(message);
-      return null;
+      const fallbackDraft = buildFallbackDraft(effectiveInput);
+      setDraft(fallbackDraft);
+      setError(null);
+      showToast("AI түр боломжгүй тул нөөц ноорог үүсгэлээ.");
+      return fallbackDraft;
     } finally {
       setGenerating(false);
     }

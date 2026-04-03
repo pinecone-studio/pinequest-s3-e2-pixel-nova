@@ -1,9 +1,4 @@
-import {
-  Bell,
-  ChevronDown,
-  CircleHelp,
-  User2,
-} from "lucide-react";
+import { Bell, ChevronDown, CircleHelp, User2 } from "lucide-react";
 import Image from "next/image";
 import { useState, type FocusEvent, type ReactNode } from "react";
 import type { NotificationItem, StudentTab } from "../types";
@@ -68,7 +63,6 @@ export default function StudentHeader({
   return (
     <header className="w-full rounded-[36px] border border-[#e7ebfb] bg-white px-5 py-4 shadow-[0_20px_48px_rgba(77,93,138,0.07)] sm:px-7 lg:h-[88px] lg:px-8 lg:py-0">
       <div className="flex h-full flex-wrap items-center gap-4 lg:grid lg:grid-cols-[minmax(200px,1fr)_auto_minmax(220px,1fr)] lg:items-center lg:gap-6">
-
         {/* ── Logo ── */}
         <div className="flex min-w-[180px] shrink-0 items-center gap-3 lg:justify-self-start">
           <div className="overflow-hidden rounded-[14px]">
@@ -82,7 +76,7 @@ export default function StudentHeader({
             />
           </div>
           <span className="text-[1rem] font-semibold tracking-[-0.03em] text-slate-900">
-            Pinecone
+            Educore
           </span>
         </div>
 
@@ -109,7 +103,6 @@ export default function StudentHeader({
 
         {/* ── Right actions ── */}
         <div className="order-2 ml-auto flex shrink-0 items-center gap-1 rounded-full border border-[#edf0fb] bg-white px-2 py-2 shadow-[0_18px_38px_-28px_rgba(42,56,99,0.24)] lg:order-none lg:ml-0 lg:justify-self-end">
-
           {/* XP badge */}
           <div className="hidden h-[36px] items-center gap-1.5 rounded-full border border-[#fddcbb] bg-[#fff7ef] px-4 text-[12px] font-semibold text-[#f39a4a] sm:flex">
             <svg
@@ -260,7 +253,9 @@ export default function StudentHeader({
               }`}
             >
               <div className="rounded-[18px] bg-gradient-to-r from-[#f4f6ff] via-[#faf5ff] to-[#fff6f0] p-4">
-                <div className="text-xs text-slate-400">Нэвтэрсэн хэрэглэгч</div>
+                <div className="text-xs text-slate-400">
+                  Нэвтэрсэн хэрэглэгч
+                </div>
                 <div className="mt-0.5 text-sm font-semibold text-slate-900">
                   {currentUserName}
                 </div>
