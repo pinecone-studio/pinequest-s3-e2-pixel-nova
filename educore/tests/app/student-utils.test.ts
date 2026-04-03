@@ -38,9 +38,9 @@ describe('student app utils', () => {
   });
 
   it('maps score bands to encouraging result messages', () => {
-    expect(getResultMessage(95)).toContain('Excellent');
-    expect(getResultMessage(78)).toContain('Strong result');
-    expect(getResultMessage(45)).toContain('starting point');
+    expect(getResultMessage(95)).toContain('Маш сайн');
+    expect(getResultMessage(78)).toContain('Сайн үр дүн');
+    expect(getResultMessage(45)).toContain('эхлэх суурь');
   });
 });
 
