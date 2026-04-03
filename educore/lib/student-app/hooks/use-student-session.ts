@@ -8,13 +8,14 @@ import {
   startSessionWithOptions,
   submitSession,
   submitSessionAnswer,
-} from '../services/api';
+} from '@/lib/student-app/services/api';
 import {
   buildSyncMessage,
   toActiveSession,
 } from '../core/context-helpers';
 import { isCheatDetectionEnabled } from '../core/cheat-detection';
 import type { AnswerValue, CheatEventType } from '@/types/student-app';
+import type { ActiveExamSession } from '@/types/student-app';
 import type { StudentAppSetState, StudentAppState } from '../core/state';
 import {
   mergeSessionResult,
@@ -27,6 +28,65 @@ type UseStudentSessionArgs = {
   refreshDashboard: () => Promise<void>;
 };
 
+const parseApiErrorPayload = (error: unknown) => {
+  if (!(error instanceof Error) || !error.message) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(error.message) as {
+      code?: string;
+      message?: string;
+      error?: {
+        code?: string;
+        message?: string;
+      };
+    };
+
+    return {
+      code:
+        typeof parsed.error?.code === 'string'
+          ? parsed.error.code
+          : typeof parsed.code === 'string'
+            ? parsed.code
+            : null,
+      message:
+        typeof parsed.error?.message === 'string'
+          ? parsed.error.message
+          : typeof parsed.message === 'string'
+            ? parsed.message
+            : null,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const isRecoverableStartStatusError = (error: unknown) => {
+  const payload = parseApiErrorPayload(error);
+
+  return (
+    payload?.code === 'INVALID_STATUS' &&
+    payload.message === "Session must be in 'joined' or 'late' status to start"
+  );
+};
+
+const SESSION_STATUS_PRIORITY: Record<ActiveExamSession['status'], number> = {
+  joined: 0,
+  late: 0,
+  in_progress: 1,
+  submitting: 2,
+  submitted: 3,
+};
+
+const getMostAdvancedSessionStatus = (
+  currentStatus: ActiveExamSession['status'],
+  nextStatus: ActiveExamSession['status'],
+) =>
+  SESSION_STATUS_PRIORITY[currentStatus] > SESSION_STATUS_PRIORITY[nextStatus]
+    ? currentStatus
+    : nextStatus;
+
 export const useStudentSession = ({
   state,
   setState,
@@ -37,6 +97,66 @@ export const useStudentSession = ({
   const activeSessionId = activeSession?.sessionId ?? null;
   const activeSessionRoomCode = activeSession?.roomCode ?? null;
   const activeSessionEntryStatus = activeSession?.entryStatus ?? null;
+
+  const syncActiveSessionFromDetail = useCallback(
+    (
+      sessionId: string,
+      roomCode: string,
+      entryStatus: string,
+      detail: Awaited<ReturnType<typeof getSessionDetail>>,
+    ) => {
+      const nextSession = toActiveSession(
+        sessionId,
+        roomCode,
+        detail,
+        detail.session.status,
+        entryStatus,
+      );
+
+      setState((current) => ({
+        ...current,
+        activeSession:
+          current.activeSession &&
+          current.activeSession.sessionId === sessionId
+            ? (() => {
+                const currentSession = current.activeSession;
+                const resolvedStatus = getMostAdvancedSessionStatus(
+                  currentSession.status,
+                  nextSession.status,
+                );
+                const keepCurrentProgress =
+                  resolvedStatus !== nextSession.status;
+
+                return {
+                  ...currentSession,
+                  ...nextSession,
+                  status: resolvedStatus,
+                  startedAt: keepCurrentProgress
+                    ? currentSession.startedAt ?? nextSession.startedAt
+                    : nextSession.startedAt ?? currentSession.startedAt,
+                  timerEndsAt: keepCurrentProgress
+                    ? currentSession.timerEndsAt ?? nextSession.timerEndsAt
+                    : nextSession.timerEndsAt ?? currentSession.timerEndsAt,
+                  answers: currentSession.answers,
+                  currentQuestionIndex: Math.min(
+                    currentSession.currentQuestionIndex,
+                    Math.max(detail.questions.length - 1, 0),
+                  ),
+                  lastAnswerAt: currentSession.lastAnswerAt,
+                  entryStatus:
+                    currentSession.entryStatus === 'late' ||
+                    nextSession.entryStatus === 'late'
+                      ? 'late'
+                      : 'on_time',
+                  syncStatus: 'ready',
+                  syncMessage: buildSyncMessage('ready'),
+                };
+              })()
+            : current.activeSession,
+      }));
+    },
+    [setState],
+  );
 
   const recoverActiveSession = useCallback(async () => {
     if (!student || !activeSessionId) return;
@@ -58,28 +178,7 @@ export const useStudentSession = ({
 
     try {
       const detail = await getSessionDetail(student, sessionId);
-      setState((current) => ({
-        ...current,
-        activeSession: current.activeSession
-          ? {
-              ...current.activeSession,
-              ...toActiveSession(
-                sessionId,
-                roomCode,
-                detail,
-                detail.session.status,
-                entryStatus,
-              ),
-              answers: current.activeSession.answers,
-              currentQuestionIndex: Math.min(
-                current.activeSession.currentQuestionIndex,
-                Math.max(detail.questions.length - 1, 0),
-              ),
-              syncStatus: 'ready',
-              syncMessage: buildSyncMessage('ready'),
-            }
-          : current.activeSession,
-      }));
+      syncActiveSessionFromDetail(sessionId, roomCode, entryStatus, detail);
     } catch (error) {
       setState((current) => ({
         ...current,
@@ -100,6 +199,7 @@ export const useStudentSession = ({
     activeSessionId,
     activeSessionRoomCode,
     setState,
+    syncActiveSessionFromDetail,
     student,
   ]);
 
@@ -145,11 +245,47 @@ export const useStudentSession = ({
       throw new Error('Сонгосон суралцагч алга.');
     }
 
-    const started = await startSessionWithOptions(
-      student,
-      activeSession.sessionId,
-      options,
-    );
+    if (
+      activeSession.status === 'in_progress' ||
+      activeSession.status === 'submitting' ||
+      activeSession.status === 'submitted'
+    ) {
+      return;
+    }
+
+    let started: Awaited<ReturnType<typeof startSessionWithOptions>>;
+
+    try {
+      started = await startSessionWithOptions(
+        student,
+        activeSession.sessionId,
+        options,
+      );
+    } catch (error) {
+      if (isRecoverableStartStatusError(error)) {
+        try {
+          const detail = await getSessionDetail(student, activeSession.sessionId);
+
+          if (
+            detail.session.status === 'in_progress' ||
+            detail.session.status === 'submitting' ||
+            detail.session.status === 'submitted'
+          ) {
+            syncActiveSessionFromDetail(
+              activeSession.sessionId,
+              activeSession.roomCode,
+              activeSession.entryStatus,
+              detail,
+            );
+            return;
+          }
+        } catch {
+          // Fall through to the original start error below.
+        }
+      }
+
+      throw error;
+    }
 
     setState((current) => ({
       ...current,
@@ -166,7 +302,7 @@ export const useStudentSession = ({
           }
         : current.activeSession,
     }));
-  }, [activeSession, setState, student]);
+  }, [activeSession, setState, student, syncActiveSessionFromDetail]);
 
   const setCurrentQuestionIndex = useCallback(
     (index: number) => {

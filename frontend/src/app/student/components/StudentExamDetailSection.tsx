@@ -97,8 +97,7 @@ export default function StudentExamDetailSection({
     return () => clearInterval(timer);
   }, [examMeta.isUpcoming, examMeta.scheduledAt]);
 
-  const isActionDisabled =
-    primaryActionDisabled || Boolean(joinError) || examMeta.isUpcoming;
+  const isActionDisabled = primaryActionDisabled || examMeta.isUpcoming;
 
   return (
     <section className={`mx-auto w-full ${maxWidthClassName} space-y-5`}>
