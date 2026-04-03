@@ -98,23 +98,14 @@ const getDueBadge = (value: Date) => {
   );
 
   if (difference === 0) {
-    return {
-      label: "Өнөөдөр",
-      className: "bg-[#e6faeb] text-[#62c980]",
-    };
+    return { label: "Өнөөдөр", className: "bg-[#e6faeb] text-[#62c980]" };
   }
 
   if (difference <= 2) {
-    return {
-      label: `${difference} хоног`,
-      className: "bg-[#fff2dc] text-[#f0aa3d]",
-    };
+    return { label: `${difference} хоног`, className: "bg-[#fff2dc] text-[#f0aa3d]" };
   }
 
-  return {
-    label: `${difference} хоног`,
-    className: "bg-[#f3f5f7] text-[#a8b2bc]",
-  };
+  return { label: `${difference} хоног`, className: "bg-[#f3f5f7] text-[#a8b2bc]" };
 };
 
 export default function StudentDashboardTab({
@@ -146,7 +137,6 @@ export default function StudentDashboardTab({
   const featuredExam = useMemo(() => {
     return orderedExams.map((exam) => {
       const timestamp = getExamTimestamp(exam);
-
       return {
         id: exam.id,
         exam,
@@ -175,7 +165,6 @@ export default function StudentDashboardTab({
     return remainingExams.slice(0, 4).map((exam) => {
       const timestamp = getExamTimestamp(exam);
       const dueBadge = getDueBadge(timestamp);
-
       return {
         id: exam.id,
         exam,
@@ -277,19 +266,14 @@ export default function StudentDashboardTab({
                     <div className="h-7 w-28 animate-pulse rounded-full bg-[#e4e7f0]" />
                     <div className="h-6 w-24 animate-pulse rounded-full bg-[#eef2fb]" />
                   </div>
-
                   <div className="mt-6 space-y-3">
                     {Array.from({ length: 3 }).map((__, rowIndex) => (
-                      <div
-                        key={rowIndex}
-                        className="flex items-center justify-between gap-3"
-                      >
+                      <div key={rowIndex} className="flex items-center justify-between gap-3">
                         <div className="h-4 w-24 animate-pulse rounded-full bg-[#eef2fb]" />
                         <div className="h-4 w-20 animate-pulse rounded-full bg-[#e4e7f0]" />
                       </div>
                     ))}
                   </div>
-
                   {index === 0 ? (
                     <div className="mt-auto ml-auto h-11 w-32 animate-pulse rounded-full bg-[#dfe5fb]" />
                   ) : (
@@ -303,7 +287,6 @@ export default function StudentDashboardTab({
 
             <div className="space-y-3">
               <div className="h-8 w-32 animate-pulse rounded-full bg-[#e4e7f0]" />
-
               {Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={index}
@@ -327,7 +310,6 @@ export default function StudentDashboardTab({
             <div className="h-8 w-[270px] animate-pulse rounded-full bg-[#e4e7f0]" />
             <div className="h-6 w-[92px] animate-pulse rounded-full bg-[#e4e7f0]" />
           </div>
-
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
               <div
@@ -338,7 +320,6 @@ export default function StudentDashboardTab({
                   <div className="h-6 w-28 animate-pulse rounded-full bg-[#e4e7f0]" />
                   <div className="h-7 w-[70px] animate-pulse rounded-full bg-[#eef2fb]" />
                 </div>
-
                 <div className="mt-5 space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="h-4 w-12 animate-pulse rounded-full bg-[#eef2fb]" />
@@ -349,7 +330,6 @@ export default function StudentDashboardTab({
                     <div className="h-4 w-14 animate-pulse rounded-full bg-[#e4e7f0]" />
                   </div>
                 </div>
-
                 <div className="mt-6 border-t border-[#edf1ff] pt-3">
                   <div className="ml-auto h-4 w-24 animate-pulse rounded-full bg-[#e4e7f0]" />
                 </div>
@@ -375,19 +355,29 @@ export default function StudentDashboardTab({
   }
 
   return (
-    <section className="mx-auto w-full max-w-[1272px] space-y-7">
-      <div className="space-y-5">
-        <h2 className="text-[2rem] font-semibold tracking-[-0.05em] text-slate-900">
-          {featuredDayHeading}
-        </h2>
+    <section className="mx-auto w-full space-y-7">
+      <div className="space-y-4">
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_316px]">
-          <div className="grid gap-4 md:grid-cols-2">
+        {/* ── Header row: date heading + leaderboard heading ── */}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_409px]">
+          <h2 className="text-[2rem] font-semibold tracking-[-0.05em] text-slate-900">
+            {featuredDayHeading}
+          </h2>
+          <h3 className="text-[1.6rem] font-semibold tracking-[-0.04em] text-slate-900">
+            Таны эрэмбэ
+          </h3>
+        </div>
+
+        {/* ── Main grid: exam cards + leaderboard rows ── */}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_409px]">
+
+          {/* Exam cards — 799 Fill × 300 Fill */}
+          <div className="grid h-[300px] gap-4 md:grid-cols-2">
             {featuredExam.length > 0 ? (
               featuredExam.map((item, index) => (
                 <article
                   key={item.id}
-                  className="flex min-h-[200px] flex-col rounded-[28px] border border-[#d9e4ff] bg-white px-5 py-5 shadow-[0_12px_28px_-24px_rgba(79,93,132,0.16)]"
+                  className="flex h-full flex-col rounded-[28px] border border-[#d9e4ff] bg-white px-5 py-5 shadow-[0_12px_28px_-24px_rgba(79,93,132,0.16)]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-[1.08rem] font-semibold tracking-[-0.03em] text-slate-900">
@@ -451,16 +441,11 @@ export default function StudentDashboardTab({
             )}
           </div>
 
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-[1.6rem] font-semibold tracking-[-0.04em] text-slate-900">
-                Таны эрэмбэ
-              </h3>
-              <p className="sr-only">
-                Одоогийн эрэмбэ{" "}
-                {displayRank ? `#${displayRank}` : "тодорхойгүй"}
-              </p>
-            </div>
+          {/* Leaderboard — 409 Fill × 300, rows 409 Fill × 78 Hug */}
+          <div className="flex h-[300px] flex-col gap-3">
+            <p className="sr-only">
+              Одоогийн эрэмбэ {displayRank ? `#${displayRank}` : "тодорхойгүй"}
+            </p>
 
             {xpRows.length > 0 ? (
               xpRows.map((entry, index) => {
@@ -482,7 +467,7 @@ export default function StudentDashboardTab({
                           "aria-label": "Ахиц харах",
                         }
                       : {})}
-                    className={`flex w-full items-center gap-3 rounded-[18px] border px-4 py-3 text-left ${
+                    className={`flex h-[78px] w-full items-center gap-3 rounded-[18px] border px-4 text-left ${
                       isCurrentUser
                         ? "border-[#c5d3ff] bg-[linear-gradient(135deg,#ffffff_0%,#f5f7ff_100%)] shadow-[0_14px_28px_-24px_rgba(79,93,132,0.24)]"
                         : "border-[#edf1ff] bg-white"
@@ -511,28 +496,26 @@ export default function StudentDashboardTab({
                         >
                           {displayName}
                         </div>
-                        {isCurrentUser ? (
+                        {isCurrentUser && (
                           <span className="rounded-full bg-[#5f70ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white">
                             ТА
                           </span>
-                        ) : null}
+                        )}
                       </div>
                       <div className="mt-0.5 text-[11px] text-slate-400">
                         Түвшин {entry.level}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-0.5">
-                      {isCurrentUser && xpGapToAbove !== null ? (
+                      {isCurrentUser && xpGapToAbove !== null && (
                         <div className="flex items-center gap-1 text-[11px] font-semibold text-[#62c980]">
                           <ArrowUp className="h-3.5 w-3.5" />
                           {xpGapToAbove} оноо
                         </div>
-                      ) : null}
+                      )}
                       <div
                         className={`flex items-center gap-1 text-[14px] font-semibold ${
-                          isCurrentUser
-                            ? "text-[#4a66ef]"
-                            : "text-slate-400 blur-none"
+                          isCurrentUser ? "text-[#4a66ef]" : "text-slate-400"
                         }`}
                       >
                         <svg
@@ -561,6 +544,7 @@ export default function StudentDashboardTab({
         </div>
       </div>
 
+      {/* ── Upcoming exams ── */}
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[1.9rem] font-semibold tracking-[-0.045em] text-slate-900">
