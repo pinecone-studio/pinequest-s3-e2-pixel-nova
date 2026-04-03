@@ -12,6 +12,13 @@ export type SubjectInsightMistake = {
   submittedAt: string | null;
 };
 
+export type SubjectInsightStrengthExample = {
+  topic: string;
+  questionText: string;
+  examTitle: string | null;
+  submittedAt: string | null;
+};
+
 export type SubjectInsightDetail = {
   subject: string;
   average: number;
@@ -24,6 +31,7 @@ export type SubjectInsightDetail = {
   latestExamTitle: string | null;
   latestSubmittedAt: string | null;
   recentMistakes: SubjectInsightMistake[];
+  recentStrengths: SubjectInsightStrengthExample[];
 };
 
 export type SubjectInsightAnswer = {
@@ -253,6 +261,7 @@ export const buildFallbackSubjectInsightDetail = (
     latestExamTitle: null,
     latestSubmittedAt: null,
     recentMistakes: [],
+    recentStrengths: [],
   };
 };
 
@@ -272,6 +281,7 @@ export const buildBackendSubjectInsightDetail = (
   let latestExamTitle: string | null = null;
   let latestSubmittedAt: string | null = null;
   const recentMistakes: SubjectInsightMistake[] = [];
+  const recentStrengths: SubjectInsightStrengthExample[] = [];
 
   answers.forEach((answer, index) => {
     const label = getQuestionTopicLabel(answer, index);
@@ -312,6 +322,14 @@ export const buildBackendSubjectInsightDetail = (
           answer.questionText?.replace(/\s+/g, " ").trim() || `Асуулт ${index + 1}`,
         selectedAnswer: answer.selectedAnswer ?? null,
         correctAnswer: answer.correctAnswer ?? null,
+        examTitle: answer.examTitle ?? null,
+        submittedAt: answer.submittedAt ?? null,
+      });
+    } else {
+      recentStrengths.push({
+        topic: label,
+        questionText:
+          answer.questionText?.replace(/\s+/g, " ").trim() || `Асуулт ${index + 1}`,
         examTitle: answer.examTitle ?? null,
         submittedAt: answer.submittedAt ?? null,
       });
@@ -358,6 +376,14 @@ export const buildBackendSubjectInsightDetail = (
     })
     .slice(0, 3);
 
+  const orderedStrengths = recentStrengths
+    .sort((left, right) => {
+      const leftDate = left.submittedAt ?? "";
+      const rightDate = right.submittedAt ?? "";
+      return rightDate.localeCompare(leftDate);
+    })
+    .slice(0, 3);
+
   return {
     subject,
     average: averagePercentage,
@@ -370,5 +396,6 @@ export const buildBackendSubjectInsightDetail = (
     latestExamTitle,
     latestSubmittedAt,
     recentMistakes: orderedMistakes,
+    recentStrengths: orderedStrengths,
   };
 };

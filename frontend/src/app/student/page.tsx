@@ -44,7 +44,7 @@ export default function StudentPage() {
     [selectedUser],
   );
 
-  const data = useStudentData(sessionUser);
+  const data = useStudentData(sessionUser, { useSessionFallback: false });
   const exam = useStudentExamState({
     currentUser: data.currentUser,
   });

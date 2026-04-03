@@ -80,16 +80,20 @@ describe("StudentProgressTab", () => {
     );
 
     expect(screen.getByText("Миний ахиц")).toBeInTheDocument();
-    expect(screen.getByText("Хичээлийн дүн")).toBeInTheDocument();
+    expect(screen.getByText("Шалгалтын дүн")).toBeInTheDocument();
     expect(screen.getByText("Дүгнэлт")).toBeInTheDocument();
     expect(screen.getByText("Хиймэл оюуны ерөнхий дүгнэлт")).toBeInTheDocument();
-    expect(screen.getByText("Англи хэл")).toBeInTheDocument();
-    expect(screen.getByText("Математик")).toBeInTheDocument();
-    expect(screen.getByText("Физик")).toBeInTheDocument();
+    expect(screen.getByText("English Reading Quiz")).toBeInTheDocument();
+    expect(screen.getByText("Mathematics Final Exam")).toBeInTheDocument();
+    expect(screen.getByText("Physics Midterm")).toBeInTheDocument();
     expect(screen.getByText("ТА")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Математик/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Mathematics Final Exam/i }));
 
+    expect(screen.getByRole("dialog", { name: "Mathematics Final Exam" })).toBeInTheDocument();
+    expect(screen.getByText("Хувийн дүн")).toBeInTheDocument();
+    expect(screen.getByText("Оноо")).toBeInTheDocument();
+    expect(screen.getByText("Үнэлгээ")).toBeInTheDocument();
     expect(screen.getByText("Анхаарах хэрэгтэй")).toBeInTheDocument();
     expect(screen.getByText("Гүйцэтгэл өндөр сэдэв")).toBeInTheDocument();
     expect(screen.getByText("Зөвлөгөө")).toBeInTheDocument();

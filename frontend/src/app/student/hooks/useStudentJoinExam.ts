@@ -71,8 +71,12 @@ export const useStudentJoinExam = () => {
     return () => clearInterval(timer);
   }, [joinError, selectedExam?.scheduledAt]);
 
-  const handleLookup = useCallback(async (roomCodeOverride?: string) => {
-    const code = (roomCodeOverride ?? roomCodeInput).trim().toUpperCase();
+  const handleLookup = useCallback(async (roomCodeOverride?: unknown) => {
+    const overrideCode =
+      typeof roomCodeOverride === "string" ? roomCodeOverride : undefined;
+    const baseCode =
+      typeof roomCodeInput === "string" ? roomCodeInput : "";
+    const code = (overrideCode ?? baseCode).trim().toUpperCase();
     if (!code) {
       setJoinError("Өрөөний код оруулна уу.");
       return null;

@@ -3,7 +3,6 @@ import {
   CircleAlert,
   ClipboardX,
   Clock3,
-  ChevronRight,
   Info,
   Play,
   RefreshCcw,
@@ -11,7 +10,6 @@ import {
 import type { FormEvent } from "react";
 import type { Exam } from "../types";
 import { formatDate, gradeFromPercentage } from "../utils";
-import { formatClock, subjectFromExam } from "./student-exams-helpers";
 
 type JoinExamPanelProps = {
   loading: boolean;
@@ -21,8 +19,6 @@ type JoinExamPanelProps = {
   joinError: string | null;
   onLookup: () => void;
   selectedExam?: Exam | null;
-  upcomingExams?: Exam[];
-  onSelectUpcomingExam?: (exam: Exam) => void;
   studentHistory: {
     examId: string;
     title: string;
@@ -89,8 +85,6 @@ export default function StudentJoinExamPanel({
   joinError,
   onLookup,
   selectedExam,
-  upcomingExams = [],
-  onSelectUpcomingExam = () => undefined,
   studentHistory,
 }: JoinExamPanelProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -191,6 +185,10 @@ export default function StudentJoinExamPanel({
                   className={`inline-flex h-[36px] min-w-[182px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#6354ee] to-[#4f4be4] px-5 text-[13px] font-semibold text-white shadow-[0_20px_42px_rgba(96,84,228,0.28)] transition hover:brightness-105 ${
                     joinLoading ? "opacity-70" : ""
                   }`}
+<<<<<<< Updated upstream
+=======
+                  onClick={() => onLookup()}
+>>>>>>> Stashed changes
                   disabled={joinLoading}
                 >
                   <Play className="h-[18px] w-[18px]" />
@@ -251,63 +249,6 @@ export default function StudentJoinExamPanel({
             <li>Микрофоны хяналтын аудио бичлэг шаардлагатай.</li>
           )}
         </ul>
-      </div>
-
-      <div className="rounded-[30px] border border-[#e8edf9] bg-white p-6 shadow-[0_22px_55px_rgba(68,84,125,0.08)]">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">
-              Удахгүй болох шалгалтууд
-            </h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Багшийн оруулсан хуваарь энд автоматаар харагдана.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          {upcomingExams.length === 0 ? (
-            <div className="rounded-[22px] border border-dashed border-[#d7def4] bg-[#fafbff] px-5 py-8 text-sm text-slate-400 md:col-span-2">
-              Одоогоор ирээдүйд болох шалгалтын хуваарь алга.
-            </div>
-          ) : (
-            upcomingExams.slice(0, 6).map((exam) => (
-              <button
-                key={exam.id}
-                type="button"
-                onClick={() => onSelectUpcomingExam(exam)}
-                className="rounded-[22px] border border-[#e7ecfb] bg-[#fafcff] px-5 py-4 text-left transition hover:border-[#cfd9ff] hover:bg-white"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-base font-semibold text-slate-900">
-                      {subjectFromExam(exam)}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      {formatDate(exam.scheduledAt ?? exam.createdAt)}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
-                </div>
-
-                <div className="mt-4 grid gap-2 text-sm text-slate-500">
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Эхлэх цаг</span>
-                    <span className="font-medium text-slate-700">
-                      {formatClock(new Date(exam.scheduledAt ?? exam.createdAt))}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Үргэлжлэх хугацаа</span>
-                    <span className="font-medium text-slate-700">
-                      {exam.duration ?? 45} минут
-                    </span>
-                  </div>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
       </div>
 
       <div className="rounded-[30px] border border-[#e8edf9] bg-white p-6 shadow-[0_22px_55px_rgba(68,84,125,0.08)]">

@@ -137,19 +137,15 @@ export default function StudentDashboardTab({
   onOpenProgress,
 }: StudentDashboardTabProps) {
   const orderedExams = useMemo(
-    () => [...exams].filter((exam) => isUpcomingExam(exam)).sort(compareDashboardExams),
+    () =>
+      [...exams]
+        .filter((exam) => isUpcomingExam(exam))
+        .sort(compareDashboardExams),
     [exams],
   );
 
   const featuredExam = useMemo(() => {
-    const groupedDay =
-      orderedExams.length > 0 ? startOfDay(getExamTimestamp(orderedExams[0])) : new Date();
-    const sameDayExams = orderedExams.filter((exam) =>
-      isSameCalendarDay(getExamTimestamp(exam), groupedDay),
-    );
-    const source = sameDayExams.length > 0 ? sameDayExams : orderedExams;
-
-    return source.slice(0, 2).map((exam) => {
+    return orderedExams.map((exam) => {
       const timestamp = getExamTimestamp(exam);
 
       return {
@@ -168,12 +164,14 @@ export default function StudentDashboardTab({
       return formatDayHeading(new Date());
     }
 
-    return formatDayHeading(getExamTimestamp(featuredExam[0].exam));
+    return "Товлогдсон шалгалтууд";
   }, [featuredExam]);
 
   const upcomingCards = useMemo(() => {
     const featuredIds = new Set(featuredExam.map((item) => item.id));
-    const remainingExams = orderedExams.filter((exam) => !featuredIds.has(exam.id));
+    const remainingExams = orderedExams.filter(
+      (exam) => !featuredIds.has(exam.id),
+    );
 
     return remainingExams.slice(0, 4).map((exam) => {
       const timestamp = getExamTimestamp(exam);
@@ -404,26 +402,35 @@ export default function StudentDashboardTab({
                   <dl className="mt-6 space-y-3 text-[0.98rem]">
                     <div className="flex items-center justify-between gap-3">
                       <dt className="text-slate-400">Өдөр:</dt>
-                      <dd className="font-medium text-slate-700">{item.dateLabel}</dd>
+                      <dd className="font-medium text-slate-700">
+                        {item.dateLabel}
+                      </dd>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <dt className="text-slate-400">Эхлэх цаг:</dt>
-                      <dd className="font-medium text-slate-700">{item.timeLabel}</dd>
+                      <dd className="font-medium text-slate-700">
+                        {item.timeLabel}
+                      </dd>
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <dt className="text-slate-400">Үргэлжлэх хугацаа:</dt>
-                      <dd className="font-medium text-slate-700">{item.durationLabel}</dd>
+                      <dd className="font-medium text-slate-700">
+                        {item.durationLabel}
+                      </dd>
                     </div>
                   </dl>
 
                   {index === 0 ? (
-                    <button
-                      type="button"
-                      className="mt-auto ml-auto inline-flex h-11 items-center justify-center rounded-full bg-[#4f69ef] px-5 text-sm font-semibold text-white shadow-[0_16px_32px_-22px_rgba(79,105,239,0.72)] transition hover:brightness-105"
-                      onClick={() => onOpenExamDetail(item.exam)}
-                    >
-                      Шалгалтад орох
-                    </button>
+                    <div className="mt-auto border-t border-[#edf1ff] pt-3">
+                      <button
+                        type="button"
+                        className="ml-auto inline-flex items-center gap-2 text-[0.98rem] font-medium text-slate-600 transition hover:text-slate-900"
+                        onClick={() => onOpenExamDetail(item.exam)}
+                      >
+                        Дэлгэрэнгүй
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   ) : (
                     <div className="mt-auto border-t border-[#edf1ff] pt-3">
                       <button
@@ -451,7 +458,8 @@ export default function StudentDashboardTab({
                 Таны эрэмбэ
               </h3>
               <p className="sr-only">
-                Одоогийн эрэмбэ {displayRank ? `#${displayRank}` : "тодорхойгүй"}
+                Одоогийн эрэмбэ{" "}
+                {displayRank ? `#${displayRank}` : "тодорхойгүй"}
               </p>
             </div>
 
@@ -571,7 +579,7 @@ export default function StudentDashboardTab({
 
         {upcomingCards.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-[#dfe5fb] bg-white/90 px-5 py-8 text-sm text-slate-400">
-            Одоогоор ирээдүйд болох шалгалтын хуваарь алга.
+            Одоогоор товлогдсон шалгалтын хуваарь алга.
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -594,11 +602,15 @@ export default function StudentDashboardTab({
                 <dl className="mt-5 space-y-3 text-[0.95rem]">
                   <div className="flex items-center justify-between gap-3">
                     <dt className="text-slate-400">Өдөр:</dt>
-                    <dd className="font-medium text-slate-700">{card.dateLabel}</dd>
+                    <dd className="font-medium text-slate-700">
+                      {card.dateLabel}
+                    </dd>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <dt className="text-slate-400">Эхлэх цаг:</dt>
-                    <dd className="font-medium text-slate-700">{card.timeLabel}</dd>
+                    <dd className="font-medium text-slate-700">
+                      {card.timeLabel}
+                    </dd>
                   </div>
                 </dl>
 
