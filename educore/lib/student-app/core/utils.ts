@@ -82,7 +82,7 @@ export const getResultMessage = (score: number) => {
 export const getIntegrityCapabilities = (): IntegrityCapability => {
   if (Platform.OS === 'android') {
     return {
-      screenshotProtectionSupported: false,
+      screenshotProtectionSupported: true,
       screenshotDetectionSupported: false,
       copyPasteRestricted: true,
       backgroundDetectionSupported: true,
@@ -96,7 +96,7 @@ export const getIntegrityCapabilities = (): IntegrityCapability => {
 
   if (Platform.OS === 'ios') {
     return {
-      screenshotProtectionSupported: false,
+      screenshotProtectionSupported: true,
       screenshotDetectionSupported: false,
       copyPasteRestricted: true,
       backgroundDetectionSupported: true,

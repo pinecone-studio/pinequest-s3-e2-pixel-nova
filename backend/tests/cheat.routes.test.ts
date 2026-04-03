@@ -11,6 +11,7 @@ import app from "../src/index";
 
 const mockR2 = {
   get: jest.fn(),
+  list: jest.fn(),
 };
 
 const cheatEnv = {
@@ -26,6 +27,7 @@ describe("cheat routes", () => {
   beforeEach(() => {
     resetDbMock();
     mockR2.get.mockReset();
+    mockR2.list.mockReset();
   });
 
   it("creates a presigned upload URL for camera snapshots", async () => {
@@ -199,6 +201,44 @@ describe("cheat routes", () => {
         image: "data:image/jpeg;base64,bW9jaw==",
       }),
     );
+  });
+
+  it("returns the latest snapshot asset for a teacher session alert", async () => {
+    queueDbResults(
+      { id: "auth-result" },
+      [{ examId: "exam-1" }],
+      [{ studentId: "student-1" }],
+    );
+
+    mockR2.list.mockResolvedValue({
+      objects: [
+        { key: "cheat-snapshots/session-1/student-1/1710000000000-older.jpg" },
+        { key: "cheat-snapshots/session-1/student-1/1710000001000-latest.jpg" },
+      ],
+    });
+
+    const response = await app.request(
+      "http://localhost/api/cheat/latest-snapshot/session-1",
+      {
+        method: "GET",
+        headers: teacherHeaders(),
+      },
+      cheatEnv,
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      data: {
+        objectKey: "cheat-snapshots/session-1/student-1/1710000001000-latest.jpg",
+        assetUrl:
+          "http://localhost/api/cheat/snapshot-assets?key=cheat-snapshots%2Fsession-1%2Fstudent-1%2F1710000001000-latest.jpg",
+      },
+    });
+    expect(mockR2.list).toHaveBeenCalledWith({
+      limit: 100,
+      prefix: "cheat-snapshots/session-1/student-1/",
+    });
   });
 
   it("accepts the new mobile camera event types", async () => {

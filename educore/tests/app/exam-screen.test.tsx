@@ -27,6 +27,13 @@ jest.mock("expo-camera", () => ({
   useCameraPermissions: jest.fn(() => [{ granted: true }, jest.fn()]),
 }));
 
+jest.mock("expo-screen-capture", () => ({
+  allowScreenCaptureAsync: jest.fn(async () => undefined),
+  disableAppSwitcherProtectionAsync: jest.fn(async () => undefined),
+  enableAppSwitcherProtectionAsync: jest.fn(async () => undefined),
+  preventScreenCaptureAsync: jest.fn(async () => undefined),
+}));
+
 jest.mock("@/lib/student-app/context", () => ({
   useStudentApp: jest.fn(),
 }));
@@ -80,6 +87,8 @@ const mockUseStudentApp = useStudentApp as jest.MockedFunction<
 >;
 const mockUseCameraPermissions = jest.requireMock("expo-camera")
   .useCameraPermissions as jest.Mock;
+const mockPreventScreenCaptureAsync = jest.requireMock("expo-screen-capture")
+  .preventScreenCaptureAsync as jest.Mock;
 
 const buildActiveSession = (
   status: ActiveExamSession["status"] = "joined",
@@ -241,6 +250,9 @@ describe("ExamScreen", () => {
     expect(screen.getByText("Demo exam")).toBeTruthy();
     expect(screen.getByText("Асуулт 1")).toBeTruthy();
     expect(screen.getByText("Илгээх")).toBeTruthy();
+    expect(mockPreventScreenCaptureAsync).toHaveBeenCalledWith(
+      "educore-active-exam",
+    );
     screen.unmount();
   });
 

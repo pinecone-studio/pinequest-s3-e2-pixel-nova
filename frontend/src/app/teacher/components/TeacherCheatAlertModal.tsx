@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
+import { getLatestSnapshot, type LatestSnapshotAsset } from "@/api/cheat";
 import type { NotificationItem } from "@/lib/notifications";
 
 type TeacherCheatAlertModalProps = {
@@ -31,6 +34,41 @@ export default function TeacherCheatAlertModal({
   onDisqualify,
   onWarn,
 }: TeacherCheatAlertModalProps) {
+  const [snapshot, setSnapshot] = useState<LatestSnapshotAsset | null>(null);
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
+
+  useEffect(() => {
+    if (!notification?.sessionId) {
+      setSnapshot(null);
+      setSnapshotLoading(false);
+      return;
+    }
+
+    let active = true;
+    setSnapshotLoading(true);
+
+    void getLatestSnapshot(notification.sessionId)
+      .then((result) => {
+        if (active) {
+          setSnapshot(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setSnapshot(null);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setSnapshotLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [notification?.sessionId]);
+
   if (!notification) return null;
 
   return (
@@ -62,6 +100,36 @@ export default function TeacherCheatAlertModal({
           <br />
           {getReason(notification)} үйлдэл хийсэн байна.
         </p>
+
+        <div className="mt-6 overflow-hidden rounded-[24px] border border-[#f0dcdc] bg-[#fff8f8]">
+          {snapshotLoading ? (
+            <div className="px-5 py-6 text-center text-sm text-slate-500">
+              Snapshot loading...
+            </div>
+          ) : snapshot?.assetUrl ? (
+            <div className="space-y-3 p-4">
+              <img
+                src={snapshot.assetUrl}
+                alt={`${getStudentName(notification)} snapshot`}
+                className="max-h-[280px] w-full rounded-[18px] object-cover"
+              />
+              <div className="flex justify-end">
+                <a
+                  href={snapshot.assetUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-[14px] border border-[#ead2d2] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-[#fff1f1]"
+                >
+                  Open snapshot
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="px-5 py-6 text-center text-sm text-slate-500">
+              No snapshot available yet.
+            </div>
+          )}
+        </div>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <button
