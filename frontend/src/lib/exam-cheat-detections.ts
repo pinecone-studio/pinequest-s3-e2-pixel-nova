@@ -3,13 +3,8 @@ export const DEFAULT_ENABLED_CHEAT_DETECTIONS = [
   "tab_hidden",
   "window_blur",
   "copy_paste",
-  "right_click",
   "screen_capture",
   "devtools_open",
-  "multiple_monitors",
-  "suspicious_resize",
-  "rapid_answers",
-  "idle_too_long",
   "face_missing",
   "multiple_faces",
   "looking_away",
@@ -29,9 +24,11 @@ export const normalizeEnabledCheatDetections = (
     return [...DEFAULT_ENABLED_CHEAT_DETECTIONS];
   }
 
-  const normalized = detections.filter((value): value is ConfigurableCheatDetection => {
-    return DETECTION_SET.has(value);
-  });
+  const normalized = detections.filter(
+    (value): value is ConfigurableCheatDetection => {
+      return DETECTION_SET.has(value);
+    },
+  );
 
   return normalized.length > 0
     ? Array.from(new Set(normalized))
@@ -41,22 +38,21 @@ export const normalizeEnabledCheatDetections = (
 export const isCheatDetectionEnabled = (
   eventType: string,
   enabledDetections?: readonly string[] | null,
-) => normalizeEnabledCheatDetections(enabledDetections).includes(
-  eventType as ConfigurableCheatDetection,
-);
+) =>
+  normalizeEnabledCheatDetections(enabledDetections).includes(
+    eventType as ConfigurableCheatDetection,
+  );
 
-export const CHEAT_DETECTION_LABELS: Record<ConfigurableCheatDetection, string> = {
-  tab_switch: "Таб солих",
-  tab_hidden: "Бүтэн дэлгэцээс гарах",
-  window_blur: "Цонхноос гарах",
-  copy_paste: "Хуулах, буулгах",
-  right_click: "Баруун товшилт",
+export const CHEAT_DETECTION_LABELS: Record<
+  ConfigurableCheatDetection,
+  string
+> = {
+  tab_switch: "Дэлгэц солих",
+  tab_hidden: "Камер нээх",
+  window_blur: "Дуу хураагуур",
+  copy_paste: "Хуулах эсвэл буулгах оролдлого",
   screen_capture: "Дэлгэцийн зураг авах",
-  devtools_open: "Developer tools нээх",
-  multiple_monitors: "Олон дэлгэц",
-  suspicious_resize: "Сэжигтэй хэмжээс өөрчлөх",
-  rapid_answers: "Хэт хурдан хариулах",
-  idle_too_long: "Хэт удаан идэвхгүй байх",
+  devtools_open: "Хулганы баруун товч дарах ",
   face_missing: "Нүүр илрэхгүй байх",
   multiple_faces: "Олон нүүр илрэх",
   looking_away: "Хажуу тийш харах",

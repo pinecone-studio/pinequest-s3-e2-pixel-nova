@@ -151,12 +151,96 @@ function inferSubjectName(exam: Exam) {
       keywords: ["монгол", "mongolian", "essay", "зохион бичлэг", "найруулга"],
     },
     {
+      label: "Монгол бичиг",
+      keywords: ["монгол бичиг", "үндэсний бичиг", "traditional script"],
+    },
+    {
+      label: "Орос хэл",
+      keywords: ["орос", "russian", "кирилл", "русский"],
+    },
+    {
+      label: "Хятад хэл",
+      keywords: ["хятад", "chinese", "mandarin", "hanzi", "hsk"],
+    },
+    {
+      label: "Солонгос хэл",
+      keywords: ["солонгос", "korean", "hangul", "topik"],
+    },
+    {
+      label: "Япон хэл",
+      keywords: ["япон", "japanese", "hiragana", "katakana", "jlpt"],
+    },
+    {
+      label: "Герман хэл",
+      keywords: ["герман", "german", "deutsch"],
+    },
+    {
       label: "Физик",
       keywords: ["physics", "force", "motion", "energy", "electromagnetic"],
     },
     {
       label: "Хими",
       keywords: ["chemistry", "chemical", "atom", "molecule", "reaction"],
+    },
+    {
+      label: "Биологи",
+      keywords: ["biology", "cell", "genetics", "ecosystem", "photosynthesis"],
+    },
+    {
+      label: "Газарзүй",
+      keywords: ["geography", "map", "climate", "continent", "latitude"],
+    },
+    {
+      label: "Нийгэм судлал",
+      keywords: ["social studies", "society", "sociology", "citizenship"],
+    },
+    {
+      label: "Иргэний ёс зүйн боловсрол",
+      keywords: ["ethics", "civic", "citizen", "moral", "ёс зүй"],
+    },
+    {
+      label: "Эдийн засаг",
+      keywords: ["economics", "microeconomics", "macroeconomics", "market"],
+    },
+    {
+      label: "Мэдээллийн технологи",
+      keywords: ["information technology", "it", "computer", "digital literacy"],
+    },
+    {
+      label: "Программчлал",
+      keywords: ["programming", "coding", "algorithm", "python", "javascript"],
+    },
+    {
+      label: "Дизайн технологи",
+      keywords: ["design technology", "engineering drawing", "prototype"],
+    },
+    {
+      label: "Дүрслэх урлаг",
+      keywords: ["art", "drawing", "painting", "visual art"],
+    },
+    {
+      label: "Хөгжим",
+      keywords: ["music", "rhythm", "melody", "harmony"],
+    },
+    {
+      label: "Биеийн тамир",
+      keywords: ["physical education", "pe", "fitness", "sports"],
+    },
+    {
+      label: "Эрүүл мэнд",
+      keywords: ["health", "nutrition", "wellness", "first aid"],
+    },
+    {
+      label: "Технологи",
+      keywords: ["technology", "tools", "manufacturing", "craft"],
+    },
+    {
+      label: "Астрономи",
+      keywords: ["astronomy", "planet", "solar system", "galaxy"],
+    },
+    {
+      label: "Экологи",
+      keywords: ["ecology", "environment", "biodiversity", "sustainability"],
     },
     {
       label: "Түүх",
