@@ -32,6 +32,13 @@ const exam: Exam = {
   ],
 };
 
+beforeAll(() => {
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    configurable: true,
+    value: jest.fn(),
+  });
+});
+
 describe("StudentExamView", () => {
   it("renders the question image before answer options", () => {
     render(
@@ -106,8 +113,8 @@ describe("StudentExamView", () => {
     expect(screen.getByText("desktop-camera-panel")).toBeInTheDocument();
   });
 
-  it("moves to the next question when continue is clicked", () => {
-    const onNext = jest.fn();
+  it("moves to the next question when the next index button is clicked", () => {
+    const setCurrentQuestionIndex = jest.fn();
 
     render(
       <StudentExamView
@@ -127,25 +134,24 @@ describe("StudentExamView", () => {
         warning={null}
         timeLeft={120}
         currentQuestionIndex={0}
-        setCurrentQuestionIndex={jest.fn()}
+        setCurrentQuestionIndex={setCurrentQuestionIndex}
         violations={violations}
         answers={{}}
         onUpdateAnswer={jest.fn()}
         onSelectMcq={jest.fn()}
         onPrev={jest.fn()}
-        onNext={onNext}
+        onNext={jest.fn()}
         onSubmit={jest.fn()}
         onExit={jest.fn()}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Үргэлжлүүлэх" }));
-    expect(onNext).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("Question 2")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "2" }));
+    expect(setCurrentQuestionIndex).toHaveBeenCalledWith(1);
   });
 
-  it("shows a back button and submit action on the last question", () => {
-    const onPrev = jest.fn();
+  it("moves to the previous question from the index buttons and keeps submit available", () => {
+    const setCurrentQuestionIndex = jest.fn();
     const onSubmit = jest.fn();
 
     render(
@@ -166,20 +172,20 @@ describe("StudentExamView", () => {
         warning={null}
         timeLeft={120}
         currentQuestionIndex={1}
-        setCurrentQuestionIndex={jest.fn()}
+        setCurrentQuestionIndex={setCurrentQuestionIndex}
         violations={violations}
         answers={{}}
         onUpdateAnswer={jest.fn()}
         onSelectMcq={jest.fn()}
-        onPrev={onPrev}
+        onPrev={jest.fn()}
         onNext={jest.fn()}
         onSubmit={onSubmit}
         onExit={jest.fn()}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Өмнөх асуулт" }));
-    expect(onPrev).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "1" }));
+    expect(setCurrentQuestionIndex).toHaveBeenCalledWith(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Илгээх" }));
     expect(onSubmit).toHaveBeenCalledTimes(1);

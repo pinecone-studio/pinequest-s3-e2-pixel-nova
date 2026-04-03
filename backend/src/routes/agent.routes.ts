@@ -7,6 +7,7 @@ import { authMiddleware } from "../middleware/auth";
 import { requireRole } from "../middleware/role-guard";
 import { error, success } from "../utils/response";
 import { newId } from "../utils/id";
+import { normalizeWorkersAiError } from "../utils/workers-ai";
 import {
   generateExamDraft,
   type NormalizedDraftExam,
@@ -52,11 +53,11 @@ agentRoutes.post(
       const draft = await generateExamDraft(c.env.AI, payload);
       return success(c, { draft });
     } catch (err) {
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : "Failed to generate exam draft";
-      return error(c, "AI_GENERATION_FAILED", message, 502);
+      const normalized = normalizeWorkersAiError(
+        err,
+        "Failed to generate exam draft.",
+      );
+      return error(c, normalized.code, normalized.message, normalized.status);
     }
   },
 );

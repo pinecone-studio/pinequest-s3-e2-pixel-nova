@@ -123,7 +123,35 @@ describe("agent routes", () => {
     await expect(response.json()).resolves.toMatchObject({
       success: false,
       error: {
-        code: "AI_GENERATION_FAILED",
+        code: "AI_UNAVAILABLE",
+      },
+    });
+  });
+
+  it("normalizes Workers AI daily limit errors", async () => {
+    queueDbResults([{ id: "teacher-1", fullName: "Ada Teacher" }]);
+    workerEnv.AI.run.mockRejectedValue(
+      new Error("Workers AI daily limit reached for your account"),
+    );
+
+    const response = await app.request(
+      "http://localhost/api/agent/exam-generator/generate",
+      jsonRequest(
+        {
+          topic: "Biology",
+          difficulty: "easy",
+          questionCount: 3,
+        },
+        teacherHeaders(),
+      ),
+      workerEnv,
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      success: false,
+      error: {
+        code: "AI_DAILY_LIMIT_REACHED",
       },
     });
   });
