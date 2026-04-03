@@ -185,10 +185,6 @@ export default function StudentJoinExamPanel({
                   className={`inline-flex h-[36px] min-w-[182px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#6354ee] to-[#4f4be4] px-5 text-[13px] font-semibold text-white shadow-[0_20px_42px_rgba(96,84,228,0.28)] transition hover:brightness-105 ${
                     joinLoading ? "opacity-70" : ""
                   }`}
-<<<<<<< Updated upstream
-=======
-                  onClick={() => onLookup()}
->>>>>>> Stashed changes
                   disabled={joinLoading}
                 >
                   <Play className="h-[18px] w-[18px]" />
@@ -221,7 +217,9 @@ export default function StudentJoinExamPanel({
                       className={`flex min-h-[66px] flex-col justify-center rounded-[12px] border px-4 py-3 ${item.className}`}
                     >
                       <div className="flex items-center gap-2 text-[14px] font-semibold leading-none">
-                        <Icon className={`h-[16px] w-[16px] ${item.iconClassName}`} />
+                        <Icon
+                          className={`h-[16px] w-[16px] ${item.iconClassName}`}
+                        />
                         {item.title}
                       </div>
                       <div className="mt-1 text-[11px] leading-[1.2] text-slate-400">

@@ -127,7 +127,6 @@ export default function StudentDashboardTab({
   currentRank,
   leaderboardXp = 0,
   leaderboardLevel,
-  studentHistory: _studentHistory,
   xpNeighborEntries = [],
   termLeaderboardEntries = [],
   teacherName,
