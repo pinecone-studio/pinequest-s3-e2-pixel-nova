@@ -106,9 +106,13 @@ export default function JoinExamScreen() {
     if (guideStepIndex === null) return;
 
     if (guideStepIndex >= JOIN_GUIDE_STEPS.length - 1) {
+      const targetSessionId =
+        activeSession?.sessionId ?? joinedRoomCode ?? roomCode.trim().toUpperCase();
+
       router.replace({
-        pathname: "/exam",
+        pathname: "/exam/[id]",
         params: {
+          id: targetSessionId,
           roomCode: joinedRoomCode ?? roomCode.trim().toUpperCase(),
           autoStart: "1",
         },

@@ -56,6 +56,7 @@ describe("StudentExamView", () => {
     expect(image).toBeInTheDocument();
     expect(image).toHaveAttribute("src", "data:image/png;base64,abc123");
     expect(screen.getByRole("button", { name: /A\.\s*2/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Илгээх" })).toBeInTheDocument();
   });
 
   it("selects an mcq option", () => {
@@ -103,6 +104,85 @@ describe("StudentExamView", () => {
     );
 
     expect(screen.getByText("desktop-camera-panel")).toBeInTheDocument();
+  });
+
+  it("moves to the next question when continue is clicked", () => {
+    const onNext = jest.fn();
+
+    render(
+      <StudentExamView
+        activeExam={{
+          ...exam,
+          questions: [
+            exam.questions[0],
+            {
+              id: "q-2",
+              text: "Question 2",
+              type: "text",
+              correctAnswer: "",
+              points: 1,
+            },
+          ],
+        }}
+        warning={null}
+        timeLeft={120}
+        currentQuestionIndex={0}
+        setCurrentQuestionIndex={jest.fn()}
+        violations={violations}
+        answers={{}}
+        onUpdateAnswer={jest.fn()}
+        onSelectMcq={jest.fn()}
+        onPrev={jest.fn()}
+        onNext={onNext}
+        onSubmit={jest.fn()}
+        onExit={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Үргэлжлүүлэх" }));
+    expect(onNext).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Question 2")).not.toBeInTheDocument();
+  });
+
+  it("shows a back button and submit action on the last question", () => {
+    const onPrev = jest.fn();
+    const onSubmit = jest.fn();
+
+    render(
+      <StudentExamView
+        activeExam={{
+          ...exam,
+          questions: [
+            exam.questions[0],
+            {
+              id: "q-2",
+              text: "Question 2",
+              type: "text",
+              correctAnswer: "",
+              points: 1,
+            },
+          ],
+        }}
+        warning={null}
+        timeLeft={120}
+        currentQuestionIndex={1}
+        setCurrentQuestionIndex={jest.fn()}
+        violations={violations}
+        answers={{}}
+        onUpdateAnswer={jest.fn()}
+        onSelectMcq={jest.fn()}
+        onPrev={onPrev}
+        onNext={jest.fn()}
+        onSubmit={onSubmit}
+        onExit={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Өмнөх асуулт" }));
+    expect(onPrev).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Илгээх" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
   it("renders a larger warning card copy for violations", () => {

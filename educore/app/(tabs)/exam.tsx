@@ -770,9 +770,6 @@ function HistoryList({
   );
 }
 export default function ExamScreen() {
-  const params = useLocalSearchParams<{
-    autoStart?: string | string[];
-  }>();
   const router = useRouter();
   const {
     activeSession,
@@ -816,11 +813,8 @@ export default function ExamScreen() {
     : {};
   const isJoined =
     activeSession?.status === "joined" || activeSession?.status === "late";
-  const autoStartRequested = Array.isArray(params.autoStart)
-    ? params.autoStart[0] === "1"
-    : params.autoStart === "1";
   const shouldAutoStart = isJoined;
-  const showAutoStartPreflight = isJoined;
+  const isExamInProgress = activeSession?.status === "in_progress";
   const audioRecorder = useExamAudioRecorder({
     required: Boolean(activeSession?.exam.requiresAudioRecording),
     session: activeSession,
@@ -850,13 +844,16 @@ export default function ExamScreen() {
   const isLastQuestion = activeSession
     ? activeSession.currentQuestionIndex >= activeSession.questions.length - 1
     : false;
+  const displayedRemainingSeconds = isExamInProgress
+    ? remainingSeconds
+    : (activeSession?.exam.durationMin ?? 0) * 60;
   const primaryActionLabel = submitting
     ? "Илгээж байна..."
     : isLastQuestion
       ? "Илгээх"
       : "Үргэлжлүүлэх";
   const primaryActionDisabled =
-    isSyncBlocked || !currentQuestion || !hasCurrentAnswer;
+    isSyncBlocked || !currentQuestion || !hasCurrentAnswer || isJoined;
 
   const persistTextAnswer = useCallback(async () => {
     if (!currentQuestion || !activeSession) return;
@@ -1103,6 +1100,7 @@ export default function ExamScreen() {
     if (!activeSession) return;
 
     setStartingExam(true);
+    setSyncError(null);
     try {
       const permissionResult = cameraPermission?.granted
         ? cameraPermission
@@ -1147,6 +1145,7 @@ export default function ExamScreen() {
       }
 
       setProctoringBlockedMessage(null);
+      setSyncError(null);
       await startExam({
         audioReady: requiresAudioRecording ? audioReady : undefined,
       });
@@ -1282,238 +1281,79 @@ export default function ExamScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {isJoined ? (
-          <>
-            {showAutoStartPreflight ? (
-              <View style={styles.preflightWrap}>
-                <View style={styles.preflightCard}>
-                  <View style={styles.preflightIcon}>
-                    <Ionicons name="shield-checkmark-outline" size={42} color="#3568F5" />
-                  </View>
-                  <Text style={styles.preflightTitle}>Шалгалтыг бэлдэж байна...</Text>
-                  <Text style={styles.preflightText}>
-                    {startingExam
-                      ? "Камер, микрофон болон шалгалтын хамгаалалтыг идэвхжүүлж байна."
-                      : cameraPermission?.granted
-                        ? "Камер бэлэн болмогц шалгалт автоматаар эхэлнэ."
-                        : "Камерын зөвшөөрлийг шалгаж байна."}
-                  </Text>
-
-                  <View style={styles.preflightMeta}>
-                    <Text style={styles.preflightMetaLabel}>Шалгалт</Text>
-                    <Text style={styles.preflightMetaValue}>
-                      {activeSession.exam.title}
-                    </Text>
-                  </View>
-
-                  {syncError ? (
-                    <Text style={styles.errorText}>{syncError}</Text>
-                  ) : null}
-                  {proctoringBlockedMessage ? (
-                    <Text style={styles.errorText}>{proctoringBlockedMessage}</Text>
-                  ) : null}
-
-                  {(syncError || proctoringBlockedMessage) && !startingExam ? (
-                    <TouchableOpacity
-                      style={styles.upcomingPrimaryButton}
-                      onPress={() => void handleStart()}
-                    >
-                      <Text style={styles.primaryBtnText}>Дахин оролдох</Text>
-                    </TouchableOpacity>
-                  ) : null}
-
-                  <MobileProctorCamera
-                    captureEnabled={false}
-                    headless
-                    isEnabled
-                    permissionGranted={!!cameraPermission?.granted}
-                    sessionId={activeSession.sessionId}
-                    student={student}
-                    onCameraReadyChange={setCameraReady}
-                    onViolation={logIntegrityEvent}
-                  />
-                </View>
-              </View>
-            ) : (
-              <>
-                <Text style={styles.pageTitle}>Шалгалтууд</Text>
-
-                <View style={styles.tabRow}>
-                  <View style={[styles.tab, styles.tabActive]}>
-                    <Text style={[styles.tabText, styles.tabTextActive]}>
-                      Шалгалтууд
-                    </Text>
-                  </View>
-                  <View style={styles.tab}>
-                    <Text style={styles.tabText}>Шалгалтын түүх</Text>
-                  </View>
-                </View>
-
-                <View style={styles.searchBar}>
-                  <Ionicons name="search-outline" size={18} color="#98A2B3" />
-                  <Text style={styles.searchPlaceholderText}>Шалгалт хайх...</Text>
-                </View>
-
-                <View style={styles.upcomingCard}>
-                  <View style={styles.listCardRow}>
-                    <Text style={styles.upcomingCardTitle}>
-                      {activeSession.exam.title}
-                    </Text>
-                    <View
-                      style={[
-                        styles.statusPill,
-                        activeSession.entryStatus === "late" &&
-                          styles.statusPillWarning,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusPillText,
-                          activeSession.entryStatus === "late" &&
-                            styles.statusPillTextWarning,
-                        ]}
-                      >
-                        {activeSession.entryStatus === "late"
-                          ? "Хоцорсон"
-                          : "Эхэлсэн"}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.upcomingMetaGroup}>
-                    <View style={styles.upcomingMetaRow}>
-                      <Text style={styles.upcomingMetaLabel}>Өдөр:</Text>
-                      <Text style={styles.upcomingMetaValue}>
-                        {formatListDate(
-                          activeSession.exam.scheduledAt ?? activeSession.startedAt,
-                        )}
-                      </Text>
-                    </View>
-                    <View style={styles.upcomingMetaRow}>
-                      <Text style={styles.upcomingMetaLabel}>Эхэлсэн цаг:</Text>
-                      <Text style={styles.upcomingMetaValue}>
-                        {formatListTime(
-                          activeSession.exam.scheduledAt ?? activeSession.startedAt,
-                        )}
-                      </Text>
-                    </View>
-                    <View style={styles.upcomingMetaRow}>
-                      <Text style={styles.upcomingMetaLabel}>
-                        Үргэлжилсэн хугацаа:
-                      </Text>
-                      <Text style={styles.upcomingMetaValue}>
-                        {activeSession.exam.durationMin} минут
-                      </Text>
-                    </View>
-                  </View>
-
-                  {syncError ? (
-                    <Text style={styles.errorText}>{syncError}</Text>
-                  ) : null}
-                  {proctoringBlockedMessage ? (
-                    <Text style={styles.errorText}>{proctoringBlockedMessage}</Text>
-                  ) : null}
-
-                  <View style={styles.upcomingButtonRow}>
-                    <TouchableOpacity
-                      style={styles.upcomingPrimaryButton}
-                      onPress={() => void handleStart()}
-                    >
-                      <Text style={styles.primaryBtnText}>Шалгалтанд орох</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <MobileProctorCamera
-                    captureEnabled={false}
-                    headless
-                    isEnabled
-                    permissionGranted={!!cameraPermission?.granted}
-                    sessionId={activeSession.sessionId}
-                    student={student}
-                    onCameraReadyChange={setCameraReady}
-                    onViolation={logIntegrityEvent}
-                  />
-                </View>
-              </>
-            )}
-          </>
-        ) : (
-          <View style={styles.activeExamLayout}>
-            <View style={styles.activeExamHeader}>
-              <View style={styles.activeExamHeading}>
-                <Text style={styles.activeExamTitle}>{activeSession.exam.title}</Text>
-                <Text style={styles.activeExamSubtitle}>
-                  Асуултуудаа сайн уншиж танилцаад тайван бөглөөрэй.
-                </Text>
-              </View>
-              <View style={styles.examTimerBadge}>
-                <Ionicons name="time-outline" size={18} color="#111827" />
-                <Text style={styles.examTimerBadgeText}>
-                  {formatCountdown(remainingSeconds)}
-                </Text>
-              </View>
-            </View>
-
-            {activeSession.syncMessage ? (
-              <Text style={styles.subtleStatusText}>
-                {activeSession.syncMessage}
+        <View style={styles.activeExamLayout}>
+          <View style={styles.activeExamHeader}>
+            <View style={styles.activeExamHeading}>
+              <Text style={styles.activeExamTitle}>{activeSession.exam.title}</Text>
+              <Text style={styles.activeExamSubtitle}>
+                Асуултуудаа сайн уншиж танилцаад тайван бөглөөрэй.
               </Text>
-            ) : null}
-
-            {integrity.warningMessage ? (
-              <View style={styles.warningBox}>
-                <Text style={styles.warningText}>
-                  {integrity.warningMessage}
-                </Text>
-              </View>
-            ) : null}
-
-            {proctoringBlockedMessage ? (
-              <View style={styles.warningBox}>
-                <Text style={styles.warningText}>
-                  {proctoringBlockedMessage}
-                </Text>
-              </View>
-            ) : null}
-
-            {syncError ? <Text style={styles.errorText}>{syncError}</Text> : null}
+            </View>
+            <View style={styles.examTimerBadge}>
+              <Ionicons name="time-outline" size={18} color="#111827" />
+              <Text style={styles.examTimerBadgeText}>
+                {formatCountdown(displayedRemainingSeconds)}
+              </Text>
+            </View>
           </View>
-        )}
 
-        {!isJoined ? (
-          <>
-            <MobileProctorCamera
-              captureEnabled={
-                activeSession.status === "in_progress" && appIsActive
-              }
-              headless
-              isEnabled={activeSession.status === "in_progress" && appIsActive}
-              permissionGranted={!!cameraPermission?.granted}
-              sessionId={activeSession.sessionId}
-              student={student}
-              onCameraReadyChange={setCameraReady}
-              onViolation={logIntegrityEvent}
-            />
-            {proctoringBlockedMessage ? (
-              <TouchableOpacity
-                style={[
-                  styles.secondaryBtn,
-                  recoveringProctoring && styles.navBtnDisabled,
-                ]}
-                disabled={recoveringProctoring}
-                onPress={() => void handleRecoverProctoring()}
-              >
-                <Text style={styles.secondaryBtnText}>
-                  {recoveringProctoring
-                    ? "Хяналтыг сэргээж байна..."
-                    : "Хяналтыг сэргээх"}
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-          </>
+          {!isJoined && activeSession.syncMessage ? (
+            <Text style={styles.subtleStatusText}>{activeSession.syncMessage}</Text>
+          ) : null}
+
+          {integrity.warningMessage ? (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>{integrity.warningMessage}</Text>
+            </View>
+          ) : null}
+
+          {proctoringBlockedMessage ? (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>{proctoringBlockedMessage}</Text>
+            </View>
+          ) : null}
+
+          {syncError ? <Text style={styles.errorText}>{syncError}</Text> : null}
+
+          {isJoined && (syncError || proctoringBlockedMessage) && !startingExam ? (
+            <TouchableOpacity
+              style={styles.secondaryBtn}
+              onPress={() => void handleStart()}
+            >
+              <Text style={styles.secondaryBtnText}>Дахин оролдох</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        <MobileProctorCamera
+          captureEnabled={isExamInProgress && appIsActive}
+          headless
+          isEnabled={isJoined || (isExamInProgress && appIsActive)}
+          permissionGranted={!!cameraPermission?.granted}
+          sessionId={activeSession.sessionId}
+          student={student}
+          onCameraReadyChange={setCameraReady}
+          onViolation={logIntegrityEvent}
+        />
+
+        {!isJoined && proctoringBlockedMessage ? (
+          <TouchableOpacity
+            style={[
+              styles.secondaryBtn,
+              recoveringProctoring && styles.navBtnDisabled,
+            ]}
+            disabled={recoveringProctoring}
+            onPress={() => void handleRecoverProctoring()}
+          >
+            <Text style={styles.secondaryBtnText}>
+              {recoveringProctoring
+                ? "Хяналтыг сэргээж байна..."
+                : "Хяналтыг сэргээх"}
+            </Text>
+          </TouchableOpacity>
         ) : null}
 
-        {!isJoined && currentQuestion ? (
+        {currentQuestion ? (
           <View style={styles.questionCard}>
             <Text style={styles.questionCounter}>
               Асуулт {activeSession.currentQuestionIndex + 1}
@@ -1546,9 +1386,11 @@ export default function ExamScreen() {
                   return (
                     <Pressable
                       key={option.id}
+                      disabled={!isExamInProgress}
                       onPress={() => void saveMcqAnswer(option.id)}
                       style={[
                         styles.optionButton,
+                        !isExamInProgress && styles.navBtnDisabled,
                         selected && styles.optionButtonSelected,
                       ]}
                     >
@@ -1592,6 +1434,7 @@ export default function ExamScreen() {
                 placeholderTextColor="#BBBFC9"
                 style={styles.answerInput}
                 value={textDraft}
+                editable={isExamInProgress}
                 onChangeText={setTextDraft}
                 onBlur={() => void persistTextAnswer()}
               />
@@ -1599,7 +1442,7 @@ export default function ExamScreen() {
           </View>
         ) : null}
 
-        {!isJoined ? (
+        {currentQuestion ? (
           <View style={styles.footerActions}>
             <View style={styles.questionFooterRow}>
               {activeSession.currentQuestionIndex > 0 ? (
