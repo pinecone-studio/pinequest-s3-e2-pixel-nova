@@ -476,7 +476,7 @@ export default function StudentProgressTab({
                   </button>
                 </div>
 
-                <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+                <div className="space-y-5 px-6 py-6 sm:px-7 sm:py-7">
                   {(() => {
                     const examInsight = resolveExamInsight(
                       selectedExamResult.title,
@@ -500,99 +500,104 @@ export default function StudentProgressTab({
                       examStrengths.length > 0
                         ? examStrengths.slice(0, 2)
                         : recentStrengths.slice(0, 2);
+                    const fallbackConcernRows = examInsight.concerns.slice(0, 2);
+                    const fallbackStrengthRows = examInsight.strengths.slice(0, 2);
 
                     return (
                       <>
-                        <section className="grid gap-4 sm:grid-cols-2">
-                          <div className="rounded-[24px] border border-[#d9e4ff] bg-white px-5 py-5">
-                            <div className="text-sm text-slate-400">Хувийн дүн</div>
-                            <div className="mt-2 text-[2rem] font-semibold text-slate-900">
-                              {selectedExamResult.percentage}%
-                            </div>
-                          </div>
-                          <div className="rounded-[24px] border border-[#d9e4ff] bg-white px-5 py-5">
-                            <div className="text-sm text-slate-400">Оноо</div>
-                            <div className="mt-2 text-[2rem] font-semibold text-slate-900">
-                              {selectedExamResult.score ?? 0}/
-                              {selectedExamResult.totalPoints ?? 0}
-                            </div>
-                          </div>
-                          <div className="rounded-[24px] border border-[#d9e4ff] bg-white px-5 py-5">
-                            <div className="text-sm text-slate-400">Үнэлгээ</div>
-                            <div className="mt-2 text-[2rem] font-semibold text-slate-900">
-                              {resolveGrade(selectedExamResult)}
-                            </div>
-                          </div>
-                          <div className="rounded-[24px] border border-[#d9e4ff] bg-white px-5 py-5">
-                            <div className="text-sm text-slate-400">Өгсөн огноо</div>
-                            <div className="mt-2 text-[1.15rem] font-semibold text-slate-900">
-                              {formatExamDate(selectedExamResult.date)}
-                            </div>
-                          </div>
-                        </section>
+                        <div className="rounded-[18px] bg-[#f7f9ff] px-4 py-3 text-[0.96rem] text-slate-500">
+                          {formatExamDate(selectedExamResult.date)} · {selectedExamResult.score ?? 0}/
+                          {selectedExamResult.totalPoints ?? 0} оноо · {selectedExamResult.percentage}% ·{" "}
+                          {resolveGrade(selectedExamResult)}
+                        </div>
 
-                        <section className="rounded-[24px] border border-[#ffd9d5] bg-white px-5 py-5">
-                          <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-slate-900">
-                            <CircleAlert className="h-5 w-5 text-[#ef5d52]" />
+                        <section className="rounded-[24px] border border-[#ffd6d3] bg-white px-6 py-5">
+                          <div className="flex items-center gap-3 text-[1.02rem] font-semibold text-slate-900">
+                            <CircleAlert className="h-5 w-5 text-[#ff4d4f]" />
                             Анхаарах хэрэгтэй
                           </div>
                           <div className="mt-5 space-y-4">
                             {visibleMistakes.length > 0 ? (
                               visibleMistakes.map((item) => (
-                                <div key={`${item.examTitle}-${item.questionText}`} className="space-y-2">
-                                  <p className="text-[0.98rem] leading-7 text-slate-600">
+                                <div
+                                  key={`${item.examTitle}-${item.questionText}`}
+                                  className="rounded-[18px] bg-[#fffafa] px-4 py-3"
+                                >
+                                  <p className="text-[1rem] leading-7 text-slate-600">
                                     {item.questionText}
                                   </p>
                                   {item.correctAnswer ? (
-                                    <p className="text-sm text-[#ef5d52]">
+                                    <p className="mt-2 text-sm text-[#ef5d52]">
                                       Зөв хариу: {item.correctAnswer}
                                     </p>
                                   ) : null}
                                 </div>
                               ))
                             ) : (
-                              examInsight.concerns.slice(0, 2).map((item) => (
-                                <p
+                              fallbackConcernRows.map((item) => (
+                                <div
                                   key={item.label}
-                                  className="text-[0.98rem] leading-7 text-slate-600"
+                                  className="flex items-center justify-between gap-4"
                                 >
-                                  {item.label}
-                                </p>
+                                  <span className="text-[1rem] text-slate-500">{item.label}</span>
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-3 w-[104px] overflow-hidden rounded-full bg-[#ffe2e1]">
+                                      <div
+                                        className="h-full rounded-full bg-[#ff4d4f]"
+                                        style={{ width: `${Math.max(12, Math.min(item.score, 100))}%` }}
+                                      />
+                                    </div>
+                                    <span className="w-12 text-right text-[1rem] font-medium text-[#ff4d4f]">
+                                      {item.score}%
+                                    </span>
+                                  </div>
+                                </div>
                               ))
                             )}
                           </div>
                         </section>
 
-                        <section className="rounded-[24px] border border-[#d8f2e5] bg-white px-5 py-5">
-                          <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-slate-900">
-                            <CheckCircle2 className="h-5 w-5 text-[#47be85]" />
+                        <section className="rounded-[24px] border border-[#cef0da] bg-white px-6 py-5">
+                          <div className="flex items-center gap-3 text-[1.02rem] font-semibold text-slate-900">
+                            <CheckCircle2 className="h-5 w-5 text-[#22c55e]" />
                             Гүйцэтгэл өндөр сэдэв
                           </div>
                           <div className="mt-5 space-y-4">
                             {visibleStrengths.length > 0 ? (
                               visibleStrengths.map((item) => (
-                                <p
+                                <div
                                   key={`${item.examTitle}-${item.questionText}`}
-                                  className="text-[0.98rem] leading-7 text-slate-600"
+                                  className="rounded-[18px] bg-[#fbfffd] px-4 py-3 text-[1rem] leading-7 text-slate-600"
                                 >
                                   {item.questionText}
-                                </p>
+                                </div>
                               ))
                             ) : (
-                              examInsight.strengths.slice(0, 2).map((item) => (
-                                <p
+                              fallbackStrengthRows.map((item) => (
+                                <div
                                   key={item.label}
-                                  className="text-[0.98rem] leading-7 text-slate-600"
+                                  className="flex items-center justify-between gap-4"
                                 >
-                                  {item.label}
-                                </p>
+                                  <span className="text-[1rem] text-slate-500">{item.label}</span>
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-3 w-[104px] overflow-hidden rounded-full bg-[#dbf7e6]">
+                                      <div
+                                        className="h-full rounded-full bg-[#22c55e]"
+                                        style={{ width: `${Math.max(12, Math.min(item.score, 100))}%` }}
+                                      />
+                                    </div>
+                                    <span className="w-12 text-right text-[1rem] font-medium text-[#22c55e]">
+                                      {item.score}%
+                                    </span>
+                                  </div>
+                                </div>
                               ))
                             )}
                           </div>
                         </section>
 
-                        <section className="rounded-[24px] border border-[#f7e7c3] bg-[#fff8eb] px-5 py-5">
-                          <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-slate-900">
+                        <section className="rounded-[24px] border border-[#f7e7c3] bg-[#fff8eb] px-6 py-5">
+                          <div className="flex items-center gap-3 text-[1.02rem] font-semibold text-slate-900">
                             <Lightbulb className="h-5 w-5 text-[#f0a63c]" />
                             Зөвлөгөө
                           </div>
@@ -648,24 +653,24 @@ export default function StudentProgressTab({
       {aiSummaryOpen && typeof document !== "undefined"
         ? createPortal(
             <div
-              className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/50 px-4 py-8 backdrop-blur-sm"
+              className="fixed inset-0 z-[70] overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-sm"
               onClick={closeAiSummary}
             >
               <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="student-ai-summary-title"
-                className="mx-auto w-full max-w-[620px] rounded-[34px] border border-[#dde3ff] bg-white p-6 shadow-[0_34px_90px_rgba(32,40,68,0.3)] sm:p-8"
+                className="mx-auto w-full max-w-[520px] rounded-[34px] border border-[#dce5fb] bg-white px-7 pb-7 pt-7 shadow-[0_34px_90px_rgba(32,40,68,0.3)]"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3 text-[#4869ef]">
+                  <div className="flex items-center gap-3 text-[#2f67ed]">
                     <Sparkles className="h-6 w-6" strokeWidth={2} />
                     <h3
                       id="student-ai-summary-title"
-                      className="text-[1.1rem] font-semibold tracking-[-0.04em]"
+                      className="text-[1.05rem] font-semibold tracking-[-0.04em]"
                     >
-                      Хиймэл оюуны ерөнхий дүгнэлт
+                      AI-ийн ерөнхий дүгнэлт
                     </h3>
                   </div>
 
@@ -679,22 +684,22 @@ export default function StudentProgressTab({
                   </button>
                 </div>
 
-                <h4 className="mt-5 text-[2rem] font-semibold leading-[1.32] tracking-[-0.05em] text-slate-900">
+                <h4 className="mt-5 text-[1.95rem] font-semibold leading-[1.36] tracking-[-0.05em] text-slate-900">
                   {aiSnapshot.headline}
                 </h4>
 
-                <div className="mt-6 space-y-4">
-                  <section className="rounded-[24px] border border-[#cfeeda] bg-[#fbfffc] px-5 py-5">
-                    <div className="flex items-center gap-2 text-[1.05rem] font-semibold text-[#58c47b]">
+                <div className="mt-7 space-y-4">
+                  <section className="rounded-[22px] border border-[#c8f1db] bg-[#fcfffd] px-5 py-5">
+                    <div className="flex items-center gap-2 text-[1rem] font-semibold text-[#0a9d6f]">
                       <CheckCircle2 className="h-5 w-5" />
                       Сайн байгаа хэсэг
                     </div>
-                    <div className="mt-4 space-y-2.5 text-[1rem] leading-8 text-slate-700">
+                    <div className="mt-3 space-y-2.5 text-[1rem] leading-8 text-[#0a8a67]">
                       {strongExams.length > 0 ? (
                         strongExams.map((item, index) => (
                           <div key={item.examId}>
-                            <span className="font-semibold text-[#58c47b]">
-                              {index + 1}. {item.title} ({item.percentage}%)
+                            <span className="font-semibold text-[#0a9d6f]">
+                              {index + 1}. {item.title}
                             </span>{" "}
                             <span>{getStrengthRemark(item.percentage)}</span>
                           </div>
@@ -702,7 +707,7 @@ export default function StudentProgressTab({
                       ) : (
                         aiSnapshot.strengths.slice(0, 3).map((item, index) => (
                           <div key={item}>
-                            <span className="font-semibold text-[#58c47b]">{index + 1}.</span>{" "}
+                            <span className="font-semibold text-[#0a9d6f]">{index + 1}.</span>{" "}
                             <span>{item}</span>
                           </div>
                         ))
@@ -710,17 +715,17 @@ export default function StudentProgressTab({
                     </div>
                   </section>
 
-                  <section className="rounded-[24px] border border-[#f8ddb0] bg-[#fffdf8] px-5 py-5">
-                    <div className="flex items-center gap-2 text-[1.05rem] font-semibold text-[#f0a63c]">
+                  <section className="rounded-[22px] border border-[#ffe0b6] bg-[#fffdfa] px-5 py-5">
+                    <div className="flex items-center gap-2 text-[1rem] font-semibold text-[#eb7a1f]">
                       <CircleAlert className="h-5 w-5" />
                       Анхаарах хэсэг
                     </div>
-                    <div className="mt-4 space-y-2.5 text-[1rem] leading-8 text-slate-700">
+                    <div className="mt-3 space-y-2.5 text-[1rem] leading-8 text-[#d96510]">
                       {focusExams.length > 0 ? (
                         focusExams.map((item, index) => (
                           <div key={item.examId}>
-                            <span className="font-semibold text-[#f0a63c]">
-                              {index + 1}. {item.title} ({item.percentage}%)
+                            <span className="font-semibold text-[#eb7a1f]">
+                              {index + 1}. {item.title}
                             </span>{" "}
                             <span>{getFocusRemark(item.percentage)}</span>
                           </div>
@@ -728,7 +733,7 @@ export default function StudentProgressTab({
                       ) : (
                         aiSnapshot.focusAreas.slice(0, 2).map((item, index) => (
                           <div key={item}>
-                            <span className="font-semibold text-[#f0a63c]">{index + 1}.</span>{" "}
+                            <span className="font-semibold text-[#eb7a1f]">{index + 1}.</span>{" "}
                             <span>{item}</span>
                           </div>
                         ))
@@ -737,35 +742,66 @@ export default function StudentProgressTab({
                   </section>
 
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-4 text-center shadow-[0_10px_24px_-26px_rgba(79,93,132,0.22)]">
-                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#4965ee]">
+                    <div className="rounded-[20px] border border-[#d9e8ff] bg-[#f8fbff] px-4 py-4 text-center">
+                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#2f67ed]">
                         {aiSnapshot.stats.average}%
                       </div>
-                      <div className="mt-1 text-[0.98rem] text-slate-400">Дундаж оноо</div>
+                      <div className="mt-1 text-[0.98rem] text-slate-500">Дундаж оноо</div>
                     </div>
-                    <div className="rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-4 text-center shadow-[0_10px_24px_-26px_rgba(79,93,132,0.22)]">
-                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#4965ee]">
+                    <div className="rounded-[20px] border border-[#c8f1db] bg-[#fbfffc] px-4 py-4 text-center">
+                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#0a9d6f]">
                         {aiSnapshot.stats.best}%
                       </div>
-                      <div className="mt-1 text-[0.98rem] text-slate-400">Хамгийн өндөр</div>
+                      <div className="mt-1 text-[0.98rem] text-slate-500">Хамгийн өндөр</div>
                     </div>
-                    <div className="rounded-[20px] border border-[#d9e4ff] bg-white px-4 py-4 text-center shadow-[0_10px_24px_-26px_rgba(79,93,132,0.22)]">
-                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#4965ee]">
+                    <div className="rounded-[20px] border border-[#e9ddff] bg-[#fcfbff] px-4 py-4 text-center">
+                      <div className="text-[2rem] font-semibold tracking-[-0.04em] text-[#7a3ef1]">
                         {aiSnapshot.stats.examCount}
                       </div>
-                      <div className="mt-1 text-[0.98rem] text-slate-400">Өгсөн шалгалт</div>
+                      <div className="mt-1 text-[0.98rem] text-slate-500">Өгсөн шалгалт</div>
                     </div>
                   </div>
 
-                  <section className="rounded-[22px] border border-[#d9e4ff] bg-white px-5 py-5 shadow-[0_10px_24px_-26px_rgba(79,93,132,0.18)]">
-                    <div className="flex items-center gap-2 text-[1.02rem] font-semibold text-[#4965ee]">
-                      <Lightbulb className="h-5 w-5" />
-                      Өнөөдрийн урам
+                  <section className="rounded-[22px] border border-[#edf1f8] bg-[#fcfdff] px-5 py-5">
+                    <div className="flex items-center gap-2 text-[1rem] font-semibold text-slate-700">
+                      <TrendingUp className="h-5 w-5" />
+                      Гүйцэтгэлийн явц
                     </div>
-                    <p className="mt-3 text-[1rem] leading-8 text-[#5c75d9]">
+                    <p className="mt-3 text-[1rem] leading-8 text-slate-600">
+                      {trendDelta < 0
+                        ? "Сүүлийн үед гүйцэтгэл буурсан тул тогтмол давтлага хийх хэрэгтэй."
+                        : trendDelta > 0
+                          ? "Сүүлийн үед гүйцэтгэл өссөн тул энэ хурдаа хадгалаарай."
+                          : "Гүйцэтгэл тогтвортой байна. Давтлагын хэмнэлээ хэвээр хадгалаарай."}
+                    </p>
+                  </section>
+
+                  <section className="rounded-[22px] border border-[#d9e8ff] bg-[#f8fbff] px-5 py-5">
+                    <div className="flex items-center gap-2 text-[1rem] font-semibold text-[#2f67ed]">
+                      <Lightbulb className="h-5 w-5" />
+                      Зөвлөгөө
+                    </div>
+                    <p className="mt-3 text-[1rem] leading-8 text-[#2f67ed]">
                       {aiSnapshot.encouragement}
                     </p>
                   </section>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={closeAiSummary}
+                      className="rounded-[20px] border border-[#d9d9d9] bg-white px-6 py-4 text-[1.05rem] font-medium tracking-[-0.03em] text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Ойлголоо
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeAiSummary}
+                      className="rounded-[20px] bg-[#2f67ed] px-6 py-4 text-[1.05rem] font-medium tracking-[-0.03em] text-white shadow-[0_18px_40px_-18px_rgba(47,103,237,0.78)] transition hover:bg-[#255fe0]"
+                    >
+                      Давтлага эхлэх
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>,

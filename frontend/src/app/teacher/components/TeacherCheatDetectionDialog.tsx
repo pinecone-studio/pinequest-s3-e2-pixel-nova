@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  CHEAT_DETECTION_LABELS,
   DEFAULT_ENABLED_CHEAT_DETECTIONS,
   type ConfigurableCheatDetection,
 } from "@/lib/exam-cheat-detections";
@@ -21,8 +20,6 @@ type TeacherCheatDetectionDialogProps = {
 };
 
 export default function TeacherCheatDetectionDialog({
-  exam,
-  examTitle,
   open,
   saving = false,
   requiresAudioRecording,
@@ -34,12 +31,27 @@ export default function TeacherCheatDetectionDialog({
 }: TeacherCheatDetectionDialogProps) {
   if (!open) return null;
 
-  const title = exam?.title ?? examTitle ?? "Шалгалт";
   const selectedSet = new Set<ConfigurableCheatDetection>(
     DEFAULT_ENABLED_CHEAT_DETECTIONS.filter((value) =>
       selectedDetections.includes(value),
     ),
   );
+
+  const designRows: Array<
+    | { type: "detection"; key: ConfigurableCheatDetection; label: string }
+    | { type: "camera"; key: "camera_requirement"; label: string }
+  > = [
+    { type: "detection", key: "tab_switch", label: "Дэлгэц солих" },
+    { type: "camera", key: "camera_requirement", label: "Камер нээх" },
+    { type: "detection", key: "window_blur", label: "Дуу хураагуур" },
+    { type: "detection", key: "looking_away", label: "Байршил заагч" },
+    { type: "detection", key: "screen_capture", label: "Дэлгэцийн зураг авах" },
+    {
+      type: "detection",
+      key: "devtools_open",
+      label: "Хулганы баруун товч дарах",
+    },
+  ];
 
   const toggleDetection = (detection: ConfigurableCheatDetection) => {
     if (selectedSet.has(detection)) {
@@ -62,20 +74,20 @@ export default function TeacherCheatDetectionDialog({
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center gap-4 rounded-[20px] px-1 py-1 text-left transition hover:bg-slate-50"
+      className="flex w-full items-center gap-8 px-0 py-0.5 text-left"
     >
       <span
-        className={`relative h-7 w-14 shrink-0 rounded-full border transition ${
-          checked ? "border-[#2f6df6] bg-[#2f6df6]" : "border-[#c9c9c9] bg-white"
+        className={`relative h-[18px] w-[32px] shrink-0 rounded-full border-[2px] transition ${
+          checked ? "border-[#2f67ed] bg-white" : "border-[#cfcfcf] bg-white"
         }`}
       >
         <span
-          className={`absolute top-0.5 size-6 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition ${
-            checked ? "right-0.5" : "left-0.5 bg-[#d1d5db]"
+          className={`absolute top-1/2 h-[12px] w-[12px] -translate-y-1/2 rounded-full shadow-[0_1px_4px_rgba(15,23,42,0.12)] transition ${
+            checked ? "right-[2px] bg-[#2f67ed]" : "left-[2px] bg-[#bdbdbd]"
           }`}
         />
       </span>
-      <span className="text-[22px] font-semibold tracking-[-0.02em] text-slate-950">
+      <span className="whitespace-nowrap text-[16px] font-medium tracking-[-0.045em] text-black">
         {label}
       </span>
     </button>
@@ -83,38 +95,37 @@ export default function TeacherCheatDetectionDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[130] overflow-y-auto bg-black/55 px-4 py-6 backdrop-blur-[8px] sm:px-6 sm:py-10"
+      className="fixed inset-0 z-[130] flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-[4px] sm:px-6 "
       onClick={onClose}
     >
-      <div className="mx-auto flex min-h-screen w-full max-w-[920px] items-center justify-center py-4 sm:py-8">
+      <div className="mx-auto flex h-auto w-full max-w-[500px] items-center justify-center no-scrollbar">
         <div
-          className="w-full overflow-hidden rounded-[32px] border border-[#eceff3] bg-white shadow-[0_30px_90px_-42px_rgba(15,23,42,0.45)]"
+          className="w-full rounded-[34px] border border-[#e8edf6] bg-white shadow-[0_26px_90px_-38px_rgba(15,23,42,0.38)]"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex items-start justify-between gap-4 px-6 pb-2 pt-6 sm:px-8 sm:pt-7">
+          <div className="flex items-start justify-between gap-4 px-8 pb-1 pt-8">
             <div className="min-w-0">
-              <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[40px]">
+              <h2 className=" whitespace-nowrap text-[22px] font-semibold leading-[1.08] tracking-[-0.06em] text-black">
                 Шалгалтын зөрчил сонгоно уу.
               </h2>
-              <p className="mt-3 max-w-2xl text-[18px] leading-7 text-slate-400">
+              <p className="mt-7 max-w-[404px] text-[16px] leading-[1.24] tracking-[-0.04em] text-[#9ca1aa]">
                 Таны идэвхжүүлсэн зөрчил гарах үед мэдэгдэл болон очно.
               </p>
-              <p className="mt-4 text-sm font-medium text-slate-500">{title}</p>
             </div>
 
             <button
               type="button"
-              className="mt-1 inline-flex size-11 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+              className="mt-1 inline-flex size-12 items-center justify-center rounded-full text-black transition hover:bg-slate-100"
               onClick={onClose}
-              aria-label="Луйврийн тохиргоог хаах"
+              aria-label="Луйвaрийн тохиргоог хаах"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="size-7"
+                className="size-8"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth={1.9}
+                strokeWidth={1.7}
               >
                 <path
                   strokeLinecap="round"
@@ -125,50 +136,47 @@ export default function TeacherCheatDetectionDialog({
             </button>
           </div>
 
-          <div className="px-6 pb-7 pt-4 sm:px-8">
-            <div className="grid gap-4">
-              <ToggleRow
-                checked={requiresAudioRecording}
-                label="Камер нээх"
-                onToggle={() =>
-                  onAudioRequirementChange(!requiresAudioRecording)
-                }
-              />
-
-              {DEFAULT_ENABLED_CHEAT_DETECTIONS.map((detection) => (
-                <ToggleRow
-                  key={detection}
-                  checked={selectedSet.has(detection)}
-                  label={CHEAT_DETECTION_LABELS[detection]}
-                  onToggle={() => toggleDetection(detection)}
-                />
-              ))}
+          <div className="px-8 pb-4 pt-8">
+            <div className="grid gap-6">
+              {designRows.map((row) =>
+                row.type === "camera" ? (
+                  <ToggleRow
+                    key={row.key}
+                    checked={requiresAudioRecording}
+                    label={row.label}
+                    onToggle={() =>
+                      onAudioRequirementChange(!requiresAudioRecording)
+                    }
+                  />
+                ) : (
+                  <ToggleRow
+                    key={row.key}
+                    checked={selectedSet.has(row.key)}
+                    label={row.label}
+                    onToggle={() => toggleDetection(row.key)}
+                  />
+                ),
+              )}
             </div>
-
-            {selectedSet.size === 0 && (
-              <p className="mt-5 rounded-2xl border border-[#f5d3bf] bg-[#fff7f2] px-4 py-3 text-sm text-[#9a4a20]">
-                Хадгалахаасаа өмнө дор хаяж нэг илрүүлэлт идэвхтэй байх ёстой.
-              </p>
-            )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 px-6 pb-7 sm:px-8">
+          <div className="flex items-center justify-end gap-4 px-8 pb-8 pt-4">
             <button
               type="button"
-              className="rounded-[18px] border border-[#d6dee8] bg-white px-7 py-3 text-[18px] font-medium text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex w-24 h-11 items-center justify-center rounded-[16px] border border-[#d8d8d8] bg-white px-8 text-[16px] font-medium tracking-[-0.04em] text-[#2d2d2d] transition hover:bg-slate-50"
               onClick={onClose}
             >
               Болих
             </button>
             <button
               type="button"
-              className={`inline-flex items-center gap-2 rounded-[18px] px-8 py-3 text-[18px] font-medium text-white transition ${
-                selectedSet.size === 0 || saving
+              className={`inline-flex w-30 h-11 items-center justify-center gap-2 rounded-[16px] px-8 text-[16px] font-medium tracking-[-0.04em] text-white transition ${
+                saving
                   ? "cursor-not-allowed bg-slate-300"
-                  : "bg-[#2f6df6] hover:bg-[#255fe0]"
+                  : "bg-[#2f67ed] shadow-[0_18px_40px_-18px_rgba(47,103,237,0.8)] hover:bg-[#255fe0]"
               }`}
               onClick={onSave}
-              disabled={selectedSet.size === 0 || saving}
+              disabled={saving}
             >
               {saving ? (
                 <>
