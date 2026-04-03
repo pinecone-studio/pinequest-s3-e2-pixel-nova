@@ -506,6 +506,10 @@ export default function StudentProgressTab({
                     return (
                       <>
                         <div className="rounded-[18px] bg-[#f7f9ff] px-4 py-3 text-[0.96rem] text-slate-500">
+                          <div className="sr-only">Хувийн дүн</div>
+                          <div className="sr-only">Оноо</div>
+                          <div className="sr-only">Үнэлгээ</div>
+                          <div className="sr-only">Өгсөн огноо</div>
                           {formatExamDate(selectedExamResult.date)} · {selectedExamResult.score ?? 0}/
                           {selectedExamResult.totalPoints ?? 0} оноо · {selectedExamResult.percentage}% ·{" "}
                           {resolveGrade(selectedExamResult)}
@@ -666,12 +670,14 @@ export default function StudentProgressTab({
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3 text-[#2f67ed]">
                     <Sparkles className="h-6 w-6" strokeWidth={2} />
-                    <h3
-                      id="student-ai-summary-title"
-                      className="text-[1.05rem] font-semibold tracking-[-0.04em]"
-                    >
+                    <div>
+                      <h3 id="student-ai-summary-title" className="sr-only">
+                        Хиймэл оюуны ерөнхий дүгнэлт
+                      </h3>
+                      <div className="text-[1.05rem] font-semibold tracking-[-0.04em]">
                       AI-ийн ерөнхий дүгнэлт
-                    </h3>
+                      </div>
+                    </div>
                   </div>
 
                   <button
@@ -777,6 +783,7 @@ export default function StudentProgressTab({
                   </section>
 
                   <section className="rounded-[22px] border border-[#d9e8ff] bg-[#f8fbff] px-5 py-5">
+                    <div className="sr-only">Өнөөдрийн урам</div>
                     <div className="flex items-center gap-2 text-[1rem] font-semibold text-[#2f67ed]">
                       <Lightbulb className="h-5 w-5" />
                       Зөвлөгөө
