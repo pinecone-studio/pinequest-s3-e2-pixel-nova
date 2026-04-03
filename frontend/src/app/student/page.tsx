@@ -13,8 +13,6 @@ import {
   type RoleKey,
 } from "@/lib/role-session";
 import StudentDashboardView from "./components/StudentDashboardView";
-import DesktopExamCameraCard from "./components/DesktopExamCameraCard";
-import DesktopExamAudioCard from "./components/DesktopExamAudioCard";
 import StudentExamView from "./components/StudentExamView";
 import StudentResultView from "./components/StudentResultView";
 import { useStudentData } from "./hooks/useStudentData";
@@ -44,7 +42,7 @@ export default function StudentPage() {
     [selectedUser],
   );
 
-  const data = useStudentData(sessionUser);
+  const data = useStudentData(sessionUser, { useSessionFallback: false });
   const exam = useStudentExamState({
     currentUser: data.currentUser,
   });
@@ -186,7 +184,7 @@ export default function StudentPage() {
 
     lastResolvedResultSignatureRef.current = lastSubmissionResolvedSignature;
     void refreshProgress();
-  }, [exam.lastSubmission, exam.resultPending, refreshProgress]);
+  }, [lastSubmissionResolvedSignature, exam.resultPending, refreshProgress]);
 
   if (showFallbackState) {
     return (

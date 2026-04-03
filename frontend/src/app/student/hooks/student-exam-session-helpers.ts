@@ -62,6 +62,21 @@ type SessionPayload = {
   questions: SessionQuestion[];
 };
 
+const mapSessionQuestionType = (type: string): Question["type"] => {
+  switch (type) {
+    case "multiple_choice":
+    case "true_false":
+    case "mcq":
+      return "mcq";
+    case "short_answer":
+    case "open":
+      return "open";
+    case "text":
+    default:
+      return "text";
+  }
+};
+
 export const mapSessionToExam = (
   sessionData: SessionPayload,
   roomCodeInput: string,
@@ -83,7 +98,7 @@ export const mapSessionToExam = (
     questions: sessionData.questions.map((question) => ({
       id: question.id,
       text: question.questionText,
-      type: question.type as Question["type"],
+      type: mapSessionQuestionType(question.type),
       options: question.options?.map((opt) => opt.text) ?? undefined,
       correctAnswer: "",
       points: Number(question.points ?? 1),

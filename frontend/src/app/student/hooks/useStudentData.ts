@@ -6,7 +6,11 @@ import type { Exam } from "../types";
 
 const DASHBOARD_POLL_MS = 30000;
 
-export const useStudentData = (overrideUser?: User | null) => {
+export const useStudentData = (
+  overrideUser?: User | null,
+  options?: { useSessionFallback?: boolean },
+) => {
+  const useSessionFallback = options?.useSessionFallback ?? true;
   const overrideUserId = overrideUser?.id ?? null;
   const overrideUsername = overrideUser?.username ?? null;
   const overridePassword = overrideUser?.password ?? "";
@@ -66,9 +70,11 @@ export const useStudentData = (overrideUser?: User | null) => {
   );
 
   useEffect(() => {
-    const user = resolvedUser ?? getSessionUser();
+    const user = resolvedUser ?? (useSessionFallback ? getSessionUser() : null);
 
     setCurrentUser(user ?? null);
+    setLoading(true);
+    setExams([]);
 
     let cancelled = false;
 
@@ -104,6 +110,7 @@ export const useStudentData = (overrideUser?: User | null) => {
     overrideUserId,
     overrideUsername,
     resolvedUser,
+    useSessionFallback,
   ]);
 
   useEffect(() => {
@@ -112,7 +119,7 @@ export const useStudentData = (overrideUser?: User | null) => {
         return;
       }
 
-      const user = resolvedUser ?? getSessionUser();
+      const user = resolvedUser ?? (useSessionFallback ? getSessionUser() : null);
       if (!user) {
         setExams([]);
         return;
@@ -147,7 +154,7 @@ export const useStudentData = (overrideUser?: User | null) => {
         document.removeEventListener("visibilitychange", handleVisibilityChange);
       }
     };
-  }, [mapUpcomingExams, resolvedUser]);
+  }, [mapUpcomingExams, resolvedUser, useSessionFallback]);
 
   const showToast = useCallback((message: string) => {
     setToast(message);

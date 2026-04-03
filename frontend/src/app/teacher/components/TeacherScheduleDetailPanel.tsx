@@ -278,11 +278,15 @@ export default function TeacherScheduleDetailPanel({
     roster?.expectedStudentsCount ?? exam.expectedStudentsCount ?? 0,
     participants.length,
   );
-  const joinedCount = Math.max(participants.length, attendanceJoined, attendanceSubmitted);
+  const joinedCount = Math.max(
+    participants.length,
+    attendanceJoined,
+    attendanceSubmitted,
+  );
   const submittedStatuses = new Set(["submitted", "graded"]);
   const audioMonitoringEnabled = Boolean(
     exam.requiresAudioRecording ||
-      exam.enabledCheatDetections?.includes("audio_recording_interrupted"),
+    exam.enabledCheatDetections?.includes("audio_recording_interrupted"),
   );
   const flaggedCount = participants.filter(
     (participant) =>
@@ -292,7 +296,9 @@ export default function TeacherScheduleDetailPanel({
   ).length;
   const normalCount = Math.max(joinedCount - flaggedCount, 0);
   const submittedCount = Math.max(
-    participants.filter((participant) => submittedStatuses.has(participant.status)).length,
+    participants.filter((participant) =>
+      submittedStatuses.has(participant.status),
+    ).length,
     attendanceSubmitted,
   );
   const [audioChunksBySession, setAudioChunksBySession] = useState<
@@ -359,7 +365,8 @@ export default function TeacherScheduleDetailPanel({
   const audioParticipants = useMemo(
     () =>
       participants.filter(
-        (participant) => (audioChunksBySession[participant.sessionId]?.length ?? 0) > 0,
+        (participant) =>
+          (audioChunksBySession[participant.sessionId]?.length ?? 0) > 0,
       ),
     [audioChunksBySession, participants],
   );
@@ -368,11 +375,13 @@ export default function TeacherScheduleDetailPanel({
     return (
       audioParticipants.find(
         (participant) => participant.sessionId === selectedAudioSessionId,
-      ) ?? audioParticipants[0] ?? null
+      ) ??
+      audioParticipants[0] ??
+      null
     );
   }, [audioParticipants, selectedAudioSessionId]);
   const selectedAudioChunks = selectedAudioParticipant
-    ? audioChunksBySession[selectedAudioParticipant.sessionId] ?? []
+    ? (audioChunksBySession[selectedAudioParticipant.sessionId] ?? [])
     : [];
   const totalAudioClipCount = useMemo(
     () =>
@@ -383,12 +392,15 @@ export default function TeacherScheduleDetailPanel({
     [audioChunksBySession],
   );
   const handleOpenAudioSection = () => {
-    audioSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    audioSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
   const audioSummaryTitle = audioLoading
     ? "Хайж байна..."
-    : selectedAudioParticipant?.studentName ??
-      (audioMonitoringEnabled ? "Бичлэг хүлээгдэж байна" : "Идэвхжүүлээгүй");
+    : (selectedAudioParticipant?.studentName ??
+      (audioMonitoringEnabled ? "Бичлэг хүлээгдэж байна" : "Идэвхжүүлээгүй"));
   const audioSummaryHelperText = audioLoading
     ? "Бичлэгүүдийг уншиж байна"
     : totalAudioClipCount > 0
@@ -478,110 +490,112 @@ export default function TeacherScheduleDetailPanel({
         ref={audioSectionRef}
         className="rounded-[28px] border border-[#e7ebf2] bg-white px-6 py-6 shadow-[0_26px_50px_-38px_rgba(15,23,42,0.2)]"
       >
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-2xl">
-              <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-slate-900">
-                Сурагчийн дуу бичлэг
-              </h3>
-              <p className="mt-2 text-[15px] leading-7 text-slate-400">
-                Сурагч сонгоод play дарж дуу бичлэгийг шууд сонсоно. Зөрчилтэй
-                үед багшид хурдан шалгах боломжтойгоор энгийн байдлаар үзүүлж байна.
-              </p>
-            </div>
-            {audioParticipants.length > 0 ? (
-              <div className="w-full max-w-[320px]">
-                <TeacherSelect
-                  options={audioParticipants.map((participant) => ({
-                    value: participant.sessionId,
-                    label: `${participant.studentName} · ${
-                      audioChunksBySession[participant.sessionId]?.length ?? 0
-                    } бичлэг`,
-                  }))}
-                  value={selectedAudioParticipant?.sessionId ?? ""}
-                  onChange={(event) => setSelectedAudioSessionId(event.target.value)}
-                  className="min-h-[48px] rounded-[16px] border-[#d8dee8] py-0 text-[15px] font-medium text-[#20232d] shadow-[0_2px_10px_-8px_rgba(15,23,42,0.15)]"
-                />
-              </div>
-            ) : null}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-slate-900">
+              Сурагчийн дуу бичлэг
+            </h3>
+            <p className="mt-2 text-[15px] leading-7 text-slate-400">
+              Сурагч сонгоод play дарж дуу бичлэгийг шууд сонсоно. Зөрчилтэй үед
+              багшид хурдан шалгах боломжтойгоор энгийн байдлаар үзүүлж байна.
+            </p>
           </div>
+          {audioParticipants.length > 0 ? (
+            <div className="w-full max-w-[320px]">
+              <TeacherSelect
+                options={audioParticipants.map((participant) => ({
+                  value: participant.sessionId,
+                  label: `${participant.studentName} · ${
+                    audioChunksBySession[participant.sessionId]?.length ?? 0
+                  } бичлэг`,
+                }))}
+                value={selectedAudioParticipant?.sessionId ?? ""}
+                onChange={(event) =>
+                  setSelectedAudioSessionId(event.target.value)
+                }
+                className="min-h-[48px] rounded-[16px] border-[#d8dee8] py-0 text-[15px] font-medium text-[#20232d] shadow-[0_2px_10px_-8px_rgba(15,23,42,0.15)]"
+              />
+            </div>
+          ) : null}
+        </div>
 
-          <div className="mt-5">
-            {!audioMonitoringEnabled ? (
-              <div className="rounded-[20px] border border-dashed border-[#dce5ef] bg-[#fbfdff] px-5 py-5 text-sm leading-6 text-slate-500">
-                Энэ шалгалтад дуу бичлэгийн хяналт асаагаагүй байна. Дараагийн
-                шалгалтад луйврын илрүүлэлтийн тохиргоон дээрээс `Дуу хураагуур`
-                хэсгийг идэвхжүүлээд ашиглаж болно.
-              </div>
-            ) : audioLoading ? (
-              <div className="flex items-center gap-3 rounded-[20px] border border-[#e8edf5] bg-[#fbfdff] px-5 py-5 text-sm text-slate-500">
-                <LoaderCircle className="size-5 animate-spin text-[#ef8f20]" />
-                Дуу бичлэгүүдийг ачаалж байна...
-              </div>
-            ) : audioParticipants.length === 0 ? (
-              <div className="rounded-[20px] border border-dashed border-[#dce5ef] bg-[#fbfdff] px-5 py-5 text-sm text-slate-500">
-                Одоогоор сурагчдаас ирсэн дуу бичлэг алга байна.
-              </div>
-            ) : selectedAudioParticipant ? (
-              <div className="space-y-4">
-                <div className="rounded-[20px] border border-[#e8edf5] bg-[#fbfdff] px-5 py-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[18px] font-semibold text-slate-900">
-                        {selectedAudioParticipant.studentName}
-                      </div>
-                      <div className="mt-1 text-sm text-slate-500">
-                        {selectedAudioParticipant.studentCode || "--"} ·{" "}
-                        {selectedAudioChunks.length} бичлэг
-                      </div>
+        <div className="mt-5">
+          {!audioMonitoringEnabled ? (
+            <div className="rounded-[20px] border border-dashed border-[#dce5ef] bg-[#fbfdff] px-5 py-5 text-sm leading-6 text-slate-500">
+              Энэ шалгалтад дуу бичлэгийн хяналт асаагаагүй байна. Дараагийн
+              шалгалтад сэжигтэй үйлдэлүүдийг тохиргоон дээрээс `Дуу хураагуур`
+              хэсгийг идэвхжүүлээд ашиглаж болно.
+            </div>
+          ) : audioLoading ? (
+            <div className="flex items-center gap-3 rounded-[20px] border border-[#e8edf5] bg-[#fbfdff] px-5 py-5 text-sm text-slate-500">
+              <LoaderCircle className="size-5 animate-spin text-[#ef8f20]" />
+              Дуу бичлэгүүдийг ачаалж байна...
+            </div>
+          ) : audioParticipants.length === 0 ? (
+            <div className="rounded-[20px] border border-dashed border-[#dce5ef] bg-[#fbfdff] px-5 py-5 text-sm text-slate-500">
+              Одоогоор сурагчдаас ирсэн дуу бичлэг алга байна.
+            </div>
+          ) : selectedAudioParticipant ? (
+            <div className="space-y-4">
+              <div className="rounded-[20px] border border-[#e8edf5] bg-[#fbfdff] px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[18px] font-semibold text-slate-900">
+                      {selectedAudioParticipant.studentName}
                     </div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[#f3dfc2] bg-[#fff8ee] px-3 py-2 text-sm font-semibold text-[#ef8f20]">
-                      <Headphones className="size-4" />
-                      Сонсож шалгана
+                    <div className="mt-1 text-sm text-slate-500">
+                      {selectedAudioParticipant.studentCode || "--"} ·{" "}
+                      {selectedAudioChunks.length} бичлэг
                     </div>
                   </div>
-                </div>
-
-                <div className="space-y-3">
-                  {selectedAudioChunks.map((chunk) => (
-                    <div
-                      key={chunk.id}
-                      className="rounded-[20px] border border-[#e8edf5] bg-white px-4 py-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-semibold text-slate-900">
-                            Бичлэг #{chunk.sequenceNumber + 1}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500">
-                            {formatAudioWindow(chunk)}
-                          </div>
-                        </div>
-                        <span className="rounded-full border border-[#dce5ef] bg-[#f8fafc] px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                          {Math.round(chunk.durationMs / 1000)} сек
-                        </span>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-3">
-                        <audio
-                          controls
-                          preload="none"
-                          src={chunk.assetUrl}
-                          className="w-full max-w-[420px]"
-                        />
-                        <a
-                          className="inline-flex items-center rounded-[12px] border border-[#dce5ef] bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-[#f8fafc]"
-                          href={chunk.assetUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Тусдаа нээх
-                        </a>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#f3dfc2] bg-[#fff8ee] px-3 py-2 text-sm font-semibold text-[#ef8f20]">
+                    <Headphones className="size-4" />
+                    Сонсож шалгана
+                  </div>
                 </div>
               </div>
-            ) : null}
-          </div>
+
+              <div className="space-y-3">
+                {selectedAudioChunks.map((chunk) => (
+                  <div
+                    key={chunk.id}
+                    className="rounded-[20px] border border-[#e8edf5] bg-white px-4 py-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">
+                          Бичлэг #{chunk.sequenceNumber + 1}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          {formatAudioWindow(chunk)}
+                        </div>
+                      </div>
+                      <span className="rounded-full border border-[#dce5ef] bg-[#f8fafc] px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                        {Math.round(chunk.durationMs / 1000)} сек
+                      </span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <audio
+                        controls
+                        preload="none"
+                        src={chunk.assetUrl}
+                        className="w-full max-w-[420px]"
+                      />
+                      <a
+                        className="inline-flex items-center rounded-[12px] border border-[#dce5ef] bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-[#f8fafc]"
+                        href={chunk.assetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Тусдаа нээх
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="rounded-[28px] border border-[#e7ebf2] bg-white shadow-[0_26px_50px_-38px_rgba(15,23,42,0.2)]">

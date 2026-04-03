@@ -45,6 +45,47 @@ export type ExamLocationConfig = {
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
+const mapQuestionTypeToBackend = (
+  type: SyncExamPayload["questions"][number]["type"],
+) => {
+  switch (type) {
+    case "mcq":
+      return "multiple_choice";
+    case "open":
+    case "text":
+    default:
+      return "short_answer";
+  }
+};
+
+const buildQuestionPayload = (
+  question: SyncExamPayload["questions"][number],
+) => {
+  const normalizedOptions = (question.options ?? [])
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const isMcq = question.type === "mcq";
+  const options = isMcq
+    ? normalizedOptions.map((text, index) => ({
+        label: OPTION_LABELS[index] ?? String(index + 1),
+        text,
+        isCorrect: text === question.correctAnswer,
+      }))
+    : undefined;
+
+  return {
+    type: mapQuestionTypeToBackend(question.type),
+    questionText: question.text.trim(),
+    points: question.points,
+    correctAnswerText:
+      !isMcq && question.correctAnswer.trim().length > 0
+        ? question.correctAnswer.trim()
+        : undefined,
+    imageUrl: question.imageUrl,
+    options: options && options.length > 0 ? options : undefined,
+  };
+};
+
 const readBackendError = async (response: Response, fallback: string) => {
   try {
     const payload = (await response.json()) as
@@ -135,22 +176,7 @@ export const syncExamToBackend = async (
   const created = await unwrap<RemoteExamDetail>(createRes);
 
   if (exam.questions.length > 0) {
-    const batchPayload = exam.questions.map((question) => {
-      const opts = question.options?.map((text, index) => ({
-        label: OPTION_LABELS[index] ?? String(index + 1),
-        text,
-        isCorrect: text === question.correctAnswer,
-      }));
-
-      return {
-        type: question.type,
-        questionText: question.text,
-        points: question.points,
-        correctAnswerText: question.correctAnswer,
-        imageUrl: question.imageUrl,
-        options: opts?.length ? opts : undefined,
-      };
-    });
+    const batchPayload = exam.questions.map(buildQuestionPayload);
 
     const batchRes = await fetch(
       `${API_BASE_URL}/api/exams/${created.id}/questions/batch`,
@@ -162,12 +188,25 @@ export const syncExamToBackend = async (
     );
 
     if (!batchRes.ok) {
-      throw new Error(
-        await readBackendError(
-          batchRes,
-          "Backend batch question create failed",
-        ),
-      );
+      for (const question of exam.questions) {
+        const singleRes = await fetch(
+          `${API_BASE_URL}/api/exams/${created.id}/questions`,
+          {
+            method: "POST",
+            headers: buildHeaders(user),
+            body: JSON.stringify(buildQuestionPayload(question)),
+          },
+        );
+
+        if (!singleRes.ok) {
+          throw new Error(
+            await readBackendError(
+              singleRes,
+              "Backend question create failed",
+            ),
+          );
+        }
+      }
     }
   }
 

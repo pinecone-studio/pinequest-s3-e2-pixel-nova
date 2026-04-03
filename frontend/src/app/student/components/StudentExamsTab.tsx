@@ -8,7 +8,6 @@ import StudentJoinExamPanel from "./StudentJoinExamPanel";
 
 type StudentExamsTabProps = {
   loading: boolean;
-  exams?: Exam[];
   roomCodeInput: string;
   setRoomCodeInput: (value: string) => void;
   joinLoading: boolean;
@@ -18,7 +17,6 @@ type StudentExamsTabProps = {
   startingExam: boolean;
   onStartExam: () => void;
   onClearSelection: () => void;
-  onSelectExam?: (exam: Exam) => void;
   teacherName?: string | null;
   studentHistory: {
     examId: string;
@@ -33,7 +31,6 @@ type StudentExamsTabProps = {
 
 export default function StudentExamsTab({
   loading,
-  exams = [],
   roomCodeInput,
   setRoomCodeInput,
   joinLoading,
@@ -43,7 +40,6 @@ export default function StudentExamsTab({
   startingExam,
   onStartExam,
   onClearSelection,
-  onSelectExam = () => undefined,
   teacherName,
   studentHistory,
 }: StudentExamsTabProps) {
@@ -99,8 +95,6 @@ export default function StudentExamsTab({
         joinError={joinError}
         onLookup={onLookup}
         selectedExam={selectedExam}
-        upcomingExams={exams}
-        onSelectUpcomingExam={onSelectExam}
         studentHistory={studentHistory}
       />
     );

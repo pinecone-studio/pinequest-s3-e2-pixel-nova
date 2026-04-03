@@ -40,6 +40,51 @@ describe("student exam session helpers", () => {
 		expect(exam.duration).toBe(45);
 	});
 
+	it("maps backend question types to student exam question types", () => {
+		const session = {
+			exam: {
+				id: "exam-1",
+				title: "Demo Exam",
+				description: null,
+				durationMin: 45,
+			},
+			questions: [
+				{
+					id: "q-1",
+					type: "multiple_choice",
+					questionText: "Choose one",
+					points: 1,
+					options: [
+						{ id: "o1", label: "A", text: "One" },
+						{ id: "o2", label: "B", text: "Two" },
+					],
+				},
+				{
+					id: "q-2",
+					type: "short_answer",
+					questionText: "Write the answer",
+					points: 1,
+				},
+				{
+					id: "q-3",
+					type: "true_false",
+					questionText: "True or false?",
+					points: 1,
+					options: [
+						{ id: "o3", label: "A", text: "True" },
+						{ id: "o4", label: "B", text: "False" },
+					],
+				},
+			],
+		};
+
+		const exam = mapSessionToExam(session, "ab12");
+
+		expect(exam.questions[0].type).toBe("mcq");
+		expect(exam.questions[1].type).toBe("open");
+		expect(exam.questions[2].type).toBe("mcq");
+	});
+
 	it("maps result payload to report entries", () => {
 		const result = {
 			score: 3,

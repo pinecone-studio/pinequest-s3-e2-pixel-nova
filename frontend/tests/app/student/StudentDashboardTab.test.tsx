@@ -118,7 +118,7 @@ describe("StudentDashboardTab", () => {
   it("renders the screenshot-style home overview", () => {
     render(<StudentDashboardTab {...defaultProps} />);
 
-    expect(screen.getByText("3 сарын 30")).toBeInTheDocument();
+    expect(screen.getByText("Товлогдсон шалгалтууд")).toBeInTheDocument();
     expect(screen.getByText("Таны эрэмбэ")).toBeInTheDocument();
     expect(screen.getByText("Дараагийн шалгалтууд")).toBeInTheDocument();
     expect(screen.getAllByText("Англи хэл").length).toBeGreaterThan(0);
@@ -155,7 +155,7 @@ describe("StudentDashboardTab", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Шалгалтад орох" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Дэлгэрэнгүй" })[0]);
     expect(onOpenExamDetail).toHaveBeenCalledTimes(1);
     expect(onOpenExamDetail.mock.calls[0]?.[0]).toMatchObject({
       id: "exam-1",
@@ -174,12 +174,16 @@ describe("StudentDashboardTab", () => {
   });
 
   it("renders loading skeletons", () => {
-    const { container } = render(<StudentDashboardTab {...defaultProps} loading={true} />);
+    const { container } = render(
+      <StudentDashboardTab {...defaultProps} loading={true} />,
+    );
 
     expect(
       screen.getByLabelText("student-dashboard-loading"),
     ).toBeInTheDocument();
-    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(
+      0,
+    );
   });
 
   it("keeps the layout stable even without history", () => {
@@ -201,7 +205,7 @@ describe("StudentDashboardTab", () => {
     );
 
     expect(
-      screen.getByText("Одоогоор ирээдүйд болох шалгалтын хуваарь алга."),
+      screen.getByText("Одоогоор товлогдсон шалгалтын хуваарь алга."),
     ).toBeInTheDocument();
   });
 
@@ -223,7 +227,13 @@ describe("StudentDashboardTab", () => {
         xpNeighborEntries={[]}
         termLeaderboardEntries={[
           { rank: 1, id: "student-2", fullName: "Бат", xp: 20, level: 11 },
-          { rank: 2, id: "student-1", fullName: "Золбоо Бат", xp: 45, level: 12 },
+          {
+            rank: 2,
+            id: "student-1",
+            fullName: "Золбоо Бат",
+            xp: 45,
+            level: 12,
+          },
           { rank: 3, id: "student-3", fullName: "Сараа", xp: 10, level: 11 },
         ]}
       />,

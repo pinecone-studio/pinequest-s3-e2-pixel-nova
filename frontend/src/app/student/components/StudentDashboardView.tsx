@@ -254,7 +254,6 @@ export default function StudentDashboardView({
         {exam.activeTab === "Exams" && (
           <StudentExamsTab
             loading={showExamsLoading}
-            exams={data.exams}
             roomCodeInput={exam.roomCodeInput}
             setRoomCodeInput={exam.setRoomCodeInput}
             joinLoading={exam.joinLoading}
@@ -265,10 +264,6 @@ export default function StudentDashboardView({
             onStartExam={exam.startExam}
             onClearSelection={() => {
               exam.setSelectedExam(null);
-              exam.setJoinError(null);
-            }}
-            onSelectExam={(selected) => {
-              exam.setSelectedExam(selected);
               exam.setJoinError(null);
             }}
             teacherName={activeTeacherName}

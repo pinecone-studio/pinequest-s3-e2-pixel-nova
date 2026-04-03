@@ -22,17 +22,6 @@ const selectedExam: Exam = {
   ],
 };
 
-const upcomingExam: Exam = {
-  id: "exam-2",
-  title: "Math Progress Quiz",
-  description: "Математик",
-  scheduledAt: "2099-04-29T09:30:00.000Z",
-  roomCode: "ROOM02",
-  createdAt: "2099-04-28T09:00:00.000Z",
-  duration: 45,
-  questions: [],
-};
-
 describe("StudentExamsTab", () => {
   it("opens the start guide first and starts only after the final confirmation", () => {
     const onStartExam = jest.fn();
@@ -40,7 +29,6 @@ describe("StudentExamsTab", () => {
     render(
       <StudentExamsTab
         loading={false}
-        exams={[]}
         joinLoading={false}
         roomCodeInput="AX7K2P"
         setRoomCodeInput={jest.fn()}
@@ -110,7 +98,6 @@ describe("StudentExamsTab", () => {
     render(
       <StudentExamsTab
         loading={false}
-        exams={[]}
         joinLoading={false}
         roomCodeInput="AX7K2P"
         setRoomCodeInput={jest.fn()}
@@ -134,12 +121,10 @@ describe("StudentExamsTab", () => {
 
   it("shows the join panel when no exam is selected", () => {
     const onLookup = jest.fn();
-    const onSelectExam = jest.fn();
 
     render(
       <StudentExamsTab
         loading={false}
-        exams={[upcomingExam]}
         joinLoading={false}
         roomCodeInput=""
         setRoomCodeInput={jest.fn()}
@@ -148,7 +133,6 @@ describe("StudentExamsTab", () => {
         selectedExam={null}
         onStartExam={jest.fn()}
         onClearSelection={jest.fn()}
-        onSelectExam={onSelectExam}
         teacherName={null}
         studentHistory={[]}
       />,
@@ -163,16 +147,9 @@ describe("StudentExamsTab", () => {
     expect(screen.getByText("Автоматаар илгээх")).toBeInTheDocument();
     expect(screen.getByText("Хуулах")).toBeInTheDocument();
     expect(screen.getByText("Камер")).toBeInTheDocument();
-    expect(screen.getByText("Удахгүй болох шалгалтууд")).toBeInTheDocument();
-    expect(screen.getByText("Математик")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Шалгалтад нэвтрэх" }));
     expect(onLookup).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByRole("button", { name: /Математик/i }));
-    expect(onSelectExam).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "exam-2" }),
-    );
   });
 
   it("submits the room code form when the student presses Enter", () => {
@@ -205,7 +182,6 @@ describe("StudentExamsTab", () => {
     render(
       <StudentExamsTab
         loading={true}
-        exams={[]}
         joinLoading={false}
         roomCodeInput=""
         setRoomCodeInput={jest.fn()}
