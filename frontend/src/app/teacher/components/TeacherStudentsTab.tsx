@@ -66,7 +66,7 @@ function ScheduleCardsSkeleton() {
       {Array.from({ length: 2 }).map((_, index) => (
         <div key={index} className="space-y-5">
           <Skeleton className="h-6 w-36 rounded-full border-0 bg-[#e5ebf5]" />
-          <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5  lg:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: index === 0 ? 1 : 3 }).map((__, cardIndex) => (
               <ScheduleCardSkeleton key={`${index}-${cardIndex}`} />
             ))}
@@ -79,7 +79,7 @@ function ScheduleCardsSkeleton() {
 
 function ScheduleCardSkeleton() {
   return (
-    <div className="relative min-h-[340px] rounded-[24px] border border-[#dfdfdf] bg-white px-6 pb-5 pt-6">
+    <div className="relative w-[412px]  h-[340px] rounded-[24px] border border-[#dfdfdf] bg-white px-6 pb-5 pt-6">
       <div className="relative flex h-full flex-col">
         <div className="space-y-5">
           <div className="flex items-start justify-between gap-4">
@@ -423,24 +423,24 @@ export default function TeacherStudentsTab({
   }
 
   return (
-    <section className="mx-auto w-full max-w-[1260px] px-4 pb-8 pt-8 md:px-6 xl:px-0">
+    <section className="mx-auto w-full max-w-318 px-4 pb-8 pt-8 md:px-6 xl:px-0">
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
         <div>
-          <h2 className="text-[24px] font-semibold leading-[33px] tracking-[-0.02em] text-black">
+          <h2 className="text-[24px] font-semibold leading-8.25 tracking-[-0.02em] text-black">
             Шалгалтын хуваарь
           </h2>
           <div className="mt-3 flex min-h-6 flex-wrap items-center gap-5 text-[16px] leading-6 text-[#212121]">
-            <div className="flex items-center gap-[10px]">
+            <div className="flex items-center gap-2.5">
               <LegendDot category="required" />
               <span>Заавал судлах</span>
             </div>
-            <div className="flex items-center gap-[10px]">
+            <div className="flex items-center gap-2.5">
               <LegendDot category="elective" />
               <span>Сонгон судлал</span>
             </div>
           </div>
           {viewMode === "cards" ? (
-            <div className="mt-6 max-w-[266px]">
+            <div className="mt-6 w-113  ">
               <TeacherSelect
                 options={[
                   { value: "upcoming", label: "Удахгүй болох шалгалтууд" },
@@ -450,7 +450,7 @@ export default function TeacherStudentsTab({
                 onChange={(event) =>
                   setScheduleFilter(event.target.value as ScheduleFilter)
                 }
-                className="min-h-[48px] rounded-[16px] border-[#d8dee8] py-0 text-[16px] font-medium text-[#20232d] shadow-[0_2px_10px_-8px_rgba(15,23,42,0.15)] focus:border-[#8aa7ff] focus:ring-2 focus:ring-[#dbe6ff]"
+                className="w-113  rounded-[16px] border-[#d8dee8] py-0 text-[16px] font-medium text-[#20232d] shadow-[0_2px_10px_-8px_rgba(15,23,42,0.15)] focus:border-[#8aa7ff] focus:ring-2 focus:ring-[#dbe6ff]"
               />
             </div>
           ) : null}
@@ -458,7 +458,7 @@ export default function TeacherStudentsTab({
 
         <div className="ml-auto flex flex-col items-end gap-3">
           <button
-            className="inline-flex h-[48px] min-w-[184px] items-center justify-center gap-[10px] overflow-hidden rounded-[14px] bg-[linear-gradient(180deg,#3f78ff_0%,#2f66ef_100%)] px-5 text-[18px] font-semibold leading-6 text-white shadow-[0_14px_24px_-22px_rgba(37,99,235,0.8)] transition hover:brightness-[1.03]"
+            className="inline-flex h-[49px] w-[185px] items-center justify-center gap-[10px] overflow-hidden rounded-[14px] bg-[linear-gradient(180deg,#3f78ff_0%,#2f66ef_100%)] px-5 text-[18px] font-semibold leading-6 text-white shadow-[0_14px_24px_-22px_rgba(37,99,235,0.8)] transition hover:brightness-[1.03]"
             onClick={onAddSchedule}
             type="button"
           >
@@ -473,7 +473,9 @@ export default function TeacherStudentsTab({
               <path d="M12 5v14" />
               <path d="M5 12h14" />
             </svg>
+            <h1 className="text-[15px]" >
             Хуваарь нэмэх
+            </h1>
           </button>
 
           <div className="inline-flex items-center gap-1 rounded-[16px] border border-[#d7e3f4] bg-[#eef4ff] p-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_14px_26px_-24px_rgba(59,130,246,0.5)]">
@@ -488,7 +490,7 @@ export default function TeacherStudentsTab({
                   : "bg-transparent text-[#2f66ef] hover:bg-white/75 hover:text-[#1d4ed8]"
               } ${isViewLoading ? "cursor-progress opacity-80" : ""}`}
             >
-              <Layers className="size-[18px]" />
+              <Layers className="size-4.5" />
             </button>
             <button
               type="button"
@@ -501,7 +503,7 @@ export default function TeacherStudentsTab({
                   : "bg-transparent text-[#2f66ef] hover:bg-white/75 hover:text-[#1d4ed8]"
               } ${isViewLoading ? "cursor-progress opacity-80" : ""}`}
             >
-              <CalendarDays className="size-[18px]" />
+              <CalendarDays className="size-4.5" />
             </button>
           </div>
         </div>
