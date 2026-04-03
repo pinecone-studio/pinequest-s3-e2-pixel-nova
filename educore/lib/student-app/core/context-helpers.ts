@@ -54,9 +54,9 @@ export const buildSyncMessage = (
   status: SessionSyncStatus,
   error?: string | null,
 ) => {
-  if (status === 'syncing') return 'Syncing exam state with the server...';
-  if (status === 'error') return error ?? 'Could not refresh the active exam.';
-  if (status === 'ready') return 'Active exam recovered.';
+  if (status === 'syncing') return 'Шалгалтын төлөвийг сервертэй синк хийж байна...';
+  if (status === 'error') return error ?? 'Идэвхтэй шалгалтын мэдээллийг шинэчилж чадсангүй.';
+  if (status === 'ready') return 'Идэвхтэй шалгалтын мэдээллийг сэргээв.';
   return null;
 };
 

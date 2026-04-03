@@ -47,7 +47,7 @@ export default function ResultScreen() {
 
           <View style={styles.summaryRow}>
             <View style={[styles.summaryCard, styles.summaryCardBlue]}>
-              <Text style={styles.summaryLabel}>Нийт XP</Text>
+              <Text style={styles.summaryLabel}>Нийт оноо</Text>
               <View style={styles.summaryInner}>
                 <Ionicons name="flash" size={20} color="#3568F5" />
                 <Text style={[styles.summaryValue, styles.summaryValueBlue]}>
@@ -68,7 +68,7 @@ export default function ResultScreen() {
           </View>
 
           <TouchableOpacity style={styles.collectButton} onPress={handleClose}>
-            <Text style={styles.collectButtonText}>XP цуглуулах</Text>
+            <Text style={styles.collectButtonText}>Оноогоо авах</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -67,8 +67,7 @@ export default function ExamScheduleCard({
 
   return (
     <div
-      className={`${cardClass} max-h-[min(90vh,1040px)] w-full max-w-[560px] overflow-auto p-6 font-sans sm:p-7 no-scrollbar`}
-    >
+      className={`${cardClass} max-h-[min(90vh,1040px)] w-full max-w-[560px] overflow-auto font-sans sm:p-7 no-scrollbar`}>
       <div className="grid gap-6">
         <div className="flex items-center justify-between">
           <span className="text-[18px] font-semibold text-black">
@@ -79,16 +78,14 @@ export default function ExamScheduleCard({
               type="button"
               className="flex size-8 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100"
               onClick={onClose}
-              disabled={scheduling}
-            >
+              disabled={scheduling}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="size-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth={2}
-              >
+                strokeWidth={2}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -137,8 +134,7 @@ export default function ExamScheduleCard({
               className="min-w-20.5 rounded-[14px] border border-[#dfdfdf] bg-white px-4 py-2.5 text-[14px] font-medium text-[#5b6068] transition hover:bg-[#f8fafc]"
               onClick={onClose}
               type="button"
-              disabled={scheduling}
-            >
+              disabled={scheduling}>
               Буцах
             </button>
           )}
@@ -146,15 +142,13 @@ export default function ExamScheduleCard({
             className={`inline-flex min-w-27.5 items-center justify-center gap-2 rounded-[14px] px-5 py-2.5 text-[14px] ${buttonPrimary} ${scheduling ? "opacity-80" : ""}`}
             onClick={onContinue}
             type="button"
-            disabled={scheduling}
-          >
+            disabled={scheduling}>
             {scheduling ? (
               <>
                 <svg
                   className="size-4 animate-spin"
                   viewBox="0 0 24 24"
-                  fill="none"
-                >
+                  fill="none">
                   <circle
                     cx="12"
                     cy="12"

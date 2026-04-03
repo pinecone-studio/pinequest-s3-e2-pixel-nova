@@ -58,7 +58,7 @@ export const initializeExamNotifications = async () => {
     await Notifications.setNotificationChannelAsync(
       EXAM_NOTIFICATION_CHANNEL_ID,
       {
-        name: 'Exam reminders',
+        name: 'Шалгалтын сануулга',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 150, 250],
         lightColor: '#2563EB',

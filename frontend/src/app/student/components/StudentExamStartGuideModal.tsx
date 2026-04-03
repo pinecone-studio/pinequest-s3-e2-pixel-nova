@@ -30,9 +30,9 @@ const guideSteps = [
     icon: MonitorSmartphone,
   },
   {
-    title: "Copy Paste хийх",
+    title: "Хуулах, буулгах",
     description:
-      "Шалгалтын үед текстийг copy эсвэл paste үйлдэл хийх боломжгүй.",
+      "Шалгалтын үед текст хуулах эсвэл буулгах үйлдэл хийх боломжгүй.",
     icon: ClipboardX,
   },
 ] as const;
@@ -59,8 +59,7 @@ export default function StudentExamStartGuideModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="student-exam-start-guide-title"
-        className="w-full max-w-[360px] rounded-[30px] bg-white p-5 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.4)]"
-      >
+        className="w-full max-w-[360px] rounded-[30px] bg-white p-5 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.4)]">
         <div className="rounded-[24px] bg-[linear-gradient(180deg,#f7faff_0%,#ffffff_100%)] px-6 py-8 text-center">
           <div className="mx-auto grid size-[132px] place-items-center rounded-[28px] bg-[#f2f6ff] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
             <div className="grid size-[84px] place-items-center rounded-[24px] bg-[#2f66ef] text-white shadow-[0_18px_34px_-18px_rgba(47,102,239,0.75)]">
@@ -70,8 +69,7 @@ export default function StudentExamStartGuideModal({
 
           <h2
             id="student-exam-start-guide-title"
-            className="mt-7 text-[24px] font-semibold tracking-[-0.03em] text-[#2f66ef]"
-          >
+            className="mt-7 text-[24px] font-semibold tracking-[-0.03em] text-[#2f66ef]">
             {step.title}
           </h2>
           <p className="mt-4 text-[15px] leading-7 text-slate-800">
@@ -96,16 +94,14 @@ export default function StudentExamStartGuideModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-[16px] border border-[#d8e1f0] bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-[#f8fbff]"
-          >
+            className="rounded-[16px] border border-[#d8e1f0] bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-[#f8fbff]">
             Болих
           </button>
           <button
             type="button"
             onClick={isLastStep ? onStart : onNext}
             disabled={submitting}
-            className="rounded-[16px] bg-[#2f66ef] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2557d0] disabled:cursor-not-allowed disabled:opacity-70"
-          >
+            className="rounded-[16px] bg-[#2f66ef] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2557d0] disabled:cursor-not-allowed disabled:opacity-70">
             {isLastStep
               ? submitting
                 ? "Эхлүүлж байна..."

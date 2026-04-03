@@ -48,9 +48,9 @@ const JOIN_GUIDE_STEPS: JoinGuideStep[] = [
   },
   {
     key: "copy",
-    title: "Copy Paste хийх",
+    title: "Хуулах, буулгах",
     description:
-      "Шалгалтын үед текстийг copy эсвэл paste хийх боломжгүй.",
+      "Шалгалтын үед текст хуулах эсвэл буулгах боломжгүй.",
     icon: "copy-outline",
     tone: "danger",
   },
@@ -181,7 +181,7 @@ export default function JoinExamScreen() {
               >
                 <Text style={styles.primaryBtnText}>
                   {activeGuideIndex >= JOIN_GUIDE_STEPS.length - 1
-                    ? "Start"
+                    ? "Эхлэх"
                     : "Цааш"}
                 </Text>
               </TouchableOpacity>

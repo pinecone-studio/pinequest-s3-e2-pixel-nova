@@ -89,7 +89,7 @@ export const useStudentSession = ({
               syncStatus: 'error',
               syncMessage: buildSyncMessage(
                 'error',
-                normalizeApiError(error, 'Could not recover the active exam.'),
+                normalizeApiError(error, 'Идэвхтэй шалгалтыг сэргээж чадсангүй.'),
               ),
             }
           : current.activeSession,
@@ -111,7 +111,7 @@ export const useStudentSession = ({
   const joinExam = useCallback(
     async (roomCode: string) => {
       if (!student) {
-        throw new Error('No active student selected.');
+        throw new Error('Сонгосон суралцагч алга.');
       }
 
       const normalizedCode = roomCode.trim().toUpperCase();
@@ -138,11 +138,11 @@ export const useStudentSession = ({
 
   const startExam = useCallback(async (options?: { audioReady?: boolean }) => {
     if (!activeSession) {
-      throw new Error('No active exam session found.');
+      throw new Error('Идэвхтэй шалгалтын session олдсонгүй.');
     }
 
     if (!student) {
-      throw new Error('No active student selected.');
+      throw new Error('Сонгосон суралцагч алга.');
     }
 
     const started = await startSessionWithOptions(
@@ -221,7 +221,7 @@ export const useStudentSession = ({
           lastEventAt: timestamp,
           warningMessage:
             current.integrity.warningMessage ??
-            'Integrity monitoring detected an exam-related event. Stay inside the app until you submit.',
+            'Шалгалтын үеийн хяналт сэжигтэй үйлдэл илрүүллээ. Илгээх хүртлээ апп дотроо байна уу.',
           eventCount: current.integrity.eventCount + 1,
         },
       }));
@@ -240,7 +240,7 @@ export const useStudentSession = ({
   const answerQuestion = useCallback(
     async (questionId: string, answer: AnswerValue) => {
       if (!activeSession) {
-        throw new Error('No active exam session found.');
+        throw new Error('Идэвхтэй шалгалтын session олдсонгүй.');
       }
 
       const now = Date.now();
@@ -260,13 +260,13 @@ export const useStudentSession = ({
               },
               lastAnswerAt: now,
               syncStatus: 'syncing',
-              syncMessage: 'Saving your answer...',
+              syncMessage: 'Хариултыг хадгалж байна...',
             }
           : current.activeSession,
       }));
 
       if (!student) {
-        throw new Error('No active student selected.');
+        throw new Error('Сонгосон суралцагч алга.');
       }
 
       try {
@@ -296,7 +296,7 @@ export const useStudentSession = ({
                 syncStatus: 'error',
                 syncMessage: normalizeApiError(
                   error,
-                  'Could not save the answer. Try again before submitting.',
+                  'Хариултыг хадгалж чадсангүй. Илгээхээс өмнө дахин оролдоно уу.',
                 ),
               }
             : current.activeSession,
@@ -313,12 +313,12 @@ export const useStudentSession = ({
 
   const submitCurrentExam = useCallback(async (options?: { beforeSubmit?: () => Promise<void> }) => {
     if (!activeSession) {
-      throw new Error('No active exam session found.');
+      throw new Error('Идэвхтэй шалгалтын session олдсонгүй.');
     }
 
     if (submitLockRef.current || activeSession.status === 'submitting') {
       throw new Error(
-        '{"error":{"message":"The exam is already being submitted."}}',
+        '{"error":{"message":"Шалгалтыг аль хэдийн илгээж байна."}}',
       );
     }
 
@@ -330,7 +330,7 @@ export const useStudentSession = ({
             ...current.activeSession,
             status: 'submitting',
             syncStatus: 'syncing',
-            syncMessage: 'Submitting your exam...',
+            syncMessage: 'Шалгалтыг илгээж байна...',
           }
         : current.activeSession,
     }));
@@ -341,7 +341,7 @@ export const useStudentSession = ({
       }
 
       if (!student) {
-        throw new Error('No active student selected.');
+        throw new Error('Сонгосон суралцагч алга.');
       }
 
       const submission = await submitSession(student, activeSession.sessionId);
@@ -372,12 +372,12 @@ export const useStudentSession = ({
               syncStatus: 'error',
               syncMessage: normalizeApiError(
                 error,
-                'Failed to submit the exam.',
+                'Шалгалтыг илгээж чадсангүй.',
               ),
             }
           : current.activeSession,
       }));
-      throw new Error(normalizeApiError(error, 'Failed to submit the exam.'));
+      throw new Error(normalizeApiError(error, 'Шалгалтыг илгээж чадсангүй.'));
     } finally {
       submitLockRef.current = false;
     }
