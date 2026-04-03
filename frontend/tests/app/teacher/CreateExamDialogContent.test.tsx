@@ -3,14 +3,52 @@ import { Dialog } from "@/components/ui/dialog";
 import CreateExamDialogContent from "@/app/teacher/components/CreateExamDialogContent";
 
 const push = jest.fn();
+const handlePdfUpload = jest.fn();
+const handleImageUpload = jest.fn();
+const handleDocxUpload = jest.fn();
+const setImportMcqCount = jest.fn();
+const setImportTextCount = jest.fn();
+const setImportOpenCount = jest.fn();
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
 
+jest.mock("@/lib/examGuard", () => ({
+  getSessionUser: () => ({
+    id: "teacher-1",
+    username: "Ada Teacher",
+    password: "",
+    role: "teacher",
+    createdAt: "",
+  }),
+}));
+
+jest.mock("@/app/teacher/hooks/useExamImport", () => ({
+  useExamImport: () => ({
+    pdfLoading: false,
+    pdfError: null,
+    importError: null,
+    importLoading: false,
+    importLoadingLabel: null,
+    setImportMcqCount,
+    setImportTextCount,
+    setImportOpenCount,
+    handlePdfUpload,
+    handleImageUpload,
+    handleDocxUpload,
+  }),
+}));
+
 describe("CreateExamDialogContent", () => {
   beforeEach(() => {
     push.mockReset();
+    handlePdfUpload.mockReset();
+    handleImageUpload.mockReset();
+    handleDocxUpload.mockReset();
+    setImportMcqCount.mockReset();
+    setImportTextCount.mockReset();
+    setImportOpenCount.mockReset();
     window.sessionStorage.clear();
   });
 
@@ -146,5 +184,32 @@ describe("CreateExamDialogContent", () => {
     expect(push).not.toHaveBeenCalled();
     expect(screen.getByText("Файл хавсаргана уу.")).toBeInTheDocument();
     expect(screen.getByText("Нийт асуулт дор хаяж 1 байх ёстой.")).toBeInTheDocument();
+  });
+
+  it("generates PDF questions in-place without navigating away", async () => {
+    renderDialog();
+
+    fireEvent.click(screen.getByRole("button", { name: /PDF/ }));
+    fireEvent.change(screen.getAllByRole("spinbutton")[0], {
+      target: { value: "2" },
+    });
+
+    const file = new File(["fake pdf content"], "chapter-1.pdf", {
+      type: "application/pdf",
+    });
+    const fileInput = document.querySelector('input[type="file"]');
+    expect(fileInput).not.toBeNull();
+    fireEvent.change(fileInput as HTMLInputElement, {
+      target: { files: [file] },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Асуулт үүсгэх" }));
+
+    expect(push).not.toHaveBeenCalled();
+    expect(setImportMcqCount).toHaveBeenCalledWith(2);
+    expect(handlePdfUpload).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "chapter-1.pdf" }),
+      { preserveTitle: true },
+    );
   });
 });

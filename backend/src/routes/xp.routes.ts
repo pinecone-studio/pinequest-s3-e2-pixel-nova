@@ -82,4 +82,42 @@ xpRoutes.get("/leaderboard", async (c) => {
   return success(c, leaderboard);
 });
 
+// GET /neighbors — current student plus nearest above/below by overall XP
+xpRoutes.get("/neighbors", requireRole("student"), async (c) => {
+  const user = c.get("user");
+  const db = getDb(c.env.educore);
+
+  const rankedStudents = await db
+    .select({
+      id: students.id,
+      fullName: students.fullName,
+      avatarUrl: students.avatarUrl,
+      xp: students.xp,
+    })
+    .from(students)
+    .orderBy(desc(students.xp), students.fullName, students.id);
+
+  const normalized = rankedStudents.map((student, index) => ({
+    rank: index + 1,
+    id: student.id,
+    fullName: student.fullName,
+    avatarUrl: student.avatarUrl,
+    xp: student.xp,
+    level: getLevel(student.xp),
+    isCurrentUser: student.id === user.id,
+  }));
+
+  const currentIndex = normalized.findIndex((student) => student.id === user.id);
+
+  if (currentIndex === -1) {
+    return success(c, []);
+  }
+
+  const neighbors = normalized.filter((_, index) =>
+    index >= currentIndex - 1 && index <= currentIndex + 1,
+  );
+
+  return success(c, neighbors);
+});
+
 export default xpRoutes;

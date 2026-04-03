@@ -131,11 +131,18 @@ export const generateId = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 export const generateRoomCode = () =>
-  Math.random()
-    .toString(36)
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 6);
+  (() => {
+    const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const digits = "23456789";
+    const nextLetters = Array.from({ length: 4 }, () =>
+      letters[Math.floor(Math.random() * letters.length)],
+    ).join("");
+    const nextDigits = Array.from({ length: 2 }, () =>
+      digits[Math.floor(Math.random() * digits.length)],
+    ).join("");
+
+    return `${nextLetters}${nextDigits}`;
+  })();
 
 const memoryStore = new Map<string, string>();
 

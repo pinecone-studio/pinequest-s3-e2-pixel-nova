@@ -53,11 +53,12 @@ describe("useAiExamGenerator", () => {
     expect(showToast).toHaveBeenCalled();
   });
 
-  it("surfaces generation errors cleanly", async () => {
+  it("falls back to a local draft when AI generation fails", async () => {
     generateAiExamDraft.mockRejectedValue(new Error("AI down"));
 
+    const showToast = jest.fn();
     const { result } = renderHook(() =>
-      useAiExamGenerator({ teacherId: "teacher-1", showToast: jest.fn() }),
+      useAiExamGenerator({ teacherId: "teacher-1", showToast }),
     );
 
     act(() => {
@@ -68,7 +69,12 @@ describe("useAiExamGenerator", () => {
       await result.current.generateDraft();
     });
 
-    expect(result.current.error).toBe("AI down");
+    expect(result.current.error).toBeNull();
+    expect(result.current.draft?.title).toContain("Geometry");
+    expect(result.current.draft?.questions).toHaveLength(10);
+    expect(showToast).toHaveBeenCalledWith(
+      "AI түр боломжгүй тул нөөц ноорог үүсгэлээ.",
+    );
   });
 
   it("blocks invalid draft requests before calling the API", async () => {
@@ -89,7 +95,7 @@ describe("useAiExamGenerator", () => {
     expect(result.current.error).toBe("Гарчиг хамгийн багадаа 3 тэмдэгт байх ёстой.");
   });
 
-  it("unwraps api envelope errors into a friendly message", async () => {
+  it("still creates a fallback draft for api envelope errors", async () => {
     generateAiExamDraft.mockRejectedValue(
       new Error(
         JSON.stringify({
@@ -112,7 +118,8 @@ describe("useAiExamGenerator", () => {
       await result.current.generateDraft();
     });
 
-    expect(result.current.error).toBe("AI ноорог үүсгэхэд түр алдаа гарлаа.");
+    expect(result.current.error).toBeNull();
+    expect(result.current.draft?.questions.length).toBe(10);
   });
 
   it("saves only accepted drafts", async () => {

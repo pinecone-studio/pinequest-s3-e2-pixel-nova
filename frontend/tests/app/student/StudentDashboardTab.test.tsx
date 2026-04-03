@@ -81,6 +81,32 @@ const defaultProps = {
     { rank: 4, id: "student-1", fullName: "Золбоо Бат", xp: 2100, level: 12 },
     { rank: 5, id: "student-3", fullName: "Сараа", xp: 2050, level: 11 },
   ],
+  xpNeighborEntries: [
+    {
+      rank: 2,
+      id: "student-9",
+      fullName: "Топ",
+      xp: 240,
+      level: 2,
+      isCurrentUser: false,
+    },
+    {
+      rank: 3,
+      id: "student-1",
+      fullName: "Золбоо Бат",
+      xp: 170,
+      level: 1,
+      isCurrentUser: true,
+    },
+    {
+      rank: 4,
+      id: "student-3",
+      fullName: "Сараа",
+      xp: 150,
+      level: 1,
+      isCurrentUser: false,
+    },
+  ],
   teacherName: "Г. Сарантуяа",
   onOpenExamDetail: jest.fn(),
   onCloseExamDetail: jest.fn(),
@@ -106,8 +132,8 @@ describe("StudentDashboardTab", () => {
     expect(screen.queryByText("Бат")).not.toBeInTheDocument();
     expect(screen.queryByText("Сараа")).not.toBeInTheDocument();
     expect(screen.getByText("ТА")).toBeInTheDocument();
-    expect(screen.getByText("300 оноо")).toBeInTheDocument();
-    expect(screen.getByText("2.4 мян.")).toHaveClass("blur-none");
+    expect(screen.getByText("70 оноо")).toBeInTheDocument();
+    expect(screen.getByText("170")).toBeInTheDocument();
     expect(screen.queryByText("Топ")).not.toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
   });
@@ -183,7 +209,7 @@ describe("StudentDashboardTab", () => {
     render(<StudentDashboardTab {...defaultProps} currentRank={null} />);
 
     expect(screen.getByText("Золбоо")).toBeInTheDocument();
-    expect(screen.getByText("300 оноо")).toBeInTheDocument();
+    expect(screen.getByText("70 оноо")).toBeInTheDocument();
   });
 
   it("orders leaderboard rows by XP even if incoming ranks are stale", () => {
@@ -194,6 +220,7 @@ describe("StudentDashboardTab", () => {
         studentCount={3}
         leaderboardXp={45}
         leaderboardLevel={12}
+        xpNeighborEntries={[]}
         termLeaderboardEntries={[
           { rank: 1, id: "student-2", fullName: "Бат", xp: 20, level: 11 },
           { rank: 2, id: "student-1", fullName: "Золбоо Бат", xp: 45, level: 12 },

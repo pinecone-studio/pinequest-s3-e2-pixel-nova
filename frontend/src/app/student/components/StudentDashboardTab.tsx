@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ArrowRight, ArrowUp, ChevronRight } from "lucide-react";
-import type { XpLeaderboardEntry } from "@/api/xp";
+import type { XpLeaderboardEntry, XpNeighborEntry } from "@/api/xp";
 import type { Exam } from "../types";
 import StudentExamDetailSection from "./StudentExamDetailSection";
 import { formatClock, subjectFromExam } from "./student-exams-helpers";
@@ -28,6 +28,7 @@ type StudentDashboardTabProps = {
     grade?: "A" | "B" | "C" | "D" | "F";
     date: string;
   }[];
+  xpNeighborEntries?: XpNeighborEntry[];
   termLeaderboardEntries?: XpLeaderboardEntry[];
   teacherName?: string | null;
   onOpenExamDetail?: (exam: Exam) => void;
@@ -126,6 +127,8 @@ export default function StudentDashboardTab({
   currentRank,
   leaderboardXp = 0,
   leaderboardLevel,
+  studentHistory: _studentHistory,
+  xpNeighborEntries = [],
   termLeaderboardEntries = [],
   teacherName,
   onOpenExamDetail = () => undefined,
@@ -188,7 +191,10 @@ export default function StudentDashboardTab({
   }, [featuredExam, orderedExams]);
 
   const { xpRows, xpGapToAbove, displayRank } = useMemo(() => {
-    const normalizedEntries = termLeaderboardEntries
+    const sourceEntries =
+      xpNeighborEntries.length > 0 ? xpNeighborEntries : termLeaderboardEntries;
+
+    const normalizedEntries = sourceEntries
       .map((entry) => ({
         ...entry,
         fullName:
@@ -201,23 +207,23 @@ export default function StudentDashboardTab({
           right.xp - left.xp ||
           left.rank - right.rank ||
           left.fullName.localeCompare(right.fullName),
-      )
-      .map((entry, index) => ({
-        ...entry,
-        rank: index + 1,
-      }));
+      );
 
+    const currentEntryIndex = normalizedEntries.findIndex(
+      (entry) => entry.id === currentUserId,
+    );
     const currentEntry =
-      normalizedEntries.find((entry) => entry.id === currentUserId) ??
-      (currentUserId
-        ? {
-            rank: currentRank ?? Math.max(normalizedEntries.length + 1, 1),
-            id: currentUserId,
-            fullName: currentUserName,
-            xp: leaderboardXp,
-            level: leaderboardLevel ?? levelInfo.level,
-          }
-        : null);
+      currentEntryIndex >= 0
+        ? normalizedEntries[currentEntryIndex]
+        : currentUserId
+          ? {
+              rank: currentRank ?? Math.max(normalizedEntries.length + 1, 1),
+              id: currentUserId,
+              fullName: currentUserName,
+              xp: leaderboardXp,
+              level: leaderboardLevel ?? levelInfo.level,
+            }
+          : null;
 
     if (!currentEntry) {
       return {
@@ -227,12 +233,12 @@ export default function StudentDashboardTab({
       };
     }
 
-    const nearestAbove = [...normalizedEntries]
-      .reverse()
-      .find((entry) => entry.rank < currentEntry.rank);
-    const nearestBelow = normalizedEntries.find(
-      (entry) => entry.rank > currentEntry.rank,
-    );
+    const nearestAbove =
+      currentEntryIndex > 0 ? normalizedEntries[currentEntryIndex - 1] : null;
+    const nearestBelow =
+      currentEntryIndex >= 0 && currentEntryIndex < normalizedEntries.length - 1
+        ? normalizedEntries[currentEntryIndex + 1]
+        : null;
 
     return {
       xpRows: [nearestAbove, currentEntry, nearestBelow].filter(
@@ -241,7 +247,7 @@ export default function StudentDashboardTab({
       xpGapToAbove: nearestAbove
         ? Math.max(nearestAbove.xp - currentEntry.xp, 0)
         : null,
-      displayRank: currentEntry.rank,
+      displayRank: currentEntry.rank ?? currentRank,
     };
   }, [
     currentRank,
@@ -251,6 +257,7 @@ export default function StudentDashboardTab({
     leaderboardXp,
     levelInfo.level,
     termLeaderboardEntries,
+    xpNeighborEntries,
   ]);
 
   if (loading) {

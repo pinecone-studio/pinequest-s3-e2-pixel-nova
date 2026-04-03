@@ -1,5 +1,5 @@
 const mockGetSessionUser = jest.fn();
-const mockGetStudentResults = jest.fn();
+const mockGetStudentUpcomingExams = jest.fn();
 const mockUseNotifications = jest.fn();
 
 jest.mock("@/lib/examGuard", () => ({
@@ -7,7 +7,8 @@ jest.mock("@/lib/examGuard", () => ({
 }));
 
 jest.mock("@/lib/backend-auth", () => ({
-	getStudentResults: (...args: unknown[]) => mockGetStudentResults(...args),
+	getStudentUpcomingExams: (...args: unknown[]) =>
+		mockGetStudentUpcomingExams(...args),
 }));
 
 jest.mock("@/hooks/useNotifications", () => ({
@@ -26,9 +27,23 @@ const mockUser: User = {
 	createdAt: "2024-01-01",
 };
 
-const mockResults = [
-	{ examId: "e1", title: "Math", submittedAt: "2024-06-01", percentage: 90, score: 9, totalPoints: 10 },
-	{ examId: "e2", title: "Science", submittedAt: "2024-06-02", percentage: 80, score: 8, totalPoints: 10 },
+const mockUpcomingExams = [
+	{
+		examId: "e1",
+		title: "Math",
+		status: "scheduled",
+		scheduledAt: "2024-06-01T10:00:00.000Z",
+		roomCode: "ABCD12",
+		durationMin: 45,
+	},
+	{
+		examId: "e2",
+		title: "Science",
+		status: "active",
+		startedAt: "2024-06-02T10:00:00.000Z",
+		roomCode: "WXYZ34",
+		durationMin: 30,
+	},
 ];
 
 // Suppress act() warnings from async state updates in intervals
@@ -47,7 +62,7 @@ describe("useStudentData", () => {
 	beforeEach(() => {
 		jest.useFakeTimers();
 		mockGetSessionUser.mockReturnValue(mockUser);
-		mockGetStudentResults.mockResolvedValue(mockResults);
+		mockGetStudentUpcomingExams.mockResolvedValue(mockUpcomingExams);
 		mockUseNotifications.mockImplementation(({ userId }: { userId?: string | null }) => {
 			if (!userId) {
 				return {
@@ -134,7 +149,7 @@ describe("useStudentData", () => {
 	});
 
 	it("handles API error gracefully", async () => {
-		mockGetStudentResults.mockRejectedValue(new Error("Network error"));
+		mockGetStudentUpcomingExams.mockRejectedValue(new Error("Network error"));
 
 		const { result } = renderHook(() => useStudentData(mockUser));
 
@@ -149,13 +164,13 @@ describe("useStudentData", () => {
 
 		await waitFor(() => expect(result.current.loading).toBe(false));
 
-		const callsBefore = mockGetStudentResults.mock.calls.length;
+		const callsBefore = mockGetStudentUpcomingExams.mock.calls.length;
 
 		await act(async () => {
 			jest.advanceTimersByTime(30000);
 		});
 
-		expect(mockGetStudentResults.mock.calls.length).toBeGreaterThan(callsBefore);
+		expect(mockGetStudentUpcomingExams.mock.calls.length).toBeGreaterThan(callsBefore);
 	});
 
 	it("skips polling while the tab is hidden", async () => {
@@ -168,12 +183,12 @@ describe("useStudentData", () => {
 			value: "hidden",
 		});
 
-		const callsBefore = mockGetStudentResults.mock.calls.length;
+		const callsBefore = mockGetStudentUpcomingExams.mock.calls.length;
 
 		await act(async () => {
 			jest.advanceTimersByTime(30000);
 		});
 
-		expect(mockGetStudentResults.mock.calls.length).toBe(callsBefore);
+		expect(mockGetStudentUpcomingExams.mock.calls.length).toBe(callsBefore);
 	});
 });

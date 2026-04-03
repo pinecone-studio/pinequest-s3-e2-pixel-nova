@@ -60,6 +60,28 @@ export const useStudentExamState = (params: {
     setJoinError,
   });
 
+  const handleStartExam = async () => {
+    if (sessionId) {
+      startExam();
+      return;
+    }
+
+    if (!selectedExam?.roomCode) {
+      startExam();
+      return;
+    }
+
+    const joined = await handleLookup(selectedExam.roomCode);
+    if (!joined?.sessionId) {
+      return;
+    }
+
+    startExam({
+      sessionId: joined.sessionId,
+      roomCode: joined.exam.roomCode,
+    });
+  };
+
   const handleSubmitExam = async (
     auto?: boolean,
     terminated?: boolean,
@@ -107,7 +129,7 @@ export const useStudentExamState = (params: {
     showWarning,
     logViolation,
     startingExam,
-    startExam,
+    startExam: handleStartExam,
     submittingExam,
     submitExam: handleSubmitExam,
     terminateExam,

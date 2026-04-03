@@ -71,11 +71,11 @@ export const useStudentJoinExam = () => {
     return () => clearInterval(timer);
   }, [joinError, selectedExam?.scheduledAt]);
 
-  const handleLookup = useCallback(async () => {
-    const code = roomCodeInput.trim().toUpperCase();
+  const handleLookup = useCallback(async (roomCodeOverride?: string) => {
+    const code = (roomCodeOverride ?? roomCodeInput).trim().toUpperCase();
     if (!code) {
       setJoinError("Өрөөний код оруулна уу.");
-      return;
+      return null;
     }
     setJoinLoading(true);
     try {
@@ -89,6 +89,7 @@ export const useStudentJoinExam = () => {
         exam: {
           id: string;
           title: string;
+          teacherName?: string | null;
           durationMin: number;
           questionCount: number;
           requiresAudioRecording?: boolean;
@@ -99,10 +100,10 @@ export const useStudentJoinExam = () => {
         body: JSON.stringify({ roomCode: code }),
       });
       const data = payload;
-      setSessionId(data.sessionId);
-      setSelectedExam({
+      const nextSelectedExam: Exam = {
         id: data.exam.id,
         title: data.exam.title,
+        teacherName: data.exam.teacherName ?? null,
         description: null,
         status: data.status ?? null,
         sessionStatus: data.sessionStatus ?? null,
@@ -115,12 +116,18 @@ export const useStudentJoinExam = () => {
         questions: [],
         duration: data.exam.durationMin,
         createdAt: new Date().toISOString(),
-      });
+      };
+      setSessionId(data.sessionId);
+      setSelectedExam(nextSelectedExam);
       if (data.status === "scheduled") {
         setJoinError("Шалгалт хараахан эхлээгүй байна. Хүлээнэ үү.");
       } else {
         setJoinError(null);
       }
+      return {
+        sessionId: data.sessionId,
+        exam: nextSelectedExam,
+      };
     } catch (err) {
       let message: unknown =
         "Өрөөний код олдсонгүй эсвэл шалгалт идэвхгүй байна.";
@@ -160,6 +167,7 @@ export const useStudentJoinExam = () => {
         setJoinError(messageText);
       }
       setSelectedExam(null);
+      return null;
     } finally {
       setJoinLoading(false);
     }

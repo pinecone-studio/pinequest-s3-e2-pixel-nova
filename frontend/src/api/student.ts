@@ -26,6 +26,23 @@ export type StudentExamSummary = {
   submittedAt?: string | null;
 };
 
+export type StudentUpcomingExamSummary = {
+  examId: string;
+  title: string;
+  description?: string | null;
+  status?: string | null;
+  className?: string | null;
+  groupName?: string | null;
+  subjectName?: string | null;
+  teacherName?: string | null;
+  examType?: string | null;
+  scheduledAt?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  durationMin?: number | null;
+  roomCode?: string | null;
+};
+
 export type StudentResultSummary = {
   sessionId: string;
   examId: string;
@@ -89,6 +106,11 @@ export type StudentImprovementLeaderboardEntry = {
 
 export const getStudentExams = (user?: User | null) =>
   apiRequest<StudentExamSummary[]>("/api/student/exams", { user });
+
+export const getStudentUpcomingExams = (user?: User | null) =>
+  apiRequest<StudentUpcomingExamSummary[]>("/api/student/upcoming-exams", {
+    user,
+  });
 
 export const getStudentResults = (user?: User | null) =>
   apiRequest<StudentResultSummary[]>("/api/student/results", { user });
