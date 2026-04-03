@@ -31,6 +31,18 @@ type HomeExamCard = {
   sortTime: number;
 };
 
+function getHomeExamCardKey(exam: HomeExamCard, index: number) {
+  return [
+    exam.id,
+    exam.status,
+    exam.sortTime,
+    exam.date,
+    exam.time,
+    exam.roomCode ?? "no-room",
+    index,
+  ].join(":");
+}
+
 const HOME_EXAM_STATUS_ORDER: Record<HomeExamStatus, number> = {
   active: 0,
   waiting: 1,
@@ -145,7 +157,7 @@ function buildCalendarWeek(weekDate: Date, selectedDate: Date): CalendarDay[] {
     day.setDate(weekStart.getDate() + index);
 
     return {
-      key: day.toISOString(),
+      key: `${day.getFullYear()}-${day.getMonth() + 1}-${day.getDate()}-${index}`,
       label: labels[index],
       dayNumber: day.getDate(),
       isSelected: isSameDay(day, selectedDate),
@@ -543,13 +555,13 @@ export default function HomeScreen() {
         </View>
 
         {examCards.length > 0 ? (
-          examCards.map((exam) => {
+          examCards.map((exam, index) => {
             const isPastSelectedDate = isPastCalendarDay(selectedDate, now);
             const showDetailButton =
               !isPastSelectedDate && (exam.canViewDetail || !exam.canJoin);
 
             return (
-              <View key={exam.id} style={styles.upcomingCard}>
+              <View key={getHomeExamCardKey(exam, index)} style={styles.upcomingCard}>
                 <View style={styles.listCardRow}>
                   <Text style={styles.upcomingCardTitle}>{exam.title}</Text>
                   <View
@@ -666,8 +678,8 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.nextList}
           >
-            {secondaryExams.map((exam) => (
-              <View key={exam.id} style={styles.nextCard}>
+            {secondaryExams.map((exam, index) => (
+              <View key={getHomeExamCardKey(exam, index)} style={styles.nextCard}>
                 <View style={styles.cardRow}>
                   <Text style={styles.nextCardTitle}>{exam.title}</Text>
                   <View

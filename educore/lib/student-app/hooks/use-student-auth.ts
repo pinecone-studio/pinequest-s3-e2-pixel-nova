@@ -187,7 +187,7 @@ export const useStudentAuth = ({
       const nextStudent = await loginWithCode(code.trim());
       if (nextStudent.role !== 'student') {
         throw new Error(
-          '{"error":{"message":"Only student accounts can use this app."}}',
+          '{"error":{"message":"Энэ аппыг зөвхөн суралцагчийн бүртгэл ашиглана."}}',
         );
       }
 
@@ -232,7 +232,7 @@ export const useStudentAuth = ({
         }
 
         if (!nextUser) {
-          throw new Error('{"error":{"message":"Student account not found."}}');
+          throw new Error('{"error":{"message":"Суралцагчийн бүртгэл олдсонгүй."}}');
         }
 
         setState((current) => ({
@@ -265,7 +265,7 @@ export const useStudentAuth = ({
           }));
         }
       } catch {
-        throw new Error('{"error":{"message":"Student account not found."}}');
+        throw new Error('{"error":{"message":"Суралцагчийн бүртгэл олдсонгүй."}}');
       } finally {
         setState((current) => ({ ...current, signingIn: false }));
       }

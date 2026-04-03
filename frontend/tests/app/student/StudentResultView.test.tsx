@@ -46,7 +46,9 @@ describe("StudentResultView", () => {
       />,
     );
 
-    expect(screen.getByRole("button")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Самбар руу буцах" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("85%")).not.toBeInTheDocument();
   });
 
@@ -61,7 +63,7 @@ describe("StudentResultView", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "Самбар руу буцах" }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
@@ -137,7 +139,7 @@ describe("StudentResultView", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "Самбар руу буцах" }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 

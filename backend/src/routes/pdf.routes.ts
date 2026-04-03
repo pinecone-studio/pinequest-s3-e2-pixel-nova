@@ -11,6 +11,7 @@ import { newId } from "../utils/id";
 import { parsePdf, PdfParseError } from "../utils/pdf-parser";
 import { extractQuestions } from "../utils/ai-extractor";
 import { generateQuestionsFromMaterial } from "../utils/ai-question-generator";
+import { normalizeWorkersAiError } from "../utils/workers-ai";
 
 const pdfRoutes = new Hono<AppEnv>();
 
@@ -206,7 +207,16 @@ pdfRoutes.post("/extract", zValidator("json", extractSchema), async (c) => {
     }
 
     // Extract questions via AI
-    const result = await extractQuestions(c.env.AI, parsed.pages, parsed.pageCount);
+    let result;
+    try {
+      result = await extractQuestions(c.env.AI, parsed.pages, parsed.pageCount);
+    } catch (err) {
+      const normalized = normalizeWorkersAiError(
+        err,
+        "Failed to extract questions from PDF.",
+      );
+      return error(c, normalized.code, normalized.message, normalized.status);
+    }
 
     return success(c, result);
   } catch (err) {
@@ -247,9 +257,18 @@ pdfRoutes.post("/generate", zValidator("json", generateSchema), async (c) => {
       sourceText = parsed.pages;
     }
 
-    const result = await generateQuestionsFromMaterial(c.env.AI, sourceText, counts);
+    let result;
+    try {
+      result = await generateQuestionsFromMaterial(c.env.AI, sourceText, counts);
+    } catch (err) {
+      const normalized = normalizeWorkersAiError(
+        err,
+        "Failed to generate questions from material.",
+      );
+      return error(c, normalized.code, normalized.message, normalized.status);
+    }
     return success(c, result);
-  } catch {
+  } catch (err) {
     return error(c, "INTERNAL_ERROR", "Failed to generate questions from material", 500);
   }
 });

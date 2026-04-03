@@ -34,9 +34,8 @@ const upcomingExam: Exam = {
 };
 
 describe("StudentExamsTab", () => {
-  it("renders the selected exam detail layout and actions", () => {
+  it("opens the start guide first and starts only after the final confirmation", () => {
     const onStartExam = jest.fn();
-    const onClearSelection = jest.fn();
 
     render(
       <StudentExamsTab
@@ -49,21 +48,13 @@ describe("StudentExamsTab", () => {
         onLookup={jest.fn()}
         selectedExam={selectedExam}
         onStartExam={onStartExam}
-        onClearSelection={onClearSelection}
+        onClearSelection={jest.fn()}
         teacherName="Г. Сарантуяа"
         studentHistory={[]}
       />,
     );
 
-    expect(screen.getByText("Шалгалт эхлүүлэх")).toBeInTheDocument();
-    expect(
-      screen.getByText("Англи хэлний авцын шалгалт"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Англи хэл")).toBeInTheDocument();
-    expect(screen.getByText("Г. Сарантуяа")).toBeInTheDocument();
-    expect(screen.getByText("AX7K2P")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Шалгалт эхлүүлэх" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Камер нээх")).toBeInTheDocument();
     expect(onStartExam).not.toHaveBeenCalled();
 
@@ -74,9 +65,39 @@ describe("StudentExamsTab", () => {
     expect(screen.getByText("Дэлгэц солих")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Цааш" }));
-    expect(screen.getByText("Copy Paste хийх")).toBeInTheDocument();
+    expect(screen.getByText("Хуулах, буулгах")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Эхлүүлэх" }));
+    expect(onStartExam).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the exam detail and retry state when join has an error", () => {
+    const onStartExam = jest.fn();
+    const onClearSelection = jest.fn();
+
+    render(
+      <StudentExamsTab
+        loading={false}
+        joinLoading={false}
+        roomCodeInput="AX7K2P"
+        setRoomCodeInput={jest.fn()}
+        joinError="Шалгалт эхлүүлэхэд алдаа гарлаа."
+        onLookup={jest.fn()}
+        selectedExam={selectedExam}
+        onStartExam={onStartExam}
+        onClearSelection={onClearSelection}
+        teacherName="Г. Сарантуяа"
+        studentHistory={[]}
+      />,
+    );
+
+    expect(screen.getByText("Анхааруулах зүйлс")).toBeInTheDocument();
+    expect(
+      screen.getByText("Шалгалт эхлүүлэхэд алдаа гарлаа."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Дахин оролдох")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Дахин оролдох" }));
     expect(onStartExam).toHaveBeenCalledTimes(1);
 
     fireEvent.click(
@@ -85,7 +106,7 @@ describe("StudentExamsTab", () => {
     expect(onClearSelection).toHaveBeenCalledTimes(1);
   });
 
-  it("allows the student to close the onboarding modal before starting", () => {
+  it("allows reopening the guide after closing it", () => {
     render(
       <StudentExamsTab
         loading={false}
@@ -103,11 +124,12 @@ describe("StudentExamsTab", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Шалгалт эхлүүлэх" }));
-    expect(screen.getByText("Камер нээх")).toBeInTheDocument();
-
     fireEvent.click(screen.getByRole("button", { name: "Болих" }));
-    expect(screen.queryByText("Камер нээх")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Шалгалт эхлүүлэх" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Камер нээх")).toBeInTheDocument();
   });
 
   it("shows the join panel when no exam is selected", () => {

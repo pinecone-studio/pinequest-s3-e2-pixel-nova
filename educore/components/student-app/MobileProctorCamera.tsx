@@ -52,7 +52,7 @@ export default function MobileProctorCamera({
     });
 
     if (!picture.base64) {
-      throw new Error("Snapshot capture did not return base64 data.");
+      throw new Error("Зургийн өгөгдөл бүрэн ирсэнгүй.");
     }
 
     setUploadStatus("uploading");
@@ -88,7 +88,7 @@ export default function MobileProctorCamera({
         setError(
           captureError instanceof Error
             ? captureError.message
-            : "Could not capture the exam snapshot.",
+            : "Шалгалтын зургийг авч чадсангүй.",
         );
       });
     }, SNAPSHOT_INTERVAL_MS);
@@ -120,11 +120,11 @@ export default function MobileProctorCamera({
         testID="mobile-proctor-camera"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Exam camera</Text>
-          <Pill label="Permission required" tone="warning" />
+          <Text style={styles.title}>Шалгалтын камер</Text>
+          <Pill label="Зөвшөөрөл шаардлагатай" tone="warning" />
         </View>
         <Text style={styles.message}>
-          Camera permission is required before the exam can start.
+          Шалгалт эхлэхээс өмнө камерын зөвшөөрөл шаардлагатай.
         </Text>
       </View>
     );
@@ -152,9 +152,9 @@ export default function MobileProctorCamera({
       testID="mobile-proctor-camera"
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Exam camera</Text>
+        <Text style={styles.title}>Шалгалтын камер</Text>
         <Pill
-          label={cameraReady ? "Ready" : "Starting"}
+          label={cameraReady ? "Бэлэн" : "Асаж байна"}
           tone={cameraReady ? "success" : "warning"}
         />
       </View>
@@ -175,19 +175,19 @@ export default function MobileProctorCamera({
       />
 
       <Text style={styles.status}>
-        {captureEnabled ? "Periodic evidence snapshots are active." : "Camera preflight is active."}
+        {captureEnabled ? "Нотлох зураг тогтмол авч байна." : "Камерын урьдчилсан шалгалт идэвхтэй байна."}
       </Text>
       {!hidePreview ? (
         <Text style={styles.message}>
-          The mobile client keeps the front camera ready, uploads periodic still-image
-          evidence during active exams, and remains ready for native local proctoring events.
+          Мобайл апп урд камерыг бэлэн байлгаж, шалгалтын үеэр тогтмол зураг илгээж,
+          хяналтын дотоод үйл явдлыг бүртгэхэд бэлэн байна.
         </Text>
       ) : null}
       {!hidePreview && lastSnapshotAt ? (
-        <Text style={styles.message}>Last snapshot uploaded at {lastSnapshotAt}</Text>
+        <Text style={styles.message}>Сүүлд зураг илгээсэн цаг: {lastSnapshotAt}</Text>
       ) : null}
       {!hidePreview && uploadStatus === "uploading" ? (
-        <Text style={styles.message}>Uploading evidence snapshot...</Text>
+        <Text style={styles.message}>Нотлох зураг илгээж байна...</Text>
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>

@@ -186,7 +186,7 @@ export default function StudentPage() {
 
     lastResolvedResultSignatureRef.current = lastSubmissionResolvedSignature;
     void refreshProgress();
-  }, [exam.resultPending, lastSubmissionResolvedSignature, refreshProgress]);
+  }, [exam.lastSubmission, exam.resultPending, refreshProgress]);
 
   if (showFallbackState) {
     return (
@@ -201,8 +201,7 @@ export default function StudentPage() {
           <button
             className="mt-5 rounded-2xl border border-[#dce6f4] bg-[#f8fbff] px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-white"
             onClick={() => window.location.reload()}
-            type="button"
-          >
+            type="button">
             Дахин ачаалах
           </button>
         </div>
@@ -255,27 +254,6 @@ export default function StudentPage() {
             onNext={exam.goNext}
             onSubmit={() => exam.submitExam(false)}
             onExit={exam.leaveExamFlow}
-            cameraPanel={
-              <div className="space-y-4">
-                <DesktopExamCameraCard
-                  view={exam.view}
-                  sessionId={exam.sessionId}
-                  user={data.currentUser}
-                  showWarning={exam.showWarning}
-                  enabledCheatDetections={
-                    exam.activeExam?.enabledCheatDetections ?? null
-                  }
-                />
-                <DesktopExamAudioCard
-                  view={exam.view}
-                  sessionId={exam.sessionId}
-                  user={data.currentUser}
-                  showWarning={exam.showWarning}
-                  required={Boolean(exam.activeExam?.requiresAudioRecording)}
-                  onTerminateExam={exam.terminateExam}
-                />
-              </div>
-            }
           />
         </div>
       )}

@@ -224,6 +224,7 @@ describe("ExamScreen", () => {
       ).toBeTruthy();
     });
     expect(startExam).not.toHaveBeenCalled();
+    expect(screen.getByText("Дахин оролдох")).toBeTruthy();
     screen.unmount();
   });
 
@@ -243,12 +244,8 @@ describe("ExamScreen", () => {
     screen.unmount();
   });
 
-  it("hides the joined exam list layout during auto-start preflight", () => {
-    mockUseLocalSearchParams.mockReturnValue({ autoStart: "1" });
-    mockUseCameraPermissions.mockReturnValue([
-      { granted: false },
-      jest.fn(async () => ({ granted: false })),
-    ]);
+  it("skips the joined exam list layout during auto-start", () => {
+    mockUseCameraPermissions.mockReturnValue([{ granted: true }, jest.fn()]);
     mockUseStudentApp.mockReturnValue({
       ...baseContext,
       activeSession: buildActiveSession("joined"),
@@ -258,8 +255,9 @@ describe("ExamScreen", () => {
 
     expect(screen.getByText("Demo exam")).toBeTruthy();
     expect(screen.getByText("camera-preflight")).toBeTruthy();
-    expect(screen.queryByText("Ð¨Ð°Ð»Ð³Ð°Ð»Ñ‚ÑƒÑƒÐ´")).toBeNull();
-    expect(screen.queryByText("Ð¨Ð°Ð»Ð³Ð°Ð»Ñ‚ Ñ…Ð°Ð¹Ñ…...")).toBeNull();
+    expect(screen.getByText("Асуулт 1")).toBeTruthy();
+    expect(screen.queryByText("Шалгалтууд")).toBeNull();
+    expect(screen.queryByText("Шалгалт хайх...")).toBeNull();
     screen.unmount();
   });
 

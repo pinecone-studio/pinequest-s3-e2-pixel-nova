@@ -22,17 +22,17 @@ describe('MobileProctorCamera', () => {
       <MobileProctorCamera {...baseProps} permissionGranted={false} />,
     );
 
-    expect(screen.getByText('Exam camera')).toBeTruthy();
+    expect(screen.getByText('Шалгалтын камер')).toBeTruthy();
     expect(
-      screen.getByText(/Camera permission is required before the exam can start/),
+      screen.getByText(/Шалгалт эхлэхээс өмнө камерын зөвшөөрөл шаардлагатай/),
     ).toBeTruthy();
   });
 
   it('shows camera preflight details when capture is idle', () => {
     const screen = render(<MobileProctorCamera {...baseProps} />);
 
-    expect(screen.getByText(/Camera preflight is active/)).toBeTruthy();
-    expect(screen.getByText(/The mobile client keeps the front camera ready/)).toBeTruthy();
-    expect(screen.getByText(/Ready|Starting/)).toBeTruthy();
+    expect(screen.getByText(/Камерын урьдчилсан шалгалт идэвхтэй байна/)).toBeTruthy();
+    expect(screen.getByText(/Мобайл апп урд камерыг бэлэн байлгаж/)).toBeTruthy();
+    expect(screen.getByText(/Бэлэн|Асаж байна/)).toBeTruthy();
   });
 });

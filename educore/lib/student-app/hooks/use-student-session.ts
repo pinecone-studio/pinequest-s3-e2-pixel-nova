@@ -8,13 +8,14 @@ import {
   startSessionWithOptions,
   submitSession,
   submitSessionAnswer,
-} from '../services/api';
+} from '@/lib/student-app/services/api';
 import {
   buildSyncMessage,
   toActiveSession,
 } from '../core/context-helpers';
 import { isCheatDetectionEnabled } from '../core/cheat-detection';
 import type { AnswerValue, CheatEventType } from '@/types/student-app';
+import type { ActiveExamSession } from '@/types/student-app';
 import type { StudentAppSetState, StudentAppState } from '../core/state';
 import {
   mergeSessionResult,
@@ -27,6 +28,65 @@ type UseStudentSessionArgs = {
   refreshDashboard: () => Promise<void>;
 };
 
+const parseApiErrorPayload = (error: unknown) => {
+  if (!(error instanceof Error) || !error.message) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(error.message) as {
+      code?: string;
+      message?: string;
+      error?: {
+        code?: string;
+        message?: string;
+      };
+    };
+
+    return {
+      code:
+        typeof parsed.error?.code === 'string'
+          ? parsed.error.code
+          : typeof parsed.code === 'string'
+            ? parsed.code
+            : null,
+      message:
+        typeof parsed.error?.message === 'string'
+          ? parsed.error.message
+          : typeof parsed.message === 'string'
+            ? parsed.message
+            : null,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const isRecoverableStartStatusError = (error: unknown) => {
+  const payload = parseApiErrorPayload(error);
+
+  return (
+    payload?.code === 'INVALID_STATUS' &&
+    payload.message === "Session must be in 'joined' or 'late' status to start"
+  );
+};
+
+const SESSION_STATUS_PRIORITY: Record<ActiveExamSession['status'], number> = {
+  joined: 0,
+  late: 0,
+  in_progress: 1,
+  submitting: 2,
+  submitted: 3,
+};
+
+const getMostAdvancedSessionStatus = (
+  currentStatus: ActiveExamSession['status'],
+  nextStatus: ActiveExamSession['status'],
+) =>
+  SESSION_STATUS_PRIORITY[currentStatus] > SESSION_STATUS_PRIORITY[nextStatus]
+    ? currentStatus
+    : nextStatus;
+
 export const useStudentSession = ({
   state,
   setState,
@@ -37,6 +97,66 @@ export const useStudentSession = ({
   const activeSessionId = activeSession?.sessionId ?? null;
   const activeSessionRoomCode = activeSession?.roomCode ?? null;
   const activeSessionEntryStatus = activeSession?.entryStatus ?? null;
+
+  const syncActiveSessionFromDetail = useCallback(
+    (
+      sessionId: string,
+      roomCode: string,
+      entryStatus: string,
+      detail: Awaited<ReturnType<typeof getSessionDetail>>,
+    ) => {
+      const nextSession = toActiveSession(
+        sessionId,
+        roomCode,
+        detail,
+        detail.session.status,
+        entryStatus,
+      );
+
+      setState((current) => ({
+        ...current,
+        activeSession:
+          current.activeSession &&
+          current.activeSession.sessionId === sessionId
+            ? (() => {
+                const currentSession = current.activeSession;
+                const resolvedStatus = getMostAdvancedSessionStatus(
+                  currentSession.status,
+                  nextSession.status,
+                );
+                const keepCurrentProgress =
+                  resolvedStatus !== nextSession.status;
+
+                return {
+                  ...currentSession,
+                  ...nextSession,
+                  status: resolvedStatus,
+                  startedAt: keepCurrentProgress
+                    ? currentSession.startedAt ?? nextSession.startedAt
+                    : nextSession.startedAt ?? currentSession.startedAt,
+                  timerEndsAt: keepCurrentProgress
+                    ? currentSession.timerEndsAt ?? nextSession.timerEndsAt
+                    : nextSession.timerEndsAt ?? currentSession.timerEndsAt,
+                  answers: currentSession.answers,
+                  currentQuestionIndex: Math.min(
+                    currentSession.currentQuestionIndex,
+                    Math.max(detail.questions.length - 1, 0),
+                  ),
+                  lastAnswerAt: currentSession.lastAnswerAt,
+                  entryStatus:
+                    currentSession.entryStatus === 'late' ||
+                    nextSession.entryStatus === 'late'
+                      ? 'late'
+                      : 'on_time',
+                  syncStatus: 'ready',
+                  syncMessage: buildSyncMessage('ready'),
+                };
+              })()
+            : current.activeSession,
+      }));
+    },
+    [setState],
+  );
 
   const recoverActiveSession = useCallback(async () => {
     if (!student || !activeSessionId) return;
@@ -58,28 +178,7 @@ export const useStudentSession = ({
 
     try {
       const detail = await getSessionDetail(student, sessionId);
-      setState((current) => ({
-        ...current,
-        activeSession: current.activeSession
-          ? {
-              ...current.activeSession,
-              ...toActiveSession(
-                sessionId,
-                roomCode,
-                detail,
-                detail.session.status,
-                entryStatus,
-              ),
-              answers: current.activeSession.answers,
-              currentQuestionIndex: Math.min(
-                current.activeSession.currentQuestionIndex,
-                Math.max(detail.questions.length - 1, 0),
-              ),
-              syncStatus: 'ready',
-              syncMessage: buildSyncMessage('ready'),
-            }
-          : current.activeSession,
-      }));
+      syncActiveSessionFromDetail(sessionId, roomCode, entryStatus, detail);
     } catch (error) {
       setState((current) => ({
         ...current,
@@ -89,7 +188,7 @@ export const useStudentSession = ({
               syncStatus: 'error',
               syncMessage: buildSyncMessage(
                 'error',
-                normalizeApiError(error, 'Could not recover the active exam.'),
+                normalizeApiError(error, 'Идэвхтэй шалгалтыг сэргээж чадсангүй.'),
               ),
             }
           : current.activeSession,
@@ -100,6 +199,7 @@ export const useStudentSession = ({
     activeSessionId,
     activeSessionRoomCode,
     setState,
+    syncActiveSessionFromDetail,
     student,
   ]);
 
@@ -111,7 +211,7 @@ export const useStudentSession = ({
   const joinExam = useCallback(
     async (roomCode: string) => {
       if (!student) {
-        throw new Error('No active student selected.');
+        throw new Error('Сонгосон суралцагч алга.');
       }
 
       const normalizedCode = roomCode.trim().toUpperCase();
@@ -138,18 +238,54 @@ export const useStudentSession = ({
 
   const startExam = useCallback(async (options?: { audioReady?: boolean }) => {
     if (!activeSession) {
-      throw new Error('No active exam session found.');
+      throw new Error('Идэвхтэй шалгалтын session олдсонгүй.');
     }
 
     if (!student) {
-      throw new Error('No active student selected.');
+      throw new Error('Сонгосон суралцагч алга.');
     }
 
-    const started = await startSessionWithOptions(
-      student,
-      activeSession.sessionId,
-      options,
-    );
+    if (
+      activeSession.status === 'in_progress' ||
+      activeSession.status === 'submitting' ||
+      activeSession.status === 'submitted'
+    ) {
+      return;
+    }
+
+    let started: Awaited<ReturnType<typeof startSessionWithOptions>>;
+
+    try {
+      started = await startSessionWithOptions(
+        student,
+        activeSession.sessionId,
+        options,
+      );
+    } catch (error) {
+      if (isRecoverableStartStatusError(error)) {
+        try {
+          const detail = await getSessionDetail(student, activeSession.sessionId);
+
+          if (
+            detail.session.status === 'in_progress' ||
+            detail.session.status === 'submitting' ||
+            detail.session.status === 'submitted'
+          ) {
+            syncActiveSessionFromDetail(
+              activeSession.sessionId,
+              activeSession.roomCode,
+              activeSession.entryStatus,
+              detail,
+            );
+            return;
+          }
+        } catch {
+          // Fall through to the original start error below.
+        }
+      }
+
+      throw error;
+    }
 
     setState((current) => ({
       ...current,
@@ -166,7 +302,7 @@ export const useStudentSession = ({
           }
         : current.activeSession,
     }));
-  }, [activeSession, setState, student]);
+  }, [activeSession, setState, student, syncActiveSessionFromDetail]);
 
   const setCurrentQuestionIndex = useCallback(
     (index: number) => {
@@ -221,7 +357,7 @@ export const useStudentSession = ({
           lastEventAt: timestamp,
           warningMessage:
             current.integrity.warningMessage ??
-            'Integrity monitoring detected an exam-related event. Stay inside the app until you submit.',
+            'Шалгалтын үеийн хяналт сэжигтэй үйлдэл илрүүллээ. Илгээх хүртлээ апп дотроо байна уу.',
           eventCount: current.integrity.eventCount + 1,
         },
       }));
@@ -240,7 +376,7 @@ export const useStudentSession = ({
   const answerQuestion = useCallback(
     async (questionId: string, answer: AnswerValue) => {
       if (!activeSession) {
-        throw new Error('No active exam session found.');
+        throw new Error('Идэвхтэй шалгалтын session олдсонгүй.');
       }
 
       const now = Date.now();
@@ -260,13 +396,13 @@ export const useStudentSession = ({
               },
               lastAnswerAt: now,
               syncStatus: 'syncing',
-              syncMessage: 'Saving your answer...',
+              syncMessage: 'Хариултыг хадгалж байна...',
             }
           : current.activeSession,
       }));
 
       if (!student) {
-        throw new Error('No active student selected.');
+        throw new Error('Сонгосон суралцагч алга.');
       }
 
       try {
@@ -296,7 +432,7 @@ export const useStudentSession = ({
                 syncStatus: 'error',
                 syncMessage: normalizeApiError(
                   error,
-                  'Could not save the answer. Try again before submitting.',
+                  'Хариултыг хадгалж чадсангүй. Илгээхээс өмнө дахин оролдоно уу.',
                 ),
               }
             : current.activeSession,
@@ -313,12 +449,12 @@ export const useStudentSession = ({
 
   const submitCurrentExam = useCallback(async (options?: { beforeSubmit?: () => Promise<void> }) => {
     if (!activeSession) {
-      throw new Error('No active exam session found.');
+      throw new Error('Идэвхтэй шалгалтын session олдсонгүй.');
     }
 
     if (submitLockRef.current || activeSession.status === 'submitting') {
       throw new Error(
-        '{"error":{"message":"The exam is already being submitted."}}',
+        '{"error":{"message":"Шалгалтыг аль хэдийн илгээж байна."}}',
       );
     }
 
@@ -330,7 +466,7 @@ export const useStudentSession = ({
             ...current.activeSession,
             status: 'submitting',
             syncStatus: 'syncing',
-            syncMessage: 'Submitting your exam...',
+            syncMessage: 'Шалгалтыг илгээж байна...',
           }
         : current.activeSession,
     }));
@@ -341,7 +477,7 @@ export const useStudentSession = ({
       }
 
       if (!student) {
-        throw new Error('No active student selected.');
+        throw new Error('Сонгосон суралцагч алга.');
       }
 
       const submission = await submitSession(student, activeSession.sessionId);
@@ -372,12 +508,12 @@ export const useStudentSession = ({
               syncStatus: 'error',
               syncMessage: normalizeApiError(
                 error,
-                'Failed to submit the exam.',
+                'Шалгалтыг илгээж чадсангүй.',
               ),
             }
           : current.activeSession,
       }));
-      throw new Error(normalizeApiError(error, 'Failed to submit the exam.'));
+      throw new Error(normalizeApiError(error, 'Шалгалтыг илгээж чадсангүй.'));
     } finally {
       submitLockRef.current = false;
     }

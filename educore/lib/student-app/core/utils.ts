@@ -68,15 +68,15 @@ export const formatCountdown = (seconds: number) => {
 
 export const getResultMessage = (score: number) => {
   if (score >= 90) {
-    return 'Excellent work. You handled this exam with confidence.';
+    return 'Маш сайн. Та энэ шалгалтыг өөртөө итгэлтэйгээр гүйцэтгэлээ.';
   }
   if (score >= 75) {
-    return 'Strong result. Keep this momentum going.';
+    return 'Сайн үр дүн байна. Энэ эрчээ үргэлжлүүлээрэй.';
   }
   if (score >= 60) {
-    return 'Exam completed successfully. Review the details and keep improving.';
+    return 'Шалгалтаа амжилттай дуусгалаа. Дэлгэрэнгүйг хараад ахиулаарай.';
   }
-  return 'This attempt gives you a starting point. Review the answers and try again stronger.';
+  return 'Энэ оролдлого танд эхлэх суурь боллоо. Хариултаа нягтлаад дараагийн удаа илүү сайн оролдоорой.';
 };
 
 export const getIntegrityCapabilities = (): IntegrityCapability => {
@@ -87,9 +87,9 @@ export const getIntegrityCapabilities = (): IntegrityCapability => {
       copyPasteRestricted: true,
       backgroundDetectionSupported: true,
       notes: [
-        'Lifecycle events can be logged during an active exam.',
-        'Copy and paste can be reduced in answer fields.',
-        'Full screenshot blocking needs a native screen-capture module before release hardening.',
+        'Шалгалтын үеийн аппын төлөв өөрчлөлтийг бүртгэж болно.',
+        'Хариултын талбарт хуулах, буулгах үйлдлийг хязгаарлаж болно.',
+        'Дэлгэцийн зураг бүрэн хориглохын тулд native screen-capture модуль шаардлагатай.',
       ],
     };
   }
@@ -101,9 +101,9 @@ export const getIntegrityCapabilities = (): IntegrityCapability => {
       copyPasteRestricted: true,
       backgroundDetectionSupported: true,
       notes: [
-        'Lifecycle events can be logged during an active exam.',
-        'Copy and paste can be reduced in answer fields.',
-        'iOS screenshot prevention is limited and should be treated as detect-or-warn only.',
+        'Шалгалтын үеийн аппын төлөв өөрчлөлтийг бүртгэж болно.',
+        'Хариултын талбарт хуулах, буулгах үйлдлийг хязгаарлаж болно.',
+        'iOS дээр дэлгэцийн зураг хориглох боломж хязгаарлагдмал тул зөвхөн илрүүлэх эсвэл анхааруулах түвшинд ашиглана.',
       ],
     };
   }
@@ -113,16 +113,16 @@ export const getIntegrityCapabilities = (): IntegrityCapability => {
     screenshotDetectionSupported: false,
     copyPasteRestricted: false,
     backgroundDetectionSupported: true,
-    notes: ['Web environments use warning-only integrity controls.'],
+    notes: ['Вэб орчинд зөвхөн анхааруулах төрлийн шударга байдлын хяналт ашиглана.'],
   };
 };
 
 export const formatDateTime = (value?: string | null) => {
-  if (!value) return 'Not available';
+  if (!value) return 'Байхгүй';
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return 'Not available';
+    return 'Байхгүй';
   }
 
   return new Intl.DateTimeFormat('en-US', {
@@ -134,23 +134,23 @@ export const formatDateTime = (value?: string | null) => {
 };
 
 export const getEntryStatusLabel = (entryStatus: string | null | undefined) => {
-  return entryStatus === 'late' ? 'Late entry' : 'On time';
+  return entryStatus === 'late' ? 'Хоцорч орсон' : 'Цагтаа орсон';
 };
 
 export const getSessionStateLabel = (status: string) => {
   switch (status) {
     case 'late':
-      return 'Late entry';
+      return 'Хоцорч орсон';
     case 'joined':
-      return 'Ready to start';
+      return 'Эхлэхэд бэлэн';
     case 'in_progress':
-      return 'In progress';
+      return 'Явагдаж байна';
     case 'submitting':
-      return 'Submitting';
+      return 'Илгээж байна';
     case 'submitted':
-      return 'Submitted';
+      return 'Илгээсэн';
     case 'graded':
-      return 'Graded';
+      return 'Дүгнэсэн';
     default:
       return status.replace(/_/g, ' ');
   }

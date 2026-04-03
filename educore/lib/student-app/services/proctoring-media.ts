@@ -12,7 +12,7 @@ import type {
 const dataUrlToBlob = async (dataUrl: string) => {
   const response = await fetch(dataUrl);
   if (!response.ok) {
-    throw new Error(`Could not read media payload: ${response.status}`);
+    throw new Error(`Медиа өгөгдлийг уншиж чадсангүй: ${response.status}`);
   }
   return response.blob();
 };
@@ -20,7 +20,7 @@ const dataUrlToBlob = async (dataUrl: string) => {
 const localUriToBlob = async (uri: string) => {
   const response = await fetch(uri);
   if (!response.ok) {
-    throw new Error(`Could not read local media file: ${response.status}`);
+    throw new Error(`Локал медиа файлыг уншиж чадсангүй: ${response.status}`);
   }
   return response.blob();
 };
@@ -37,7 +37,7 @@ const uploadBlob = async (
   });
 
   if (!response.ok) {
-    throw new Error(`Media upload failed with status ${response.status}`);
+    throw new Error(`Медиа файл илгээхэд алдаа гарлаа: ${response.status}`);
   }
 };
 

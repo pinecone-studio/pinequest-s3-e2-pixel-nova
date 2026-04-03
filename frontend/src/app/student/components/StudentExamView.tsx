@@ -42,8 +42,7 @@ function QuestionBlock({
   return (
     <article
       id={`question-${question.id}`}
-      className="rounded-[28px] border border-[#d8e1f0] bg-white p-6 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.25)]"
-    >
+      className="rounded-[28px] border border-[#d8e1f0] bg-white p-6 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.25)]">
       <div className="mb-4 flex items-start gap-3">
         <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[#edf3ff] text-sm font-semibold text-[#355cde]">
           {index + 1}
@@ -89,8 +88,7 @@ function QuestionBlock({
                     ? "border-[#9edec2] bg-[#eefcf3] text-[#069668]"
                     : "border-[#d8e1f0] bg-[#f7faff] text-slate-800 hover:border-[#b6c8ea] hover:bg-[#f1f6ff]"
                 }`}
-                onClick={() => onSelectMcq(question.id, option)}
-              >
+                onClick={() => onSelectMcq(question.id, option)}>
                 <div className="flex flex-wrap items-start gap-1">
                   <span>{label}.</span>
                   {hasTraditionalMongolian(option) ? (
@@ -133,8 +131,8 @@ export default function StudentExamView({
   const questionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const totalQuestions = activeExam?.questions.length || 0;
-  const answeredCount = Object.values(answers).filter((value) =>
-    value && value.trim().length > 0,
+  const answeredCount = Object.values(answers).filter(
+    (value) => value && value.trim().length > 0,
   ).length;
   const progressPercent =
     totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
@@ -145,13 +143,16 @@ export default function StudentExamView({
   );
 
   useEffect(() => {
-    if (!questionIds.length || typeof IntersectionObserver === "undefined") return;
+    if (!questionIds.length || typeof IntersectionObserver === "undefined")
+      return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
-          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+          .sort(
+            (left, right) => right.intersectionRatio - left.intersectionRatio,
+          )[0];
 
         if (!visible) return;
         const nextIndex = questionIds.findIndex(
@@ -188,7 +189,7 @@ export default function StudentExamView({
   return (
     <div className="min-h-screen bg-background px-6 py-8 text-foreground">
       {warning && (
-        <div className="fixed right-6 top-6 z-50 max-w-[420px]">
+        <div className="sticky right-6 top-6 z-50 max-w-[420px]">
           <div className="overflow-hidden rounded-[28px] border border-[#ffc9a8] bg-white shadow-[0_28px_64px_-28px_rgba(249,115,22,0.42)]">
             <div className="flex items-start gap-4 px-5 py-5">
               <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#fff1e8] text-[#f97316]">
@@ -198,7 +199,9 @@ export default function StudentExamView({
                 <p className="text-base font-semibold text-slate-900">
                   Анхааруулга илэрлээ
                 </p>
-                <p className="mt-2 text-[15px] leading-7 text-slate-600">{warning}</p>
+                <p className="mt-2 text-[15px] leading-7 text-slate-600">
+                  {warning}
+                </p>
                 <p className="mt-3 text-sm font-medium text-[#f97316]">
                   Дахин давтагдвал шалгалт автоматаар дуусна.
                 </p>
@@ -257,8 +260,7 @@ export default function StudentExamView({
               key={question.id}
               ref={(node) => {
                 questionRefs.current[question.id] = node;
-              }}
-            >
+              }}>
               <QuestionBlock
                 question={question}
                 index={index}
@@ -284,7 +286,9 @@ export default function StudentExamView({
             <div className="mt-3 grid grid-cols-3 gap-2">
               {Array.from({ length: totalQuestions || 6 }).map((_, idx) => {
                 const question = activeExam?.questions[idx];
-                const isAnswered = question ? Boolean(answers[question.id]?.trim()) : false;
+                const isAnswered = question
+                  ? Boolean(answers[question.id]?.trim())
+                  : false;
                 const isCurrent = idx === currentQuestionIndex;
 
                 return (
@@ -298,8 +302,7 @@ export default function StudentExamView({
                           ? "border-[#9edec2] bg-[#eefcf3] text-[#069668]"
                           : "border-border bg-muted text-slate-700 hover:bg-muted/70"
                     }`}
-                    onClick={() => scrollToQuestion(idx)}
-                  >
+                    onClick={() => scrollToQuestion(idx)}>
                     {idx + 1}
                   </button>
                 );
@@ -312,15 +315,13 @@ export default function StudentExamView({
       <div className="mt-6 flex w-full flex-wrap justify-between gap-3">
         <button
           className="rounded-xl border border-border bg-muted px-4 py-2 text-sm transition hover:bg-muted/70"
-          onClick={onExit}
-        >
+          onClick={onExit}>
           Гарах
         </button>
         <button
           className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
           onClick={onSubmit}
-          disabled={submitting}
-        >
+          disabled={submitting}>
           Илгээх
         </button>
         {submitting && (

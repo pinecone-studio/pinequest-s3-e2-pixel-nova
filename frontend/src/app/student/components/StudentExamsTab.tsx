@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Exam } from "../types";
 import StudentExamDetailSection from "./StudentExamDetailSection";
-import StudentExamStartGuideModal from "./StudentExamStartGuideModal";
+import StudentExamStartGuideModal, {
+  STUDENT_EXAM_START_GUIDE_STEP_COUNT,
+} from "./StudentExamStartGuideModal";
 import StudentJoinExamPanel from "./StudentJoinExamPanel";
 
 type StudentExamsTabProps = {
@@ -45,13 +47,47 @@ export default function StudentExamsTab({
   teacherName,
   studentHistory,
 }: StudentExamsTabProps) {
-  const [showStartGuide, setShowStartGuide] = useState(false);
+  const autoOpenedGuideExamIdRef = useRef<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [guideStepIndex, setGuideStepIndex] = useState(0);
 
   useEffect(() => {
-    setShowStartGuide(false);
+    if (!selectedExam) {
+      autoOpenedGuideExamIdRef.current = null;
+      setGuideOpen(false);
+      setGuideStepIndex(0);
+      return;
+    }
+
+    if (joinError) {
+      setGuideOpen(false);
+      return;
+    }
+
+    if (autoOpenedGuideExamIdRef.current === selectedExam.id) {
+      return;
+    }
+
+    autoOpenedGuideExamIdRef.current = selectedExam.id;
     setGuideStepIndex(0);
-  }, [selectedExam?.id]);
+    setGuideOpen(true);
+  }, [joinError, selectedExam]);
+
+  const handleOpenGuide = () => {
+    setGuideStepIndex(0);
+    setGuideOpen(true);
+  };
+
+  const handleCloseGuide = () => {
+    if (startingExam) {
+      return;
+    }
+    setGuideOpen(false);
+  };
+
+  const handleStartExam = () => {
+    void onStartExam();
+  };
 
   if (!selectedExam) {
     return (
@@ -77,29 +113,36 @@ export default function StudentExamsTab({
         joinError={joinError}
         teacherName={teacherName}
         onBack={onClearSelection}
-        onPrimaryAction={() => {
-          setGuideStepIndex(0);
-          setShowStartGuide(true);
-        }}
-        primaryActionLabel="Шалгалт эхлүүлэх"
+        onPrimaryAction={joinError ? handleStartExam : handleOpenGuide}
+        primaryActionLabel={
+          startingExam
+            ? "Эхлүүлж байна..."
+            : joinError
+              ? "Дахин оролдох"
+              : "Шалгалт эхлүүлэх"
+        }
         primaryActionDisabled={startingExam}
         maxWidthClassName="max-w-[1088px]"
       />
-      <StudentExamStartGuideModal
-        open={showStartGuide}
-        stepIndex={guideStepIndex}
-        totalSteps={4}
-        submitting={startingExam}
-        onClose={() => {
-          if (startingExam) return;
-          setShowStartGuide(false);
-          setGuideStepIndex(0);
-        }}
-        onNext={() => setGuideStepIndex((current) => Math.min(current + 1, 3))}
-        onStart={() => {
-          void onStartExam();
-        }}
-      />
+
+      {!joinError && (
+        <StudentExamStartGuideModal
+          open={guideOpen}
+          stepIndex={guideStepIndex}
+          totalSteps={STUDENT_EXAM_START_GUIDE_STEP_COUNT}
+          onNext={() =>
+            setGuideStepIndex((current) =>
+              Math.min(
+                current + 1,
+                STUDENT_EXAM_START_GUIDE_STEP_COUNT - 1,
+              ),
+            )
+          }
+          onClose={handleCloseGuide}
+          onStart={handleStartExam}
+          submitting={startingExam}
+        />
+      )}
     </>
   );
 }
