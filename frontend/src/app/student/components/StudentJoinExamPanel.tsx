@@ -8,6 +8,7 @@ import {
   Play,
   RefreshCcw,
 } from "lucide-react";
+import type { FormEvent } from "react";
 import type { Exam } from "../types";
 import { formatDate, gradeFromPercentage } from "../utils";
 import { formatClock, subjectFromExam } from "./student-exams-helpers";
@@ -92,6 +93,11 @@ export default function StudentJoinExamPanel({
   onSelectUpcomingExam = () => undefined,
   studentHistory,
 }: JoinExamPanelProps) {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onLookup();
+  };
+
   if (loading) {
     return (
       <section
@@ -166,7 +172,10 @@ export default function StudentJoinExamPanel({
               </h2>
             </div>
 
-            <div className="mt-6 w-full max-w-[418px] space-y-4">
+            <form
+              className="mt-6 w-full max-w-[418px] space-y-4"
+              onSubmit={handleSubmit}
+            >
               <input
                 className="h-[46px] w-full rounded-[18px] border border-[#dfe5fb] bg-[#fbfcff] px-5 text-[15px] font-medium text-slate-800 outline-none transition placeholder:text-[#adb7cf] focus:border-[#aab7ff] focus:bg-white"
                 placeholder="Өрөөний код"
@@ -178,10 +187,10 @@ export default function StudentJoinExamPanel({
 
               <div className="flex justify-end">
                 <button
+                  type="submit"
                   className={`inline-flex h-[36px] min-w-[182px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#6354ee] to-[#4f4be4] px-5 text-[13px] font-semibold text-white shadow-[0_20px_42px_rgba(96,84,228,0.28)] transition hover:brightness-105 ${
                     joinLoading ? "opacity-70" : ""
                   }`}
-                  onClick={onLookup}
                   disabled={joinLoading}
                 >
                   <Play className="h-[18px] w-[18px]" />
@@ -194,7 +203,7 @@ export default function StudentJoinExamPanel({
                   {joinError}
                 </div>
               )}
-            </div>
+            </form>
           </div>
 
           <div className={rulesPanelClassName}>

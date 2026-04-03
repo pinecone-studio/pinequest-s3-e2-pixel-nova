@@ -520,15 +520,6 @@ sessionRoutes.post(
     return notFound(c, "Exam");
   }
 
-  if (exam.requiresAudioRecording && !audioReady) {
-    return error(
-      c,
-      "AUDIO_REQUIRED",
-      "Microphone recording must be ready before the exam can start.",
-      409,
-    );
-  }
-
   const nowDate = new Date();
   const scheduledAt = parseExamDate(exam.scheduledAt);
 

@@ -331,11 +331,12 @@ describe("session routes", () => {
     });
   });
 
-  it("blocks starting a required-audio exam when audio is not ready", async () => {
+  it("allows starting a required-audio exam even when audio is not ready", async () => {
     queueDbResults(
       [{ id: "student-1", fullName: "Nora Student" }],
       [{ id: "session-1", examId: "exam-1", status: "joined" }],
       [{ id: "exam-1", requiresAudioRecording: 1, status: "active" }],
+      undefined,
     );
 
     const response = await app.request(
@@ -344,12 +345,13 @@ describe("session routes", () => {
       workerEnv,
     );
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      success: false,
-      error: {
-        code: "AUDIO_REQUIRED",
-        message: "Microphone recording must be ready before the exam can start.",
+      success: true,
+      data: {
+        sessionId: "session-1",
+        status: "in_progress",
+        startedAt: expect.any(String),
       },
     });
   });

@@ -194,6 +194,31 @@ const requestDesktopMicrophonePermission = async () => {
   stream.getTracks().forEach((track) => track.stop());
 };
 
+const reportPermissionIssue = async ({
+  eventType,
+  message,
+  sessionId,
+  source,
+}: {
+  eventType: "camera_blocked" | "microphone_permission_denied";
+  message: string;
+  sessionId: string;
+  source: "browser_camera" | "browser_audio";
+}) => {
+  await apiRequest("/api/cheat/event", {
+    method: "POST",
+    body: JSON.stringify({
+      sessionId,
+      eventType,
+      source,
+      confidence: 0.99,
+      details: {
+        message,
+      },
+    }),
+  }).catch(() => null);
+};
+
 export const useStudentExamSession = ({
   currentUser,
   roomCodeInput,
@@ -337,9 +362,27 @@ export const useStudentExamSession = ({
         const sessionData = await apiRequest<SessionData>(`/api/sessions/${effectiveSessionId}`);
         const mappedExam: Exam = mapSessionToExam(sessionData, effectiveRoomCode);
         requiresAudioRecording = Boolean(mappedExam.requiresAudioRecording);
-        await requestDesktopCameraPermission();
+        let cameraIssue: string | null = null;
+        let microphoneIssue: string | null = null;
+
+        try {
+          await requestDesktopCameraPermission();
+        } catch (error) {
+          cameraIssue = parseErrorMessage(
+            error,
+            "Камерын зөвшөөрөл олгогдоогүй байна.",
+          );
+        }
+
         if (requiresAudioRecording) {
-          await requestDesktopMicrophonePermission();
+          try {
+            await requestDesktopMicrophonePermission();
+          } catch (error) {
+            microphoneIssue = parseErrorMessage(
+              error,
+              "Микрофоны зөвшөөрөл олгогдоогүй байна.",
+            );
+          }
         }
         const restoredServerAnswers = mapSessionAnswers(sessionData);
         const restoredDraftAnswers = readDraftAnswers(effectiveSessionId);
@@ -350,7 +393,8 @@ export const useStudentExamSession = ({
         const startData = await apiRequest<{ startedAt?: string; status?: string }>(`/api/sessions/${effectiveSessionId}/start`, {
           method: "POST",
           body: JSON.stringify({
-            audioReady: requiresAudioRecording ? true : undefined,
+            audioReady:
+              requiresAudioRecording && !microphoneIssue ? true : undefined,
           }),
         });
         const nextExam = {
@@ -367,22 +411,36 @@ export const useStudentExamSession = ({
         setViolations({ ...EMPTY_VIOLATIONS });
         setJoinError?.(null);
         setView("exam");
+
+        if (cameraIssue) {
+          void reportPermissionIssue({
+            eventType: "camera_blocked",
+            message: cameraIssue,
+            sessionId: effectiveSessionId,
+            source: "browser_camera",
+          });
+        }
+
+        if (microphoneIssue) {
+          void reportPermissionIssue({
+            eventType: "microphone_permission_denied",
+            message: microphoneIssue,
+            sessionId: effectiveSessionId,
+            source: "browser_audio",
+          });
+        }
+
+        if (cameraIssue || microphoneIssue) {
+          const deniedItems = [
+            cameraIssue ? "камер" : null,
+            microphoneIssue ? "микрофон" : null,
+          ].filter(Boolean);
+          showWarning(
+            `${deniedItems.join(" ба ")} зөвшөөрөгдөөгүй ч шалгалт эхэллээ. Багшид мэдэгдэнэ.`,
+          );
+        }
       } catch (error) {
         const message = parseErrorMessage(error, "Шалгалт эхлүүлэхэд алдаа гарлаа.");
-        if (requiresAudioRecording) {
-          void apiRequest(`/api/cheat/event`, {
-            method: "POST",
-            body: JSON.stringify({
-              sessionId: effectiveSessionId,
-              eventType: "microphone_permission_denied",
-              source: "browser_audio",
-              confidence: 0.99,
-              details: {
-                message,
-              },
-            }),
-          }).catch(() => null);
-        }
         setJoinError?.(message);
         showWarning(message);
       } finally {

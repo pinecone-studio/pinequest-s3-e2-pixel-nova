@@ -175,6 +175,32 @@ describe("StudentExamsTab", () => {
     );
   });
 
+  it("submits the room code form when the student presses Enter", () => {
+    const onLookup = jest.fn();
+
+    render(
+      <StudentExamsTab
+        loading={false}
+        exams={[]}
+        joinLoading={false}
+        roomCodeInput="ROOM02"
+        setRoomCodeInput={jest.fn()}
+        joinError={null}
+        onLookup={onLookup}
+        selectedExam={null}
+        onStartExam={jest.fn()}
+        onClearSelection={jest.fn()}
+        teacherName={null}
+        studentHistory={[]}
+      />,
+    );
+
+    const roomCodeInput = screen.getByPlaceholderText("Өрөөний код");
+    fireEvent.submit(roomCodeInput.closest("form")!);
+
+    expect(onLookup).toHaveBeenCalledTimes(1);
+  });
+
   it("renders the screenshot-style loading block for exams tab", () => {
     render(
       <StudentExamsTab

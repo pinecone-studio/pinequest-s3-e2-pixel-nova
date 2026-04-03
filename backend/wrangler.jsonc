@@ -27,6 +27,9 @@
   "ai": {
     "binding": "AI",
   },
+  "vars": {
+    "R2_BUCKET_NAME": "educore-exam-files"
+  },
   "ratelimits": [
     {
       "name": "RATE_LIMIT_GENERAL_READ",
