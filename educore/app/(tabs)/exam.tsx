@@ -1,6 +1,12 @@
 ﻿import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCameraPermissions } from "expo-camera";
+import {
+  allowScreenCaptureAsync,
+  disableAppSwitcherProtectionAsync,
+  enableAppSwitcherProtectionAsync,
+  preventScreenCaptureAsync,
+} from "expo-screen-capture";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -67,6 +73,8 @@ type HistoryListItem = {
   statusText: string;
   sortTime: number;
 };
+
+const EXAM_SCREEN_CAPTURE_KEY = "educore-active-exam";
 
 function getRequestedTab(tab?: string | string[]): TabKey {
   const resolved = Array.isArray(tab) ? tab[0] : tab;
@@ -769,6 +777,27 @@ function HistoryList({
     </>
   );
 }
+
+function ExamScreenCaptureGuard({ enabled }: { enabled: boolean }) {
+  useEffect(() => {
+    if (!enabled) return;
+
+    void preventScreenCaptureAsync(EXAM_SCREEN_CAPTURE_KEY).catch(
+      () => undefined,
+    );
+    void enableAppSwitcherProtectionAsync(0.6).catch(() => undefined);
+
+    return () => {
+      void allowScreenCaptureAsync(EXAM_SCREEN_CAPTURE_KEY).catch(
+        () => undefined,
+      );
+      void disableAppSwitcherProtectionAsync().catch(() => undefined);
+    };
+  }, [enabled]);
+
+  return null;
+}
+
 export default function ExamScreen() {
   const router = useRouter();
   const {
@@ -1276,6 +1305,7 @@ export default function ExamScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
+      <ExamScreenCaptureGuard enabled />
       <ScrollView
         style={styles.screen}
         contentContainerStyle={styles.content}

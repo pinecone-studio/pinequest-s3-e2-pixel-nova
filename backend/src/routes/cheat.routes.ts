@@ -394,6 +394,24 @@ const buildAudioAssetUrl = (requestUrl: string, objectKey: string) => {
   return url.toString();
 };
 
+const listLatestSnapshotObjectKey = async (
+  bucket: R2Bucket,
+  sessionId: string,
+  studentId: string,
+) => {
+  const prefix = `${SNAPSHOT_OBJECT_PREFIX}/${sessionId}/${studentId}/`;
+  const listing = await bucket.list({
+    limit: 100,
+    prefix,
+  });
+
+  const latest = [...listing.objects].sort((left, right) =>
+    right.key.localeCompare(left.key),
+  )[0];
+
+  return latest?.key ?? null;
+};
+
 const inferSnapshotMimeType = (objectKey: string): SnapshotMimeType => {
   if (objectKey.endsWith(".png")) {
     return "image/png";
@@ -1088,6 +1106,44 @@ cheatRoutes.get("/snapshot-assets", async (c) => {
   );
   c.header("Cache-Control", "private, max-age=60");
   return c.body(await snapshotObject.arrayBuffer());
+});
+
+cheatRoutes.get("/latest-snapshot/:sessionId", requireRole("teacher"), async (c) => {
+  const sessionId = c.req.param("sessionId");
+  const teacherId = c.get("user").id;
+  const db = getDb(c.env.educore);
+
+  const exam = await verifyTeacherSnapshotAccess(db, sessionId, teacherId);
+  if (!exam) {
+    return forbidden(c, "You cannot access snapshots for this session.");
+  }
+
+  const [session] = await db
+    .select({
+      studentId: examSessions.studentId,
+    })
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .limit(1);
+
+  if (!session?.studentId) {
+    return notFound(c, "Session");
+  }
+
+  const objectKey = await listLatestSnapshotObjectKey(
+    c.env.EXAM_FILES,
+    sessionId,
+    session.studentId,
+  );
+
+  if (!objectKey) {
+    return success(c, null);
+  }
+
+  return success(c, {
+    objectKey,
+    assetUrl: buildSnapshotAssetUrl(c.req.url, objectKey),
+  });
 });
 
 cheatRoutes.get("/audio-assets", async (c) => {

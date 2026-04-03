@@ -72,6 +72,11 @@ export type ExamAudioChunk = {
   assetUrl: string;
 };
 
+export type LatestSnapshotAsset = {
+  objectKey: string;
+  assetUrl: string;
+};
+
 export const reportCheatEvent = (
   payload: CheatEventPayload,
   user?: User | null,
@@ -113,6 +118,11 @@ export const finalizeAudioUpload = (
 
 export const getExamAudioChunks = (sessionId: string, user?: User | null) =>
   apiRequest<ExamAudioChunk[]>(`/api/cheat/audio-chunks/${sessionId}`, { user });
+
+export const getLatestSnapshot = (sessionId: string, user?: User | null) =>
+  apiRequest<LatestSnapshotAsset | null>(`/api/cheat/latest-snapshot/${sessionId}`, {
+    user,
+  });
 
 export const getCheatEvents = (examId: string, user?: User | null) =>
   apiRequest(`/api/cheat/events/${examId}`, { user });

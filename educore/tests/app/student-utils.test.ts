@@ -113,7 +113,7 @@ describe('formatCountdown', () => {
 describe('platform integrity capabilities', () => {
   it('returns a structured capability object', () => {
     expect(getIntegrityCapabilities()).toMatchObject({
-      screenshotProtectionSupported: false,
+      screenshotProtectionSupported: Platform.OS !== 'web',
       backgroundDetectionSupported: true,
     });
   });
