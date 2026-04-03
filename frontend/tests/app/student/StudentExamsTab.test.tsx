@@ -74,7 +74,7 @@ describe("StudentExamsTab", () => {
     expect(screen.getByText("Дэлгэц солих")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Цааш" }));
-    expect(screen.getByText("Copy Paste хийх")).toBeInTheDocument();
+    expect(screen.getByText("Хуулах, буулгах")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Эхлүүлэх" }));
     expect(onStartExam).toHaveBeenCalledTimes(1);
